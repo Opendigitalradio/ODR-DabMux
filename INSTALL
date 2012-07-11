@@ -1,0 +1,31 @@
+Required dependencies:
+======================
+
+    * libfec from Phil Karn: http://www.ka9q.net/code/fec/
+
+Simple install procedure:
+=========================
+
+    % wget http://www.ka9q.net/code/fec/fec-3.0.1.tar.bz2
+                                            # Download libfec
+    % tar xjf fec-3.0.1.tar.bz2             # Unpack the library source
+    % cd fec-3.0.1                          # Change to the library directory
+    % ./configure                           # Run the configure script
+    % make                                  # Build the library
+    [as root]
+    % make install                          # Install the library
+
+    % tar xjf crc-dabmux-0.3.0.4.tar.bz2    # Unpack the source
+    % cd crc-dabmux-0.3.0.4                 # Change to the source directory
+    % ./configure                           # Run the configure script
+    % make                                  # Build CRC-DabMux
+    [ as root ]
+    % make install                          # Install CRC-DabMux
+
+
+Advanced install procedure:
+===========================
+
+The configure script can be launch with a variety of options, launch the
+following command for a complete list:
+    % ./configure --help

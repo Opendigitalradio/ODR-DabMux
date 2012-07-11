@@ -1,0 +1,18 @@
+Jean-Daniel Langlois <> for
+the Communications Research Centre, Ottawa, Canada, 2002:
+    Fisrt version of DabMux.cpp (a.k.a. createETI.cpp)
+
+Pascal Charest <pascal [dot] charest [at] crc [dot] ca> for
+the Communications Research Centre, Ottawa, Canada, 2002-2009:
+    All files.
+
+Jean-Michel Bouffard <jean-michel [dot] bouffard [at] crc [dot] ca> for
+the Communications Research Centre, Ottawa, Canada, 2004:
+    Minor changes for crc.c, DabMux.cpp
+
+Martin-Pierre Lussier <martin-pierre [dot] lussier [at] crc [dot] ca> for
+the Communications Research Centre, Ottawa, Canada, 2004, 2006:
+    Minor changes for PcDebug.h, bridge.c, bridge.h, dabOutput.cpp
+
+FarSite Communications Ltd.
+    All files included in lib/farsite/

@@ -1,0 +1,584 @@
+.\" Process this file with
+.\" groff -t -man -Tascii DabMux.1
+.\" groff -t -man DabMux.1 > DabMux.ps
+.\"
+.TH CRC-DABMUX 1 "2006-2010" "\(co Communications Research Centre Canada" "User Manual"
+.SH NAME
+crc-dabmux \- A software DAB multiplexer
+
+.SH SYNOPSIS
+.B  crc-dabmux
+.BI [ ensemble ]
+.BI [ "subchannel1 subchannel2 ..." ]
+.BI [ "service1 component1 " [ "component2 ..." ] " service2 ..."]
+.BI [ output1 ... ]
+.B  [-h]
+.BI [-m " mode"]
+.BI [-n " nbFrames"]
+.B  [-V]
+.B  [-z]
+
+.SS ensemble
+.BI [-i " ensembleId"]
+.BI [-L " label"]
+.BI [-l " sLabel"]
+
+.SS subchannel
+.B  -(A | B | D | E | F | M | P | T)
+.I  inputName
+.BI [-b " bitrate"]
+.BI [-i " subchannelId"]
+.BB [-k]
+.BI [-p " protection"]
+
+.SS service
+.B  -S
+.BI [-g " language"]
+.BI [-i " serviceId"]
+.BI [-L " label"]
+.BI [-l " sLabel"]
+.BI [-y " PTy"]
+
+.SS component
+.B  -C
+.BI [-a " address"]
+.B  [-d]
+.BI [-f " figType"]
+.BI [-i " subchannelId"]
+.BI [-L " label"]
+.BI [-l " sLabel"]
+.BI [-t " packetType"]
+
+.SS output
+.BI -O " outputName"
+
+.SH DESCRIPTION
+CRC-DABMUX is a software multiplexer that generates an ETI stream from audio and data streams. Because of its software based architecture, many typical DAB services can be generated and multiplexed on a single PC platform with live or pre-recorded sources.
+
+A DAB multiplex configuration is composed of one ensemble. An ensemble is the entity that receivers tune to and process. An ensemble contains several services. A service is the listener-selectable output. Each service contains one mandatory service component which is called primary component. An audio primary component define a program service while a data primary component define a data service. Service can contain additional components which are called secondary components. Maximum total number of components is 12 for program services and 11 for data services. A service component is a link to one subchannel (or Fast Information Data Channel). A subchannel is the physical space used within the common interleaved frame. 
+
+.bp
+.KS
+.cs R 20
+.ps -1
+.nf
+                     __________________________________________________
+                    |                   CRC-Ensemble                   |  ENSEMBLE
+                    |__________________________________________________|
+                            |                 |                 |
+                            |                 |                 |
+                     _______V______    _______V______    _______V______ 
+                    | CRC-Service1 |  | CRC-Service2 |  | CRC-Service3 |  SERVICES
+                    |______________|  |______________|  |______________|
+                       |        |        |        | |______         |
+                       |        |        |        |        |        |
+                     __V__    __V__    __V__    __V__    __V__    __V__ 
+                    | SC1 |  | SC2 |  | SC3 |  | SC4 |  | SC5 |  | SC6 |  SERVICE
+                    |_____|  |_____|  |_____|  |_____|  |_____|  |_____|  COMPONENTS
+                       |        |   _____|        |        |    ____|
+                       |        |  |              |        |   |
+ _________________   __V________V__V______________V________V___V_______   COMMON
+| MCI | SI | FIDC | | SubCh1 | SubCh9 |  ...  | SubCh3 | SubCh60 | ... |  INTERLEAVED
+|_____|____|______| |________|________|_______|________|_________|_____|  FRAME
+Fast Information Ch.                 Main Service Channel
+.fi
+.ps
+.cs R
+
+.I Figure 1: An example of a DAB multiplex
+.KE
+
+.SH OPTIONS
+.
+.SS GENERAL
+.TP
+.B -h
+get this help
+.
+.TP
+.BI -m " mode"
+DAB mode (default: 2)
+.
+.TP
+.BI -n " nbFrames"
+number of frames to produce (default: infinite)
+.
+.TP
+.B -o
+turn on log facility on TCP port 12222
+.
+.TP
+.B -V
+print version information, included input/output/format and exit
+.
+.TP
+.B -z
+write SCCA field for old Factum ETI analyzer
+
+.SS INPUT
+One of the following option must be used:
+.TP
+.BI -A " inputName"
+set audio input with MPEG-1/2 layer II file
+.I inputName
+input file
+.
+.TP
+.BI -B " inputName"
+set CRC-Bridge stream data input with UDP input address
+.I inputName.
+Format is
+.BI [ address ]: port
+.
+.TP
+.BI -D " inputName"
+set raw stream data input with UDP input address
+.I inputName.
+Format is
+.BI [ address ]: port
+.
+.TP
+.BI -E " inputName"
+set enhanced packet input
+.
+.TP
+.BI -F " inputName"
+set audio input with DAB+ file (AAC + RS + interleaver)
+.I inputName
+input file
+.
+.TP
+.BI -M " inputName"
+set DMB input
+.
+.TP
+.BI -P " inputName"
+set packet input
+.
+.TP
+.B -T
+set test input
+
+.SS ENSEMBLE, SUBCHANNEL, SERVICE AND SERVICE COMPONENTS OPTIONS
+.TP
+.BI -a " address"
+packet address (default: 0x200 + <n> (512))
+.
+.TP
+.BI -b " bitrate"
+bitrate (in kbits/s) of the subchannel (default: audio 1st frame, data 384, packet 32)
+.
+.TP
+.B -d
+turn on datagroups in packet mode
+.
+.TP
+.BI -f " figType"
+user application type in FIG 0/13 for packet mode
+.
+.TP
+.BI -g " language"
+Primary service component language: english=9, french=15
+.
+.TP
+.BI -i " id"
+.IR service | subchannel | serviceComponent
+id of ensemble, service <n>, subchannel <n> or service component <n> (default: <n>)
+.
+.TP
+.B -k
+set non-blocking file input (audio and packet only)
+.
+.TP
+.BI -L " label"
+label of service <n> (default: CRC-Audio<n>)
+.
+.TP
+.BI -l " sLabel"
+short label flag of service <n>. Format is either numerical or a character string. (default: 0xf040)
+.
+.TP
+.BI -p " protection"
+protection level (default: 3)
+.
+.TP
+.BI -t " type"
+.br
+audio/data service component type (default: 0)
+.br
+audio: foreground=0, background=1, multi-channel=2
+.br
+data: unspecified=0, TMC=1, EWS=2, ITTS=3, paging=4, TDC=5, IP=59, MOT=60, proprietary=61
+.
+.TP
+.BI -y " PTy"
+Primary service component program type international code
+
+.SS OUTPUT
+.TP
+.BI -O " outputName"
+name of the output in URL format, i.e.
+.IR scheme ://[ address ][: port ][ path ][? query ]
+where
+.I scheme
+is
+.RI ( raw | udp | tcp | file | fifo | simul )
+
+.SH USAGE
+A multiplex configuration is composed of subchannels, services, service components, outputs and general options. Subchannels must be defined before being referenced by a service component. Services component must be defined within the service they are associated with.
+
+To easily build a multiplex configuration, ensemble options must be defined first. Then subchannels should be defined, followed with services. For each service, its associated service components must be defined when it is defined. Then, outputs should be defined and finally, general options can be appended.
+
+For any numerical option, the value format can be in decimal (e.g. 26), hexadecimal (starting with 0x, e.g. 0x1a) or octal (starting with zero, e.g. 032).
+
+Labels and short labels containing space characters should be double-quoted (e.g. "CRC Ensemble")
+
+A short label is a 16 bits flag field that indicates which of the characters of the label are to be displayed in an abbreviated form. MSB bit is associated with first label character. A binary value of 0 means that the associated character should not be displayed and a value of 1 activate the display. A maximum of 8 bits shall be set. Short label value could also be entered by text. In this case, a flag field will be extrated by comparing label with short label. (e.g. label="CRC Service", short label="Service" or short label=0x0f70)
+
+.SS ENSEMBLE
+Ensemble options must be defined prior to any subchannel, service and service component.
+.RB "Label (" -L "), short label (" -l " and ensemble identifier (" -i " are available options. Ensemble identifier is a 16 bits number divided in two part. First 4 most significant bits are country identifier and last 12 bits are ensemble reference. Country identifier should not be set to 0.
+
+.SS SUBCHANNEL (INPUT)
+Subchannels are defined through software input. Common options are
+.I bitrate
+.RB ( -b ),
+.I subchannel identifier
+.RB ( -i ") and "
+.I protection
+.RB ( -p ).
+Bitrate must be 8 kbits/s multiple. For audio input, look at table 7 in subclause 6.2 of ETSI - EN 300 401 for allowed bitrates. Subchannel identifier shall range from 0 to 63. Protection is between 1 and 5 for audio input and between 1 and 4 for data input. Only UEP is supported for MPEG-1/2 layer II audio subchannels and EEP-A for all other subchannels. Input format is chosen between
+.RB "audio (" -A "), data (" -D "), enhanced packet mode (" -E "), dmb (" -M "), packet mode (" -P ") and test (" -T ).
+
+.I NOTE: all input type might not be supported. Option -V lists supported inputs.
+
+.TP
+.BI "-A " inputName
+MPEG audio input. File format must conforms to subclause 7 of ETSI - EN 300 401 (i.e with ScF-CRC, FPAD or XPAD  and no padding bytes). MPEG-1 layer II at 48kHz sampling rate and MPEG-2 layer II at 24kHz are supported. The 
+.I inputName
+format is directly the file name.
+.RS
+Example:
+.IP \(bu
+.I -A audio.mpg
+.RE
+
+.TP
+.BI "-D " inputName
+Data DAB stream mode input. Uses CRC-Dr.Bridge for subchannel framing.
+.I InputName
+is a URL with supported scheme are
+.IR UDP " and " SLIP.
+This input can also be used with
+.I PRBS
+scheme, without any framing.
+.RS
+Examples:
+.IP \(bu
+.I -D udp://224.8.9.9:1234
+.IP \(bu
+.I -D slip://:1234
+.IP \(bu
+.I -D prbs://:0x110
+.RE
+
+.TP
+.BI "-E " inputName
+DAB enhanced packet mode input. Input stream must follow same rules as with DAB packet mode input. 192 Reed-Solomon error correction RS(204,188) codes are added after every 2256 input data bytes. 24 bytes null packets is added when needed.
+.I inputName
+is directly the file name.
+
+.TP
+.BI "-M " inputName
+DAB MPEG-2 TS input, also known as DMB.
+.I InputName
+is a URL with UDP as default and unique input scheme.
+.RS
+Examples:
+.IP \(bu
+.I -M udp://:1234
+.IP \(bu
+.I -M 224.8.8.8:1234
+.RE
+
+.TP
+.BI "-P " inputName
+DAB packet mode input. Input stream must conforms to subclause 5.3.2 of ETSI - EN 300 401. The
+.I inputName
+is directly the file name. Flag
+.B -k
+should be set for pipe input. If packets contain DAB datagroups, then
+.B -d
+flag should be set. Component type is set with 
+.BI "-t " type
+option while FIG 0/13 is set with
+.BI "-f " figType
+options. If input packet is bigger than available space at the end of the current frame, it will start next frame and current frame is padded with 24 bytes null packets. If there is not enough input packet available to complete current frame, it is fill with 24 bytes null packets.
+.RS
+Examples:
+.IP \(bu
+.I -P input.bws -t 60 -d
+.IP \(bu
+.I -P ipstream -k -t 59 -d
+.RE
+
+.TP
+.BI -T
+Data DAB stream mode CRC test internal input. Generates a well-know byte stream for debugging purpose. Each DAB logical frame is composed of a sequence of 8 bits number from 0 to 255. First 4 bytes are replaced with a 32 bits frame counter in big endian mode.
+.RS
+Example:
+.IP \(bu
+.I -T
+.RE
+
+.SS SERVICE
+A new service is added every time option
+.I -S
+is used. Options are
+.I language
+.RB ( -g ),
+.I service identifier
+.RB ( -i ),
+.I label
+.RB ( -L ),
+.I short label
+.RB ( -l ") and "
+.I program type
+.RB ( -y ).
+Service identifier is 16 bits encoded for audio services and 32 bits encoded for data services. Program type (PTy) specified the international code found in table of RBDS PTY codes in table 13 of ETSI - TS 101 756.
+
+.SS SERVICE COMPONENT
+Service components are added with option (
+.B -C
+). As they are part of one service, they must be defined within a service definition, i.e. after option (
+.B -S
+) and its sub options. The
+.I subchannel identifier
+.RB ( -i )
+is a common option of all types of components. For audio components,
+.I type
+.RB ( -t )
+can be used to set foreground, background or multi-channel stream. By default, it is foreground. For packet component, options
+.I packet address
+.RB ( -a ),
+datagroups
+.RB ( -d ),
+.I fig type,
+.RB ( -f ),
+.I subchannel identifier
+.RB ( -i "), and "
+.I packet type
+.RB ( -t )
+are available.
+
+.SS OUTPUT
+Output are defined with option
+.B -O
+followed with the
+.I output name.
+The maximum number of allowed output is not defined. If there is no output defined, a simulation output is automatically created.
+.I Output name
+follows the
+.I URL
+schemes 
+.IR raw , " udp" , " tcp" , " file" " or " simul ". " Raw
+scheme is used with a E1 communication card for creating a G.703 stream. For UDP scheme, one ETI frame per UDP datagram is inserted, without the padding. With TCP scheme, each frame is preceded with a 16 bits integer telling the frame size in bytes. This number is in little-endian byte order. Same format is used with file output, except that a 32 bits integer is inserted at the beginning of the file. This number indicates number of frame in the file. This number is in little-endian byte order.
+
+.SS GENERAL
+The software can be called with
+.I help
+.RB ( -h )
+option to get a brief online help or with
+.I version
+.RB ( -V )
+option to get information. DAB
+.I mode
+.RB ( -m )
+can be set between 1 and 4. Default mode is 2. A limited
+.I number of frames
+.RB ( -n )
+to produce can be choose, otherwise the software will produces an unlimited number of ETI frames. A special option
+.RB ( -z )
+is available to remove false SCCA field error reports with an old version of Factum ETI analyser. Option
+.RB ( -o )
+is used to turn on LOG facility.
+
+.SS URL
+Most input and output resources are defined through URLs. Uniform Resource Locator (URL) is a standard way to reference resource location. URL format is:
+.RI [ scheme ://][ address ][: port ][ path ][? query ].
+Scheme indicates the protocol to access the resource. 
+
+.I NOTE: all URL types might not be supported. Option -V lists supported URLs.
+
+.TP
+.B raw://address
+Write interface for network card low level access. Interface name is specified with
+.I path.
+.RS
+Example:
+.IP \(bu
+.I raw://hdlc0
+.RE
+
+.TP
+.B file://path
+Read/write to/from a local file with file name
+.I path.
+In *NIX, add an additional / for accessing root while on Windows, use path starting with C:\e.
+.RS
+Examples:
+.IP \(bu
+.I file://audiofile.mp2
+.IP \(bu
+.I file:///root
+.IP \(bu
+.I file://c:\ewinroot
+.RE
+
+.TP
+.B udp://[address][:port]
+Receive/send UDP packets from/to a client at a specified IP
+.IR address " and " port .
+Can be any unicast or multicast address. When resource is an input, if address is multicast, it is used to join group, otherwise address is used to choose a specific network card when there is more than one. No input address means wait packets from any network interface. When resource is an output, address is always a destination. When it is not specified, destination is local address.
+.RS
+Examples:
+.IP \(bu
+.I udp://224.8.9.10:1234
+.IP \(bu
+.I udp://:1234
+.RE
+
+.TP
+.B slip://[address]:port]
+SLIP is a packet framing protocol over TCP. It is conform to RFC1055. It follows same rules as TCP for naming convention.
+.RS
+Example:
+.IP \(bu
+.I slip://:1234
+.RE
+
+.TP
+.B prbs://:port
+PRBS is used for testing purpose. It is an internal input that generates a pseudo-random binary sequence. Stream is generated form the output of a feedback shift register which polynomial is specified by the user. Register is reseted at the beginning of each DAB logical frame.
+.RS
+Example:
+.IP \(bu
+.I prbs://:0x110
+.RE
+
+.TP
+.B simul://
+This scheme is an simulation output. Drop the stream and add a 24 ms delay between each write operation.
+
+.SS LOGS
+Output logs can be accessed through TCP socket on port 12222. Use option
+.RB ( -o )
+to turn on LOGS. Every line start with
+.RI < prio >
+, where
+.I prio
+is the message priority. Priority codes can be found in the following table.
+.TS
+tab(&), box;
+| c | c | c |
+| l | c | l |.
+Mnemonic & Value & Description
+_
+_
+EMERG   & 0 & system is unusable
+_
+ALERT   & 1 & action must be taken immediately
+_
+CRIT    & 2 & critical conditions
+_
+ERR     & 3 & error conditions
+_
+WARNING & 4 & warning conditions
+_
+NOTICE  & 5 & normal but significant condition
+_
+INFO    & 6 & informational
+_
+DBG     & 7 & debug-level messages
+.TE
+
+.I Figure 2: Message logs priority chart
+
+.SH EXAMPLES
+.TP
+Encode one (1) audio file with default options
+.ul 1
+crc-dabmux -A filename -S -C -O file://output
+
+.TP
+Encode one (1) audio file with user defined labels
+crc-dabmux -A filename -S -L "Service Label" -C -L "Component Label" -O file://output
+
+.TP
+Encode one (1) audio file with user defined subchannel options, i.e. 192 kbits/s @ protection 4
+crc-dabmux -A filename -b 192 -p 4 -S -C -O file://output
+
+.TP
+Encode one (1) audio file and one (1) data stream
+crc-dabmux -A filename -S -C -D 224.8.8.8:1234 -S -C -O file://output
+
+.TP
+Encode one (1) broadcast website (BWS) file
+crc-dabmux -P filename.bws -b 64 -t 60 -S -C -O file://output
+
+.TP
+Encode a complex multiplex
+crc-dabmux \\
+.RS
+.RS
+-A audio.mp2 -b 192 -i 0 -p 4 \\
+.br
+-P pipe1 -k -b 312 -i 1 -p 4 \\
+.br
+-P data1.bws -b 64 -i 2 -p 3 \\
+.br
+-E data2.ss -b 96 -i 3 -p 4 \\
+.br
+.M udp://224.8.8.8:1234 -b 256 -i 4 -p 4 \\
+.br
+-S -L CRC-Karaoke -l 4064 -i 80 \\
+.RS
+-C -i 0 \\
+.br
+-C -i 2 \\
+.RE
+-S -L "CRC-IP Tunneling" -l 4080 -i 81 \\
+.RS
+-C -i 1 \\
+.RE
+-S -L CRC-WebSite -l 0x0fe0 -i 82 \\
+.RS
+-C -i 2 \\
+.RE
+-S -L "CRC-Slide Show" -l SlideShow -i 83 \\
+.RS
+-C -i 3 \\
+.RE
+-S -L CRC-DMB -l 07000 -i 84 \\
+.RS
+-C -i 4 \\
+.RE
+-O raw://hdlc0 -m 2
+.RE
+
+.SH CONFORMING TO
+ETSI: EN 300 401 V1.3.3 (May 2001).
+.I Radio Broadcasting Systems;
+.I Digital Audio Broadcasting (DAB) to mobile, portable and fixed receivers.
+.PP
+ETSI: ETS 300 799 1st edition (September 1997).
+.I Digital Audio Broadcasting (DAB);
+.I Distribution interfaces;
+.I Ensemble Transport Interface (ETI).
+.PP
+ETSI: TS 102 427 V1.1.1 (July 2005).
+.I Digital Audio Broadcasting (DAB);
+.I Data Broadcasting - MPEG-2 TS streaming
+
+.SH AUTHOR
+Pascal Charest <pascal (dot) charest (at) crc (dot) ca>

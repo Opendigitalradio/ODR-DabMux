@@ -2,6 +2,9 @@
    Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
    2011 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
+
+   Includes modifications
+   2012, Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
    This file is part of CRC-DabMux.
@@ -920,6 +923,7 @@ void printUsage(char *name, FILE* out = stderr)
     fprintf(out, "  -m                   : DAB mode (default: 2)\n");
     fprintf(out, "  -n nbFrames          : number of frames to produce\n");
     fprintf(out, "  -o                   : turn on TCP log on port 12222\n");
+    fprintf(out, "  -r                   : throttle the output rate to one ETI frame every 24ms\n");
     fprintf(out, "  -V                   : print version information and "
             "exit\n");
     fprintf(out, "  -z                   : write SCCA field for Factum ETI"
@@ -942,7 +946,7 @@ void printUsage(char *name, FILE* out = stderr)
             "subchannel (default: audio 1st frame, data %i, packet %i)\n",
             DEFAULT_DATA_BITRATE, DEFAULT_PACKET_BITRATE);
     fprintf(out, "  -c                   : set the extendend country code ECC "
-            "(default: %u (0x%2x)\n");
+            "(default: %u (0x%2x)\n", DEFAULT_ENSEMBLE_ECC, DEFAULT_ENSEMBLE_ECC);
     fprintf(out, "  -d                   : turn on datagroups in packet "
             "mode\n");
     fprintf(out, "  -f figType           : user application type in FIG "
@@ -958,7 +962,7 @@ void printUsage(char *name, FILE* out = stderr)
     fprintf(out, "  -l sLabel<n>         : short label flag of service <n>"
             " (default: 0xf040)\n");
     fprintf(out, "  -p protection<n>     : protection level (default: 3)\n");
-    fprintf(out, "  -s                   : enable TIST, synchronized on 1PPS at level 2\n");
+    fprintf(out, "  -s                   : enable TIST, synchronized on 1PPS at level 2. This also transmits time using the MNSC.\n");
     fprintf(out, "  -t type              : audio/data service component type"
             " (default: 0)\n");
     fprintf(out, "                         audio: foreground=0, "
@@ -1368,8 +1372,22 @@ int main(int argc, char *argv[])
     bool factumAnalyzer = false;
     unsigned long limit = 0;
     time_t date;
-    unsigned timestamp = 0xffffff;
+    bool enableTist = false;
+    unsigned timestamp = 0;
 
+    unsigned long time_seconds = 0;
+
+    struct timeval mnsc_time;
+
+    /* TODO: 
+     * In a SFN, when reconfiguring the ensemble, the multiplexer
+     * has to be restarted (crc-dabmux doesn't support reconfiguration).
+     * Ideally, we must be able to restart transmission s.t. the receiver
+     * synchronisation is preserved.
+     */
+    gettimeofday(&mnsc_time, NULL);
+
+    bool MNSC_increment_time = false;
 
     char* progName = strrchr(argv[0], '/');
     if (progName == NULL) {
@@ -1381,7 +1399,7 @@ int main(int argc, char *argv[])
 
     while (1) {
         int c = getopt(argc, argv,
-                "A:B:CD:E:F:L:M:O:P:STVa:b:c:de:f:g:hi:kl:m:n:op:st:y:z");
+                "A:B:CD:E:F:L:M:O:P:STVa:b:c:de:f:g:hi:kl:m:n:op:rst:y:z");
         if (c == -1) {
             break;
         }
@@ -2078,6 +2096,7 @@ int main(int argc, char *argv[])
             break;
         case 's':
             {
+                /*
                 struct timeval tv;
                 gettimeofday(&tv, NULL);
                 unsigned _8ms = (tv.tv_usec / 1000) / 8;
@@ -2086,6 +2105,8 @@ int main(int argc, char *argv[])
                 unsigned _488ns = 0;
                 unsigned _61ns = 0;
                 timestamp = (((((((_8ms << 3) | _1ms) << 8) | _4us) << 3) | _488ns) << 8) | _61ns;
+                */
+                enableTist = true;
             }
             break;
         case 'y':
@@ -2100,6 +2121,23 @@ int main(int argc, char *argv[])
             break;
         case 'z':
             factumAnalyzer = true;
+            break;
+        case 'r':
+            etiLog.printHeader(TcpLog::INFO,
+                    "Enabling throttled output using simul, one frame every 24ms\n");
+            outputs.push_back(new dabOutput);
+            output = outputs.end() - 1;
+
+            memset(*output, 0, sizeof(dabOutput));
+            (*output)->outputProto = "simul";
+            (*output)->outputName = "";
+            (*output)->data = NULL;
+            (*output)->operations = dabOutputDefaultOperations;
+
+            subchannel = ensemble->subchannels.end();
+            protection = NULL;
+            component = ensemble->components.end();
+            service = ensemble->services.end();
             break;
         case '?':
             returnCode = -1;
@@ -2436,7 +2474,7 @@ int main(int argc, char *argv[])
 
         //****** FP ******//
         // Frame Phase, 3 bits, compteur sur 3 bits, permet au COFDM generator
-        // de savoir quand inserer le TII utilise egalement par le MNST
+        // de savoir quand inserer le TII utilise egalement par le MNSC
         fc->FP = currentFrame & 0x7;
 
         //****** MID ******//
@@ -2491,7 +2529,49 @@ int main(int argc, char *argv[])
         eti_EOH *eoh = (eti_EOH *) & etiFrame[index];
 
         //MNSC Multiplex Network Signalling Channel, 2 octets
+
         eoh->MNSC = 0;
+
+        struct tm *time_tm = gmtime(&mnsc_time.tv_sec);
+        switch (fc->FP & 0x3)
+        {
+            case 0:
+                if (MNSC_increment_time)
+                {
+                    MNSC_increment_time = false;
+                    mnsc_time.tv_sec += 1;
+                }
+                {
+
+                    eti_MNSC_TIME_0 *mnsc = (eti_MNSC_TIME_0 *) &eoh->MNSC;
+                    // Set fields according to ETS 300 799 -- 5.5.1 and A.2.2 
+                    mnsc->type = 0;
+                    mnsc->identifier = 0;
+                    mnsc->rfa = 0;
+                }
+                break;
+            case 1:
+                {
+                    eti_MNSC_TIME_1 *mnsc = (eti_MNSC_TIME_1 *) &eoh->MNSC;
+                    mnsc->setFromTime(time_tm);
+                    mnsc->accuracy = 1;
+                    mnsc->sync_to_frame = 1;
+                }
+                break;
+            case 2:
+                {
+                    eti_MNSC_TIME_2 *mnsc = (eti_MNSC_TIME_2 *) &eoh->MNSC;
+                    mnsc->setFromTime(time_tm);
+                }
+                break;
+            case 3:
+                {
+                    eti_MNSC_TIME_3 *mnsc = (eti_MNSC_TIME_3 *) &eoh->MNSC;
+                    mnsc->setFromTime(time_tm);
+                }
+                break;
+        }
+
 
         //CRC Cyclic Redundancy Checksum du FC,  STC et MNSC, 2 octets
         nbBytesCRC = 4 + ((fc->NST) * 4) + 2;
@@ -3481,21 +3561,32 @@ int main(int argc, char *argv[])
         index = (FLtmp + 2 + 1) * 4;
         eti_TIST *tist = (eti_TIST *) & etiFrame[index];
 
-        tist->TIST = htonl(timestamp) | 0xff;
-        if (timestamp != 0xffffff) {
-            timestamp += 3 << 17;
-            if (timestamp > 0xf9ffff) {
-                timestamp -= 0xfa0000;
-            }
+        if (enableTist) {
+            tist->TIST = htonl(timestamp) | 0xff;
+        }
+        else {
+            tist->TIST = htonl(0xffffff) | 0xff;
         }
 
-        /**********************************************************************
+        timestamp += 3 << 17;
+        if (timestamp > 0xf9ffff)
+        {
+            timestamp -= 0xfa0000;
+
+            // Also update MNSC time for next frame
+            MNSC_increment_time = true;
+        }
+
+
+
+        /********************************************************************** 
          ***********   Section FRPD   *****************************************
          **********************************************************************/
 
         //Donne le nombre total d'octets utils dans la trame
         index = (FLtmp + 1 + 1 + 1 + 1) * 4;
 
+        // Give the data to the outputs
         for (output = outputs.begin() ; output != outputs.end(); ++output) {
             if ((*output)->operations.write((*output)->data, etiFrame, index)
                     == -1) {
@@ -3509,12 +3600,21 @@ int main(int argc, char *argv[])
 #endif // DUMP_BRIDGE
 
         if (currentFrame % 100 == 0) {
-            etiLog.print(TcpLog::INFO, "ETI frame number %i \n", currentFrame);
+            if (enableTist) {
+                etiLog.print(TcpLog::INFO, "ETI frame number %i Timestamp: %d + %f\n",
+                        currentFrame, mnsc_time.tv_sec, 
+                        (timestamp & 0xFFFFFF) / 16384000.0);
+            }
+            else {
+                etiLog.print(TcpLog::INFO, "ETI frame number %i Time: %d, no TIST\n",
+                        currentFrame, mnsc_time.tv_sec);
+            }
         }
     }
 
 EXIT:
     etiLog.print(TcpLog::DBG, "exiting...\n");
+    fflush(stderr);
     //fermeture des fichiers
     for (subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();

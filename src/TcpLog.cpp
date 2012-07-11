@@ -157,7 +157,7 @@ void TcpLog::printHeader(const int priority, const char *format, ...)
         message.insert(pos, beginning);
     }
 
-    fprintf(stderr, message.c_str());
+    fprintf(stderr, "%s", message.c_str());
     if (client != -1) {
         if (write(client, message.c_str(), message.size())
                 != (int)message.size()) {
@@ -216,7 +216,7 @@ void TcpLog::print(const int priority, const char *format, ...)
         message.insert(pos, beginning);
     }
 
-    fprintf(stderr, message.c_str());
+    fprintf(stderr, "%s", message.c_str());
     if (client != -1) {
         if (send(client, message.c_str(), message.size(), MSG_NOSIGNAL)
                 != (int)message.size()) {

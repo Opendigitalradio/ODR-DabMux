@@ -1,6 +1,9 @@
 /*
    Copyright (C) 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in Right
    of Canada (Communications Research Center Canada)
+
+   Includes modifications
+   2012, Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
    This file is part of CRC-DabMux.
@@ -25,6 +28,7 @@
 #   pragma warning ( default : 4103 )
 #else
 #   include "Eti.h"
+#   include <time.h>
 #endif
 
 
@@ -67,4 +71,35 @@ void eti_STC::setStartAddress(uint16_t address)
 uint16_t eti_STC::getStartAddress()
 {
     return (uint16_t)((startAddress_high << 8) + startAddress_low);
+}
+
+/* Helper functions for eti_MNSC_TIME_x which fill the time-relevant
+ * fields for the MNSC
+ */
+void eti_MNSC_TIME_1::setFromTime(struct tm *time_tm)
+{
+    second_unit = time_tm->tm_sec % 10;
+    second_tens = time_tm->tm_sec / 10;
+    
+    minute_unit = time_tm->tm_min % 10;
+    minute_tens = time_tm->tm_min / 10;
+}
+
+void eti_MNSC_TIME_2::setFromTime(struct tm *time_tm)
+{
+    hour_unit = time_tm->tm_hour % 10;
+    hour_tens = time_tm->tm_hour / 10;
+    
+    day_unit = time_tm->tm_mday % 10;
+    day_tens = time_tm->tm_mday / 10;
+}
+
+void eti_MNSC_TIME_3::setFromTime(struct tm *time_tm)
+{
+    month_unit = (time_tm->tm_mon + 1) % 10;
+    month_tens = (time_tm->tm_mon + 1) / 10;
+    
+    // They didn't see the y2k bug coming, did they ?
+    year_unit = (time_tm->tm_year - 100) % 10;
+    year_tens = (time_tm->tm_year - 100) / 10;
 }

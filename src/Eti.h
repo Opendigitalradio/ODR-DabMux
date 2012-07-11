@@ -1,6 +1,9 @@
 /*
    Copyright (C) 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in Right
    of Canada (Communications Research Center Canada)
+
+   Includes modifications
+   2012, Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
    This file is part of CRC-DabMux.
@@ -35,6 +38,7 @@ typedef DWORD32 uint32_t;
 #   pragma pack(push, 1)
 #else
 #   include <stdint.h>
+#   include <time.h>
 
 #   define PACKED __attribute__ ((packed))
 #endif
@@ -92,5 +96,40 @@ struct eti_TIST {
     uint32_t TIST;
 } PACKED;
 
+
+struct eti_MNSC_TIME_0 {
+    uint32_t type:4;
+    uint32_t identifier:4;
+    uint32_t rfa:8;
+} PACKED;
+
+struct eti_MNSC_TIME_1 {
+    uint32_t second_unit:4;
+    uint32_t second_tens:3;
+    uint32_t accuracy:1;
+    
+    uint32_t minute_unit:4;
+    uint32_t minute_tens:3;
+    uint32_t sync_to_frame:1;
+    void setFromTime(struct tm *time_tm);
+} PACKED;
+
+struct eti_MNSC_TIME_2 {
+    uint32_t hour_unit:4;
+    uint32_t hour_tens:4;
+    
+    uint32_t day_unit:4;
+    uint32_t day_tens:4;
+    void setFromTime(struct tm *time_tm);
+} PACKED;
+
+struct eti_MNSC_TIME_3 {
+    uint32_t month_unit:4;
+    uint32_t month_tens:4;
+    
+    uint32_t year_unit:4;
+    uint32_t year_tens:4;
+    void setFromTime(struct tm *time_tm);
+} PACKED;
 
 #endif // ETI_

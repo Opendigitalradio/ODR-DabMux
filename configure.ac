@@ -17,12 +17,13 @@
 # along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([CRC-DabMux], [0.3.0.4], [pascal.charest@crc.ca])
+AC_INIT([CRC-DabMux], [0.3.0.4-r5], [pascal.charest@crc.ca])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall])
 AC_CONFIG_SRCDIR([src/DabMux.cpp])
 AC_CONFIG_HEADER([config.h])
+AM_SILENT_RULES([yes])
 
 case $host in
 *linux*)
@@ -54,6 +55,7 @@ AC_PROG_INSTALL
 #AC_CHECK_LIB([fec], [init_rs_char], [], AC_MSG_ERROR([libfec is required]))
 # FIXME: Replace `main' with a function in `-lpthread':
 AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
+AC_CHECK_LIB([boost_system], [main], [], [AC_MSG_ERROR([library boost_system is missing])])
 
 # Checks for header files.
 AC_MSG_CHECKING([for OS type])

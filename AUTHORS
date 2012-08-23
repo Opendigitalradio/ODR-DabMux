@@ -16,3 +16,11 @@ the Communications Research Centre, Ottawa, Canada, 2004, 2006:
 
 FarSite Communications Ltd.
     All files included in lib/farsite/
+
+Matthias P. Braendli <matthias [at] mpb [dot] li>
+    Time encoding into MNSC necessary for SFN using CRC-DabMod.
+    Refactoring of configuration input for command line,
+    creation of a configuration file format.
+    Files: DabMux.{cpp,h}, Parser*.{cpp,h}, utils.{cpp,h},
+            MuxElements.{cpp,h}
+

@@ -15,8 +15,11 @@
 
 @SET_MAKE@
 
-# Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
+# Copyright (C) 2008, 2009,2012 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
+#
+# Pascal Charest and 
+# Matthias P. Braendli
 
 # This file is part of CRC-DabMux.
 # 
@@ -93,8 +96,10 @@ am_CRC_DabMux_OBJECTS = CRC_DabMux-DabMux.$(OBJEXT) \
 	CRC_DabMux-dabInputTest.$(OBJEXT) \
 	CRC_DabMux-dabInputUdp.$(OBJEXT) \
 	CRC_DabMux-dabOutput.$(OBJEXT) CRC_DabMux-bridge.$(OBJEXT) \
-	CRC_DabMux-Eti.$(OBJEXT) CRC_DabMux-TcpLog.$(OBJEXT) \
-	CRC_DabMux-UdpSocket.$(OBJEXT) \
+	CRC_DabMux-utils.$(OBJEXT) CRC_DabMux-MuxElements.$(OBJEXT) \
+	CRC_DabMux-ParserCmdline.$(OBJEXT) \
+	CRC_DabMux-ParserConfigfile.$(OBJEXT) CRC_DabMux-Eti.$(OBJEXT) \
+	CRC_DabMux-TcpLog.$(OBJEXT) CRC_DabMux-UdpSocket.$(OBJEXT) \
 	CRC_DabMux-InetAddress.$(OBJEXT) CRC_DabMux-prbs.$(OBJEXT) \
 	CRC_DabMux-crc.$(OBJEXT) CRC_DabMux-dabUtils.$(OBJEXT) \
 	CRC_DabMux-Dmb.$(OBJEXT) CRC_DabMux-Interleaver.$(OBJEXT) \
@@ -107,15 +112,36 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_$(V))
+am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
+am__v_CC_0 = @echo "  CC    " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_$(V))
+am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CCLD_0 = @echo "  CCLD  " $@;
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+AM_V_CXX = $(am__v_CXX_$(V))
+am__v_CXX_ = $(am__v_CXX_$(AM_DEFAULT_VERBOSITY))
+am__v_CXX_0 = @echo "  CXX   " $@;
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+AM_V_CXXLD = $(am__v_CXXLD_$(V))
+am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CXXLD_0 = @echo "  CXXLD " $@;
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(CRC_BridgeTest_SOURCES) $(CRC_DabMux_SOURCES)
 DIST_SOURCES = $(CRC_BridgeTest_SOURCES) $(CRC_DabMux_SOURCES)
 ETAGS = etags
@@ -123,6 +149,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -254,7 +281,10 @@ CRC_DabMux_SOURCES = DabMux.cpp \
                      dabInputUdp.h dabInputUdp.cpp \
                      dabOutput.h dabOutput.cpp \
                      bridge.h bridge.c \
-                      \
+                     utils.cpp utils.h \
+                     MuxElements.cpp MuxElements.h \
+                     ParserCmdline.cpp ParserCmdline.h \
+                     ParserConfigfile.cpp ParserConfigfile.h \
                      Eti.h Eti.cpp \
                      TcpLog.h TcpLog.cpp \
                      UdpSocket.h UdpSocket.cpp \
@@ -347,10 +377,10 @@ clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 CRC-BridgeTest$(EXEEXT): $(CRC_BridgeTest_OBJECTS) $(CRC_BridgeTest_DEPENDENCIES) 
 	@rm -f CRC-BridgeTest$(EXEEXT)
-	$(CRC_BridgeTest_LINK) $(CRC_BridgeTest_OBJECTS) $(CRC_BridgeTest_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(CRC_BridgeTest_LINK) $(CRC_BridgeTest_OBJECTS) $(CRC_BridgeTest_LDADD) $(LIBS)
 CRC-DabMux$(EXEEXT): $(CRC_DabMux_OBJECTS) $(CRC_DabMux_DEPENDENCIES) 
 	@rm -f CRC-DabMux$(EXEEXT)
-	$(CXXLINK) $(CRC_DabMux_OBJECTS) $(CRC_DabMux_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(CRC_DabMux_OBJECTS) $(CRC_DabMux_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -365,6 +395,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-Eti.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-InetAddress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-Interleaver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-MuxElements.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-ParserCmdline.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-ParserConfigfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-ReedSolomon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-TcpLog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-TcpServer.Po@am__quote@
@@ -395,549 +428,692 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-dabUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-mpeg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-prbs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRC_DabMux-utils.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 CRC_BridgeTest-bridge.o: bridge.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-bridge.o -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-bridge.Tpo -c -o CRC_BridgeTest-bridge.o `test -f 'bridge.c' || echo '$(srcdir)/'`bridge.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_BridgeTest-bridge.Tpo $(DEPDIR)/CRC_BridgeTest-bridge.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-bridge.o -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-bridge.Tpo -c -o CRC_BridgeTest-bridge.o `test -f 'bridge.c' || echo '$(srcdir)/'`bridge.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_BridgeTest-bridge.Tpo $(DEPDIR)/CRC_BridgeTest-bridge.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bridge.c' object='CRC_BridgeTest-bridge.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -c -o CRC_BridgeTest-bridge.o `test -f 'bridge.c' || echo '$(srcdir)/'`bridge.c
 
 CRC_BridgeTest-bridge.obj: bridge.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-bridge.obj -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-bridge.Tpo -c -o CRC_BridgeTest-bridge.obj `if test -f 'bridge.c'; then $(CYGPATH_W) 'bridge.c'; else $(CYGPATH_W) '$(srcdir)/bridge.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_BridgeTest-bridge.Tpo $(DEPDIR)/CRC_BridgeTest-bridge.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-bridge.obj -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-bridge.Tpo -c -o CRC_BridgeTest-bridge.obj `if test -f 'bridge.c'; then $(CYGPATH_W) 'bridge.c'; else $(CYGPATH_W) '$(srcdir)/bridge.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_BridgeTest-bridge.Tpo $(DEPDIR)/CRC_BridgeTest-bridge.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bridge.c' object='CRC_BridgeTest-bridge.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -c -o CRC_BridgeTest-bridge.obj `if test -f 'bridge.c'; then $(CYGPATH_W) 'bridge.c'; else $(CYGPATH_W) '$(srcdir)/bridge.c'; fi`
 
 CRC_BridgeTest-crc.o: crc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-crc.o -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-crc.Tpo -c -o CRC_BridgeTest-crc.o `test -f 'crc.c' || echo '$(srcdir)/'`crc.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_BridgeTest-crc.Tpo $(DEPDIR)/CRC_BridgeTest-crc.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-crc.o -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-crc.Tpo -c -o CRC_BridgeTest-crc.o `test -f 'crc.c' || echo '$(srcdir)/'`crc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_BridgeTest-crc.Tpo $(DEPDIR)/CRC_BridgeTest-crc.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='crc.c' object='CRC_BridgeTest-crc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -c -o CRC_BridgeTest-crc.o `test -f 'crc.c' || echo '$(srcdir)/'`crc.c
 
 CRC_BridgeTest-crc.obj: crc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-crc.obj -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-crc.Tpo -c -o CRC_BridgeTest-crc.obj `if test -f 'crc.c'; then $(CYGPATH_W) 'crc.c'; else $(CYGPATH_W) '$(srcdir)/crc.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_BridgeTest-crc.Tpo $(DEPDIR)/CRC_BridgeTest-crc.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -MT CRC_BridgeTest-crc.obj -MD -MP -MF $(DEPDIR)/CRC_BridgeTest-crc.Tpo -c -o CRC_BridgeTest-crc.obj `if test -f 'crc.c'; then $(CYGPATH_W) 'crc.c'; else $(CYGPATH_W) '$(srcdir)/crc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_BridgeTest-crc.Tpo $(DEPDIR)/CRC_BridgeTest-crc.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='crc.c' object='CRC_BridgeTest-crc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CRC_BridgeTest_CFLAGS) $(CFLAGS) -c -o CRC_BridgeTest-crc.obj `if test -f 'crc.c'; then $(CYGPATH_W) 'crc.c'; else $(CYGPATH_W) '$(srcdir)/crc.c'; fi`
 
 CRC_DabMux-bridge.o: bridge.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-bridge.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-bridge.Tpo -c -o CRC_DabMux-bridge.o `test -f 'bridge.c' || echo '$(srcdir)/'`bridge.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-bridge.Tpo $(DEPDIR)/CRC_DabMux-bridge.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-bridge.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-bridge.Tpo -c -o CRC_DabMux-bridge.o `test -f 'bridge.c' || echo '$(srcdir)/'`bridge.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-bridge.Tpo $(DEPDIR)/CRC_DabMux-bridge.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bridge.c' object='CRC_DabMux-bridge.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-bridge.o `test -f 'bridge.c' || echo '$(srcdir)/'`bridge.c
 
 CRC_DabMux-bridge.obj: bridge.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-bridge.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-bridge.Tpo -c -o CRC_DabMux-bridge.obj `if test -f 'bridge.c'; then $(CYGPATH_W) 'bridge.c'; else $(CYGPATH_W) '$(srcdir)/bridge.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-bridge.Tpo $(DEPDIR)/CRC_DabMux-bridge.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-bridge.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-bridge.Tpo -c -o CRC_DabMux-bridge.obj `if test -f 'bridge.c'; then $(CYGPATH_W) 'bridge.c'; else $(CYGPATH_W) '$(srcdir)/bridge.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-bridge.Tpo $(DEPDIR)/CRC_DabMux-bridge.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bridge.c' object='CRC_DabMux-bridge.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-bridge.obj `if test -f 'bridge.c'; then $(CYGPATH_W) 'bridge.c'; else $(CYGPATH_W) '$(srcdir)/bridge.c'; fi`
 
 CRC_DabMux-prbs.o: prbs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-prbs.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-prbs.Tpo -c -o CRC_DabMux-prbs.o `test -f 'prbs.c' || echo '$(srcdir)/'`prbs.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-prbs.Tpo $(DEPDIR)/CRC_DabMux-prbs.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-prbs.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-prbs.Tpo -c -o CRC_DabMux-prbs.o `test -f 'prbs.c' || echo '$(srcdir)/'`prbs.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-prbs.Tpo $(DEPDIR)/CRC_DabMux-prbs.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='prbs.c' object='CRC_DabMux-prbs.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-prbs.o `test -f 'prbs.c' || echo '$(srcdir)/'`prbs.c
 
 CRC_DabMux-prbs.obj: prbs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-prbs.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-prbs.Tpo -c -o CRC_DabMux-prbs.obj `if test -f 'prbs.c'; then $(CYGPATH_W) 'prbs.c'; else $(CYGPATH_W) '$(srcdir)/prbs.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-prbs.Tpo $(DEPDIR)/CRC_DabMux-prbs.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-prbs.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-prbs.Tpo -c -o CRC_DabMux-prbs.obj `if test -f 'prbs.c'; then $(CYGPATH_W) 'prbs.c'; else $(CYGPATH_W) '$(srcdir)/prbs.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-prbs.Tpo $(DEPDIR)/CRC_DabMux-prbs.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='prbs.c' object='CRC_DabMux-prbs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-prbs.obj `if test -f 'prbs.c'; then $(CYGPATH_W) 'prbs.c'; else $(CYGPATH_W) '$(srcdir)/prbs.c'; fi`
 
 CRC_DabMux-crc.o: crc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-crc.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-crc.Tpo -c -o CRC_DabMux-crc.o `test -f 'crc.c' || echo '$(srcdir)/'`crc.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-crc.Tpo $(DEPDIR)/CRC_DabMux-crc.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-crc.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-crc.Tpo -c -o CRC_DabMux-crc.o `test -f 'crc.c' || echo '$(srcdir)/'`crc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-crc.Tpo $(DEPDIR)/CRC_DabMux-crc.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='crc.c' object='CRC_DabMux-crc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-crc.o `test -f 'crc.c' || echo '$(srcdir)/'`crc.c
 
 CRC_DabMux-crc.obj: crc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-crc.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-crc.Tpo -c -o CRC_DabMux-crc.obj `if test -f 'crc.c'; then $(CYGPATH_W) 'crc.c'; else $(CYGPATH_W) '$(srcdir)/crc.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-crc.Tpo $(DEPDIR)/CRC_DabMux-crc.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-crc.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-crc.Tpo -c -o CRC_DabMux-crc.obj `if test -f 'crc.c'; then $(CYGPATH_W) 'crc.c'; else $(CYGPATH_W) '$(srcdir)/crc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-crc.Tpo $(DEPDIR)/CRC_DabMux-crc.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='crc.c' object='CRC_DabMux-crc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-crc.obj `if test -f 'crc.c'; then $(CYGPATH_W) 'crc.c'; else $(CYGPATH_W) '$(srcdir)/crc.c'; fi`
 
 CRC_DabMux-mpeg.o: mpeg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-mpeg.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-mpeg.Tpo -c -o CRC_DabMux-mpeg.o `test -f 'mpeg.c' || echo '$(srcdir)/'`mpeg.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-mpeg.Tpo $(DEPDIR)/CRC_DabMux-mpeg.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-mpeg.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-mpeg.Tpo -c -o CRC_DabMux-mpeg.o `test -f 'mpeg.c' || echo '$(srcdir)/'`mpeg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-mpeg.Tpo $(DEPDIR)/CRC_DabMux-mpeg.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpeg.c' object='CRC_DabMux-mpeg.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-mpeg.o `test -f 'mpeg.c' || echo '$(srcdir)/'`mpeg.c
 
 CRC_DabMux-mpeg.obj: mpeg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-mpeg.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-mpeg.Tpo -c -o CRC_DabMux-mpeg.obj `if test -f 'mpeg.c'; then $(CYGPATH_W) 'mpeg.c'; else $(CYGPATH_W) '$(srcdir)/mpeg.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-mpeg.Tpo $(DEPDIR)/CRC_DabMux-mpeg.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT CRC_DabMux-mpeg.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-mpeg.Tpo -c -o CRC_DabMux-mpeg.obj `if test -f 'mpeg.c'; then $(CYGPATH_W) 'mpeg.c'; else $(CYGPATH_W) '$(srcdir)/mpeg.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-mpeg.Tpo $(DEPDIR)/CRC_DabMux-mpeg.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpeg.c' object='CRC_DabMux-mpeg.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o CRC_DabMux-mpeg.obj `if test -f 'mpeg.c'; then $(CYGPATH_W) 'mpeg.c'; else $(CYGPATH_W) '$(srcdir)/mpeg.c'; fi`
 
 .cpp.o:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
 .cpp.obj:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 CRC_DabMux-DabMux.o: DabMux.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-DabMux.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-DabMux.Tpo -c -o CRC_DabMux-DabMux.o `test -f 'DabMux.cpp' || echo '$(srcdir)/'`DabMux.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-DabMux.Tpo $(DEPDIR)/CRC_DabMux-DabMux.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-DabMux.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-DabMux.Tpo -c -o CRC_DabMux-DabMux.o `test -f 'DabMux.cpp' || echo '$(srcdir)/'`DabMux.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-DabMux.Tpo $(DEPDIR)/CRC_DabMux-DabMux.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='DabMux.cpp' object='CRC_DabMux-DabMux.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-DabMux.o `test -f 'DabMux.cpp' || echo '$(srcdir)/'`DabMux.cpp
 
 CRC_DabMux-DabMux.obj: DabMux.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-DabMux.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-DabMux.Tpo -c -o CRC_DabMux-DabMux.obj `if test -f 'DabMux.cpp'; then $(CYGPATH_W) 'DabMux.cpp'; else $(CYGPATH_W) '$(srcdir)/DabMux.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-DabMux.Tpo $(DEPDIR)/CRC_DabMux-DabMux.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-DabMux.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-DabMux.Tpo -c -o CRC_DabMux-DabMux.obj `if test -f 'DabMux.cpp'; then $(CYGPATH_W) 'DabMux.cpp'; else $(CYGPATH_W) '$(srcdir)/DabMux.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-DabMux.Tpo $(DEPDIR)/CRC_DabMux-DabMux.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='DabMux.cpp' object='CRC_DabMux-DabMux.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-DabMux.obj `if test -f 'DabMux.cpp'; then $(CYGPATH_W) 'DabMux.cpp'; else $(CYGPATH_W) '$(srcdir)/DabMux.cpp'; fi`
 
 CRC_DabMux-dabInput.o: dabInput.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInput.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInput.Tpo -c -o CRC_DabMux-dabInput.o `test -f 'dabInput.cpp' || echo '$(srcdir)/'`dabInput.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInput.Tpo $(DEPDIR)/CRC_DabMux-dabInput.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInput.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInput.Tpo -c -o CRC_DabMux-dabInput.o `test -f 'dabInput.cpp' || echo '$(srcdir)/'`dabInput.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInput.Tpo $(DEPDIR)/CRC_DabMux-dabInput.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInput.cpp' object='CRC_DabMux-dabInput.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInput.o `test -f 'dabInput.cpp' || echo '$(srcdir)/'`dabInput.cpp
 
 CRC_DabMux-dabInput.obj: dabInput.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInput.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInput.Tpo -c -o CRC_DabMux-dabInput.obj `if test -f 'dabInput.cpp'; then $(CYGPATH_W) 'dabInput.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInput.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInput.Tpo $(DEPDIR)/CRC_DabMux-dabInput.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInput.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInput.Tpo -c -o CRC_DabMux-dabInput.obj `if test -f 'dabInput.cpp'; then $(CYGPATH_W) 'dabInput.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInput.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInput.Tpo $(DEPDIR)/CRC_DabMux-dabInput.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInput.cpp' object='CRC_DabMux-dabInput.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInput.obj `if test -f 'dabInput.cpp'; then $(CYGPATH_W) 'dabInput.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInput.cpp'; fi`
 
 CRC_DabMux-dabInputBridgeUdp.o: dabInputBridgeUdp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputBridgeUdp.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo -c -o CRC_DabMux-dabInputBridgeUdp.o `test -f 'dabInputBridgeUdp.cpp' || echo '$(srcdir)/'`dabInputBridgeUdp.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputBridgeUdp.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo -c -o CRC_DabMux-dabInputBridgeUdp.o `test -f 'dabInputBridgeUdp.cpp' || echo '$(srcdir)/'`dabInputBridgeUdp.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputBridgeUdp.cpp' object='CRC_DabMux-dabInputBridgeUdp.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputBridgeUdp.o `test -f 'dabInputBridgeUdp.cpp' || echo '$(srcdir)/'`dabInputBridgeUdp.cpp
 
 CRC_DabMux-dabInputBridgeUdp.obj: dabInputBridgeUdp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputBridgeUdp.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo -c -o CRC_DabMux-dabInputBridgeUdp.obj `if test -f 'dabInputBridgeUdp.cpp'; then $(CYGPATH_W) 'dabInputBridgeUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputBridgeUdp.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputBridgeUdp.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo -c -o CRC_DabMux-dabInputBridgeUdp.obj `if test -f 'dabInputBridgeUdp.cpp'; then $(CYGPATH_W) 'dabInputBridgeUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputBridgeUdp.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputBridgeUdp.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputBridgeUdp.cpp' object='CRC_DabMux-dabInputBridgeUdp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputBridgeUdp.obj `if test -f 'dabInputBridgeUdp.cpp'; then $(CYGPATH_W) 'dabInputBridgeUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputBridgeUdp.cpp'; fi`
 
 CRC_DabMux-dabInputDabplusFifo.o: dabInputDabplusFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo -c -o CRC_DabMux-dabInputDabplusFifo.o `test -f 'dabInputDabplusFifo.cpp' || echo '$(srcdir)/'`dabInputDabplusFifo.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo -c -o CRC_DabMux-dabInputDabplusFifo.o `test -f 'dabInputDabplusFifo.cpp' || echo '$(srcdir)/'`dabInputDabplusFifo.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDabplusFifo.cpp' object='CRC_DabMux-dabInputDabplusFifo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDabplusFifo.o `test -f 'dabInputDabplusFifo.cpp' || echo '$(srcdir)/'`dabInputDabplusFifo.cpp
 
 CRC_DabMux-dabInputDabplusFifo.obj: dabInputDabplusFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo -c -o CRC_DabMux-dabInputDabplusFifo.obj `if test -f 'dabInputDabplusFifo.cpp'; then $(CYGPATH_W) 'dabInputDabplusFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDabplusFifo.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo -c -o CRC_DabMux-dabInputDabplusFifo.obj `if test -f 'dabInputDabplusFifo.cpp'; then $(CYGPATH_W) 'dabInputDabplusFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDabplusFifo.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDabplusFifo.cpp' object='CRC_DabMux-dabInputDabplusFifo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDabplusFifo.obj `if test -f 'dabInputDabplusFifo.cpp'; then $(CYGPATH_W) 'dabInputDabplusFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDabplusFifo.cpp'; fi`
 
 CRC_DabMux-dabInputDabplusFile.o: dabInputDabplusFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo -c -o CRC_DabMux-dabInputDabplusFile.o `test -f 'dabInputDabplusFile.cpp' || echo '$(srcdir)/'`dabInputDabplusFile.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo -c -o CRC_DabMux-dabInputDabplusFile.o `test -f 'dabInputDabplusFile.cpp' || echo '$(srcdir)/'`dabInputDabplusFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDabplusFile.cpp' object='CRC_DabMux-dabInputDabplusFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDabplusFile.o `test -f 'dabInputDabplusFile.cpp' || echo '$(srcdir)/'`dabInputDabplusFile.cpp
 
 CRC_DabMux-dabInputDabplusFile.obj: dabInputDabplusFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo -c -o CRC_DabMux-dabInputDabplusFile.obj `if test -f 'dabInputDabplusFile.cpp'; then $(CYGPATH_W) 'dabInputDabplusFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDabplusFile.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDabplusFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo -c -o CRC_DabMux-dabInputDabplusFile.obj `if test -f 'dabInputDabplusFile.cpp'; then $(CYGPATH_W) 'dabInputDabplusFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDabplusFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDabplusFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDabplusFile.cpp' object='CRC_DabMux-dabInputDabplusFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDabplusFile.obj `if test -f 'dabInputDabplusFile.cpp'; then $(CYGPATH_W) 'dabInputDabplusFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDabplusFile.cpp'; fi`
 
 CRC_DabMux-dabInputDmbFile.o: dabInputDmbFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo -c -o CRC_DabMux-dabInputDmbFile.o `test -f 'dabInputDmbFile.cpp' || echo '$(srcdir)/'`dabInputDmbFile.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo -c -o CRC_DabMux-dabInputDmbFile.o `test -f 'dabInputDmbFile.cpp' || echo '$(srcdir)/'`dabInputDmbFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDmbFile.cpp' object='CRC_DabMux-dabInputDmbFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDmbFile.o `test -f 'dabInputDmbFile.cpp' || echo '$(srcdir)/'`dabInputDmbFile.cpp
 
 CRC_DabMux-dabInputDmbFile.obj: dabInputDmbFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo -c -o CRC_DabMux-dabInputDmbFile.obj `if test -f 'dabInputDmbFile.cpp'; then $(CYGPATH_W) 'dabInputDmbFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDmbFile.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo -c -o CRC_DabMux-dabInputDmbFile.obj `if test -f 'dabInputDmbFile.cpp'; then $(CYGPATH_W) 'dabInputDmbFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDmbFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDmbFile.cpp' object='CRC_DabMux-dabInputDmbFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDmbFile.obj `if test -f 'dabInputDmbFile.cpp'; then $(CYGPATH_W) 'dabInputDmbFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDmbFile.cpp'; fi`
 
 CRC_DabMux-dabInputDmbUdp.o: dabInputDmbUdp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbUdp.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo -c -o CRC_DabMux-dabInputDmbUdp.o `test -f 'dabInputDmbUdp.cpp' || echo '$(srcdir)/'`dabInputDmbUdp.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbUdp.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo -c -o CRC_DabMux-dabInputDmbUdp.o `test -f 'dabInputDmbUdp.cpp' || echo '$(srcdir)/'`dabInputDmbUdp.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDmbUdp.cpp' object='CRC_DabMux-dabInputDmbUdp.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDmbUdp.o `test -f 'dabInputDmbUdp.cpp' || echo '$(srcdir)/'`dabInputDmbUdp.cpp
 
 CRC_DabMux-dabInputDmbUdp.obj: dabInputDmbUdp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbUdp.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo -c -o CRC_DabMux-dabInputDmbUdp.obj `if test -f 'dabInputDmbUdp.cpp'; then $(CYGPATH_W) 'dabInputDmbUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDmbUdp.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputDmbUdp.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo -c -o CRC_DabMux-dabInputDmbUdp.obj `if test -f 'dabInputDmbUdp.cpp'; then $(CYGPATH_W) 'dabInputDmbUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDmbUdp.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputDmbUdp.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputDmbUdp.cpp' object='CRC_DabMux-dabInputDmbUdp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputDmbUdp.obj `if test -f 'dabInputDmbUdp.cpp'; then $(CYGPATH_W) 'dabInputDmbUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputDmbUdp.cpp'; fi`
 
 CRC_DabMux-dabInputEnhancedFifo.o: dabInputEnhancedFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo -c -o CRC_DabMux-dabInputEnhancedFifo.o `test -f 'dabInputEnhancedFifo.cpp' || echo '$(srcdir)/'`dabInputEnhancedFifo.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo -c -o CRC_DabMux-dabInputEnhancedFifo.o `test -f 'dabInputEnhancedFifo.cpp' || echo '$(srcdir)/'`dabInputEnhancedFifo.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputEnhancedFifo.cpp' object='CRC_DabMux-dabInputEnhancedFifo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputEnhancedFifo.o `test -f 'dabInputEnhancedFifo.cpp' || echo '$(srcdir)/'`dabInputEnhancedFifo.cpp
 
 CRC_DabMux-dabInputEnhancedFifo.obj: dabInputEnhancedFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo -c -o CRC_DabMux-dabInputEnhancedFifo.obj `if test -f 'dabInputEnhancedFifo.cpp'; then $(CYGPATH_W) 'dabInputEnhancedFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputEnhancedFifo.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo -c -o CRC_DabMux-dabInputEnhancedFifo.obj `if test -f 'dabInputEnhancedFifo.cpp'; then $(CYGPATH_W) 'dabInputEnhancedFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputEnhancedFifo.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputEnhancedFifo.cpp' object='CRC_DabMux-dabInputEnhancedFifo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputEnhancedFifo.obj `if test -f 'dabInputEnhancedFifo.cpp'; then $(CYGPATH_W) 'dabInputEnhancedFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputEnhancedFifo.cpp'; fi`
 
 CRC_DabMux-dabInputEnhancedPacketFile.o: dabInputEnhancedPacketFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedPacketFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo -c -o CRC_DabMux-dabInputEnhancedPacketFile.o `test -f 'dabInputEnhancedPacketFile.cpp' || echo '$(srcdir)/'`dabInputEnhancedPacketFile.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedPacketFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo -c -o CRC_DabMux-dabInputEnhancedPacketFile.o `test -f 'dabInputEnhancedPacketFile.cpp' || echo '$(srcdir)/'`dabInputEnhancedPacketFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputEnhancedPacketFile.cpp' object='CRC_DabMux-dabInputEnhancedPacketFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputEnhancedPacketFile.o `test -f 'dabInputEnhancedPacketFile.cpp' || echo '$(srcdir)/'`dabInputEnhancedPacketFile.cpp
 
 CRC_DabMux-dabInputEnhancedPacketFile.obj: dabInputEnhancedPacketFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedPacketFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo -c -o CRC_DabMux-dabInputEnhancedPacketFile.obj `if test -f 'dabInputEnhancedPacketFile.cpp'; then $(CYGPATH_W) 'dabInputEnhancedPacketFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputEnhancedPacketFile.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputEnhancedPacketFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo -c -o CRC_DabMux-dabInputEnhancedPacketFile.obj `if test -f 'dabInputEnhancedPacketFile.cpp'; then $(CYGPATH_W) 'dabInputEnhancedPacketFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputEnhancedPacketFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputEnhancedPacketFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputEnhancedPacketFile.cpp' object='CRC_DabMux-dabInputEnhancedPacketFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputEnhancedPacketFile.obj `if test -f 'dabInputEnhancedPacketFile.cpp'; then $(CYGPATH_W) 'dabInputEnhancedPacketFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputEnhancedPacketFile.cpp'; fi`
 
 CRC_DabMux-dabInputFifo.o: dabInputFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo -c -o CRC_DabMux-dabInputFifo.o `test -f 'dabInputFifo.cpp' || echo '$(srcdir)/'`dabInputFifo.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo -c -o CRC_DabMux-dabInputFifo.o `test -f 'dabInputFifo.cpp' || echo '$(srcdir)/'`dabInputFifo.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputFifo.cpp' object='CRC_DabMux-dabInputFifo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputFifo.o `test -f 'dabInputFifo.cpp' || echo '$(srcdir)/'`dabInputFifo.cpp
 
 CRC_DabMux-dabInputFifo.obj: dabInputFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo -c -o CRC_DabMux-dabInputFifo.obj `if test -f 'dabInputFifo.cpp'; then $(CYGPATH_W) 'dabInputFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputFifo.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo -c -o CRC_DabMux-dabInputFifo.obj `if test -f 'dabInputFifo.cpp'; then $(CYGPATH_W) 'dabInputFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputFifo.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputFifo.cpp' object='CRC_DabMux-dabInputFifo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputFifo.obj `if test -f 'dabInputFifo.cpp'; then $(CYGPATH_W) 'dabInputFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputFifo.cpp'; fi`
 
 CRC_DabMux-dabInputFile.o: dabInputFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo -c -o CRC_DabMux-dabInputFile.o `test -f 'dabInputFile.cpp' || echo '$(srcdir)/'`dabInputFile.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo -c -o CRC_DabMux-dabInputFile.o `test -f 'dabInputFile.cpp' || echo '$(srcdir)/'`dabInputFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputFile.cpp' object='CRC_DabMux-dabInputFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputFile.o `test -f 'dabInputFile.cpp' || echo '$(srcdir)/'`dabInputFile.cpp
 
 CRC_DabMux-dabInputFile.obj: dabInputFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo -c -o CRC_DabMux-dabInputFile.obj `if test -f 'dabInputFile.cpp'; then $(CYGPATH_W) 'dabInputFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputFile.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo -c -o CRC_DabMux-dabInputFile.obj `if test -f 'dabInputFile.cpp'; then $(CYGPATH_W) 'dabInputFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputFile.cpp' object='CRC_DabMux-dabInputFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputFile.obj `if test -f 'dabInputFile.cpp'; then $(CYGPATH_W) 'dabInputFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputFile.cpp'; fi`
 
 CRC_DabMux-dabInputMpegFifo.o: dabInputMpegFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo -c -o CRC_DabMux-dabInputMpegFifo.o `test -f 'dabInputMpegFifo.cpp' || echo '$(srcdir)/'`dabInputMpegFifo.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo -c -o CRC_DabMux-dabInputMpegFifo.o `test -f 'dabInputMpegFifo.cpp' || echo '$(srcdir)/'`dabInputMpegFifo.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputMpegFifo.cpp' object='CRC_DabMux-dabInputMpegFifo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputMpegFifo.o `test -f 'dabInputMpegFifo.cpp' || echo '$(srcdir)/'`dabInputMpegFifo.cpp
 
 CRC_DabMux-dabInputMpegFifo.obj: dabInputMpegFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo -c -o CRC_DabMux-dabInputMpegFifo.obj `if test -f 'dabInputMpegFifo.cpp'; then $(CYGPATH_W) 'dabInputMpegFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputMpegFifo.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo -c -o CRC_DabMux-dabInputMpegFifo.obj `if test -f 'dabInputMpegFifo.cpp'; then $(CYGPATH_W) 'dabInputMpegFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputMpegFifo.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputMpegFifo.cpp' object='CRC_DabMux-dabInputMpegFifo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputMpegFifo.obj `if test -f 'dabInputMpegFifo.cpp'; then $(CYGPATH_W) 'dabInputMpegFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputMpegFifo.cpp'; fi`
 
 CRC_DabMux-dabInputMpegFile.o: dabInputMpegFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo -c -o CRC_DabMux-dabInputMpegFile.o `test -f 'dabInputMpegFile.cpp' || echo '$(srcdir)/'`dabInputMpegFile.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo -c -o CRC_DabMux-dabInputMpegFile.o `test -f 'dabInputMpegFile.cpp' || echo '$(srcdir)/'`dabInputMpegFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputMpegFile.cpp' object='CRC_DabMux-dabInputMpegFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputMpegFile.o `test -f 'dabInputMpegFile.cpp' || echo '$(srcdir)/'`dabInputMpegFile.cpp
 
 CRC_DabMux-dabInputMpegFile.obj: dabInputMpegFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo -c -o CRC_DabMux-dabInputMpegFile.obj `if test -f 'dabInputMpegFile.cpp'; then $(CYGPATH_W) 'dabInputMpegFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputMpegFile.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputMpegFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo -c -o CRC_DabMux-dabInputMpegFile.obj `if test -f 'dabInputMpegFile.cpp'; then $(CYGPATH_W) 'dabInputMpegFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputMpegFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputMpegFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputMpegFile.cpp' object='CRC_DabMux-dabInputMpegFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputMpegFile.obj `if test -f 'dabInputMpegFile.cpp'; then $(CYGPATH_W) 'dabInputMpegFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputMpegFile.cpp'; fi`
 
 CRC_DabMux-dabInputPacketFile.o: dabInputPacketFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPacketFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo -c -o CRC_DabMux-dabInputPacketFile.o `test -f 'dabInputPacketFile.cpp' || echo '$(srcdir)/'`dabInputPacketFile.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPacketFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo -c -o CRC_DabMux-dabInputPacketFile.o `test -f 'dabInputPacketFile.cpp' || echo '$(srcdir)/'`dabInputPacketFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputPacketFile.cpp' object='CRC_DabMux-dabInputPacketFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputPacketFile.o `test -f 'dabInputPacketFile.cpp' || echo '$(srcdir)/'`dabInputPacketFile.cpp
 
 CRC_DabMux-dabInputPacketFile.obj: dabInputPacketFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPacketFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo -c -o CRC_DabMux-dabInputPacketFile.obj `if test -f 'dabInputPacketFile.cpp'; then $(CYGPATH_W) 'dabInputPacketFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputPacketFile.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPacketFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo -c -o CRC_DabMux-dabInputPacketFile.obj `if test -f 'dabInputPacketFile.cpp'; then $(CYGPATH_W) 'dabInputPacketFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputPacketFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputPacketFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputPacketFile.cpp' object='CRC_DabMux-dabInputPacketFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputPacketFile.obj `if test -f 'dabInputPacketFile.cpp'; then $(CYGPATH_W) 'dabInputPacketFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputPacketFile.cpp'; fi`
 
 CRC_DabMux-dabInputPrbs.o: dabInputPrbs.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPrbs.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo -c -o CRC_DabMux-dabInputPrbs.o `test -f 'dabInputPrbs.cpp' || echo '$(srcdir)/'`dabInputPrbs.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo $(DEPDIR)/CRC_DabMux-dabInputPrbs.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPrbs.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo -c -o CRC_DabMux-dabInputPrbs.o `test -f 'dabInputPrbs.cpp' || echo '$(srcdir)/'`dabInputPrbs.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo $(DEPDIR)/CRC_DabMux-dabInputPrbs.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputPrbs.cpp' object='CRC_DabMux-dabInputPrbs.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputPrbs.o `test -f 'dabInputPrbs.cpp' || echo '$(srcdir)/'`dabInputPrbs.cpp
 
 CRC_DabMux-dabInputPrbs.obj: dabInputPrbs.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPrbs.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo -c -o CRC_DabMux-dabInputPrbs.obj `if test -f 'dabInputPrbs.cpp'; then $(CYGPATH_W) 'dabInputPrbs.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputPrbs.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo $(DEPDIR)/CRC_DabMux-dabInputPrbs.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputPrbs.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo -c -o CRC_DabMux-dabInputPrbs.obj `if test -f 'dabInputPrbs.cpp'; then $(CYGPATH_W) 'dabInputPrbs.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputPrbs.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputPrbs.Tpo $(DEPDIR)/CRC_DabMux-dabInputPrbs.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputPrbs.cpp' object='CRC_DabMux-dabInputPrbs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputPrbs.obj `if test -f 'dabInputPrbs.cpp'; then $(CYGPATH_W) 'dabInputPrbs.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputPrbs.cpp'; fi`
 
 CRC_DabMux-dabInputRawFile.o: dabInputRawFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo -c -o CRC_DabMux-dabInputRawFile.o `test -f 'dabInputRawFile.cpp' || echo '$(srcdir)/'`dabInputRawFile.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo -c -o CRC_DabMux-dabInputRawFile.o `test -f 'dabInputRawFile.cpp' || echo '$(srcdir)/'`dabInputRawFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputRawFile.cpp' object='CRC_DabMux-dabInputRawFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputRawFile.o `test -f 'dabInputRawFile.cpp' || echo '$(srcdir)/'`dabInputRawFile.cpp
 
 CRC_DabMux-dabInputRawFile.obj: dabInputRawFile.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo -c -o CRC_DabMux-dabInputRawFile.obj `if test -f 'dabInputRawFile.cpp'; then $(CYGPATH_W) 'dabInputRawFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputRawFile.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFile.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo -c -o CRC_DabMux-dabInputRawFile.obj `if test -f 'dabInputRawFile.cpp'; then $(CYGPATH_W) 'dabInputRawFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputRawFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFile.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputRawFile.cpp' object='CRC_DabMux-dabInputRawFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputRawFile.obj `if test -f 'dabInputRawFile.cpp'; then $(CYGPATH_W) 'dabInputRawFile.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputRawFile.cpp'; fi`
 
 CRC_DabMux-dabInputRawFifo.o: dabInputRawFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo -c -o CRC_DabMux-dabInputRawFifo.o `test -f 'dabInputRawFifo.cpp' || echo '$(srcdir)/'`dabInputRawFifo.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFifo.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo -c -o CRC_DabMux-dabInputRawFifo.o `test -f 'dabInputRawFifo.cpp' || echo '$(srcdir)/'`dabInputRawFifo.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputRawFifo.cpp' object='CRC_DabMux-dabInputRawFifo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputRawFifo.o `test -f 'dabInputRawFifo.cpp' || echo '$(srcdir)/'`dabInputRawFifo.cpp
 
 CRC_DabMux-dabInputRawFifo.obj: dabInputRawFifo.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo -c -o CRC_DabMux-dabInputRawFifo.obj `if test -f 'dabInputRawFifo.cpp'; then $(CYGPATH_W) 'dabInputRawFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputRawFifo.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputRawFifo.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo -c -o CRC_DabMux-dabInputRawFifo.obj `if test -f 'dabInputRawFifo.cpp'; then $(CYGPATH_W) 'dabInputRawFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputRawFifo.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Tpo $(DEPDIR)/CRC_DabMux-dabInputRawFifo.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputRawFifo.cpp' object='CRC_DabMux-dabInputRawFifo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputRawFifo.obj `if test -f 'dabInputRawFifo.cpp'; then $(CYGPATH_W) 'dabInputRawFifo.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputRawFifo.cpp'; fi`
 
 CRC_DabMux-dabInputSlip.o: dabInputSlip.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputSlip.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo -c -o CRC_DabMux-dabInputSlip.o `test -f 'dabInputSlip.cpp' || echo '$(srcdir)/'`dabInputSlip.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo $(DEPDIR)/CRC_DabMux-dabInputSlip.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputSlip.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo -c -o CRC_DabMux-dabInputSlip.o `test -f 'dabInputSlip.cpp' || echo '$(srcdir)/'`dabInputSlip.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo $(DEPDIR)/CRC_DabMux-dabInputSlip.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputSlip.cpp' object='CRC_DabMux-dabInputSlip.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputSlip.o `test -f 'dabInputSlip.cpp' || echo '$(srcdir)/'`dabInputSlip.cpp
 
 CRC_DabMux-dabInputSlip.obj: dabInputSlip.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputSlip.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo -c -o CRC_DabMux-dabInputSlip.obj `if test -f 'dabInputSlip.cpp'; then $(CYGPATH_W) 'dabInputSlip.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputSlip.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo $(DEPDIR)/CRC_DabMux-dabInputSlip.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputSlip.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo -c -o CRC_DabMux-dabInputSlip.obj `if test -f 'dabInputSlip.cpp'; then $(CYGPATH_W) 'dabInputSlip.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputSlip.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputSlip.Tpo $(DEPDIR)/CRC_DabMux-dabInputSlip.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputSlip.cpp' object='CRC_DabMux-dabInputSlip.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputSlip.obj `if test -f 'dabInputSlip.cpp'; then $(CYGPATH_W) 'dabInputSlip.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputSlip.cpp'; fi`
 
 CRC_DabMux-dabInputTest.o: dabInputTest.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputTest.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo -c -o CRC_DabMux-dabInputTest.o `test -f 'dabInputTest.cpp' || echo '$(srcdir)/'`dabInputTest.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo $(DEPDIR)/CRC_DabMux-dabInputTest.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputTest.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo -c -o CRC_DabMux-dabInputTest.o `test -f 'dabInputTest.cpp' || echo '$(srcdir)/'`dabInputTest.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo $(DEPDIR)/CRC_DabMux-dabInputTest.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputTest.cpp' object='CRC_DabMux-dabInputTest.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputTest.o `test -f 'dabInputTest.cpp' || echo '$(srcdir)/'`dabInputTest.cpp
 
 CRC_DabMux-dabInputTest.obj: dabInputTest.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputTest.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo -c -o CRC_DabMux-dabInputTest.obj `if test -f 'dabInputTest.cpp'; then $(CYGPATH_W) 'dabInputTest.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputTest.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo $(DEPDIR)/CRC_DabMux-dabInputTest.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputTest.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo -c -o CRC_DabMux-dabInputTest.obj `if test -f 'dabInputTest.cpp'; then $(CYGPATH_W) 'dabInputTest.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputTest.Tpo $(DEPDIR)/CRC_DabMux-dabInputTest.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputTest.cpp' object='CRC_DabMux-dabInputTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputTest.obj `if test -f 'dabInputTest.cpp'; then $(CYGPATH_W) 'dabInputTest.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputTest.cpp'; fi`
 
 CRC_DabMux-dabInputUdp.o: dabInputUdp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputUdp.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo -c -o CRC_DabMux-dabInputUdp.o `test -f 'dabInputUdp.cpp' || echo '$(srcdir)/'`dabInputUdp.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputUdp.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputUdp.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo -c -o CRC_DabMux-dabInputUdp.o `test -f 'dabInputUdp.cpp' || echo '$(srcdir)/'`dabInputUdp.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputUdp.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputUdp.cpp' object='CRC_DabMux-dabInputUdp.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputUdp.o `test -f 'dabInputUdp.cpp' || echo '$(srcdir)/'`dabInputUdp.cpp
 
 CRC_DabMux-dabInputUdp.obj: dabInputUdp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputUdp.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo -c -o CRC_DabMux-dabInputUdp.obj `if test -f 'dabInputUdp.cpp'; then $(CYGPATH_W) 'dabInputUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputUdp.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputUdp.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabInputUdp.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo -c -o CRC_DabMux-dabInputUdp.obj `if test -f 'dabInputUdp.cpp'; then $(CYGPATH_W) 'dabInputUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputUdp.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabInputUdp.Tpo $(DEPDIR)/CRC_DabMux-dabInputUdp.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabInputUdp.cpp' object='CRC_DabMux-dabInputUdp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabInputUdp.obj `if test -f 'dabInputUdp.cpp'; then $(CYGPATH_W) 'dabInputUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabInputUdp.cpp'; fi`
 
 CRC_DabMux-dabOutput.o: dabOutput.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabOutput.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabOutput.Tpo -c -o CRC_DabMux-dabOutput.o `test -f 'dabOutput.cpp' || echo '$(srcdir)/'`dabOutput.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabOutput.Tpo $(DEPDIR)/CRC_DabMux-dabOutput.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabOutput.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabOutput.Tpo -c -o CRC_DabMux-dabOutput.o `test -f 'dabOutput.cpp' || echo '$(srcdir)/'`dabOutput.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabOutput.Tpo $(DEPDIR)/CRC_DabMux-dabOutput.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabOutput.cpp' object='CRC_DabMux-dabOutput.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabOutput.o `test -f 'dabOutput.cpp' || echo '$(srcdir)/'`dabOutput.cpp
 
 CRC_DabMux-dabOutput.obj: dabOutput.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabOutput.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabOutput.Tpo -c -o CRC_DabMux-dabOutput.obj `if test -f 'dabOutput.cpp'; then $(CYGPATH_W) 'dabOutput.cpp'; else $(CYGPATH_W) '$(srcdir)/dabOutput.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabOutput.Tpo $(DEPDIR)/CRC_DabMux-dabOutput.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabOutput.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabOutput.Tpo -c -o CRC_DabMux-dabOutput.obj `if test -f 'dabOutput.cpp'; then $(CYGPATH_W) 'dabOutput.cpp'; else $(CYGPATH_W) '$(srcdir)/dabOutput.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabOutput.Tpo $(DEPDIR)/CRC_DabMux-dabOutput.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabOutput.cpp' object='CRC_DabMux-dabOutput.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabOutput.obj `if test -f 'dabOutput.cpp'; then $(CYGPATH_W) 'dabOutput.cpp'; else $(CYGPATH_W) '$(srcdir)/dabOutput.cpp'; fi`
 
+CRC_DabMux-utils.o: utils.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-utils.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-utils.Tpo -c -o CRC_DabMux-utils.o `test -f 'utils.cpp' || echo '$(srcdir)/'`utils.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-utils.Tpo $(DEPDIR)/CRC_DabMux-utils.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='utils.cpp' object='CRC_DabMux-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-utils.o `test -f 'utils.cpp' || echo '$(srcdir)/'`utils.cpp
+
+CRC_DabMux-utils.obj: utils.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-utils.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-utils.Tpo -c -o CRC_DabMux-utils.obj `if test -f 'utils.cpp'; then $(CYGPATH_W) 'utils.cpp'; else $(CYGPATH_W) '$(srcdir)/utils.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-utils.Tpo $(DEPDIR)/CRC_DabMux-utils.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='utils.cpp' object='CRC_DabMux-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-utils.obj `if test -f 'utils.cpp'; then $(CYGPATH_W) 'utils.cpp'; else $(CYGPATH_W) '$(srcdir)/utils.cpp'; fi`
+
+CRC_DabMux-MuxElements.o: MuxElements.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-MuxElements.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-MuxElements.Tpo -c -o CRC_DabMux-MuxElements.o `test -f 'MuxElements.cpp' || echo '$(srcdir)/'`MuxElements.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-MuxElements.Tpo $(DEPDIR)/CRC_DabMux-MuxElements.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='MuxElements.cpp' object='CRC_DabMux-MuxElements.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-MuxElements.o `test -f 'MuxElements.cpp' || echo '$(srcdir)/'`MuxElements.cpp
+
+CRC_DabMux-MuxElements.obj: MuxElements.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-MuxElements.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-MuxElements.Tpo -c -o CRC_DabMux-MuxElements.obj `if test -f 'MuxElements.cpp'; then $(CYGPATH_W) 'MuxElements.cpp'; else $(CYGPATH_W) '$(srcdir)/MuxElements.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-MuxElements.Tpo $(DEPDIR)/CRC_DabMux-MuxElements.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='MuxElements.cpp' object='CRC_DabMux-MuxElements.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-MuxElements.obj `if test -f 'MuxElements.cpp'; then $(CYGPATH_W) 'MuxElements.cpp'; else $(CYGPATH_W) '$(srcdir)/MuxElements.cpp'; fi`
+
+CRC_DabMux-ParserCmdline.o: ParserCmdline.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ParserCmdline.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-ParserCmdline.Tpo -c -o CRC_DabMux-ParserCmdline.o `test -f 'ParserCmdline.cpp' || echo '$(srcdir)/'`ParserCmdline.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-ParserCmdline.Tpo $(DEPDIR)/CRC_DabMux-ParserCmdline.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ParserCmdline.cpp' object='CRC_DabMux-ParserCmdline.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-ParserCmdline.o `test -f 'ParserCmdline.cpp' || echo '$(srcdir)/'`ParserCmdline.cpp
+
+CRC_DabMux-ParserCmdline.obj: ParserCmdline.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ParserCmdline.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-ParserCmdline.Tpo -c -o CRC_DabMux-ParserCmdline.obj `if test -f 'ParserCmdline.cpp'; then $(CYGPATH_W) 'ParserCmdline.cpp'; else $(CYGPATH_W) '$(srcdir)/ParserCmdline.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-ParserCmdline.Tpo $(DEPDIR)/CRC_DabMux-ParserCmdline.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ParserCmdline.cpp' object='CRC_DabMux-ParserCmdline.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-ParserCmdline.obj `if test -f 'ParserCmdline.cpp'; then $(CYGPATH_W) 'ParserCmdline.cpp'; else $(CYGPATH_W) '$(srcdir)/ParserCmdline.cpp'; fi`
+
+CRC_DabMux-ParserConfigfile.o: ParserConfigfile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ParserConfigfile.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-ParserConfigfile.Tpo -c -o CRC_DabMux-ParserConfigfile.o `test -f 'ParserConfigfile.cpp' || echo '$(srcdir)/'`ParserConfigfile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-ParserConfigfile.Tpo $(DEPDIR)/CRC_DabMux-ParserConfigfile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ParserConfigfile.cpp' object='CRC_DabMux-ParserConfigfile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-ParserConfigfile.o `test -f 'ParserConfigfile.cpp' || echo '$(srcdir)/'`ParserConfigfile.cpp
+
+CRC_DabMux-ParserConfigfile.obj: ParserConfigfile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ParserConfigfile.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-ParserConfigfile.Tpo -c -o CRC_DabMux-ParserConfigfile.obj `if test -f 'ParserConfigfile.cpp'; then $(CYGPATH_W) 'ParserConfigfile.cpp'; else $(CYGPATH_W) '$(srcdir)/ParserConfigfile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-ParserConfigfile.Tpo $(DEPDIR)/CRC_DabMux-ParserConfigfile.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ParserConfigfile.cpp' object='CRC_DabMux-ParserConfigfile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-ParserConfigfile.obj `if test -f 'ParserConfigfile.cpp'; then $(CYGPATH_W) 'ParserConfigfile.cpp'; else $(CYGPATH_W) '$(srcdir)/ParserConfigfile.cpp'; fi`
+
 CRC_DabMux-Eti.o: Eti.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Eti.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-Eti.Tpo -c -o CRC_DabMux-Eti.o `test -f 'Eti.cpp' || echo '$(srcdir)/'`Eti.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-Eti.Tpo $(DEPDIR)/CRC_DabMux-Eti.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Eti.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-Eti.Tpo -c -o CRC_DabMux-Eti.o `test -f 'Eti.cpp' || echo '$(srcdir)/'`Eti.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-Eti.Tpo $(DEPDIR)/CRC_DabMux-Eti.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Eti.cpp' object='CRC_DabMux-Eti.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-Eti.o `test -f 'Eti.cpp' || echo '$(srcdir)/'`Eti.cpp
 
 CRC_DabMux-Eti.obj: Eti.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Eti.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-Eti.Tpo -c -o CRC_DabMux-Eti.obj `if test -f 'Eti.cpp'; then $(CYGPATH_W) 'Eti.cpp'; else $(CYGPATH_W) '$(srcdir)/Eti.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-Eti.Tpo $(DEPDIR)/CRC_DabMux-Eti.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Eti.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-Eti.Tpo -c -o CRC_DabMux-Eti.obj `if test -f 'Eti.cpp'; then $(CYGPATH_W) 'Eti.cpp'; else $(CYGPATH_W) '$(srcdir)/Eti.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-Eti.Tpo $(DEPDIR)/CRC_DabMux-Eti.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Eti.cpp' object='CRC_DabMux-Eti.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-Eti.obj `if test -f 'Eti.cpp'; then $(CYGPATH_W) 'Eti.cpp'; else $(CYGPATH_W) '$(srcdir)/Eti.cpp'; fi`
 
 CRC_DabMux-TcpLog.o: TcpLog.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpLog.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpLog.Tpo -c -o CRC_DabMux-TcpLog.o `test -f 'TcpLog.cpp' || echo '$(srcdir)/'`TcpLog.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-TcpLog.Tpo $(DEPDIR)/CRC_DabMux-TcpLog.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpLog.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpLog.Tpo -c -o CRC_DabMux-TcpLog.o `test -f 'TcpLog.cpp' || echo '$(srcdir)/'`TcpLog.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-TcpLog.Tpo $(DEPDIR)/CRC_DabMux-TcpLog.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TcpLog.cpp' object='CRC_DabMux-TcpLog.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-TcpLog.o `test -f 'TcpLog.cpp' || echo '$(srcdir)/'`TcpLog.cpp
 
 CRC_DabMux-TcpLog.obj: TcpLog.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpLog.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpLog.Tpo -c -o CRC_DabMux-TcpLog.obj `if test -f 'TcpLog.cpp'; then $(CYGPATH_W) 'TcpLog.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpLog.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-TcpLog.Tpo $(DEPDIR)/CRC_DabMux-TcpLog.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpLog.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpLog.Tpo -c -o CRC_DabMux-TcpLog.obj `if test -f 'TcpLog.cpp'; then $(CYGPATH_W) 'TcpLog.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpLog.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-TcpLog.Tpo $(DEPDIR)/CRC_DabMux-TcpLog.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TcpLog.cpp' object='CRC_DabMux-TcpLog.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-TcpLog.obj `if test -f 'TcpLog.cpp'; then $(CYGPATH_W) 'TcpLog.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpLog.cpp'; fi`
 
 CRC_DabMux-UdpSocket.o: UdpSocket.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-UdpSocket.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo -c -o CRC_DabMux-UdpSocket.o `test -f 'UdpSocket.cpp' || echo '$(srcdir)/'`UdpSocket.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo $(DEPDIR)/CRC_DabMux-UdpSocket.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-UdpSocket.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo -c -o CRC_DabMux-UdpSocket.o `test -f 'UdpSocket.cpp' || echo '$(srcdir)/'`UdpSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo $(DEPDIR)/CRC_DabMux-UdpSocket.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='UdpSocket.cpp' object='CRC_DabMux-UdpSocket.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-UdpSocket.o `test -f 'UdpSocket.cpp' || echo '$(srcdir)/'`UdpSocket.cpp
 
 CRC_DabMux-UdpSocket.obj: UdpSocket.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-UdpSocket.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo -c -o CRC_DabMux-UdpSocket.obj `if test -f 'UdpSocket.cpp'; then $(CYGPATH_W) 'UdpSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/UdpSocket.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo $(DEPDIR)/CRC_DabMux-UdpSocket.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-UdpSocket.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo -c -o CRC_DabMux-UdpSocket.obj `if test -f 'UdpSocket.cpp'; then $(CYGPATH_W) 'UdpSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/UdpSocket.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-UdpSocket.Tpo $(DEPDIR)/CRC_DabMux-UdpSocket.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='UdpSocket.cpp' object='CRC_DabMux-UdpSocket.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-UdpSocket.obj `if test -f 'UdpSocket.cpp'; then $(CYGPATH_W) 'UdpSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/UdpSocket.cpp'; fi`
 
 CRC_DabMux-InetAddress.o: InetAddress.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-InetAddress.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-InetAddress.Tpo -c -o CRC_DabMux-InetAddress.o `test -f 'InetAddress.cpp' || echo '$(srcdir)/'`InetAddress.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-InetAddress.Tpo $(DEPDIR)/CRC_DabMux-InetAddress.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-InetAddress.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-InetAddress.Tpo -c -o CRC_DabMux-InetAddress.o `test -f 'InetAddress.cpp' || echo '$(srcdir)/'`InetAddress.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-InetAddress.Tpo $(DEPDIR)/CRC_DabMux-InetAddress.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='InetAddress.cpp' object='CRC_DabMux-InetAddress.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-InetAddress.o `test -f 'InetAddress.cpp' || echo '$(srcdir)/'`InetAddress.cpp
 
 CRC_DabMux-InetAddress.obj: InetAddress.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-InetAddress.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-InetAddress.Tpo -c -o CRC_DabMux-InetAddress.obj `if test -f 'InetAddress.cpp'; then $(CYGPATH_W) 'InetAddress.cpp'; else $(CYGPATH_W) '$(srcdir)/InetAddress.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-InetAddress.Tpo $(DEPDIR)/CRC_DabMux-InetAddress.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-InetAddress.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-InetAddress.Tpo -c -o CRC_DabMux-InetAddress.obj `if test -f 'InetAddress.cpp'; then $(CYGPATH_W) 'InetAddress.cpp'; else $(CYGPATH_W) '$(srcdir)/InetAddress.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-InetAddress.Tpo $(DEPDIR)/CRC_DabMux-InetAddress.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='InetAddress.cpp' object='CRC_DabMux-InetAddress.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-InetAddress.obj `if test -f 'InetAddress.cpp'; then $(CYGPATH_W) 'InetAddress.cpp'; else $(CYGPATH_W) '$(srcdir)/InetAddress.cpp'; fi`
 
 CRC_DabMux-dabUtils.o: dabUtils.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabUtils.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabUtils.Tpo -c -o CRC_DabMux-dabUtils.o `test -f 'dabUtils.cpp' || echo '$(srcdir)/'`dabUtils.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabUtils.Tpo $(DEPDIR)/CRC_DabMux-dabUtils.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabUtils.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabUtils.Tpo -c -o CRC_DabMux-dabUtils.o `test -f 'dabUtils.cpp' || echo '$(srcdir)/'`dabUtils.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabUtils.Tpo $(DEPDIR)/CRC_DabMux-dabUtils.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabUtils.cpp' object='CRC_DabMux-dabUtils.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabUtils.o `test -f 'dabUtils.cpp' || echo '$(srcdir)/'`dabUtils.cpp
 
 CRC_DabMux-dabUtils.obj: dabUtils.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabUtils.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabUtils.Tpo -c -o CRC_DabMux-dabUtils.obj `if test -f 'dabUtils.cpp'; then $(CYGPATH_W) 'dabUtils.cpp'; else $(CYGPATH_W) '$(srcdir)/dabUtils.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-dabUtils.Tpo $(DEPDIR)/CRC_DabMux-dabUtils.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-dabUtils.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-dabUtils.Tpo -c -o CRC_DabMux-dabUtils.obj `if test -f 'dabUtils.cpp'; then $(CYGPATH_W) 'dabUtils.cpp'; else $(CYGPATH_W) '$(srcdir)/dabUtils.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-dabUtils.Tpo $(DEPDIR)/CRC_DabMux-dabUtils.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dabUtils.cpp' object='CRC_DabMux-dabUtils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-dabUtils.obj `if test -f 'dabUtils.cpp'; then $(CYGPATH_W) 'dabUtils.cpp'; else $(CYGPATH_W) '$(srcdir)/dabUtils.cpp'; fi`
 
 CRC_DabMux-Dmb.o: Dmb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Dmb.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-Dmb.Tpo -c -o CRC_DabMux-Dmb.o `test -f 'Dmb.cpp' || echo '$(srcdir)/'`Dmb.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-Dmb.Tpo $(DEPDIR)/CRC_DabMux-Dmb.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Dmb.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-Dmb.Tpo -c -o CRC_DabMux-Dmb.o `test -f 'Dmb.cpp' || echo '$(srcdir)/'`Dmb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-Dmb.Tpo $(DEPDIR)/CRC_DabMux-Dmb.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Dmb.cpp' object='CRC_DabMux-Dmb.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-Dmb.o `test -f 'Dmb.cpp' || echo '$(srcdir)/'`Dmb.cpp
 
 CRC_DabMux-Dmb.obj: Dmb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Dmb.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-Dmb.Tpo -c -o CRC_DabMux-Dmb.obj `if test -f 'Dmb.cpp'; then $(CYGPATH_W) 'Dmb.cpp'; else $(CYGPATH_W) '$(srcdir)/Dmb.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-Dmb.Tpo $(DEPDIR)/CRC_DabMux-Dmb.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Dmb.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-Dmb.Tpo -c -o CRC_DabMux-Dmb.obj `if test -f 'Dmb.cpp'; then $(CYGPATH_W) 'Dmb.cpp'; else $(CYGPATH_W) '$(srcdir)/Dmb.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-Dmb.Tpo $(DEPDIR)/CRC_DabMux-Dmb.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Dmb.cpp' object='CRC_DabMux-Dmb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-Dmb.obj `if test -f 'Dmb.cpp'; then $(CYGPATH_W) 'Dmb.cpp'; else $(CYGPATH_W) '$(srcdir)/Dmb.cpp'; fi`
 
 CRC_DabMux-Interleaver.o: Interleaver.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Interleaver.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-Interleaver.Tpo -c -o CRC_DabMux-Interleaver.o `test -f 'Interleaver.cpp' || echo '$(srcdir)/'`Interleaver.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-Interleaver.Tpo $(DEPDIR)/CRC_DabMux-Interleaver.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Interleaver.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-Interleaver.Tpo -c -o CRC_DabMux-Interleaver.o `test -f 'Interleaver.cpp' || echo '$(srcdir)/'`Interleaver.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-Interleaver.Tpo $(DEPDIR)/CRC_DabMux-Interleaver.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Interleaver.cpp' object='CRC_DabMux-Interleaver.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-Interleaver.o `test -f 'Interleaver.cpp' || echo '$(srcdir)/'`Interleaver.cpp
 
 CRC_DabMux-Interleaver.obj: Interleaver.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Interleaver.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-Interleaver.Tpo -c -o CRC_DabMux-Interleaver.obj `if test -f 'Interleaver.cpp'; then $(CYGPATH_W) 'Interleaver.cpp'; else $(CYGPATH_W) '$(srcdir)/Interleaver.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-Interleaver.Tpo $(DEPDIR)/CRC_DabMux-Interleaver.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-Interleaver.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-Interleaver.Tpo -c -o CRC_DabMux-Interleaver.obj `if test -f 'Interleaver.cpp'; then $(CYGPATH_W) 'Interleaver.cpp'; else $(CYGPATH_W) '$(srcdir)/Interleaver.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-Interleaver.Tpo $(DEPDIR)/CRC_DabMux-Interleaver.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Interleaver.cpp' object='CRC_DabMux-Interleaver.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-Interleaver.obj `if test -f 'Interleaver.cpp'; then $(CYGPATH_W) 'Interleaver.cpp'; else $(CYGPATH_W) '$(srcdir)/Interleaver.cpp'; fi`
 
 CRC_DabMux-ReedSolomon.o: ReedSolomon.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ReedSolomon.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo -c -o CRC_DabMux-ReedSolomon.o `test -f 'ReedSolomon.cpp' || echo '$(srcdir)/'`ReedSolomon.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo $(DEPDIR)/CRC_DabMux-ReedSolomon.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ReedSolomon.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo -c -o CRC_DabMux-ReedSolomon.o `test -f 'ReedSolomon.cpp' || echo '$(srcdir)/'`ReedSolomon.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo $(DEPDIR)/CRC_DabMux-ReedSolomon.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ReedSolomon.cpp' object='CRC_DabMux-ReedSolomon.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-ReedSolomon.o `test -f 'ReedSolomon.cpp' || echo '$(srcdir)/'`ReedSolomon.cpp
 
 CRC_DabMux-ReedSolomon.obj: ReedSolomon.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ReedSolomon.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo -c -o CRC_DabMux-ReedSolomon.obj `if test -f 'ReedSolomon.cpp'; then $(CYGPATH_W) 'ReedSolomon.cpp'; else $(CYGPATH_W) '$(srcdir)/ReedSolomon.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo $(DEPDIR)/CRC_DabMux-ReedSolomon.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-ReedSolomon.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo -c -o CRC_DabMux-ReedSolomon.obj `if test -f 'ReedSolomon.cpp'; then $(CYGPATH_W) 'ReedSolomon.cpp'; else $(CYGPATH_W) '$(srcdir)/ReedSolomon.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-ReedSolomon.Tpo $(DEPDIR)/CRC_DabMux-ReedSolomon.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ReedSolomon.cpp' object='CRC_DabMux-ReedSolomon.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-ReedSolomon.obj `if test -f 'ReedSolomon.cpp'; then $(CYGPATH_W) 'ReedSolomon.cpp'; else $(CYGPATH_W) '$(srcdir)/ReedSolomon.cpp'; fi`
 
 CRC_DabMux-TcpServer.o: TcpServer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpServer.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpServer.Tpo -c -o CRC_DabMux-TcpServer.o `test -f 'TcpServer.cpp' || echo '$(srcdir)/'`TcpServer.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-TcpServer.Tpo $(DEPDIR)/CRC_DabMux-TcpServer.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpServer.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpServer.Tpo -c -o CRC_DabMux-TcpServer.o `test -f 'TcpServer.cpp' || echo '$(srcdir)/'`TcpServer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-TcpServer.Tpo $(DEPDIR)/CRC_DabMux-TcpServer.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TcpServer.cpp' object='CRC_DabMux-TcpServer.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-TcpServer.o `test -f 'TcpServer.cpp' || echo '$(srcdir)/'`TcpServer.cpp
 
 CRC_DabMux-TcpServer.obj: TcpServer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpServer.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpServer.Tpo -c -o CRC_DabMux-TcpServer.obj `if test -f 'TcpServer.cpp'; then $(CYGPATH_W) 'TcpServer.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpServer.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-TcpServer.Tpo $(DEPDIR)/CRC_DabMux-TcpServer.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpServer.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpServer.Tpo -c -o CRC_DabMux-TcpServer.obj `if test -f 'TcpServer.cpp'; then $(CYGPATH_W) 'TcpServer.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpServer.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-TcpServer.Tpo $(DEPDIR)/CRC_DabMux-TcpServer.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TcpServer.cpp' object='CRC_DabMux-TcpServer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-TcpServer.obj `if test -f 'TcpServer.cpp'; then $(CYGPATH_W) 'TcpServer.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpServer.cpp'; fi`
 
 CRC_DabMux-TcpSocket.o: TcpSocket.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpSocket.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo -c -o CRC_DabMux-TcpSocket.o `test -f 'TcpSocket.cpp' || echo '$(srcdir)/'`TcpSocket.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo $(DEPDIR)/CRC_DabMux-TcpSocket.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpSocket.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo -c -o CRC_DabMux-TcpSocket.o `test -f 'TcpSocket.cpp' || echo '$(srcdir)/'`TcpSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo $(DEPDIR)/CRC_DabMux-TcpSocket.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TcpSocket.cpp' object='CRC_DabMux-TcpSocket.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-TcpSocket.o `test -f 'TcpSocket.cpp' || echo '$(srcdir)/'`TcpSocket.cpp
 
 CRC_DabMux-TcpSocket.obj: TcpSocket.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpSocket.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo -c -o CRC_DabMux-TcpSocket.obj `if test -f 'TcpSocket.cpp'; then $(CYGPATH_W) 'TcpSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpSocket.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo $(DEPDIR)/CRC_DabMux-TcpSocket.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-TcpSocket.obj -MD -MP -MF $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo -c -o CRC_DabMux-TcpSocket.obj `if test -f 'TcpSocket.cpp'; then $(CYGPATH_W) 'TcpSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpSocket.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-TcpSocket.Tpo $(DEPDIR)/CRC_DabMux-TcpSocket.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TcpSocket.cpp' object='CRC_DabMux-TcpSocket.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRC_DabMux-TcpSocket.obj `if test -f 'TcpSocket.cpp'; then $(CYGPATH_W) 'TcpSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/TcpSocket.cpp'; fi`
@@ -1058,7 +1234,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-local mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -1128,7 +1304,7 @@ uninstall-am: uninstall-binPROGRAMS
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic ctags distclean distclean-compile \
+	clean-generic clean-local ctags distclean distclean-compile \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-binPROGRAMS \
 	install-data install-data-am install-dvi install-dvi-am \
@@ -1140,6 +1316,17 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-binPROGRAMS
 
+
+CRC-DabMux-cfg: CRC-DabMux
+	@echo "Copying CRC-DabMux to CRC-DabMux-cfg that reads ensemble config file"
+	cp CRC-DabMux CRC-DabMux-cfg
+
+.PHONY: CRC-DabMux-cfg
+
+all: CRC-DabMux-cfg all-am
+
+clean-local:
+	rm CRC-DabMux-cfg
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

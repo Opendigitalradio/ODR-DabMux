@@ -1,5 +1,8 @@
-# Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
+# Copyright (C) 2008, 2009,2012 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
+#
+# Pascal Charest and 
+# Matthias P. Braendli
 
 # This file is part of CRC-DabMux.
 # 
@@ -16,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
-bin_PROGRAMS	=CRC-DabMux CRC-BridgeTest
+bin_PROGRAMS=CRC-DabMux CRC-BridgeTest
 
 FEC_FLAGS   =
 FEC_LIBS    =-lfec
@@ -45,7 +48,10 @@ CRC_DabMux_SOURCES  =DabMux.cpp \
                      dabInputUdp.h dabInputUdp.cpp \
                      dabOutput.h dabOutput.cpp \
                      bridge.h bridge.c \
-                      \
+                     utils.cpp utils.h \
+                     MuxElements.cpp MuxElements.h \
+                     ParserCmdline.cpp ParserCmdline.h \
+                     ParserConfigfile.cpp ParserConfigfile.h \
                      Eti.h Eti.cpp \
                      TcpLog.h TcpLog.cpp \
                      UdpSocket.h UdpSocket.cpp \
@@ -61,6 +67,17 @@ CRC_DabMux_SOURCES  =DabMux.cpp \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp
 
-CRC_BridgeTest_CFLAGS	=-DBRIDGE_TEST
-CRC_BridgeTest_SOURCES	=bridge.c \
+CRC_BridgeTest_CFLAGS   =-DBRIDGE_TEST
+CRC_BridgeTest_SOURCES  =bridge.c \
                          crc.c crc.h
+
+CRC-DabMux-cfg: CRC-DabMux
+	@echo "Copying CRC-DabMux to CRC-DabMux-cfg that reads ensemble config file"
+	cp CRC-DabMux CRC-DabMux-cfg
+
+.PHONY: CRC-DabMux-cfg
+
+all: CRC-DabMux-cfg all-am
+
+clean-local:
+	rm CRC-DabMux-cfg

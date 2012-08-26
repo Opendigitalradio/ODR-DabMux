@@ -2,6 +2,7 @@ Required dependencies:
 ======================
 
     * libfec from Phil Karn: http://www.ka9q.net/code/fec/
+    * Boost 1.41 or later
 
 Simple install procedure:
 =========================

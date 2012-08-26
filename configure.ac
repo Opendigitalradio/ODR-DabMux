@@ -25,6 +25,8 @@ AC_CONFIG_SRCDIR([src/DabMux.cpp])
 AC_CONFIG_HEADER([config.h])
 AM_SILENT_RULES([yes])
 
+AC_CONFIG_MACRO_DIR([m4])
+
 case $host in
 *linux*)
     case $target_cpu in
@@ -51,11 +53,11 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lfec':
+
 #AC_CHECK_LIB([fec], [init_rs_char], [], AC_MSG_ERROR([libfec is required]))
-# FIXME: Replace `main' with a function in `-lpthread':
+
 AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
-AC_CHECK_LIB([boost_system], [main], [], [AC_MSG_ERROR([library boost_system is missing])])
+AX_BOOST_BASE([1.41.0], [], AC_MSG_ERROR([BOOST 1.41 or later is required]))
 
 # Checks for header files.
 AC_MSG_CHECKING([for OS type])

@@ -33,6 +33,8 @@
 #include "MuxElements.h"
 #include <boost/property_tree/ptree.hpp>
 
+void set_short_label(dabLabel& label, std::string& slabel, const char* applies_to);
+
 void parse_configfile(std::string configuration_file,
         vector<dabOutput*> &outputs,
         dabEnsemble* ensemble,

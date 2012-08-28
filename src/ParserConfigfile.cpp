@@ -99,6 +99,44 @@ typedef DWORD32 uint32_t;
 
 using namespace std;
 
+void set_short_label(dabLabel& label, std::string& slabel, const char* applies_to)
+{
+    char* end;
+    const char* lab;
+    label.flag = strtoul(slabel.c_str(), &end, 0);
+    if (*end != 0) {
+        lab = slabel.c_str();
+        label.flag = 0;
+        for (int i = 0; i < 32; ++i) {
+            if (*lab == label.text[i]) {
+                label.flag |= 0x8000 >> i;
+                if (*(++lab) == 0) {
+                    break;
+                }
+            }
+        }
+        if (*lab != 0) {
+            stringstream ss;
+            ss << "Error : " << applies_to << " short label '" << slabel <<
+                "'!\n" << "Not in label '" << label.text << "' !\n";
+            throw runtime_error(ss.str());
+        }
+    }
+    int count = 0;
+    for (int i = 0; i < 16; ++i) {
+        if (label.flag & (1 << i)) {
+            ++count;
+        }
+    }
+    if (count > 8) {
+        stringstream ss;
+        ss << applies_to << " '" << slabel << "' short label too long!\n"
+            "Must be < 8 characters.\n";
+        throw runtime_error(ss.str());
+    }
+
+}
+
 void parse_configfile(string configuration_file,
         vector<dabOutput*> &outputs,
         dabEnsemble* ensemble,
@@ -158,6 +196,13 @@ void parse_configfile(string configuration_file,
     label.copy(ensemble->label.text, 16);
     ensemble->label.flag = 0xff00;
 
+    try {
+        string label = pt_ensemble.get<string>("shortlabel");
+        set_short_label(ensemble->label, label, "Ensemble");
+    }
+    catch (ptree_error &e) { }
+
+
     /******************** READ SERVICES PARAMETERS *************/
 
     map<string, dabService*> allservices;
@@ -184,6 +229,16 @@ void parse_configfile(string configuration_file,
                     (int)ensemble->services.size());
         }
         service->label.flag = 0xe01f;
+
+        try {
+            string label = pt_service.get<string>("shortlabel");
+            set_short_label(service->label, label, "Service");
+        }
+        catch (ptree_error &e) {
+            etiLog.printHeader(TcpLog::WARNING,
+                    "Service with uid %s has no short label.\n", serviceuid.c_str());
+        }
+
 
         service->id = pt_service.get("id", DEFAULT_SERVICE_ID + ensemble->services.size());
         service->pty = pt_service.get("pty", 0);
@@ -219,7 +274,7 @@ void parse_configfile(string configuration_file,
         }
         catch (runtime_error &e) {
             etiLog.printHeader(TcpLog::ERR,
-                    "%s", e.what());
+                    "%s\n", e.what());
             throw e;
         }
 
@@ -285,6 +340,27 @@ void parse_configfile(string configuration_file,
         component->serviceId = service->id;
         component->subchId = subchannel->id;
         component->SCIdS = SCIdS_per_service[service]++;
+
+        try {
+            string label = pt_comp.get<string>("label");
+
+            memset(component->label.text, 0, 16);
+            label.copy(component->label.text, 16);
+            component->label.flag = 0xff00;
+        }
+        catch (ptree_error &e) {
+            etiLog.printHeader(TcpLog::WARNING,
+                    "Service with uid %s has no label.\n", componentuid.c_str());
+        }
+
+        try {
+            string label = pt_comp.get<string>("shortlabel");
+            set_short_label(component->label, label, "Component");
+        }
+        catch (ptree_error &e) {
+            etiLog.printHeader(TcpLog::WARNING,
+                    "Component with uid %s has no short label.\n", componentuid.c_str());
+        }
 
         ensemble->components.push_back(component);
 
@@ -628,13 +704,13 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 
     /* Get protection */
     try {
-        int level = pt.get<int>("protection");
+        int level = pt.get<int>("protection") - 1;
 
         if (protection->form == 0) {
             if ((level < 0) || (level > 4)) {
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<
-                    "protection level must be between "
+                    ": protection level must be between "
                     "1 to 5 inclusively (current = " << level << " )";
                 throw runtime_error(ss.str());
             }
@@ -643,7 +719,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             if ((level < 0) || (level > 3)) {
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<
-                    "protection level must be between "
+                    ": protection level must be between "
                     "1 to 4 inclusively (current = " << level << " )";
                 throw runtime_error(ss.str());
             }

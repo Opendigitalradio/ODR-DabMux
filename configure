@@ -4511,9 +4511,9 @@ fi
 
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lfec':
+
 #AC_CHECK_LIB([fec], [init_rs_char], [], AC_MSG_ERROR([libfec is required]))
-# FIXME: Replace `main' with a function in `-lpthread':
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthread" >&5
 $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
@@ -4602,7 +4602,7 @@ fi
 
 
 if test "x$want_boost" = "xyes"; then
-    boost_lib_version_req=1.50.0
+    boost_lib_version_req=1.41.0
     boost_lib_version_req_shorten=`expr $boost_lib_version_req : '\([0-9]*\.[0-9]*\)'`
     boost_lib_version_req_major=`expr $boost_lib_version_req : '\([0-9]*\)'`
     boost_lib_version_req_minor=`expr $boost_lib_version_req : '[0-9]*\.\([0-9]*\)'`
@@ -4812,7 +4812,7 @@ $as_echo "$as_me: We could not detect the boost libraries (version $boost_lib_ve
 $as_echo "$as_me: Your boost libraries seems to old (version $_version)." >&6;}
         fi
         # execute ACTION-IF-NOT-FOUND (if present):
-        as_fn_error $? "BOOST 1.42 or later is required" "$LINENO" 5
+        as_fn_error $? "BOOST 1.41 or later is required" "$LINENO" 5
     else
 
 
@@ -4828,7 +4828,6 @@ $as_echo "#define HAVE_BOOST /**/" >>confdefs.h
 fi
 
 
-#AC_CHECK_LIB([boost_system], [main], [], [AC_MSG_ERROR([library boost_system is missing])])
 
 # Checks for header files.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OS type" >&5

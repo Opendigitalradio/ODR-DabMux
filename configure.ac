@@ -17,7 +17,7 @@
 # along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([CRC-DabMux], [0.3.0.4-r6], [pascal.charest@crc.ca])
+AC_INIT([CRC-DabMux], [0.3.0.4-r7], [pascal.charest@crc.ca])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall])

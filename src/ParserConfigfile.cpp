@@ -704,10 +704,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 
     /* Get protection */
     try {
-        int level = pt.get<int>("protection") - 1;
+        int level = pt.get<int>("protection");
 
         if (protection->form == 0) {
-            if ((level < 0) || (level > 4)) {
+            if ((level < 1) || (level > 5)) {
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<
                     ": protection level must be between "
@@ -716,7 +716,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             }
         }
         else {
-            if ((level < 0) || (level > 3)) {
+            if ((level < 1) || (level > 4)) {
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<
                     ": protection level must be between "
@@ -724,7 +724,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 throw runtime_error(ss.str());
             }
         }
-        protection->level = level;
+        protection->level = level - 1;
     }
     catch (ptree_error &e) {}
 

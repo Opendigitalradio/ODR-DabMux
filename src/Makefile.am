@@ -46,7 +46,13 @@ CRC_DabMux_SOURCES  =DabMux.cpp \
                      dabInputSlip.h dabInputSlip.cpp \
                      dabInputTest.h dabInputTest.cpp \
                      dabInputUdp.h dabInputUdp.cpp \
-                     dabOutput.h dabOutput.cpp \
+                     dabOutput/dabOutput.h \
+                     dabOutput/dabOutputFile.cpp \
+                     dabOutput/dabOutputFifo.cpp \
+                     dabOutput/dabOutputRaw.cpp \
+                     dabOutput/dabOutputSimul.cpp \
+                     dabOutput/dabOutputTcp.cpp \
+                     dabOutput/dabOutputUdp.cpp \
                      bridge.h bridge.c \
                      utils.cpp utils.h \
                      MuxElements.cpp MuxElements.h \

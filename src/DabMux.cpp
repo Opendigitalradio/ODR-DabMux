@@ -72,6 +72,7 @@ typedef DWORD32 uint32_t;
 #   include <sys/socket.h>
 #   include <sys/ioctl.h>
 #   include <sys/times.h>
+#   include <sys/resource.h>
 
 #   include <linux/if_packet.h>
 #   include <linux/netdevice.h>
@@ -105,7 +106,7 @@ typedef DWORD32 uint32_t;
 #include "dabInputDmbUdp.h"
 
 
-#include "dabOutput.h"
+#include "dabOutput/dabOutput.h"
 #include "crc.h"
 #include "UdpSocket.h"
 #include "InetAddress.h"
@@ -363,14 +364,9 @@ int main(int argc, char *argv[])
     if (outputs.size() == 0) {
         etiLog.printHeader(TcpLog::WARNING, "no output defined\n");
 
-        outputs.push_back(new dabOutput);
+        // initialise a new dabOutput
+        outputs.push_back(new dabOutput("simul", NULL));
         output = outputs.end() - 1;
-
-        memset(*output, 0, sizeof(dabOutput));
-        (*output)->outputProto = "simul";
-        (*output)->outputName = NULL;
-        (*output)->data = NULL;
-        (*output)->operations = dabOutputDefaultOperations;
 
         printf("Press enter to continue\n");
         getchar();
@@ -473,46 +469,46 @@ int main(int argc, char *argv[])
 
     for (output = outputs.begin(); output != outputs.end() ; ++output) {
 #if defined(HAVE_OUTPUT_FILE)
-        if (strcmp((*output)->outputProto, "file") == 0) {
-            (*output)->operations = dabOutputFileOperations;
+        if ((*output)->outputProto == "file") {
+            (*output)->output = new DabOutputFile();
 #else // !defined(HAVE_OUTPUT_FILE)
         if (0) {
 #endif // defined(HAVE_OUTPUT_FILE)
 #if defined(HAVE_OUTPUT_FIFO)
-        } else if (strcmp((*output)->outputProto, "fifo") == 0) {
-            (*output)->operations = dabOutputFifoOperations;
+        } else if ((*output)->outputProto == "fifo") {
+            (*output)->output = new DabOutputFifo();
 #endif // !defined(HAVE_OUTPUT_FIFO)
 #if defined(HAVE_OUTPUT_RAW)
-        } else if (strcmp((*output)->outputProto, "raw") == 0) {
-            (*output)->operations = dabOutputRawOperations;
+        } else if ((*output)->outputProto == "raw") {
+            (*output)->output = new DabOutputRaw();
 #endif // defined(HAVE_OUTPUT_RAW)
 #if defined(HAVE_OUTPUT_UDP)
-        } else if (strcmp((*output)->outputProto, "udp") == 0) {
-            (*output)->operations = dabOutputUdpOperations;
+        } else if ((*output)->outputProto == "udp") {
+            (*output)->output = new DabOutputUdp();
 #endif // defined(HAVE_OUTPUT_UDP)
 #if defined(HAVE_OUTPUT_TCP)
-        } else if (strcmp((*output)->outputProto, "tcp") == 0) {
-            (*output)->operations = dabOutputTcpOperations;
+        } else if ((*output)->outputProto == "tcp") {
+            (*output)->output = new DabOutputTcp();
 #endif // defined(HAVE_OUTPUT_TCP)
 #if defined(HAVE_OUTPUT_SIMUL)
-        } else if (strcmp((*output)->outputProto, "simul") == 0) {
-            (*output)->operations = dabOutputSimulOperations;
+        } else if ((*output)->outputProto == "simul") {
+            (*output)->output = new DabOutputSimul();
 #endif // defined(HAVE_OUTPUT_SIMUL)
         } else {
             etiLog.printHeader(TcpLog::ERR, "Output protcol unknown: %s\n",
-                    (*output)->outputProto);
+                    (*output)->outputProto.c_str());
             goto EXIT;
         }
 
-        if ((*output)->operations.init(&(*output)->data) == -1) {
+        if ((*output)->output == NULL) {
             etiLog.printHeader(TcpLog::ERR, "Unable to init output %s://%s\n",
-                    (*output)->outputProto, (*output)->outputName);
+                    (*output)->outputProto.c_str(), (*output)->outputName.c_str());
             return -1;
         }
-        if ((*output)->operations.open((*output)->data, (*output)->outputName)
+        if ((*output)->output->Open((*output)->outputName)
                 == -1) {
             etiLog.printHeader(TcpLog::ERR, "Unable to open output %s://%s\n",
-                    (*output)->outputProto, (*output)->outputName);
+                    (*output)->outputProto.c_str(), (*output)->outputName.c_str());
             return -1;
         }
     }
@@ -1788,10 +1784,10 @@ int main(int argc, char *argv[])
 
         // Give the data to the outputs
         for (output = outputs.begin() ; output != outputs.end(); ++output) {
-            if ((*output)->operations.write((*output)->data, etiFrame, index)
+            if ((*output)->output->Write(etiFrame, index)
                     == -1) {
                 etiLog.print(TcpLog::ERR, "Can't write to output %s://%s\n",
-                        (*output)->outputProto, (*output)->outputName);
+                        (*output)->outputProto.c_str(), (*output)->outputName.c_str());
             }
         }
 
@@ -1823,8 +1819,8 @@ EXIT:
         (*subchannel)->operations.clean(&(*subchannel)->data);
     }
     for (output = outputs.begin() ; output != outputs.end(); ++output) {
-        (*output)->operations.close((*output)->data);
-        (*output)->operations.clean(&(*output)->data);
+        (*output)->output->Close();
+        delete ((*output)->output);
     }
 
     for_each(ensemble->components.begin(), ensemble->components.end(), free);

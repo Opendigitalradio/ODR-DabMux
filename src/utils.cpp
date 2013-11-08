@@ -285,9 +285,9 @@ void printOutputs(vector<dabOutput*>& outputs)
     for (output = outputs.begin(); output != outputs.end(); ++output) {
         etiLog.printHeader(TcpLog::INFO, "Output      %i\n", index);
         etiLog.printHeader(TcpLog::INFO, "  protocol: %s\n",
-                (*output)->outputProto);
+                (*output)->outputProto.c_str());
         etiLog.printHeader(TcpLog::INFO, "  name:     %s\n",
-                (*output)->outputName);
+                (*output)->outputName.c_str());
         ++index;
     }
 }

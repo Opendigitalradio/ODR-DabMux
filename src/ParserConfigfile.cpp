@@ -40,7 +40,7 @@
 #include <string>
 #include <map>
 #include <cstring>
-#include "dabOutput.h"
+#include "dabOutput/dabOutput.h"
 #include "dabInput.h"
 #include "utils.h"
 #include "dabInputFile.h"
@@ -374,32 +374,23 @@ void parse_configfile(string configuration_file,
         string outputuid = it->first;
         string uri = pt_outputs.get<string>(outputuid);
 
-        dabOutput* output = new dabOutput();
-
-        outputs.push_back(output);
-
-        memset(output, 0, sizeof(dabOutput));
-        output->outputProto = NULL;
-        output->outputName = NULL;
-        output->data = NULL;
-        output->operations = dabOutputDefaultOperations;
-
         int proto_pos = uri.find("://");
         if (proto_pos == std::string::npos) {
             stringstream ss;
             ss << "Output with uid " << outputuid << " no protocol defined!";
             throw runtime_error(ss.str());
-        } else {
-
-            char* uri_c = new char[512];
-            memset(uri_c, 0, 512);
-            uri.copy(uri_c, 511);
-
-            uri_c[proto_pos] = '\0';
-
-            output->outputProto = uri_c;
-            output->outputName = output->outputProto + proto_pos + 3;
         }
+
+        char* uri_c = new char[512];
+        memset(uri_c, 0, 512);
+        uri.copy(uri_c, 511);
+
+        uri_c[proto_pos] = '\0';
+
+        char* outputName = uri_c + proto_pos + 3;
+
+        dabOutput* output = new dabOutput(uri_c, outputName);
+        outputs.push_back(output);
 
         // keep outputs in map, and check for uniqueness of the uid
         if (alloutputs.count(outputuid) == 0) {

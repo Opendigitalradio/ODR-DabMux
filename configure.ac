@@ -20,7 +20,7 @@ AC_PREREQ(2.61)
 AC_INIT([CRC-DabMux], [0.3.0.4-r7], [pascal.charest@crc.ca])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([-Wall])
+AM_INIT_AUTOMAKE([-Wall subdir-objects])
 AC_CONFIG_SRCDIR([src/DabMux.cpp])
 AC_CONFIG_HEADER([config.h])
 AM_SILENT_RULES([yes])

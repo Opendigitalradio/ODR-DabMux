@@ -32,7 +32,7 @@
 #include <functional>
 #include <algorithm>
 #include <stdint.h>
-#include "dabOutput.h"
+#include "dabOutput/dabOutput.h"
 #include "dabInput.h"
 #include "Eti.h"
 #include "MuxElements.h"

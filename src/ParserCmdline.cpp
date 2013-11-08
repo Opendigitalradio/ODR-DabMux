@@ -34,7 +34,7 @@
 #include <vector>
 #include <stdint.h>
 #include <cstring>
-#include "dabOutput.h"
+#include "dabOutput/dabOutput.h"
 #include "dabInput.h"
 #include "utils.h"
 #include "dabInputFile.h"
@@ -124,15 +124,6 @@ bool parse_cmdline(char **argv,
         }
         switch (c) {
         case 'O':
-            outputs.push_back(new dabOutput);
-            output = outputs.end() - 1;
-
-            memset(*output, 0, sizeof(dabOutput));
-            (*output)->outputProto = NULL;
-            (*output)->outputName = NULL;
-            (*output)->data = NULL;
-            (*output)->operations = dabOutputDefaultOperations;
-
             char* proto;
 
             proto = strstr(optarg, "://");
@@ -141,10 +132,11 @@ bool parse_cmdline(char **argv,
                         "No protocol defined for output\n");
                 goto EXIT;
             } else {
-                (*output)->outputProto = optarg;
-                (*output)->outputName = proto + 3;
-                *proto = 0;
+                *proto = 0; // terminate optarg
+                outputs.push_back(new dabOutput(optarg, proto + 3));
+                output = outputs.end() - 1;
             }
+
             subchannel = ensemble->subchannels.end();
             protection = NULL;
             component = ensemble->components.end();
@@ -803,14 +795,8 @@ bool parse_cmdline(char **argv,
         case 'r':
             etiLog.printHeader(TcpLog::INFO,
                     "Enabling throttled output using simul, one frame every 24ms\n");
-            outputs.push_back(new dabOutput);
+            outputs.push_back(new dabOutput("simul", NULL));
             output = outputs.end() - 1;
-
-            memset(*output, 0, sizeof(dabOutput));
-            (*output)->outputProto = "simul";
-            (*output)->outputName = "";
-            (*output)->data = NULL;
-            (*output)->operations = dabOutputDefaultOperations;
 
             subchannel = ensemble->subchannels.end();
             protection = NULL;

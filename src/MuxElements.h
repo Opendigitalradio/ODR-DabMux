@@ -32,17 +32,23 @@
 #include <functional>
 #include <algorithm>
 #include <stdint.h>
-#include "dabOutput.h"
+#include "dabOutput/dabOutput.h"
 #include "dabInput.h"
 #include "Eti.h"
 
 using namespace std;
 
 struct dabOutput {
-    const char* outputProto;
-    const char* outputName;
-    void* data;
-    dabOutputOperations operations;
+    dabOutput(const char* proto, const char* name) :
+        outputProto(proto), outputName(name), output(NULL) { }
+
+    // outputs are specified with outputProto://outputName
+    // during config parsing
+    std::string outputProto;
+    std::string outputName;
+
+    // later, the corresponding output is then created
+    DabOutput* output;
 };
 
 

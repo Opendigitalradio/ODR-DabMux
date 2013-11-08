@@ -69,6 +69,9 @@
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 
+/* Define to 1 if you have the `zmq' library (-lzmq). */
+#undef HAVE_LIBZMQ
+
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
@@ -111,6 +114,9 @@
 
 /* Define if UDP output is enabled */
 #undef HAVE_OUTPUT_UDP
+
+/* Define if ZeroMQ output is enabled */
+#undef HAVE_OUTPUT_ZEROMQ
 
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */

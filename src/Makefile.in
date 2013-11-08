@@ -148,6 +148,7 @@ am_CRC_DabMux_OBJECTS = CRC_DabMux-DabMux.$(OBJEXT) \
 	dabOutput/CRC_DabMux-dabOutputSimul.$(OBJEXT) \
 	dabOutput/CRC_DabMux-dabOutputTcp.$(OBJEXT) \
 	dabOutput/CRC_DabMux-dabOutputUdp.$(OBJEXT) \
+	dabOutput/CRC_DabMux-dabOutputZMQ.$(OBJEXT) \
 	CRC_DabMux-bridge.$(OBJEXT) CRC_DabMux-utils.$(OBJEXT) \
 	CRC_DabMux-MuxElements.$(OBJEXT) \
 	CRC_DabMux-ParserCmdline.$(OBJEXT) \
@@ -160,7 +161,7 @@ am_CRC_DabMux_OBJECTS = CRC_DabMux-DabMux.$(OBJEXT) \
 	CRC_DabMux-TcpServer.$(OBJEXT) CRC_DabMux-TcpSocket.$(OBJEXT)
 CRC_DabMux_OBJECTS = $(am_CRC_DabMux_OBJECTS)
 am__DEPENDENCIES_1 =
-CRC_DabMux_DEPENDENCIES = $(am__DEPENDENCIES_1)
+CRC_DabMux_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -345,8 +346,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 FEC_FLAGS = 
 FEC_LIBS = -lfec
+@HAVE_OUTPUT_ZEROMQ_TEST_FALSE@ZMQ_LIBS = 
+@HAVE_OUTPUT_ZEROMQ_TEST_TRUE@ZMQ_LIBS = -lzmq
 CRC_DabMux_CPPFLAGS = -I$(FARSYNC_DIR)
-CRC_DabMux_LDADD = $(FEC_LIBS) -lpthread
+CRC_DabMux_LDADD = $(FEC_LIBS) $(ZMQ_LIBS) -lpthread
 CRC_DabMux_SOURCES = DabMux.cpp \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
@@ -374,6 +377,7 @@ CRC_DabMux_SOURCES = DabMux.cpp \
                      dabOutput/dabOutputSimul.cpp \
                      dabOutput/dabOutputTcp.cpp \
                      dabOutput/dabOutputUdp.cpp \
+                     dabOutput/dabOutputZMQ.cpp \
                      bridge.h bridge.c \
                      utils.cpp utils.h \
                      MuxElements.cpp MuxElements.h \
@@ -496,6 +500,8 @@ dabOutput/CRC_DabMux-dabOutputTcp.$(OBJEXT):  \
 	dabOutput/$(am__dirstamp) dabOutput/$(DEPDIR)/$(am__dirstamp)
 dabOutput/CRC_DabMux-dabOutputUdp.$(OBJEXT):  \
 	dabOutput/$(am__dirstamp) dabOutput/$(DEPDIR)/$(am__dirstamp)
+dabOutput/CRC_DabMux-dabOutputZMQ.$(OBJEXT):  \
+	dabOutput/$(am__dirstamp) dabOutput/$(DEPDIR)/$(am__dirstamp)
 
 CRC-DabMux$(EXEEXT): $(CRC_DabMux_OBJECTS) $(CRC_DabMux_DEPENDENCIES) $(EXTRA_CRC_DabMux_DEPENDENCIES) 
 	@rm -f CRC-DabMux$(EXEEXT)
@@ -554,6 +560,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputSimul.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputTcp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputUdp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputZMQ.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -1035,6 +1042,20 @@ dabOutput/CRC_DabMux-dabOutputUdp.obj: dabOutput/dabOutputUdp.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o dabOutput/CRC_DabMux-dabOutputUdp.obj `if test -f 'dabOutput/dabOutputUdp.cpp'; then $(CYGPATH_W) 'dabOutput/dabOutputUdp.cpp'; else $(CYGPATH_W) '$(srcdir)/dabOutput/dabOutputUdp.cpp'; fi`
 
+dabOutput/CRC_DabMux-dabOutputZMQ.o: dabOutput/dabOutputZMQ.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT dabOutput/CRC_DabMux-dabOutputZMQ.o -MD -MP -MF dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputZMQ.Tpo -c -o dabOutput/CRC_DabMux-dabOutputZMQ.o `test -f 'dabOutput/dabOutputZMQ.cpp' || echo '$(srcdir)/'`dabOutput/dabOutputZMQ.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputZMQ.Tpo dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputZMQ.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='dabOutput/dabOutputZMQ.cpp' object='dabOutput/CRC_DabMux-dabOutputZMQ.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o dabOutput/CRC_DabMux-dabOutputZMQ.o `test -f 'dabOutput/dabOutputZMQ.cpp' || echo '$(srcdir)/'`dabOutput/dabOutputZMQ.cpp
+
+dabOutput/CRC_DabMux-dabOutputZMQ.obj: dabOutput/dabOutputZMQ.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT dabOutput/CRC_DabMux-dabOutputZMQ.obj -MD -MP -MF dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputZMQ.Tpo -c -o dabOutput/CRC_DabMux-dabOutputZMQ.obj `if test -f 'dabOutput/dabOutputZMQ.cpp'; then $(CYGPATH_W) 'dabOutput/dabOutputZMQ.cpp'; else $(CYGPATH_W) '$(srcdir)/dabOutput/dabOutputZMQ.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputZMQ.Tpo dabOutput/$(DEPDIR)/CRC_DabMux-dabOutputZMQ.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='dabOutput/dabOutputZMQ.cpp' object='dabOutput/CRC_DabMux-dabOutputZMQ.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o dabOutput/CRC_DabMux-dabOutputZMQ.obj `if test -f 'dabOutput/dabOutputZMQ.cpp'; then $(CYGPATH_W) 'dabOutput/dabOutputZMQ.cpp'; else $(CYGPATH_W) '$(srcdir)/dabOutput/dabOutputZMQ.cpp'; fi`
+
 CRC_DabMux-utils.o: utils.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CRC_DabMux_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRC_DabMux-utils.o -MD -MP -MF $(DEPDIR)/CRC_DabMux-utils.Tpo -c -o CRC_DabMux-utils.o `test -f 'utils.cpp' || echo '$(srcdir)/'`utils.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/CRC_DabMux-utils.Tpo $(DEPDIR)/CRC_DabMux-utils.Po
@@ -1447,7 +1468,7 @@ CRC-DabMux-cfg: CRC-DabMux
 all: CRC-DabMux-cfg all-am
 
 clean-local:
-	rm CRC-DabMux-cfg
+	rm -f CRC-DabMux-cfg
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -30,6 +30,7 @@
 #include "UdpSocket.h"
 #include "TcpServer.h"
 #include "TcpLog.h"
+#include <stdexcept>
 #include <signal.h>
 #ifdef _WIN32
 #   include <io.h>
@@ -44,6 +45,9 @@
 #   ifndef O_BINARY
 #       define O_BINARY 0
 #   endif // O_BINARY
+#endif
+#ifdef HAVE_OUTPUT_ZEROMQ
+#  include "zmq.hpp"
 #endif
 
 extern TcpLog etiLog;
@@ -243,6 +247,44 @@ class DabOutputSimul : public DabOutput
         timeval startTime_;
 #endif
 };
+
+#if defined(HAVE_OUTPUT_ZEROMQ)
+// -------------- ZeroMQ message queue ------------------
+class DabOutputZMQ : public DabOutput
+{
+    public:
+        DabOutputZMQ() :
+            zmq_proto_(""), zmq_context_(1), zmq_pub_sock_(zmq_context_, ZMQ_PUB)
+        {
+            throw std::runtime_error("ERROR: No ZMQ protocol specified !");
+        }
+
+        DabOutputZMQ(std::string zmq_proto) :
+            zmq_proto_(zmq_proto), zmq_context_(1), zmq_pub_sock_(zmq_context_, ZMQ_PUB)
+        { }
+
+
+        DabOutputZMQ(const DabOutputZMQ& other) :
+            zmq_proto_(other.zmq_proto_), zmq_context_(1), zmq_pub_sock_(zmq_context_, ZMQ_PUB)
+        {
+            // cannot copy context
+        }
+
+        ~DabOutputZMQ()
+        {
+            zmq_pub_sock_.close();
+        }
+
+        int Open(const char* name);
+        int Write(void* buffer, int size);
+        int Close();
+    private:
+        std::string zmq_proto_;
+        zmq::context_t zmq_context_; // handle for the zmq context
+        zmq::socket_t zmq_pub_sock_; // handle for the zmq publisher socket
+};
+
+#endif
 
 #endif
 

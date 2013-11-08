@@ -53,9 +53,6 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
 # Checks for libraries.
-
-#AC_CHECK_LIB([fec], [init_rs_char], [], AC_MSG_ERROR([libfec is required]))
-
 AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
 AX_BOOST_BASE([1.41.0], [], AC_MSG_ERROR([BOOST 1.41 or later is required]))
 
@@ -175,6 +172,15 @@ AC_ARG_ENABLE([output_simul],
         [], [enable_output_simul=yes])
 AS_IF([test "x$enable_output_simul" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_SIMUL, [1], [Define if SIMUL output is enabled])])
+# ZeroMQ message queue
+AC_ARG_ENABLE([output_zeromq],
+        [AS_HELP_STRING([--disable-output-zeromq], [Disable ZeroMQ output])],
+        [], [enable_output_zeromq=yes])
+AS_IF([test "x$enable_output_zeromq" = "xyes"],
+        [AC_DEFINE(HAVE_OUTPUT_ZEROMQ, [1], [Define if ZeroMQ output is enabled])],
+        [AC_CHECK_LIB(zmq, zmq_init, ,[AC_MSG_ERROR([ZeroMQ libzmq is required])])])
+AM_CONDITIONAL([HAVE_OUTPUT_ZEROMQ_TEST], [test "x$enable_output_zeromq" = "xyes"])
+
 
 # Formats
 # RAW
@@ -261,7 +267,7 @@ echo
 echo "Outputs:"
 enabled=""
 disabled=""
-for output in file fifo udp tcp raw simul
+for output in file fifo udp tcp raw simul zeromq
 do
     eval var=\$enable_output_$output
     AS_IF([test "x$var" = "xyes"],

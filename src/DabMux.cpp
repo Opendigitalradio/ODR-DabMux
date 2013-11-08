@@ -494,6 +494,16 @@ int main(int argc, char *argv[])
         } else if ((*output)->outputProto == "simul") {
             (*output)->output = new DabOutputSimul();
 #endif // defined(HAVE_OUTPUT_SIMUL)
+#if defined(HAVE_OUTPUT_ZEROMQ)
+        } else if ((*output)->outputProto == "zmq+tcp") {
+            (*output)->output = new DabOutputZMQ("tcp");
+        } else if ((*output)->outputProto == "zmq+ipc") {
+            (*output)->output = new DabOutputZMQ("ipc");
+        } else if ((*output)->outputProto == "zmq+pgm") {
+            (*output)->output = new DabOutputZMQ("pgm");
+        } else if ((*output)->outputProto == "zmq+epgm") {
+            (*output)->output = new DabOutputZMQ("epgm");
+#endif // defined(HAVE_OUTPUT_ZEROMQ)
         } else {
             etiLog.printHeader(TcpLog::ERR, "Output protcol unknown: %s\n",
                     (*output)->outputProto.c_str());

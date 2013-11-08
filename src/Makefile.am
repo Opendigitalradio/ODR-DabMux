@@ -24,8 +24,14 @@ bin_PROGRAMS=CRC-DabMux CRC-BridgeTest
 FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
+if HAVE_OUTPUT_ZEROMQ_TEST
+ZMQ_LIBS    =-lzmq
+else
+ZMQ_LIBS    =
+endif
+
 CRC_DabMux_CPPFLAGS =-I$(FARSYNC_DIR)
-CRC_DabMux_LDADD    =$(FEC_LIBS) -lpthread
+CRC_DabMux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread
 CRC_DabMux_SOURCES  =DabMux.cpp \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
@@ -53,6 +59,7 @@ CRC_DabMux_SOURCES  =DabMux.cpp \
                      dabOutput/dabOutputSimul.cpp \
                      dabOutput/dabOutputTcp.cpp \
                      dabOutput/dabOutputUdp.cpp \
+                     dabOutput/dabOutputZMQ.cpp \
                      bridge.h bridge.c \
                      utils.cpp utils.h \
                      MuxElements.cpp MuxElements.h \
@@ -86,4 +93,4 @@ CRC-DabMux-cfg: CRC-DabMux
 all: CRC-DabMux-cfg all-am
 
 clean-local:
-	rm CRC-DabMux-cfg
+	rm -f CRC-DabMux-cfg

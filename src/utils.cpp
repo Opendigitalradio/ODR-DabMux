@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Includes modifications
-   2012, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2013,
+   Matthias P. Braendli, http://mpb.li, matthias.braendli@mpb.li
    */
 /*
    This file is part of CRC-DabMux.
@@ -47,12 +47,13 @@ time_t getDabTime()
 void header_message() 
 {
     etiLog.printHeader(TcpLog::INFO,
-            "Welcome to %s %s, compiled at %s, %s\n\n",
-            PACKAGE_NAME, PACKAGE_VERSION, __DATE__, __TIME__);
+            "Welcome to %s %s%s, compiled at %s, %s\n\n",
+            PACKAGE_NAME, PACKAGE_VERSION, HGVERSION, __DATE__, __TIME__);
     etiLog.printHeader(TcpLog::INFO,
             "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n"
             "Her Majesty the Queen in Right of Canada,\n"
-            "(Communications Research Centre Canada) All rights reserved.\n\n");
+            "(Communications Research Centre Canada) All rights reserved.\n\n"
+            "Copyright (C) 2013\nMatthias P. Braendli, http://mpb.li\n\n");
     etiLog.printHeader(TcpLog::INFO, "Input URLs supported:");
 #if defined(HAVE_INPUT_PRBS)
     etiLog.printHeader(TcpLog::INFO, " prbs");

@@ -17,7 +17,7 @@
 # along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([CRC-DabMux], [0.3.0.4-r7], [pascal.charest@crc.ca])
+AC_INIT([CRC-DabMux], [0.3.0.4-mpb], [pascal.charest@crc.ca])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall subdir-objects])
@@ -225,6 +225,8 @@ AC_ARG_ENABLE([format_epm],
         [], [enable_format_epm=yes])
 AS_IF([test "x$enable_format_epm" = "xyes"],
         [AC_DEFINE(HAVE_FORMAT_EPM, [1], [Define if EPM format is enabled])])
+
+AM_CONDITIONAL([IS_HG_REPO], [hg parents])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

@@ -344,11 +344,13 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@IS_HG_REPO_FALSE@HGVERSION_FLAGS = -DHGVERSION="\"-modified\""
+@IS_HG_REPO_TRUE@HGVERSION_FLAGS = -DHGVERSION="\"`hg parents --template '-{node|short}'`\""
 FEC_FLAGS = 
 FEC_LIBS = -lfec
 @HAVE_OUTPUT_ZEROMQ_TEST_FALSE@ZMQ_LIBS = 
 @HAVE_OUTPUT_ZEROMQ_TEST_TRUE@ZMQ_LIBS = -lzmq
-CRC_DabMux_CPPFLAGS = -I$(FARSYNC_DIR)
+CRC_DabMux_CPPFLAGS = -I$(FARSYNC_DIR) $(HGVERSION_FLAGS)
 CRC_DabMux_LDADD = $(FEC_LIBS) $(ZMQ_LIBS) -lpthread
 CRC_DabMux_SOURCES = DabMux.cpp \
                      dabInput.h dabInput.cpp \

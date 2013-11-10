@@ -3,6 +3,8 @@ Required dependencies:
 
     * libfec from Phil Karn: http://www.ka9q.net/code/fec/
     * Boost 1.41 or later
+    * Optional ZeroMQ http://www.zeromq.org
+        Use --disable-output-zeromq if you don't have it
 
 Simple install procedure:
 =========================

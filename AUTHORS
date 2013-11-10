@@ -19,8 +19,7 @@ FarSite Communications Ltd.
 
 Matthias P. Braendli <matthias [at] mpb [dot] li>
     Time encoding into MNSC necessary for SFN using CRC-DabMod.
-    Refactoring of configuration input for command line,
-    creation of a configuration file format.
-    Files: DabMux.{cpp,h}, Parser*.{cpp,h}, utils.{cpp,h},
-            MuxElements.{cpp,h}
+    Refactoring of configuration input for command line.
+    Creation of a configuration file format.
+    ZeroMQ ETI output.
 

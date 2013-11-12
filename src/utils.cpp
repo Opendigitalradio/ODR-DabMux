@@ -48,7 +48,7 @@ void header_message()
 {
     etiLog.printHeader(TcpLog::INFO,
             "Welcome to %s %s%s, compiled at %s, %s\n\n",
-            PACKAGE_NAME, PACKAGE_VERSION, HGVERSION, __DATE__, __TIME__);
+            PACKAGE_NAME, PACKAGE_VERSION, GITVERSION, __DATE__, __TIME__);
     etiLog.printHeader(TcpLog::INFO,
             "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n"
             "Her Majesty the Queen in Right of Canada,\n"

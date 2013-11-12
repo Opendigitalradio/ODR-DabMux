@@ -21,10 +21,10 @@
 
 bin_PROGRAMS=CRC-DabMux CRC-BridgeTest
 
-if IS_HG_REPO
-HGVERSION_FLAGS = -DHGVERSION="\"`hg parents --template '-{node|short}'`\""
+if IS_GIT_REPO
+GITVERSION_FLAGS = -DGITVERSION="\"-`git describe --long --tags`\""
 else
-HGVERSION_FLAGS = -DHGVERSION="\"-modified\""
+GITVERSION_FLAGS = -DGITVERSION="\"-exported\""
 endif
 
 FEC_FLAGS   =
@@ -36,7 +36,7 @@ else
 ZMQ_LIBS    =
 endif
 
-CRC_DabMux_CPPFLAGS =-I$(FARSYNC_DIR) $(HGVERSION_FLAGS)
+CRC_DabMux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 CRC_DabMux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread
 CRC_DabMux_SOURCES  =DabMux.cpp \
                      dabInput.h dabInput.cpp \

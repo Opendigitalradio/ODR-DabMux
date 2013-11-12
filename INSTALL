@@ -6,8 +6,8 @@ Required dependencies:
     * Optional ZeroMQ http://www.zeromq.org
         Use --disable-output-zeromq if you don't have it
 
-Simple install procedure:
-=========================
+Simple install procedure using tarball release:
+===============================================
 
     % wget http://www.ka9q.net/code/fec/fec-3.0.1.tar.bz2
                                             # Download libfec
@@ -24,6 +24,15 @@ Simple install procedure:
     % make                                  # Build CRC-DabMux
     [ as root ]
     % make install                          # Install CRC-DabMux
+
+Nearly as simple install procedure using repository:
+====================================================
+
+    * Download and install fec as above
+    * Clone the git repository
+    * Bootstrap autotools:
+        % aclocal && automake --gnu --add-missing && autoconf
+    * Then use ./configure as above
 
 
 Advanced install procedure:

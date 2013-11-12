@@ -226,7 +226,7 @@ AC_ARG_ENABLE([format_epm],
 AS_IF([test "x$enable_format_epm" = "xyes"],
         [AC_DEFINE(HAVE_FORMAT_EPM, [1], [Define if EPM format is enabled])])
 
-AM_CONDITIONAL([IS_HG_REPO], [hg parents])
+AM_CONDITIONAL([IS_GIT_REPO], [test -d '.git'])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

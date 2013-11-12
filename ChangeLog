@@ -1,3 +1,41 @@
+This file contains information about the changes done to
+the CRC-DabMux in this repository
+
+2013-11-10: Matthias P. Braendli <matthias@mpb.li>
+	(tag r8):
+	* crc-dabmux:
+		Some configuration parsing and logging fixes.
+		Replaced the C-style function dispatching for the outputs
+		by C++ objects with inheritance.
+		Added support for ZeroMQ ETI output.
+		ZeroMQ dependency added in configure.ac
+		Versioning changed to make hg revision visible
+		Completed READMEs and INSTALLs
+
+2012-09-13: Matthias P. Braendli <matthias@mpb.li>
+	(tag r7):
+	* crc-dabmux/src/*:
+		Added shortlabel support to configuration file
+		Added Boost version check into autoconf
+
+2012-08-26: Matthias P. Braendli <matthias@mpb.li>
+	(tag r6):
+	* crc-dabmux/src/DabMux.h:
+		Added missing file DabMux.h
+
+2012-08-23: Matthias P. Braendli <matthias@mpb.li>
+	(tag r5):
+	* crc-dabmux/*:
+		Refactoring command line handling for crc-dabmux,
+		added configuration file parser including example.
+		When the program is called as CRC-DabMux-cfg, it reads
+		the Ensemble definition from a file rather than from
+		the command line. An example file is in doc/
+		DabMux now depends on Boost.
+
+2012-08-17: Matthias P. Braendli <matthias@mpb.li>
+	(tags r4, r3, r2 and r1 were relevant to crc-dabmod in the old repository)
+
 2011-05-24  Pascal Charest  <pascal.charest@crc.ca>
 
     * src/DabMux.cpp:   Changed for more precise messages.
@@ -19,6 +57,8 @@
 
 Copyright (C) 2010,2011 Her Majesty the Queen in Right of Canada
 (Communications Research Center Canada)
+
+Copyright (C) 2013 Matthias P. Braendli, http://mpb.li
 
 This file is part of CRC-DabMux.
 

@@ -24,22 +24,56 @@
    along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 #include "config.h"
+#include "crc.h"
 #include "AFPacket.h"
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include <arpa/inet.h>
 
-std::vector<uint8_t> AFPacket::Assemble()
+// Header PT field. AF packet contains TAG payload
+#define AFHEADER_PT_TAG 'T'
+
+// AF Packet Major (3 bits) and Minor (4 bits) version
+#define AFHEADER_VERSION 0x8 // MAJ=1, MIN=0
+
+std::vector<uint8_t> AFPacket::Assemble(char protocol_type, std::vector<uint8_t> payload)
 {
-    header.sync = 'A' << 8 | 'F';
-    header.seq = 0;
-    header.ar_cf = 0;
     header.ar_maj = 1;
     header.ar_min = 0;
-    header.pt = 'T';
+    header.pt = protocol_type;
 
-    std::string pack_data("Nothingyetpleasecomelater");
+    std::string pack_data("AF"); // SYNC
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
+
+    uint32_t taglength = payload.size();
+
+    // write length into packet
+    packet[2] = (taglength >> 24) & 0xFF;
+    packet[3] = (taglength >> 16) & 0xFF;
+    packet[4] = (taglength >> 8) & 0xFF;
+    packet[5] = taglength & 0xFF;
+
+    // fill rest of header
+    packet.push_back(seq >> 8);
+    packet.push_back(seq & 0xFF);
+    packet.push_back((have_crc ? 0x80 : 0) | AFHEADER_VERSION); // ar_cf: CRC=1
+    packet.push_back(AFHEADER_PT_TAG);
+
+    // insert payload
+    packet.insert(packet.end(), payload.begin(), payload.end());
+
+    // calculate CRC over AF Header and payload
+    uint16_t crc = 0xffff;
+    crc = crc16(crc, &(packet.back()), packet.size());
+    crc ^= 0xffff;
+    crc = htons(crc);
+
+    packet.push_back((crc >> 24) & 0xFF);
+    packet.push_back((crc >> 16) & 0xFF);
+    packet.push_back((crc >> 8) & 0xFF);
+    packet.push_back(crc & 0xFF);
+
     return packet;
 }
 

@@ -49,11 +49,13 @@ class AFPacket
     public:
         AFPacket();
 
-        std::vector<uint8_t> Assemble();
+        std::vector<uint8_t> Assemble(char protocol_type, std::vector<uint8_t> payload);
 
     private:
+        static const bool have_crc = true;
+
         AFHeader header;
-        std::vector<uint8_t> packet_;
+        uint16_t seq; //counter that overflows at 0xFFFF
 };
 
 #endif

@@ -58,7 +58,8 @@ class TagDETI : public TagItem
             rfudf = 0;
             ficf = 0;
 
-            dflc = 0; // counter
+            rfa = 0; //shall be zero
+            rfu = 0; //mnsc is valid
         }
         std::vector<uint8_t> Assemble();
 
@@ -69,7 +70,9 @@ class TagDETI : public TagItem
         uint8_t fp;
         uint8_t rfa;
         uint8_t rfu;
-        uint8_t mnsc;
+        uint16_t mnsc;
+        uint8_t fcth;
+        uint8_t fct;
 
         // ATST (optional)
         bool atstf; // presence of atst data
@@ -86,8 +89,6 @@ class TagDETI : public TagItem
         bool rfudf;
         uint32_t rfud;
 
-    private:
-        uint32_t dflc; //modulo 5000 counter for each eti frame
 
 };
 

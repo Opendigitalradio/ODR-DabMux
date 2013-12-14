@@ -108,6 +108,7 @@ typedef DWORD32 uint32_t;
 
 
 #include "dabOutput/dabOutput.h"
+#include "dabOutput/edi/TagItems.h"
 #include "crc.h"
 #include "UdpSocket.h"
 #include "InetAddress.h"
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
 
     BaseRemoteController* rc = NULL;
 
-    unsigned int currentFrame;
+    unsigned long currentFrame;
     int returnCode = 0;
     int result;
     int cur;
@@ -639,6 +640,9 @@ int main(int argc, char *argv[])
         if ((limit > 0) && (currentFrame >= limit)) {
             break;
         }
+        // For EDI, save ETI(LI) Management data into a TAG Item DETI/*{{{*/
+        TagDETI tagDETI;
+        tagDETI.atstf = 0; // TODO add ATST support/*}}}*/
         date = getDabTime();
 
         // Initialise the ETI frame
@@ -651,7 +655,7 @@ int main(int argc, char *argv[])
         // See ETS 300 799 Clause 6
         eti_SYNC *etiSync = (eti_SYNC *) etiFrame;
 
-        etiSync->ERR = 0xFF; // ETS 300 799, 5.2, no error
+        etiSync->ERR = tagDETI.stat = 0xFF; // ETS 300 799, 5.2, no error
 
         //****** Field FSYNC *****//
         // See ETS 300 799, 6.2.1.2
@@ -670,11 +674,11 @@ int main(int argc, char *argv[])
 
         //****** FCT ******//
         // Incremente for each frame, overflows at 249
-        fc->FCT = currentFrame % 250;
+        fc->FCT = tagDETI.fct = currentFrame % 250;
 
         //****** FICF ******//
         // Fast Information Channel Flag, 1 bit, =1 if FIC present
-        fc->FICF = 1;
+        fc->FICF = tagDETI.ficf = 1;
 
         //****** NST ******//
         /* Number of audio of data sub-channels, 7 bits, 0-64.
@@ -687,11 +691,11 @@ int main(int argc, char *argv[])
         /* Frame Phase, 3 bit counter, tells the COFDM generator
          * when to insert the TII. Is also used by the MNSC.
          */
-        fc->FP = currentFrame & 0x7;
+        fc->FP = tagDETI.fp = currentFrame & 0x7;
 
         //****** MID ******//
         //Mode Identity, 2 bits, 01 ModeI, 10 modeII, 11 ModeIII, 00 ModeIV
-        fc->MID = ensemble->mode;      //mode 2 needs 3 FIB, 3*32octets = 96octets
+        fc->MID = tagDETI.mid = ensemble->mode;      //mode 2 needs 3 FIB, 3*32octets = 96octets
 
         //****** FL ******//
         /* Frame Length, 11 bits, nb of words(4 bytes) in STC, EOH and MST
@@ -785,6 +789,7 @@ int main(int argc, char *argv[])
                 break;
         }
 
+        tagDETI.mnsc = eoh->MNSC;
 
         //CRC Cyclic Redundancy Checksum du FC,  STC et MNSC, 2 octets
         nbBytesCRC = 4 + ((fc->NST) * 4) + 2;
@@ -1804,7 +1809,8 @@ int main(int argc, char *argv[])
             result = (*subchannel)->input->readFrame(
                     &etiFrame[index], sizeSubchannel);
             if (result < 0) {
-                etiLog.log(info, "Subchannel %d read failed at ETI frame number: %i\n", (*subchannel)->id, currentFrame);
+                etiLog.log(info, "Subchannel %d read failed at ETI frame number: %d\n",
+                        (*subchannel)->id, currentFrame);
             }
             index += sizeSubchannel;
         }

@@ -10,6 +10,10 @@ src/CRC-DabMux-cfg
 src/dabOutput/.deps/
 src/dabOutput/.dirstamp
 
+aclocal.m4
+build-aux
+configure
+Makefile.in
 Makefile
 autom4te.cache
 config.h
@@ -19,3 +23,7 @@ lib/Makefile
 src/Makefile
 stamp-h1
 config.h.in~
+
+cscope.out
+ctags
+tags

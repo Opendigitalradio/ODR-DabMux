@@ -175,7 +175,7 @@ AS_IF([test "x$enable_output_simul" = "xyes"],
 # ZeroMQ message queue
 AC_ARG_ENABLE([output_zeromq],
         [AS_HELP_STRING([--disable-output-zeromq], [Disable ZeroMQ output])],
-        [], [enable_output_zeromq=yes])
+        [], [enable_output_zeromq=no])
 AS_IF([test "x$enable_output_zeromq" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_ZEROMQ, [1], [Define if ZeroMQ output is enabled])],
         [AC_CHECK_LIB(zmq, zmq_init, ,[AC_MSG_ERROR([ZeroMQ libzmq is required])])])

@@ -30,7 +30,7 @@ endif
 FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
-if HAVE_OUTPUT_ZEROMQ_TEST
+if HAVE_ZEROMQ_TEST
 ZMQ_LIBS    =-lzmq
 else
 ZMQ_LIBS    =
@@ -58,6 +58,7 @@ CRC_DabMux_SOURCES  =DabMux.cpp \
                      dabInputSlip.h dabInputSlip.cpp \
                      dabInputTest.h dabInputTest.cpp \
                      dabInputUdp.h dabInputUdp.cpp \
+                     dabInputZmq.h dabInputZmq.cpp \
                      dabOutput/dabOutput.h \
                      dabOutput/dabOutputFile.cpp \
                      dabOutput/dabOutputFifo.cpp \

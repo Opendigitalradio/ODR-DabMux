@@ -61,6 +61,7 @@
 #include "dabInputRawFifo.h"
 #include "dabInputDmbFile.h"
 #include "dabInputDmbUdp.h"
+#include "dabInputZmq.h"
 #include "DabMux.h"
 
 
@@ -475,9 +476,24 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         } else if (strcmp(subchan->inputProto, "file") == 0) {
             subchan->operations = dabInputDabplusFileOperations;
 #endif // defined(HAVE_INPUT_FILE)
+#if defined(HAVE_INPUT_ZEROMQ)
+        }
+        else if (strcmp(subchan->inputProto, "tcp") == 0) {
+            subchan->operations = dabInputZmqOperations;
+        }
+        else if (strcmp(subchan->inputProto, "epmg") == 0) {
+            etiLog.printHeader(TcpLog::WARNING,
+                    "Using untested epmg:// zeromq input\n");
+            subchan->operations = dabInputZmqOperations;
+        }
+        else if (strcmp(subchan->inputProto, "ipc") == 0) {
+            etiLog.printHeader(TcpLog::WARNING,
+                    "Using untested ipc:// zeromq input\n");
+            subchan->operations = dabInputZmqOperations;
+#endif // defined(HAVE_INPUT_ZEROMQ)
         } else {
             stringstream ss;
-            ss << "Subchannel with uid " << subchanuid << 
+            ss << "Subchannel with uid " << subchanuid <<
                 ": Invalid protocol for DAB+ input (" <<
                 subchan->inputProto << ")" << endl;
             throw runtime_error(ss.str());

@@ -33,6 +33,7 @@ to the official one:
 - configuration file support, see doc/example.config
 - timestamping support required for SFN
 - a ZeroMQ ETI output that can be used with CRC-DABMOD
+- a ZeroMQ dabplus input that can be used with fdk-aac-dabplus-zmq
 
 The src/ directory contains the source code of CRC-DabMux.
 

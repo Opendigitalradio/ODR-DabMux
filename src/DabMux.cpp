@@ -1829,8 +1829,10 @@ EXIT:
         (*subchannel)->operations.clean(&(*subchannel)->data);
     }
     for (output = outputs.begin() ; output != outputs.end(); ++output) {
-        (*output)->output->Close();
-        delete ((*output)->output);
+        if ((*output)->output) {
+            (*output)->output->Close();
+            delete ((*output)->output);
+        }
     }
 
     for_each(ensemble->components.begin(), ensemble->components.end(), free);

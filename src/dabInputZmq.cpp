@@ -144,8 +144,10 @@ int dabInputZmqReadFrame(dabInputOperations* ops, void* args, void* buffer, int 
     }
     else
     {
-        memcpy(buffer, input->frame_buffer.front(), size);
+        char* newframe = input->frame_buffer.front();
+        memcpy(buffer, newframe, size);
         etiLog.print(TcpLog::NOTICE, "inputZMQ got %d, %d\n", rc, input->frame_buffer.size());
+        delete[] newframe;
         input->frame_buffer.pop_front();
         return size;
     }

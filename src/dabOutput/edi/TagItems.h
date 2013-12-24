@@ -82,7 +82,7 @@ class TagDETI : public TagItem
 
         // the FIC (optional)
         bool ficf;
-        const char* fic_data;
+        const unsigned char* fic_data;
         size_t fic_length;
 
         // rfu

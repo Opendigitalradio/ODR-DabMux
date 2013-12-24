@@ -3,9 +3,7 @@
    http://mpb.li
 
    EDI output.
-    This implements an AF Packet as defined ETSI TS 102 821.
-    Also see ETSI TS 102 693
-
+    This defines a TAG Packet.
    */
 /*
    This file is part of CRC-DabMux.
@@ -24,45 +22,37 @@
    along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _AFPACKET_H_
-#define _AFPACKET_H_
-
 #include "config.h"
-#include <vector>
-#include <stdint.h>
-#include "TagItems.h"
+#include "Eti.h"
 #include "TagPacket.h"
-#define PACKED __attribute__ ((packed))
+#include "TagItems.h"
+#include <vector>
+#include <string>
+#include <list>
+#include <stdint.h>
 
-#define EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS ('T')
 
-// ETSI TS 102 821, 6.1 AF packet structure
-struct AFHeader
+std::vector<uint8_t> TagPacket::Assemble()
 {
-    uint16_t sync;
-    uint32_t len;
-    uint16_t seq;
-    uint8_t  ar_cf:1;
-    uint8_t  ar_maj:3;
-    uint8_t  ar_min:4;
-    uint8_t  pt;
-} PACKED;
+    std::list<TagItem*>::iterator tag;
 
-class AFPacket
-{
-    public:
-        AFPacket(char protocolType) : protocol_type(protocolType) {};
+    std::vector<uint8_t> packet;
 
-        std::vector<uint8_t> Assemble(TagPacket tag_packet);
+    size_t packet_length = 0;
+    for (tag = tag_items.begin(); tag != tag_items.end(); ++tag) {
+        std::vector<uint8_t> tag_data = (*tag)->Assemble();
+        packet.insert(packet.end(), tag_data.begin(), tag_data.end());
 
-    private:
-        static const bool have_crc = true;
+        packet_length += tag_data.size();
+    }
 
-        AFHeader header;
-        uint16_t seq; //counter that overflows at 0xFFFF
+    // Add padding
+    while (packet_length % 8 > 0)
+    {
+        packet.push_back(0); // TS 102 821, 5.1, "padding shall be undefined"
+        packet_length++;
+    }
 
-        char protocol_type;
-};
-
-#endif
+    return packet;
+}
 

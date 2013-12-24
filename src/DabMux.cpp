@@ -27,6 +27,8 @@
 #   include "config.h"
 #endif
 
+#define EDI_DEBUG 1
+
 #include <cstdio>
 #include <stdlib.h>
 #include <iostream>
@@ -43,8 +45,11 @@
 // for basename
 #include <libgen.h>
 
+#include <iterator>
 #include <vector>
+#include <list>
 #include <set>
+#include <map>
 #include <functional>
 #include <algorithm>
 
@@ -109,6 +114,8 @@ typedef DWORD32 uint32_t;
 
 #include "dabOutput/dabOutput.h"
 #include "dabOutput/edi/TagItems.h"
+#include "dabOutput/edi/TagPacket.h"
+#include "dabOutput/edi/AFPacket.h"
 #include "crc.h"
 #include "UdpSocket.h"
 #include "InetAddress.h"
@@ -635,14 +642,30 @@ int main(int argc, char *argv[])
 
 
     /*   Each iteration of the main loop creates one ETI frame */
+#if EDI_DEBUG
+    std::ofstream edi_debug_file("./edi.debug");
+#endif
 
     for (currentFrame = 0; running; currentFrame++) {
         if ((limit > 0) && (currentFrame >= limit)) {
             break;
         }
-        // For EDI, save ETI(LI) Management data into a TAG Item DETI/*{{{*/
-        TagDETI tagDETI;
-        tagDETI.atstf = 0; // TODO add ATST support/*}}}*/
+
+        // For EDI, save ETI(LI) Management data into a TAG Item DETI
+        TagDETI edi_tagDETI;
+        TagStarPTR edi_tagStarPtr;
+        list<TagESTn> edi_subchannels;
+        map<dabSubchannel*, TagESTn*> edi_subchannelToTag;
+
+        // The above Tag Items will be assembled into a TAG Packet
+        TagPacket edi_tagpacket;
+
+        // The TagPacket will then be placed into an AFPacket
+        AFPacket edi_afPacket(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
+
+        edi_tagDETI.atstf = 0; // TODO add ATST support
+
+
         date = getDabTime();
 
         // Initialise the ETI frame
@@ -655,7 +678,7 @@ int main(int argc, char *argv[])
         // See ETS 300 799 Clause 6
         eti_SYNC *etiSync = (eti_SYNC *) etiFrame;
 
-        etiSync->ERR = tagDETI.stat = 0xFF; // ETS 300 799, 5.2, no error
+        etiSync->ERR = edi_tagDETI.stat = 0xFF; // ETS 300 799, 5.2, no error
 
         //****** Field FSYNC *****//
         // See ETS 300 799, 6.2.1.2
@@ -674,11 +697,11 @@ int main(int argc, char *argv[])
 
         //****** FCT ******//
         // Incremente for each frame, overflows at 249
-        fc->FCT = tagDETI.fct = currentFrame % 250;
+        fc->FCT = edi_tagDETI.fct = currentFrame % 250;
 
         //****** FICF ******//
         // Fast Information Channel Flag, 1 bit, =1 if FIC present
-        fc->FICF = tagDETI.ficf = 1;
+        fc->FICF = edi_tagDETI.ficf = 1;
 
         //****** NST ******//
         /* Number of audio of data sub-channels, 7 bits, 0-64.
@@ -691,11 +714,11 @@ int main(int argc, char *argv[])
         /* Frame Phase, 3 bit counter, tells the COFDM generator
          * when to insert the TII. Is also used by the MNSC.
          */
-        fc->FP = tagDETI.fp = currentFrame & 0x7;
+        fc->FP = edi_tagDETI.fp = currentFrame & 0x7;
 
         //****** MID ******//
         //Mode Identity, 2 bits, 01 ModeI, 10 modeII, 11 ModeIII, 00 ModeIV
-        fc->MID = tagDETI.mid = ensemble->mode;      //mode 2 needs 3 FIB, 3*32octets = 96octets
+        fc->MID = edi_tagDETI.mid = ensemble->mode;      //mode 2 needs 3 FIB, 3*32octets = 96octets
 
         //****** FL ******//
         /* Frame Length, 11 bits, nb of words(4 bytes) in STC, EOH and MST
@@ -717,6 +740,7 @@ int main(int argc, char *argv[])
         /******* Section STC **************************************************/
         // Stream Characterization,
         //  number of channel * 4 octets = nb octets total
+        int edi_stream_id = 0;
         for (subchannel = ensemble->subchannels.begin();
                 subchannel != ensemble->subchannels.end();
                 ++subchannel) {
@@ -738,6 +762,17 @@ int main(int argc, char *argv[])
             //Sub-channel Stream Length, multiple de 64 bits 
             sstc->STL_high = getSizeDWord(*subchannel) / 256;
             sstc->STL_low = getSizeDWord(*subchannel) % 256;
+
+            TagESTn tag_ESTn(edi_stream_id++);
+            tag_ESTn.scid = (*subchannel)->id;
+            tag_ESTn.sad = (*subchannel)->startAddress;
+            tag_ESTn.tpl = sstc->TPL;
+            tag_ESTn.rfa = 0; // two bits
+            tag_ESTn.mst_length = getSizeByte(*subchannel) / 8;
+            assert(getSizeByte(*subchannel) % 8 == 0);
+
+            edi_subchannels.push_back(tag_ESTn);
+            edi_subchannelToTag[*subchannel] = &tag_ESTn;
             index += 4;
         }
 
@@ -789,7 +824,7 @@ int main(int argc, char *argv[])
                 break;
         }
 
-        tagDETI.mnsc = eoh->MNSC;
+        edi_tagDETI.mnsc = eoh->MNSC;
 
         //CRC Cyclic Redundancy Checksum du FC,  STC et MNSC, 2 octets
         nbBytesCRC = 4 + ((fc->NST) * 4) + 2;
@@ -803,6 +838,8 @@ int main(int argc, char *argv[])
         // Main Stream Data, si FICF=1 alors les 96 ou 128 premiers octets
         // transportent le FIC selon le mode
         index = ((fc->NST) + 2 + 1) * 4;
+        edi_tagDETI.fic_data = &etiFrame[index];
+        edi_tagDETI.fic_length = FICL;
 
         //Insertion du FIC
         FIGtype0* fig0;
@@ -1805,13 +1842,21 @@ int main(int argc, char *argv[])
         for (subchannel = ensemble->subchannels.begin();
                 subchannel != ensemble->subchannels.end();
                 ++subchannel) {
+
+            TagESTn* tag = edi_subchannelToTag[*subchannel];
+
             int sizeSubchannel = getSizeByte(*subchannel);
             result = (*subchannel)->input->readFrame(
                     &etiFrame[index], sizeSubchannel);
+
             if (result < 0) {
                 etiLog.log(info, "Subchannel %d read failed at ETI frame number: %d\n",
                         (*subchannel)->id, currentFrame);
             }
+
+            // save pointer to Audio or Data Stream into correct TagESTn for EDI
+            tag->mst_data = &etiFrame[index];
+
             index += sizeSubchannel;
         }
 
@@ -1883,7 +1928,30 @@ int main(int argc, char *argv[])
         dumpBytes(dumpData, sizeSubChannel, stderr);
 #endif // DUMP_BRIDGE
 
+        /********************************************************************** 
+         ***********   Finalise EDI   *****************************************
+         **********************************************************************/
+
+        // put all tags into one TagPacket
+        edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
+        edi_tagpacket.tag_items.push_back(&edi_tagDETI);
+
+        list<TagESTn>::iterator tag;
+        for (tag = edi_subchannels.begin(); tag != edi_subchannels.end(); ++tag) {
+            edi_tagpacket.tag_items.push_back(&(*tag));
+        }
+
+        vector<uint8_t> edi_afpacketData = edi_afPacket.Assemble(edi_tagpacket);
+
+#if EDI_DEBUG
+        std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+        std::copy(edi_afpacketData.begin(), edi_afpacketData.end(), debug_iterator);
+#endif
+
 #if _DEBUG
+        /********************************************************************** 
+         ***********   Output a small message *********************************
+         **********************************************************************/
         if (currentFrame % 100 == 0) {
             if (enableTist) {
                 etiLog.log(info, "ETI frame number %i Timestamp: %d + %f\n",

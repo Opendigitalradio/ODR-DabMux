@@ -26,6 +26,8 @@
 #include "config.h"
 #include "crc.h"
 #include "AFPacket.h"
+#include "TagItems.h"
+#include "TagPacket.h"
 #include <vector>
 #include <string>
 #include <stdint.h>
@@ -37,8 +39,10 @@
 // AF Packet Major (3 bits) and Minor (4 bits) version
 #define AFHEADER_VERSION 0x8 // MAJ=1, MIN=0
 
-std::vector<uint8_t> AFPacket::Assemble(char protocol_type, std::vector<uint8_t> payload)
+std::vector<uint8_t> AFPacket::Assemble(TagPacket tag_packet)
 {
+    std::vector<uint8_t> payload = tag_packet.Assemble();
+
     header.ar_maj = 1;
     header.ar_min = 0;
     header.pt = protocol_type;
@@ -60,7 +64,7 @@ std::vector<uint8_t> AFPacket::Assemble(char protocol_type, std::vector<uint8_t>
     packet.push_back((have_crc ? 0x80 : 0) | AFHEADER_VERSION); // ar_cf: CRC=1
     packet.push_back(AFHEADER_PT_TAG);
 
-    // insert payload
+    // insert payload, must have a length multiple of 8 bytes
     packet.insert(packet.end(), payload.begin(), payload.end());
 
     // calculate CRC over AF Header and payload

@@ -3,9 +3,7 @@
    http://mpb.li
 
    EDI output.
-    This implements an AF Packet as defined ETSI TS 102 821.
-    Also see ETSI TS 102 693
-
+    This defines a TAG Packet.
    */
 /*
    This file is part of CRC-DabMux.
@@ -24,44 +22,29 @@
    along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _AFPACKET_H_
-#define _AFPACKET_H_
+#ifndef _TAGPACKET_H_
+#define _TAGPACKET_H_
 
 #include "config.h"
+#include "Eti.h"
 #include <vector>
+#include <string>
+#include <list>
 #include <stdint.h>
-#include "TagItems.h"
-#include "TagPacket.h"
-#define PACKED __attribute__ ((packed))
 
-#define EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS ('T')
 
-// ETSI TS 102 821, 6.1 AF packet structure
-struct AFHeader
-{
-    uint16_t sync;
-    uint32_t len;
-    uint16_t seq;
-    uint8_t  ar_cf:1;
-    uint8_t  ar_maj:3;
-    uint8_t  ar_min:4;
-    uint8_t  pt;
-} PACKED;
 
-class AFPacket
+// A TagPacket is nothing else than a list of tag items, with an
+// Assemble function that puts the bytestream together and adds
+// padding such that the total length is a multiple of 8 Bytes.
+//
+// ETSI TS 102 821, 5.1 Tag Packet
+class TagPacket
 {
     public:
-        AFPacket(char protocolType) : protocol_type(protocolType) {};
+        std::vector<uint8_t> Assemble();
 
-        std::vector<uint8_t> Assemble(TagPacket tag_packet);
-
-    private:
-        static const bool have_crc = true;
-
-        AFHeader header;
-        uint16_t seq; //counter that overflows at 0xFFFF
-
-        char protocol_type;
+        std::list<TagItem*> tag_items;
 };
 
 #endif

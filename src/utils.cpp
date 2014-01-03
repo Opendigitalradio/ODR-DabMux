@@ -124,6 +124,11 @@ void printUsage(char *name, FILE* out)
     fprintf(out, "NAME\n");
     fprintf(out, "  %s - A software DAB multiplexer\n", name);
     fprintf(out, "\nSYNOPSYS\n");
+    fprintf(out, "    You can use either a configuration file, or the command line arguments\n");
+    fprintf(out, "    With external configuration file:\n");
+    fprintf(out, "  %s -e configuration.mux\n", name);
+    fprintf(out, "    See doc/example.config for an example format for the configuration file\n");
+    fprintf(out, "    With command line arguments:\n");
     fprintf(out, "  %s"
             " [ensemble]"
             " [subchannel1 subchannel2 ...]"
@@ -170,7 +175,7 @@ void printUsage(char *name, FILE* out)
             "\n");
     fprintf(out, "\nDESCRIPTION\n");
     fprintf(out,
-            "  %s  is  a  software  multiplexer  that generates an ETI stream from\n"
+            "  %s  is a software multiplexer that generates an ETI stream from\n"
             "  audio and data streams. Because of  its  software  based  architecture,\n"
             "  many  typical DAB services can be generated and multiplexed on a single\n"
             "  PC platform with live or pre-recorded sources.\n"
@@ -267,15 +272,6 @@ void printUsage(char *name, FILE* out)
             "scheme://[address][:port][/name]\n"
             "                         where scheme is (raw|udp|tcp|file|fifo|simul)\n"
            );
-}
-
-void printUsageConfigfile(char *name, FILE* out)
-{
-    fprintf(out, "NAME\n");
-    fprintf(out, "  %s - A software DAB multiplexer\n", name);
-    fprintf(out, "\nSYNOPSYS\n");
-    fprintf(out, "  %s configfile\n\n", name);
-    fprintf(out, "See doc/example.config for an example format for the configuration file");
 }
 
 void printOutputs(vector<dabOutput*>& outputs)

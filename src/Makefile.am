@@ -91,13 +91,3 @@ CRC_BridgeTest_CFLAGS   =-DBRIDGE_TEST
 CRC_BridgeTest_SOURCES  =bridge.c \
                          crc.c crc.h
 
-CRC-DabMux-cfg: CRC-DabMux
-	@echo "Copying CRC-DabMux to CRC-DabMux-cfg that reads ensemble config file"
-	cp CRC-DabMux CRC-DabMux-cfg
-
-.PHONY: CRC-DabMux-cfg
-
-all: CRC-DabMux-cfg all-am
-
-clean-local:
-	rm -f CRC-DabMux-cfg

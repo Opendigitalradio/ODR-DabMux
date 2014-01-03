@@ -321,18 +321,15 @@ int main(int argc, char *argv[])
 
     bool MNSC_increment_time = false;
 
-    /* TODO Okay, this is clearly not the nicest way to handle the two
-     * ways of defining the ensemble, but it works.
-     */
-    if (strncmp(basename(argv[0]), "CRC-DabMux-cfg", 16) == 0) {
+    if (strncmp(argv[1], "-e", 2) == 0) { // use external config file
         try {
 
-            if (argc != 2) {
-                printUsageConfigfile(argv[0]);
+            if (argc != 3) {
+                printUsage(argv[0], stderr);
                 goto EXIT;
             }
 
-            string conf_file = argv[1];
+            string conf_file = argv[2];
 
             parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
                     &factumAnalyzer, &limit);

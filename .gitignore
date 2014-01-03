@@ -28,3 +28,4 @@ config.h.in
 cscope.out
 ctags
 tags
+.clang_complete

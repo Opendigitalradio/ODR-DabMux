@@ -2,11 +2,18 @@
 .\" groff -t -man -Tascii DabMux.1
 .\" groff -t -man DabMux.1 > DabMux.ps
 .\"
-.TH CRC-DABMUX 1 "2006-2010" "\(co Communications Research Centre Canada" "User Manual"
+.TH CRC-DABMUX 1 "2006-2014" "\(co Communications Research Centre Canada and Matthias P. Braendli" "User Manual"
 .SH NAME
 crc-dabmux \- A software DAB multiplexer
 
 .SH SYNOPSIS
+crc-dabmux can be used in two ways: either with command line options, or with an external configuration file.
+It is not possible to use both simultaneously.
+.SS External Configuration File:
+.B  crc-dabmux -e config-file.mux
+
+An example configuration file with explanations is located in doc/
+.SS Configuration Through Command-Line Arguments:
 .B  crc-dabmux
 .BI [ ensemble ]
 .BI [ "subchannel1 subchannel2 ..." ]
@@ -580,5 +587,7 @@ ETSI: TS 102 427 V1.1.1 (July 2005).
 .I Digital Audio Broadcasting (DAB);
 .I Data Broadcasting - MPEG-2 TS streaming
 
-.SH AUTHOR
+.SH AUTHORS
 Pascal Charest <pascal (dot) charest (at) crc (dot) ca>
+
+Matthias P. Braendli <matthias (at) mpb (dot) li>

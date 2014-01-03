@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013,
+   Copyright (C) 2013,2014
    Matthias P. Braendli, http://mpb.li, matthias.braendli@mpb.li
    */
 /*
@@ -53,7 +53,7 @@ void header_message()
             "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n"
             "Her Majesty the Queen in Right of Canada,\n"
             "(Communications Research Centre Canada) All rights reserved.\n\n"
-            "Copyright (C) 2013\nMatthias P. Braendli, http://mpb.li\n\n");
+            "Copyright (C) 2013,2014\nMatthias P. Braendli, http://mpb.li\n\n");
     etiLog.printHeader(TcpLog::INFO, "Input URLs supported:");
 #if defined(HAVE_INPUT_PRBS)
     etiLog.printHeader(TcpLog::INFO, " prbs");

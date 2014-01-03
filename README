@@ -3,7 +3,7 @@ LICENSING
 Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty
 the Queen in Right of Canada (Communications Research Center Canada)
 
-Copyright (C) 2013
+Copyright (C) 2013, 2014
 Matthias P. Braendli, http://mpb.li
 
 This file is part of CRC-DabMux.
@@ -30,7 +30,7 @@ ETSI EN 300 401.
 
 This version has been modified, and contains additional features compared
 to the official one:
-- configuration file support, see doc/example.config
+- configuration file support, see doc/example.mux
 - timestamping support required for SFN
 - a ZeroMQ ETI output that can be used with CRC-DABMOD
 - a ZeroMQ dabplus input that can be used with fdk-aac-dabplus-zmq

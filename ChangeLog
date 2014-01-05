@@ -1,6 +1,12 @@
 This file contains information about the changes done to
 the CRC-DabMux in this repository
 
+2014-01-05: Matthias P. Braendli <matthias@mpb.li>
+	(tag r10):
+	* crc-dabmux:
+		Add ZeroMQ input, compatible with fdk-aac-dabplus-zmq
+		Replace CRC-DabMux-cfg with -e option
+
 2013-12-14: Matthias P. Braendli <matthias@mpb.li>
 	(tag r9):
 	* autotools:

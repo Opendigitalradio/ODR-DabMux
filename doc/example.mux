@@ -86,7 +86,12 @@ subchannels {
     }
     rick {
         type dabplus
-        inputfile "rick.dabp"
+        ; example file input
+        ;inputfile "rick.dabp"
+        ; example zmq input:
+        ; accept connections to port 9000 from any interface
+        ; use fdk-aac-dabplus-zmq as encoder
+        inputfile "tcp://*:9000"
         nonblock false
         bitrate 96
         id 1

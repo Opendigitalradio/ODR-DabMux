@@ -97,7 +97,7 @@ int dabInputZmqOpen(void* args, const char* inputUri)
     dabInputZmqData* input = (dabInputZmqData*)args;
 
     std::string uri = "tcp://" + std::string(inputUri);
-    int connect_error = zmq_connect(input->zmq_sock, uri.c_str());
+    int connect_error = zmq_bind(input->zmq_sock, uri.c_str());
 
     if (connect_error < 0) {
         etiLog.print(TcpLog::ERR,  "Failed to connect socket to uri '%s': %s\n", uri.c_str(), zmq_strerror(errno));

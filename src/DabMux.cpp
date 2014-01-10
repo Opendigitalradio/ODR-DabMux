@@ -1729,7 +1729,7 @@ int main(int argc, char *argv[])
                 (*subchannel)->operations.unlock((*subchannel)->data);
             }
             if (result < 0) {
-                etiLog.print(TcpLog::INFO, "ETI frame number: %i\n", currentFrame);
+                etiLog.print(TcpLog::INFO, "Subchannel %d read failed at ETI frame number: %i\n", (*subchannel)->id, currentFrame);
             }
             index += sizeSubchannel;
         }
@@ -1802,6 +1802,7 @@ int main(int argc, char *argv[])
         dumpBytes(dumpData, sizeSubChannel, stderr);
 #endif // DUMP_BRIDGE
 
+#if _DEBUG
         if (currentFrame % 100 == 0) {
             if (enableTist) {
                 etiLog.print(TcpLog::INFO, "ETI frame number %i Timestamp: %d + %f\n",
@@ -1813,6 +1814,7 @@ int main(int argc, char *argv[])
                         currentFrame, mnsc_time.tv_sec);
             }
         }
+#endif
     }
 
 EXIT:

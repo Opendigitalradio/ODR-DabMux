@@ -1,8 +1,9 @@
 # Copyright (C) 2008, 2009,2012 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
+# Pascal Charest
 #
-# Pascal Charest and 
-# Matthias P. Braendli
+# Copyright (C) 2014, Matthias P. Braendli, http://mpb.li
+#
 
 # This file is part of CRC-DabMux.
 # 
@@ -19,7 +20,7 @@
 # You should have received a copy of the GNU General Public License
 # along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
-bin_PROGRAMS=CRC-DabMux CRC-BridgeTest
+bin_PROGRAMS=crc-dabmux crc-bridgetest
 
 if IS_GIT_REPO
 GITVERSION_FLAGS = -DGITVERSION="\"-`git describe --long --tags`\""
@@ -36,9 +37,9 @@ else
 ZMQ_LIBS    =
 endif
 
-CRC_DabMux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
-CRC_DabMux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread
-CRC_DabMux_SOURCES  =DabMux.cpp \
+crc_dabmux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
+crc_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread
+crc_dabmux_SOURCES  =DabMux.cpp \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
                      dabInputDabplusFifo.h dabInputDabplusFifo.cpp \
@@ -87,7 +88,7 @@ CRC_DabMux_SOURCES  =DabMux.cpp \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp
 
-CRC_BridgeTest_CFLAGS   =-DBRIDGE_TEST
-CRC_BridgeTest_SOURCES  =bridge.c \
+crc_bridgetest_CFLAGS   =-DBRIDGE_TEST
+crc_bridgetest_SOURCES  =bridge.c \
                          crc.c crc.h
 

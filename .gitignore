@@ -4,9 +4,8 @@
 .*.swp
 .directory
 
-src/CRC-BridgeTest
-src/CRC-DabMux
-src/CRC-DabMux-cfg
+src/crc-bridgetest
+src/crc-dabmux
 src/dabOutput/.deps/
 src/dabOutput/.dirstamp
 

@@ -117,10 +117,16 @@ int dabInputZmqOpen(void* args, const char* inputUri)
 
 int dabInputZmqReadFrame(dabInputOperations* ops, void* args, void* buffer, int size)
 {
+    int rc;
     dabInputZmqData* input = (dabInputZmqData*)args;
 
     // Get new ZMQ messages
-    int rc = dabInputZmqReadFromSocket(input, size);
+    if (input->frame_buffer.size() < INPUT_ZMQ_MAX_BUFFER_SIZE) {
+        rc = dabInputZmqReadFromSocket(input, size);
+    }
+    else {
+        rc = 0;
+    }
 
     if (input->prebuffering > 0) {
         if (rc > 0)
@@ -174,8 +180,8 @@ int dabInputZmqReadFromSocket(dabInputZmqData* input, int framesize)
     if (nBytes == 5*framesize) // five frames per superframe
     {
         if (input->frame_buffer.size() > INPUT_ZMQ_MAX_BUFFER_SIZE) {
-            etiLog.print(TcpLog::WARNING, "inputZMQ %s input buffer, full, dropping frame !\n",
-                input->uri.c_str());
+            etiLog.print(TcpLog::WARNING, "inputZMQ %s input buffer full (%d), dropping frame !\n",
+                input->frame_buffer.size(), input->uri.c_str());
             nBytes = 0;
 
             // we actually drop 2 frames

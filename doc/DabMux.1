@@ -112,7 +112,7 @@ number of frames to produce (default: infinite)
 .
 .TP
 .B -o
-turn on log facility on TCP port 12222
+enable logging to syslog
 .
 .TP
 .B -V
@@ -478,13 +478,9 @@ Example:
 This scheme is an simulation output. Drop the stream and add a 24 ms delay between each write operation.
 
 .SS LOGS
-Output logs can be accessed through TCP socket on port 12222. Use option
+Output logs can be sent to syslog, to facility LOCAL0 with identificator CRC-DABMUX. Use
 .RB ( -o )
-to turn on LOGS. Every line start with
-.RI < prio >
-, where
-.I prio
-is the message priority. Priority codes can be found in the following table.
+to turn the logging to syslog on. Priority codes can be found in the following table.
 .TS
 tab(&), box;
 | c | c | c |

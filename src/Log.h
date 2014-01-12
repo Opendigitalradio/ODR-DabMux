@@ -38,11 +38,15 @@
 #include <list>
 #include <stdexcept>
 #include <string>
+#include <map>
 
 #define SYSLOG_IDENT "CRC-DABMUX"
 #define SYSLOG_FACILITY LOG_LOCAL0
 
 enum log_level_t {debug = 0, info, warn, error, alert, emerg};
+
+const std::string levels_as_str[] =
+    { "     ", "     ", "WARN ", "ERROR", "ALERT", "EMERG"} ;
 
 /** Abstract class all backends must inherit from */
 class LogBackend {

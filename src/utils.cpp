@@ -54,68 +54,69 @@ void header_message()
             "Her Majesty the Queen in Right of Canada,\n"
             "(Communications Research Centre Canada) All rights reserved.\n\n"
             "Copyright (C) 2013,2014\nMatthias P. Braendli, http://mpb.li\n\n");
-    etiLog.log(info, "Input URLs supported:");
+
+    etiLog.level(info) << "Input URLs supported:" <<
 #if defined(HAVE_INPUT_PRBS)
-    etiLog.log(info, " prbs");
+    " prbs" <<
 #endif
 #if defined(HAVE_INPUT_TEST)
-    etiLog.log(info, " test");
+    " test" <<
 #endif
 #if defined(HAVE_INPUT_SLIP)
-    etiLog.log(info, " slip");
+    " slip" <<
 #endif
 #if defined(HAVE_INPUT_UDP)
-    etiLog.log(info, " udp");
+    " udp" <<
 #endif
 #if defined(HAVE_INPUT_FIFO)
-    etiLog.log(info, " fifo");
+    " fifo" <<
 #endif
 #if defined(HAVE_INPUT_FILE)
-    etiLog.log(info, " file");
+    " file" <<
 #endif
-    etiLog.log(info, "\n");
+    "\n";
 
-    etiLog.log(info, "Inputs format supported:");
+    etiLog.level(info) << "Inputs format supported:"
 #if defined(HAVE_FORMAT_RAW)
-    etiLog.log(info, " raw");
+    " raw" <<
 #endif
 #if defined(HAVE_FORMAT_BRIDGE)
-    etiLog.log(info, " bridge");
+    " bridge" <<
 #endif
 #if defined(HAVE_FORMAT_MPEG)
-    etiLog.log(info, " mpeg");
+    " mpeg" <<
 #endif
 #if defined(HAVE_FORMAT_PACKET)
-    etiLog.log(info, " packet");
+    " packet" <<
 #endif
 #if defined(HAVE_FORMAT_DMB)
-    etiLog.log(info, " dmb");
+    " dmb" <<
 #endif
 #if defined(HAVE_FORMAT_EPM)
-    etiLog.log(info, " epm");
+    " epm" <<
 #endif
-    etiLog.log(info, "\n");
+    "\n";
 
-    etiLog.log(info, "Output URLs supported:");
+    etiLog.level(info) << "Output URLs supported:"
 #if defined(HAVE_OUTPUT_FILE)
-    etiLog.log(info, " file");
+    " file" <<
 #endif
 #if defined(HAVE_OUTPUT_FIFO)
-    etiLog.log(info, " fifo");
+    " fifo" <<
 #endif
 #if defined(HAVE_OUTPUT_UDP)
-    etiLog.log(info, " udp");
+    " udp" <<
 #endif
 #if defined(HAVE_OUTPUT_TCP)
-    etiLog.log(info, " tcp");
+    " tcp" <<
 #endif
 #if defined(HAVE_OUTPUT_RAW)
-    etiLog.log(info, " raw");
+    " raw" <<
 #endif
 #if defined(HAVE_OUTPUT_SIMUL)
-    etiLog.log(info, " simul");
+    " simul" <<
 #endif
-    etiLog.log(info, "\n\n");
+    "\n\n";
 
 }
 
@@ -302,9 +303,12 @@ void printServices(vector<dabService*>& services)
         etiLog.log(info, "Service       %i\n", index);
         etiLog.log(info, " label:       %s\n", label);
         etiLog.log(info, " short label: ");
-        for (int i = 0; i < 32; ++i) {
-            if ((*current)->label.flag & 0x8000 >> i) {
-                etiLog.log(info, "%c", (*current)->label.text[i]);
+        {
+            LogLine line = etiLog.level(info);
+            for (int i = 0; i < 32; ++i) {
+                if ((*current)->label.flag & 0x8000 >> i) {
+                    line << (*current)->label.text[i];
+                }
             }
         }
         etiLog.log(info, " (0x%x)\n", (*current)->label.flag);
@@ -346,9 +350,12 @@ void printComponent(dabComponent* component)
     etiLog.log(info, " label:                  %s\n",
             label);
     etiLog.log(info, " short label:            ");
-    for (int i = 0; i < 32; ++i) {
-        if (component->label.flag & 0x8000 >> i) {
-            etiLog.log(info, "%c", component->label.text[i]);
+    {
+        LogLine line = etiLog.level(info);
+        for (int i = 0; i < 32; ++i) {
+            if (component->label.flag & 0x8000 >> i) {
+                line << component->label.text[i];
+            }
         }
     }
     etiLog.log(info, " (0x%x)\n", component->label.flag);
@@ -440,10 +447,13 @@ void printEnsemble(dabEnsemble* ensemble)
     etiLog.log(info, " ecc:         0x%x (%u)\n",
             ensemble->ecc, ensemble->ecc);
     etiLog.log(info, " label:       %s\n", label);
-    etiLog.log(info, " short label: ");
-    for (int i = 0; i < 32; ++i) {
-        if (ensemble->label.flag & 0x8000 >> i) {
-            etiLog.log(info, "%c", ensemble->label.text[i]);
+    {
+        LogLine line = etiLog.level(info);
+        line << " short label: ";
+        for (int i = 0; i < 32; ++i) {
+            if (ensemble->label.flag & 0x8000 >> i) {
+                line << ensemble->label.text[i];
+            }
         }
     }
     etiLog.log(info, " (0x%x)\n", ensemble->label.flag);

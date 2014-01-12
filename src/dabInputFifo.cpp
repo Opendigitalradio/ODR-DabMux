@@ -212,7 +212,7 @@ int dabInputFifoRead(void* args, void* buffer, int size)
         if (curSize == 0) {
             stats->empty = true;
         } else {
-            etiLog.print(TcpLog::WARNING, "Not enough data in FIFO buffer: (%i) %i/%i\n",
+            etiLog.log(warn, "Not enough data in FIFO buffer: (%i) %i/%i\n",
                     data->stats.id, curSize, size);
         }
         return 0;
@@ -292,31 +292,31 @@ int dabInputFifoLock(void* args) {
     stats->bufferRecords[stats->bufferCount].maxSize = maxSize;
 
     if (++stats->bufferCount == NB_RECORDS) {
-        etiLog.print(TcpLog::INFO, "FIFO buffer state: (%i)", stats->id);
+        etiLog.log(info, "FIFO buffer state: (%i)", stats->id);
         for (int i = 0; i < stats->bufferCount; ++i) {
-            etiLog.print(TcpLog::INFO, " %i/%i",
+            etiLog.log(info, " %i/%i",
                     stats->bufferRecords[i].curSize,
                     stats->bufferRecords[i].maxSize);
         }
-        etiLog.print(TcpLog::INFO, "\n");
+        etiLog.log(info, "\n");
 
         if (stats->full) {
-            etiLog.print(TcpLog::WARNING, "FIFO buffer full: (%i)\n",
+            etiLog.log(warn, "FIFO buffer full: (%i)\n",
                     data->stats.id);
             stats->full = false;
         }
         if (stats->empty) {
-            etiLog.print(TcpLog::WARNING, "FIFO buffer empty: (%i)\n",
+            etiLog.log(warn, "FIFO buffer empty: (%i)\n",
                     data->stats.id);
             stats->empty = false;
         }
         if (stats->error) {
-            etiLog.print(TcpLog::ERR, "FIFO input read error: (%i)\n",
+            etiLog.log(error, "FIFO input read error: (%i)\n",
                     data->stats.id);
             stats->error = false;
         }
         if (stats->input) {
-            etiLog.print(TcpLog::ERR, "FIFO input not connected: (%i)\n",
+            etiLog.log(error, "FIFO input not connected: (%i)\n",
                     data->stats.id);
             stats->input = false;
         }
@@ -352,7 +352,7 @@ int dabInputFifoClean(void** args)
 {
     dabInputFifoData* data = (dabInputFifoData*)*args;
     data->running = false;
-    etiLog.print(TcpLog::DBG, "Wait FIFO child...\n");
+    etiLog.log(debug, "Wait FIFO child...\n");
 #ifdef WIN32
     DWORD status;
     for (int i = 0; i < 5; ++i) {
@@ -363,16 +363,16 @@ int dabInputFifoClean(void** args)
     }
     TerminateThread(data->thread, 1);
     if (CloseHandle(data->thread) == 0) {
-        etiLog.print(TcpLog::DBG, "ERROR: Failed to close FIFO child thread\n");
+        etiLog.log(debug, "ERROR: Failed to close FIFO child thread\n");
     }
 #else
     if (data->thread != (pthread_t)NULL) {
         if (pthread_join(data->thread, NULL)) {
-            etiLog.print(TcpLog::DBG, "ERROR: FIFO child thread had not exit normally\n");
+            etiLog.log(debug, "ERROR: FIFO child thread had not exit normally\n");
         }
     }
 #endif
-    etiLog.print(TcpLog::DBG, "Done\n");
+    etiLog.log(debug, "Done\n");
 #ifdef _WIN32
     CloseHandle(data->semInfo);
     CloseHandle(data->semFull);

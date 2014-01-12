@@ -90,14 +90,14 @@ int dabInputBridgeUdpRead(dabInputOperations* ops, void* args, void* buffer, int
     }
 
     if (++stats->frameCount == NB_RECORDS) {
-        etiLog.print(TcpLog::INFO, "Data subchannel usage: (%i)",
+        etiLog.log(info, "Data subchannel usage: (%i)",
                 stats->id);
         for (int i = 0; i < stats->frameCount; ++i) {
-            etiLog.print(TcpLog::INFO, " %i/%i",
+            etiLog.log(info, " %i/%i",
                     stats->frameRecords[i].curSize,
                     stats->frameRecords[i].maxSize);
         }
-        etiLog.print(TcpLog::INFO, "\n");
+        etiLog.log(info, "\n");
         stats->frameCount = 0;
     }
     return size;

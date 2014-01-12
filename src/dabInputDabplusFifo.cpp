@@ -115,7 +115,7 @@ int dabInputDabplusFifoRead(void* args, void* buffer, int size)
         }
         data->bufferOffset += ret;
         if (data->bufferOffset != data->bufferSize) {
-            etiLog.print(TcpLog::CRIT, "ERROR: Incomplete DAB+ frame!\n");
+            etiLog.log(alert, "ERROR: Incomplete DAB+ frame!\n");
             return 0;
         }
     }

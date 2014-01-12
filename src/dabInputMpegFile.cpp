@@ -100,73 +100,73 @@ READ_SUBCHANNEL:
     }
     switch (result) {
     case MPEG_BUFFER_UNDERFLOW:
-        etiLog.print(TcpLog::WARNING, "data underflow -> frame muted\n");
+        etiLog.log(warn, "data underflow -> frame muted\n");
         goto MUTE_SUBCHANNEL;
     case MPEG_BUFFER_OVERFLOW:
-        etiLog.print(TcpLog::WARNING, "bitrate too high -> frame muted\n");
+        etiLog.log(warn, "bitrate too high -> frame muted\n");
         goto MUTE_SUBCHANNEL;
     case MPEG_FILE_EMPTY:
         if (rewind) {
-            etiLog.print(TcpLog::ERR, "file rewinded and still empty "
+            etiLog.log(error, "file rewinded and still empty "
                     "-> frame muted\n");
             goto MUTE_SUBCHANNEL;
         } else {
             rewind = true;
-            etiLog.print(TcpLog::NOTICE, "reach end of file -> rewinding\n");
+            etiLog.log(info, "reach end of file -> rewinding\n");
             lseek(data->file, 0, SEEK_SET);
             goto READ_SUBCHANNEL;
         }
     case MPEG_FILE_ERROR:
-        etiLog.print(TcpLog::CRIT, "can't read file (%i) -> frame muted\n", errno);
+        etiLog.log(alert, "can't read file (%i) -> frame muted\n", errno);
         perror("");
         goto MUTE_SUBCHANNEL;
     case MPEG_SYNC_NOT_FOUND:
-        etiLog.print(TcpLog::CRIT, "mpeg sync not found, maybe is not a valid file "
+        etiLog.log(alert, "mpeg sync not found, maybe is not a valid file "
                 "-> frame muted\n");
         goto MUTE_SUBCHANNEL;
     case MPEG_INVALID_FRAME:
-        etiLog.print(TcpLog::CRIT, "file is not a valid mpeg file "
+        etiLog.log(alert, "file is not a valid mpeg file "
                 "-> frame muted\n");
         goto MUTE_SUBCHANNEL;
     default:
         if (result < 0) {
-            etiLog.print(TcpLog::CRIT,
+            etiLog.log(alert,
                     "unknown error (code = %i) -> frame muted\n",
                     result);
 MUTE_SUBCHANNEL:
             memset(buffer, 0, size);
         } else {
             if (result < size) {
-                etiLog.print(TcpLog::WARNING, "bitrate too low from file "
+                etiLog.log(warn, "bitrate too low from file "
                         "-> frame padded\n");
                 memset((char*)buffer + result, 0, size - result);
             }
             result = checkDabMpegFrame(buffer);
             switch (result) {
             case MPEG_FREQUENCY:
-                etiLog.print(TcpLog::ERR, "file has a frame with an invalid "
+                etiLog.log(error, "file has a frame with an invalid "
                         "frequency: %i, should be 48000 or 24000\n",
                         getMpegFrequency(buffer));
                 break;
             case MPEG_PADDING:
-                etiLog.print(TcpLog::WARNING,
+                etiLog.log(warn,
                         "file has a frame with padding bit set\n");
                 break;
             case MPEG_COPYRIGHT:
-                etiLog.print(TcpLog::WARNING,
+                etiLog.log(warn,
                         "file has a frame with copyright bit set\n");
                 break;
             case MPEG_ORIGINAL:
-                etiLog.print(TcpLog::WARNING,
+                etiLog.log(warn,
                         "file has a frame with original bit set\n");
                 break;
             case MPEG_EMPHASIS:
-                etiLog.print(TcpLog::WARNING,
+                etiLog.log(warn,
                         "file has a frame with emphasis bits set\n");
                 break;
             default:
                 if (result < 0) {
-                    etiLog.print(TcpLog::CRIT, "mpeg file has an invalid DAB "
+                    etiLog.log(alert, "mpeg file has an invalid DAB "
                             "mpeg frame (unknown reason: %i)\n", result);
                 }
                 break;

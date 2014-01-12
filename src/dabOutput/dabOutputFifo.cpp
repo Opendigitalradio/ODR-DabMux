@@ -60,7 +60,7 @@ int DabOutputFifo::Write(void* buffer, int size)
                 goto FIFO_WRITE_ERROR;
             break;
         default:
-            etiLog.printHeader(TcpLog::ERR, "File type is not supported.\n");
+            etiLog.log(error, "File type is not supported.\n");
             return -1;
     }
 

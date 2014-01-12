@@ -61,7 +61,7 @@ int dabInputPrbsOpen(void* args, const char* name)
     prbs_data* data = (prbs_data*)args;
 
     if (*name != ':') {
-        etiLog.print(TcpLog::ERR,
+        etiLog.log(error,
                 "Sorry, PRBS address format is prbs://:polynomial.\n");
         errno = EINVAL;
         return -1;
@@ -69,12 +69,12 @@ int dabInputPrbsOpen(void* args, const char* name)
 
     long polynomial = strtol(++name, (char **)NULL, 10);
     if ((polynomial == LONG_MIN) || (polynomial == LONG_MAX)) {
-        etiLog.print(TcpLog::ERR, "can't convert polynomial number %s\n", name);
+        etiLog.log(error, "can't convert polynomial number %s\n", name);
         errno = EINVAL;
         return -1;
     }
     if (polynomial == 0) {
-        etiLog.print(TcpLog::ERR, "you must specify a polynomial number\n");
+        etiLog.log(error, "you must specify a polynomial number\n");
         errno = EINVAL;
         return -1;
     }

@@ -125,7 +125,7 @@ int dabInputRawFifoReadFrame(dabInputOperations* ops, void* args,
 
     result = ops->read(args, data->buffer + data->bufferOffset, size - data->bufferOffset);
     if (result == -1) {
-        etiLog.print(TcpLog::CRIT, "ERROR: Can't read fifo\n");
+        etiLog.log(alert, "ERROR: Can't read fifo\n");
         perror("");
         return -1;
     }
@@ -133,21 +133,21 @@ int dabInputRawFifoReadFrame(dabInputOperations* ops, void* args,
     if (result + data->bufferOffset < size) {
         data->bufferOffset += result;
 
-        etiLog.print(TcpLog::NOTICE, "reach end of fifo -> rewinding\n");
+        etiLog.log(info, "reach end of fifo -> rewinding\n");
         if (ops->rewind(args) == -1) {
-            etiLog.print(TcpLog::CRIT, "ERROR: Can't rewind fifo\n");
+            etiLog.log(alert, "ERROR: Can't rewind fifo\n");
             return -1;
         }
 
         result = ops->read(args, data->buffer + data->bufferOffset, size - data->bufferOffset);
         if (result == -1) {
-            etiLog.print(TcpLog::CRIT, "ERROR: Can't read fifo\n");
+            etiLog.log(alert, "ERROR: Can't read fifo\n");
             perror("");
             return -1;
         }
 
         if (result < size) {
-            etiLog.print(TcpLog::CRIT, "ERROR: Not enought data in fifo\n");
+            etiLog.log(alert, "ERROR: Not enought data in fifo\n");
             return 0;
         }
     }

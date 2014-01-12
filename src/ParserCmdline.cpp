@@ -128,7 +128,7 @@ bool parse_cmdline(char **argv,
 
             proto = strstr(optarg, "://");
             if (proto == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "No protocol defined for output\n");
                 goto EXIT;
             } else {
@@ -163,7 +163,7 @@ bool parse_cmdline(char **argv,
             break;
         case 'C':
             if (service == ensemble->services.end()) {
-                etiLog.printHeader(TcpLog::ERR, "You must define a service"
+                etiLog.log(error, "You must define a service"
                         " before using option -%c\n", c);
                 printUsage(progName);
                 goto EXIT;
@@ -192,7 +192,7 @@ bool parse_cmdline(char **argv,
         case 'P':
         case 'T':
             if (optarg == NULL && c != 'T') {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -%c\n", c);
                 printUsage(progName);
                 goto EXIT;
@@ -241,7 +241,7 @@ bool parse_cmdline(char **argv,
                     (*subchannel)->operations = dabInputDabplusFileOperations;
 #endif // defined(HAVE_INPUT_FILE)
                 } else {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Invalid protocol for DAB+ input (%s)\n",
                             (*subchannel)->inputProto);
                     printUsage(progName);
@@ -298,7 +298,7 @@ bool parse_cmdline(char **argv,
                 } else if (strcmp((*subchannel)->inputProto, "fifo") == 0) {
                     (*subchannel)->operations = dabInputRawFifoOperations;
                 } else {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Invalid protocol for data input (%s)\n",
                             (*subchannel)->inputProto);
                     printUsage(progName);
@@ -351,7 +351,7 @@ bool parse_cmdline(char **argv,
                 } else if (strcmp((*subchannel)->inputProto, "file") == 0) {
                     (*subchannel)->operations = dabInputDmbFileOperations;
                 } else {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Invalid protocol for DMB input (%s)\n",
                             (*subchannel)->inputProto);
                     printUsage(progName);
@@ -362,7 +362,7 @@ bool parse_cmdline(char **argv,
                 (*subchannel)->bitrate = DEFAULT_DATA_BITRATE;
 #endif
             } else {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Service '%c' not yet coded!\n", c);
                 goto EXIT;
             }
@@ -390,7 +390,7 @@ bool parse_cmdline(char **argv,
             break;
         case 'L':
             if (optarg == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -L\n");
                 printUsage(progName);
                 goto EXIT;
@@ -415,7 +415,7 @@ bool parse_cmdline(char **argv,
             goto EXIT;
         case 'l':
             if (optarg == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -l\n");
                 printUsage(progName);
                 goto EXIT;
@@ -435,7 +435,7 @@ bool parse_cmdline(char **argv,
                         }
                     }
                     if (*end != 0) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Error at '%c' in ensemble short label '%s'!\n"
                                 "Not in label '%s'!\n",
                                 *end, optarg, ensemble->label.text);
@@ -449,7 +449,7 @@ bool parse_cmdline(char **argv,
                     }
                 }
                 if (count > 8) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Ensemble short label too long!\n"
                             "Must be < 8 characters.\n");
                     goto EXIT;
@@ -469,7 +469,7 @@ bool parse_cmdline(char **argv,
                         }
                     }
                     if (*end != 0) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Error at '%c' in component short label '%s'!\n"
                                 "Not in label '%s'!\n",
                                 *end, optarg, (*component)->label.text);
@@ -483,7 +483,7 @@ bool parse_cmdline(char **argv,
                     }
                 }
                 if (count > 8) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Service '%s' short label too long!\n"
                             "Must be < 8 characters.\n", (*component)->label.text);
                     goto EXIT;
@@ -503,7 +503,7 @@ bool parse_cmdline(char **argv,
                         }
                     }
                     if (*end != 0) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Error at '%c' in service short label '%s'!\n"
                                 "Not in label '%s'!\n",
                                 *end, optarg, (*service)->label.text);
@@ -517,7 +517,7 @@ bool parse_cmdline(char **argv,
                     }
                 }
                 if (count > 8) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Service '%s' short label too long!\n"
                             "Must be < 8 characters.\n", (*service)->label.text);
                     goto EXIT;
@@ -526,7 +526,7 @@ bool parse_cmdline(char **argv,
             break;
         case 'i':
             if (optarg == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -i\n");
                 printUsage(progName);
                 goto EXIT;
@@ -538,7 +538,7 @@ bool parse_cmdline(char **argv,
             } else if (service != ensemble->services.end()) {
                 (*service)->id = strtoul(optarg, NULL, 0);
                 if ((*service)->id == 0) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Service id 0 is invalid\n");
                     goto EXIT;
                 }
@@ -548,13 +548,13 @@ bool parse_cmdline(char **argv,
             break;
         case 'b':
             if (optarg == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -b\n");
                 printUsage(progName);
                 goto EXIT;
             }
             if (subchannel == ensemble->subchannels.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "You must define a subchannel first!\n");
                 printUsage(progName);
                 goto EXIT;
@@ -563,14 +563,14 @@ bool parse_cmdline(char **argv,
             if (((*subchannel)->bitrate & 0x7) != 0) {
                 (*subchannel)->bitrate += 8;
                 (*subchannel)->bitrate &= ~0x7;
-                etiLog.printHeader(TcpLog::WARNING,
+                etiLog.log(warn,
                         "bitrate must be multiple of 8 -> ceiling to %i\n",
                         (*subchannel)->bitrate);
             }
             break;
         case 'c':
             if (optarg == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -c\n");
                 printUsage(progName);
                 goto EXIT;
@@ -580,7 +580,7 @@ bool parse_cmdline(char **argv,
 #if defined(HAVE_INPUT_FIFO) && defined(HAVE_INPUT_FILE)
         case 'k':
             if (subchannel == ensemble->subchannels.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "You must define a subchannel first!\n");
                 printUsage(progName);
                 goto EXIT;
@@ -596,7 +596,7 @@ bool parse_cmdline(char **argv,
                     (*subchannel)->operations = dabInputEnhancedFifoOperations;
 #endif // defined(HAVE_FORMAT_EPM)
                 } else {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Error, wrong packet subchannel operations!\n");
                     goto EXIT;
                 }
@@ -613,7 +613,7 @@ bool parse_cmdline(char **argv,
                         dabInputDabplusFileOperations) {
                     (*subchannel)->operations = dabInputDabplusFifoOperations;
                 } else {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Error, wrong audio subchannel operations!\n");
                     goto EXIT;
                 }
@@ -622,7 +622,7 @@ bool parse_cmdline(char **argv,
                 break;
 #endif // defined(HAVE_FORMAT_MPEG)
             default:
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "sorry, non-blocking input file is "
                         "only valid with audio or packet services\n");
                 goto EXIT;
@@ -632,13 +632,13 @@ bool parse_cmdline(char **argv,
         case 'p':
             int level;
             if (optarg == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -P\n");
                 printUsage(progName);
                 goto EXIT;
             }
             if (subchannel == ensemble->subchannels.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "You must define a subchannel first!\n");
                 printUsage(progName);
                 goto EXIT;
@@ -646,14 +646,14 @@ bool parse_cmdline(char **argv,
             level = strtoul(optarg, NULL, 0) - 1;
             if (protection->form == 0) {
                 if ((level < 0) || (level > 4)) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "protection level must be between "
                             "1 to 5 inclusively (current = %i)\n", level);
                     goto EXIT;
                 }
             } else {
                 if ((level < 0) || (level > 3)) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "protection level must be between "
                             "1 to 4 inclusively (current = %i)\n", level);
                     goto EXIT;
@@ -665,7 +665,7 @@ bool parse_cmdline(char **argv,
             if (optarg) {
                 ensemble->mode = strtoul(optarg, NULL, 0);
                 if ((ensemble->mode < 1) || (ensemble->mode > 4)) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Mode must be between 1-4\n");
                     goto EXIT;
                 }
@@ -677,7 +677,7 @@ bool parse_cmdline(char **argv,
                     *FICL = 24;
                 }
             } else {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -m\n");
                 printUsage(progName);
                 goto EXIT;
@@ -687,24 +687,24 @@ bool parse_cmdline(char **argv,
             if (optarg) {
                 *limit = strtoul(optarg, NULL, 0);
             } else {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -n\n");
                 printUsage(progName);
                 goto EXIT;
             }
             break;
         case 'o':
-            etiLog.open("createETI", 0, 12222);
+            etiLog.register_backend(new LogToSyslog()); // TODO don't leak the LogToSyslog backend
             break;
         case 't':
             if (optarg == NULL) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Missing parameter for option -t\n");
                 printUsage(progName);
                 goto EXIT;
             }
             if (component == ensemble->components.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "You must define a component before setting "
                         "service type!\n");
                 printUsage(progName);
@@ -714,14 +714,14 @@ bool parse_cmdline(char **argv,
             break;
         case 'a':
             if (component == ensemble->components.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "You must define a component before setting "
                         "packet address!\n");
                 printUsage(progName);
                 goto EXIT;
             }
             if (!(*component)->isPacketComponent(ensemble->subchannels)) {
-                etiLog.printHeader(TcpLog::ERR, "address\n");
+                etiLog.log(error, "address\n");
                 printUsage(progName);
                 goto EXIT;
             }
@@ -729,14 +729,14 @@ bool parse_cmdline(char **argv,
             break;
         case 'd':
             if (component == ensemble->components.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "You must define a component before setting "
                         "datagroup!\n");
                 printUsage(progName);
                 goto EXIT;
             }
             if (!(*component)->isPacketComponent(ensemble->subchannels)) {
-                etiLog.printHeader(TcpLog::ERR, "datagroup\n");
+                etiLog.log(error, "datagroup\n");
                 printUsage(progName);
                 goto EXIT;
             }
@@ -744,13 +744,13 @@ bool parse_cmdline(char **argv,
             break;
         case 'f':
             if (component == ensemble->components.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "You must define a component first!\n");
                 printUsage(progName);
                 goto EXIT;
             }
             if (!(*component)->isPacketComponent(ensemble->subchannels)) {
-                etiLog.printHeader(TcpLog::ERR, "application type\n");
+                etiLog.log(error, "application type\n");
                 printUsage(progName);
                 goto EXIT;
             }
@@ -758,7 +758,7 @@ bool parse_cmdline(char **argv,
             break;
         case 'g':
             if (service == ensemble->services.end()) {
-                etiLog.printHeader(TcpLog::ERR, "You must define a service"
+                etiLog.log(error, "You must define a service"
                         " before using option -%c\n", c);
                 printUsage(progName);
                 goto EXIT;
@@ -782,7 +782,7 @@ bool parse_cmdline(char **argv,
             break;
         case 'y':
             if (service == ensemble->services.end()) {
-                etiLog.printHeader(TcpLog::ERR, "You must define a service"
+                etiLog.log(error, "You must define a service"
                         " before using option -%c\n", c);
                 printUsage(progName);
                 goto EXIT;
@@ -793,7 +793,7 @@ bool parse_cmdline(char **argv,
             *factumAnalyzer = true;
             break;
         case 'r':
-            etiLog.printHeader(TcpLog::INFO,
+            etiLog.log(info,
                     "Enabling throttled output using simul, one frame every 24ms\n");
             outputs.push_back(new dabOutput("simul", NULL));
             output = outputs.end() - 1;
@@ -808,16 +808,16 @@ bool parse_cmdline(char **argv,
             printUsage(progName, stdout);
             goto EXIT;
         default:
-            etiLog.printHeader(TcpLog::ERR, "Option '%c' not coded yet\n", c);
+            etiLog.log(error, "Option '%c' not coded yet\n", c);
             goto EXIT;
         }
     }
     if (optind < argc) {
-        etiLog.printHeader(TcpLog::ERR, "Too much parameters:");
+        etiLog.log(error, "Too much parameters:");
         while (optind < argc) {
-            etiLog.printHeader(TcpLog::ERR, " %s", argv[optind++]);
+            etiLog.log(error, " %s", argv[optind++]);
         }
-        etiLog.printHeader(TcpLog::ERR, "\n");
+        etiLog.log(error, "\n");
         printUsage(progName);
         goto EXIT;
     }

@@ -108,7 +108,7 @@ class LogToFile : public LogBackend {
                 {"DEBUG", "INFO", "WARN", "ERROR", "ALERT", "EMERG"};
 
             // fprintf is thread-safe
-            fprintf(log_file, "CRC-DABMOD: %s: %s\n",
+            fprintf(log_file, "CRC-DABMUX: %s: %s\n",
                     log_level_text[(size_t)level], message.c_str());
             fflush(log_file);
         }

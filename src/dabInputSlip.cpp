@@ -128,7 +128,7 @@ void* dabInputSlipThread(void* args)
 
     while ((client = data->server->accept()) != NULL) {
         int size = 0;
-        etiLog.print(TcpLog::INFO, "SLIP server got a new client.\n");
+        etiLog.log(info, "SLIP server got a new client.\n");
 
 #ifdef _WIN32
         WaitForSingleObject(data->semWrite, INFINITE);
@@ -173,10 +173,10 @@ void* dabInputSlipThread(void* args)
             sem_post(&data->semQueue);
 #endif
         }
-        etiLog.print(TcpLog::INFO, "SLIP server client deconnected.\n");
+        etiLog.log(info, "SLIP server client deconnected.\n");
         client->close();
     }
-    etiLog.print(TcpLog::ERR, "SLIP thread can't accept new client (%s)\n",
+    etiLog.log(error, "SLIP thread can't accept new client (%s)\n",
             inetErrDesc, inetErrMsg);
 
     return NULL;
@@ -189,30 +189,30 @@ int dabInputSlipOpen(void* args, const char* inputName)
     long port;
     address = strchr(inputName, ':');
     if (address == NULL) {
-        etiLog.print(TcpLog::ERR, "\"%s\" SLIP address format is invalid: "
+        etiLog.log(error, "\"%s\" SLIP address format is invalid: "
                 "should be [address]:port - > aborting\n", inputName);
         return -1;
     }
     ++address;
     port = strtol(address, (char **)NULL, 10);
     if ((port == LONG_MIN) || (port == LONG_MAX)) {
-        etiLog.print(TcpLog::ERR, "can't convert port number in SLIP address %s\n",
+        etiLog.log(error, "can't convert port number in SLIP address %s\n",
                 address);
         return -1;
     }
     if (port == 0) {
-        etiLog.print(TcpLog::ERR, "can't use port number 0 in SLIP address\n");
+        etiLog.log(error, "can't use port number 0 in SLIP address\n");
         return -1;
     }
     dabInputSlipData* data = (dabInputSlipData*)args;
     if (data->server->create(port) == -1) {
-        etiLog.print(TcpLog::ERR, "can't set port %i on SLIP input (%s: %s)\n",
+        etiLog.log(error, "can't set port %i on SLIP input (%s: %s)\n",
                 port, inetErrDesc, inetErrMsg);
         return -1;
     }
 
     if (data->server->listen() == -1) {
-        etiLog.print(TcpLog::ERR, "can't listen on SLIP socket(%s: %s)\n",
+        etiLog.log(error, "can't listen on SLIP socket(%s: %s)\n",
                 inetErrDesc, inetErrMsg);
         return -1;
     }
@@ -229,7 +229,7 @@ int dabInputSlipOpen(void* args, const char* inputName)
     }
 #endif
 
-    etiLog.print(TcpLog::DBG, "check return code of create\n");
+    etiLog.log(debug, "check return code of create\n");
     return 0;
 }
 
@@ -316,13 +316,13 @@ int dabInputSlipReadFrame(dabInputOperations* ops, void* args, void* buffer, int
     sem_post(&data->semQueue);
 #endif
     if (++stats->bufferCount == NB_RECORDS) {
-        etiLog.print(TcpLog::INFO, "SLIP buffer state: (%i)", stats->id);
+        etiLog.log(info, "SLIP buffer state: (%i)", stats->id);
         for (int i = 0; i < stats->bufferCount; ++i) {
-            etiLog.print(TcpLog::INFO, " %i/%i",
+            etiLog.log(info, " %i/%i",
                     stats->bufferRecords[i].curSize,
                     stats->bufferRecords[i].maxSize);
         }
-        etiLog.print(TcpLog::INFO, "\n");
+        etiLog.log(info, "\n");
 
         stats->bufferCount = 0;
     }
@@ -345,14 +345,14 @@ int dabInputSlipReadFrame(dabInputOperations* ops, void* args, void* buffer, int
     }
 
     if (++stats->frameCount == NB_RECORDS) {
-        etiLog.print(TcpLog::INFO, "Data subchannel usage: (%i)",
+        etiLog.log(info, "Data subchannel usage: (%i)",
                 stats->id);
         for (int i = 0; i < stats->frameCount; ++i) {
-            etiLog.print(TcpLog::INFO, " %i/%i",
+            etiLog.log(info, " %i/%i",
                     stats->frameRecords[i].curSize,
                     stats->frameRecords[i].maxSize);
         }
-        etiLog.print(TcpLog::INFO, "\n");
+        etiLog.log(info, "\n");
         stats->frameCount = 0;
     }
     return size;

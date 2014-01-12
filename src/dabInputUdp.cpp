@@ -71,7 +71,7 @@ int dabInputUdpOpen(void* args, const char* inputName)
     address = strdup(inputName);
     ptr = strchr(address, ':');
     if (ptr == NULL) {
-        etiLog.print(TcpLog::ERR,
+        etiLog.log(error,
                 "\"%s\" is an invalid format for udp address: "
                 "should be [address]:port - > aborting\n", address);
         returnCode = -1;
@@ -79,25 +79,25 @@ int dabInputUdpOpen(void* args, const char* inputName)
     *(ptr++) = 0;
     port = strtol(ptr, (char **)NULL, 10);
     if ((port == LONG_MIN) || (port == LONG_MAX)) {
-        etiLog.print(TcpLog::ERR,
+        etiLog.log(error,
                 "can't convert port number in udp address %s\n",
                 address);
         returnCode = -1;
     }
     if (port == 0) {
-        etiLog.print(TcpLog::ERR, "can't use port number 0 in udp address\n");
+        etiLog.log(error, "can't use port number 0 in udp address\n");
         returnCode = -1;
     }
     dabInputUdpData* input = (dabInputUdpData*)args;
     if (input->socket->create(port) == -1) {
-        etiLog.print(TcpLog::ERR, "can't set port %i on Udp input (%s: %s)\n",
+        etiLog.log(error, "can't set port %i on Udp input (%s: %s)\n",
                 port, inetErrDesc, inetErrMsg);
         returnCode = -1;
     }
 
     if (*address != 0) {
         if (input->socket->joinGroup(address) == -1) {
-            etiLog.print(TcpLog::ERR,
+            etiLog.log(error,
                     "can't join multicast group %s (%s: %s)\n",
                     address, inetErrDesc, inetErrMsg);
             returnCode = -1;
@@ -105,13 +105,13 @@ int dabInputUdpOpen(void* args, const char* inputName)
     }
 
     if (input->socket->setBlocking(false) == -1) {
-        etiLog.print(TcpLog::ERR, "can't set Udp input socket in blocking mode "
+        etiLog.log(error, "can't set Udp input socket in blocking mode "
                 "(%s: %s)\n", inetErrDesc, inetErrMsg);
         returnCode = -1;
     }
 
     free(address);
-    etiLog.print(TcpLog::DBG, "check return code of create\n");
+    etiLog.log(debug, "check return code of create\n");
     return returnCode;;
 }
 
@@ -154,14 +154,14 @@ int dabInputUdpRead(dabInputOperations* ops, void* args, void* buffer, int size)
     
     input->stats.frameRecords[input->stats.frameCount].curSize = nbBytes;
     if (++stats->frameCount == NB_RECORDS) {
-        etiLog.print(TcpLog::INFO, "Data subchannel usage: (%i)",
+        etiLog.log(info, "Data subchannel usage: (%i)",
                 stats->id);
         for (int i = 0; i < stats->frameCount; ++i) {
-            etiLog.print(TcpLog::INFO, " %i/%i",
+            etiLog.log(info, " %i/%i",
                     stats->frameRecords[i].curSize,
                     stats->frameRecords[i].maxSize);
         }
-        etiLog.print(TcpLog::INFO, "\n");
+        etiLog.log(info, "\n");
         stats->frameCount = 0;
     }
 

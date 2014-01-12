@@ -59,13 +59,13 @@ int DabOutputFile::Open(const char* filename)
                         this->type_ = ETI_FILE_TYPE_STREAMED;
                         break;
                     } else {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "File type '%s' is not supported.\n", value);
                         return -1;
                     }
                 }
                 else {
-                    etiLog.printHeader(TcpLog::WARNING, "Parameter '%s' unknown\n", key);
+                    etiLog.log(warn, "Parameter '%s' unknown\n", key);
                 }
             }
         } while (nextPair != NULL);
@@ -113,7 +113,7 @@ int DabOutputFile::Write(void* buffer, int size)
         if (write(this->file_, padding, 6144 - size) == -1) goto FILE_WRITE_ERROR;
         break;
     default:
-        etiLog.printHeader(TcpLog::ERR, "File type is not supported.\n");
+        etiLog.log(error, "File type is not supported.\n");
         return -1;
     }
 

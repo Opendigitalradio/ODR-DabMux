@@ -20,6 +20,7 @@
    */
 
 #include "dabInput.h"
+#include "Log.h"
 
 #include <string.h>
 
@@ -38,7 +39,7 @@ int dabInputSetbuf(void* args, int size)
 int dabInputSetbitrate(dabInputOperations* ops, void* args, int bitrate)
 {
     if (bitrate <= 0) {
-        etiLog.print(TcpLog::ERR, "Invalid bitrate (%i)\n", bitrate);
+        etiLog.log(error, "Invalid bitrate (%i)\n", bitrate);
         return -1;
     }
     if (ops->setbuf(args, bitrate * 3) == 0) {

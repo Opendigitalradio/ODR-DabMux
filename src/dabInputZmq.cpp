@@ -72,13 +72,13 @@ int dabInputZmqInit(void** args)
     input->stats.id = dabInputFifoData::nb++;
     input->zmq_context = zmq_ctx_new();
     if (input->zmq_context == NULL) {
-        etiLog.print(TcpLog::ERR, "Failed to initialise ZeroMQ context: %s\n", zmq_strerror(errno));
+        etiLog.log(error, "Failed to initialise ZeroMQ context: %s\n", zmq_strerror(errno));
         return 1;
     }
 
     input->zmq_sock = zmq_socket(input->zmq_context, ZMQ_SUB);
     if (input->zmq_sock == NULL) {
-        etiLog.print(TcpLog::ERR, "Failed to initialise ZeroMQ socket: %s\n", zmq_strerror(errno));
+        etiLog.log(error, "Failed to initialise ZeroMQ socket: %s\n", zmq_strerror(errno));
         return 1;
     }
 
@@ -98,13 +98,13 @@ int dabInputZmqOpen(void* args, const char* inputUri)
     int connect_error = zmq_bind(input->zmq_sock, uri.c_str());
 
     if (connect_error < 0) {
-        etiLog.print(TcpLog::ERR,  "Failed to connect socket to uri '%s': %s\n", uri.c_str(), zmq_strerror(errno));
+        etiLog.log(error,  "Failed to connect socket to uri '%s': %s\n", uri.c_str(), zmq_strerror(errno));
         return 1;
     }
 
     connect_error = zmq_setsockopt(input->zmq_sock, ZMQ_SUBSCRIBE, NULL, 0);
     if (connect_error < 0) {
-        etiLog.print(TcpLog::ERR, "Failed to subscribe to zmq messages: %s\n", zmq_strerror(errno));
+        etiLog.log(error, "Failed to subscribe to zmq messages: %s\n", zmq_strerror(errno));
         return 1;
     }
 
@@ -130,14 +130,14 @@ int dabInputZmqReadFrame(dabInputOperations* ops, void* args, void* buffer, int 
         if (rc > 0)
             input->prebuffering--;
         if (input->prebuffering == 0)
-            etiLog.print(TcpLog::NOTICE, "inputZMQ %s input pre-buffering complete\n",
+            etiLog.log(info, "inputZMQ %s input pre-buffering complete\n",
                 input->uri.c_str());
         memset(buffer, 0, size);
         return size;
     }
 
     if (input->frame_buffer.empty()) {
-        etiLog.print(TcpLog::WARNING, "inputZMQ %s input empty, re-enabling pre-buffering\n",
+        etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
                 input->uri.c_str());
         // reset prebuffering
         input->prebuffering = INPUT_ZMQ_PREBUFFERING;
@@ -161,14 +161,14 @@ int dabInputZmqReadFromSocket(dabInputZmqData* input, int framesize)
     zmq_msg_t msg;
     rc = zmq_msg_init(&msg);
     if (rc == -1) {
-        etiLog.print(TcpLog::ERR, "Failed to init zmq message: %s\n", zmq_strerror(errno));
+        etiLog.log(error, "Failed to init zmq message: %s\n", zmq_strerror(errno));
         return 0;
     }
 
     int nBytes = zmq_msg_recv(&msg, input->zmq_sock, ZMQ_DONTWAIT);
     if (nBytes == -1) {
         if (errno != EAGAIN) {
-            etiLog.print(TcpLog::ERR, "Failed to receive zmq message: %s\n", zmq_strerror(errno));
+            etiLog.log(error, "Failed to receive zmq message: %s\n", zmq_strerror(errno));
         }
         return 0;
     }
@@ -178,7 +178,7 @@ int dabInputZmqReadFromSocket(dabInputZmqData* input, int framesize)
     if (nBytes == 5*framesize) // five frames per superframe
     {
         if (input->frame_buffer.size() > INPUT_ZMQ_MAX_BUFFER_SIZE) {
-            etiLog.print(TcpLog::WARNING, "inputZMQ %s input buffer full (%d), dropping frame !\n",
+            etiLog.log(warn, "inputZMQ %s input buffer full (%d), dropping frame !\n",
                 input->frame_buffer.size(), input->uri.c_str());
             nBytes = 0;
 
@@ -198,7 +198,7 @@ int dabInputZmqReadFromSocket(dabInputZmqData* input, int framesize)
     }
     else
     {
-        etiLog.print(TcpLog::ERR, "ZMQ Wrong data size: recv'd %d, need %d \n",
+        etiLog.log(error, "ZMQ Wrong data size: recv'd %d, need %d \n",
                 nBytes, 5*framesize);
         nBytes = 0;
     }

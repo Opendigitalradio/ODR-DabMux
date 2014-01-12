@@ -92,7 +92,7 @@ int dabInputDabplusFileRead(void* args, void* buffer, int size)
         int ret = read(data->file, data->buffer, data->bufferSize);
         if (ret != data->bufferSize) {
             if (ret != 0) {
-                etiLog.print(TcpLog::CRIT, "ERROR: Incomplete DAB+ frame!\n");
+                etiLog.log(alert, "ERROR: Incomplete DAB+ frame!\n");
             }
             return 0;
         }
@@ -115,27 +115,27 @@ int dabInputDabplusFileReadFrame(dabInputOperations* ops, void* args,
 
     result = ops->read(args, dataOut, size);
     if (result == -1) {
-        etiLog.print(TcpLog::CRIT, "ERROR: Can't read file\n");
+        etiLog.log(alert, "ERROR: Can't read file\n");
         perror("");
         return -1;
     }
     if (result < size) {
         int sizeOut = result;
-        etiLog.print(TcpLog::NOTICE, "reach end of file -> rewinding\n");
+        etiLog.log(info, "reach end of file -> rewinding\n");
         if (ops->rewind(args) == -1) {
-            etiLog.print(TcpLog::CRIT, "ERROR: Can't rewind file\n");
+            etiLog.log(alert, "ERROR: Can't rewind file\n");
             return -1;
         }
 
         result = ops->read(args, dataOut + sizeOut, size - sizeOut);
         if (result == -1) {
-            etiLog.print(TcpLog::CRIT, "ERROR: Can't read file\n");
+            etiLog.log(alert, "ERROR: Can't read file\n");
             perror("");
             return -1;
         }
 
         if (result < size) {
-            etiLog.print(TcpLog::CRIT, "ERROR: Not enought data in file\n");
+            etiLog.log(alert, "ERROR: Not enought data in file\n");
             return -1;
         }
     }

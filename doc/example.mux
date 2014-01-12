@@ -23,8 +23,8 @@ general {
 
     ; boolean fileds can accept either false or true as values:
 
-    ; Enable TCPLog on port 12222
-    tcplog false
+    ; Enable logging to syslog
+    syslog false
 
     ; Write the SCCA field useful for the Factum ETI analyser
     writescca false

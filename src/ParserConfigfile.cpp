@@ -174,9 +174,9 @@ void parse_configfile(string configuration_file,
     /* Number of frames to generate */
     *limit = pt_general.get("nbframes", 0);
 
-    /* Enable TCPLog conditionally */
-    if (pt_general.get("tcplog", 0)) {
-        etiLog.open("createETI", 0, 12222);
+    /* Enable Logging to syslog conditionally */
+    if (pt_general.get("syslog", 0)) {
+        etiLog.register_backend(new LogToSyslog()); // TODO don't leak the LogToSyslog backend
     }
 
     *factumAnalyzer = pt_general.get("writescca", false);
@@ -236,7 +236,7 @@ void parse_configfile(string configuration_file,
             set_short_label(service->label, label, "Service");
         }
         catch (ptree_error &e) {
-            etiLog.printHeader(TcpLog::WARNING,
+            etiLog.log(warn,
                     "Service with uid %s has no short label.\n", serviceuid.c_str());
         }
 
@@ -274,7 +274,7 @@ void parse_configfile(string configuration_file,
             setup_subchannel_from_ptree(subchan, it->second, ensemble, subchanuid);
         }
         catch (runtime_error &e) {
-            etiLog.printHeader(TcpLog::ERR,
+            etiLog.log(error,
                     "%s\n", e.what());
             throw e;
         }
@@ -350,7 +350,7 @@ void parse_configfile(string configuration_file,
             component->label.flag = 0xff00;
         }
         catch (ptree_error &e) {
-            etiLog.printHeader(TcpLog::WARNING,
+            etiLog.log(warn,
                     "Service with uid %s has no label.\n", componentuid.c_str());
         }
 
@@ -359,7 +359,7 @@ void parse_configfile(string configuration_file,
             set_short_label(component->label, label, "Component");
         }
         catch (ptree_error &e) {
-            etiLog.printHeader(TcpLog::WARNING,
+            etiLog.log(warn,
                     "Component with uid %s has no short label.\n", componentuid.c_str());
         }
 
@@ -482,12 +482,12 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             subchan->operations = dabInputZmqOperations;
         }
         else if (strcmp(subchan->inputProto, "epmg") == 0) {
-            etiLog.printHeader(TcpLog::WARNING,
+            etiLog.log(warn,
                     "Using untested epmg:// zeromq input\n");
             subchan->operations = dabInputZmqOperations;
         }
         else if (strcmp(subchan->inputProto, "ipc") == 0) {
-            etiLog.printHeader(TcpLog::WARNING,
+            etiLog.log(warn,
                     "Using untested ipc:// zeromq input\n");
             subchan->operations = dabInputZmqOperations;
 #endif // defined(HAVE_INPUT_ZEROMQ)
@@ -657,7 +657,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                     subchan->operations = dabInputEnhancedFifoOperations;
 #endif // defined(HAVE_FORMAT_EPM)
                 } else {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Error, wrong packet subchannel operations!\n");
                     throw runtime_error("Error, wrong packet subchannel operations!\n");
                 }
@@ -674,7 +674,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                         dabInputDabplusFileOperations) {
                     subchan->operations = dabInputDabplusFifoOperations;
                 } else {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Error, wrong audio subchannel operations!\n");
                     throw runtime_error(
                             "Error, wrong audio subchannel operations!\n");

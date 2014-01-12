@@ -98,19 +98,19 @@ vector<dabService*>::iterator getService(
 bool dabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
 {
     if (subchId > 63) {
-        etiLog.printHeader(TcpLog::ERR,
+        etiLog.log(error,
                 "You must define subchannel id in the "
                 "packet component before defining packet ");
         return false;
     }
     if (getSubchannel(subchannels, subchId) == subchannels.end()) {
-        etiLog.printHeader(TcpLog::ERR,
+        etiLog.log(error,
                 "Invalid subchannel id in the packet component "
                 "for defining packet ");
         return false;
     }
     if ((*getSubchannel(subchannels, subchId))->type != 3) {
-        etiLog.printHeader(TcpLog::ERR,
+        etiLog.log(error,
                 "Invalid component type for defining packet ");
         return false;
     }
@@ -172,7 +172,7 @@ unsigned short getSizeCu(dabSubchannel* subchannel)
                 return (subchannel->bitrate >> 1);
                 break;
             default: // Should not happens
-                etiLog.print(TcpLog::ERR, "Bad protection level on "
+                etiLog.log(error, "Bad protection level on "
                         "subchannel\n");
                 return 0;
             }
@@ -192,13 +192,13 @@ unsigned short getSizeCu(dabSubchannel* subchannel)
                 return (subchannel->bitrate * 15) >> 5;
                 break;
             default: // Should not happens
-                etiLog.print(TcpLog::ERR,
+                etiLog.log(error,
                         "Bad protection level on subchannel\n");
                 return 0;
             }
             break;
         default:
-            etiLog.print(TcpLog::ERR, "Invalid protection option\n");
+            etiLog.log(error, "Invalid protection option\n");
             return 0;
         }
     }

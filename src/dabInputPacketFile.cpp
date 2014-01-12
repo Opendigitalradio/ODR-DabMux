@@ -166,7 +166,7 @@ int dabInputPacketFileRead(dabInputOperations* ops, void* args, void* buffer,
                 }
                 continue;
             } else if (nbBytes < 3) {
-                etiLog.print(TcpLog::ERR,
+                etiLog.log(error,
                         "Error while reading file for packet header; "
                         "read %i out of 3 bytes\n", nbBytes);
                 break;
@@ -192,14 +192,14 @@ int dabInputPacketFileRead(dabInputOperations* ops, void* args, void* buffer,
                 perror("Packet file");
                 return -1;
             } else if (nbBytes == 0) {
-                etiLog.print(TcpLog::NOTICE,
+                etiLog.log(info,
                         "Packet header read, but no data!\n");
                 if (ops->rewind(args) == -1) {
                     goto END_PACKET;
                 }
                 continue;
             } else if (nbBytes < length - 3) {
-                etiLog.print(TcpLog::ERR, "Error while reading packet file; "
+                etiLog.log(error, "Error while reading packet file; "
                         "read %i out of %i bytes\n", nbBytes, length - 3);
                 break;
             }
@@ -216,7 +216,7 @@ int dabInputPacketFileRead(dabInputOperations* ops, void* args, void* buffer,
                 data->enhancedPacketLength += length;
                 if (data->enhancedPacketLength >= (12 * 188)) {
                     if (data->enhancedPacketLength > (12 * 188)) {
-                        etiLog.print(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Error, too much enhanced packet data!\n");
                     }
                     ReedSolomon encoder(204, 188);
@@ -237,14 +237,14 @@ END_PACKET:
         fifoStats->frameRecords[fifoStats->frameCount].curSize = written;
         fifoStats->frameRecords[fifoStats->frameCount].maxSize = size;
         if (++fifoStats->frameCount == NB_RECORDS) {
-            etiLog.print(TcpLog::INFO, "Packet subchannel usage: (%i)",
+            etiLog.log(info, "Packet subchannel usage: (%i)",
                     fifoStats->id);
             for (int i = 0; i < fifoStats->frameCount; ++i) {
-            etiLog.print(TcpLog::INFO, " %i/%i",
+            etiLog.log(info, " %i/%i",
                     fifoStats->frameRecords[i].curSize,
                     fifoStats->frameRecords[i].maxSize);
             }
-            etiLog.print(TcpLog::INFO, "\n");
+            etiLog.log(info, "\n");
             fifoStats->frameCount = 0;
         }
     }

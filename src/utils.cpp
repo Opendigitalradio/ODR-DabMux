@@ -46,76 +46,76 @@ time_t getDabTime()
 
 void header_message() 
 {
-    etiLog.printHeader(TcpLog::INFO,
+    etiLog.log(info,
             "Welcome to %s %s%s, compiled at %s, %s\n\n",
             PACKAGE_NAME, PACKAGE_VERSION, GITVERSION, __DATE__, __TIME__);
-    etiLog.printHeader(TcpLog::INFO,
+    etiLog.log(info,
             "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n"
             "Her Majesty the Queen in Right of Canada,\n"
             "(Communications Research Centre Canada) All rights reserved.\n\n"
             "Copyright (C) 2013,2014\nMatthias P. Braendli, http://mpb.li\n\n");
-    etiLog.printHeader(TcpLog::INFO, "Input URLs supported:");
+    etiLog.log(info, "Input URLs supported:");
 #if defined(HAVE_INPUT_PRBS)
-    etiLog.printHeader(TcpLog::INFO, " prbs");
+    etiLog.log(info, " prbs");
 #endif
 #if defined(HAVE_INPUT_TEST)
-    etiLog.printHeader(TcpLog::INFO, " test");
+    etiLog.log(info, " test");
 #endif
 #if defined(HAVE_INPUT_SLIP)
-    etiLog.printHeader(TcpLog::INFO, " slip");
+    etiLog.log(info, " slip");
 #endif
 #if defined(HAVE_INPUT_UDP)
-    etiLog.printHeader(TcpLog::INFO, " udp");
+    etiLog.log(info, " udp");
 #endif
 #if defined(HAVE_INPUT_FIFO)
-    etiLog.printHeader(TcpLog::INFO, " fifo");
+    etiLog.log(info, " fifo");
 #endif
 #if defined(HAVE_INPUT_FILE)
-    etiLog.printHeader(TcpLog::INFO, " file");
+    etiLog.log(info, " file");
 #endif
-    etiLog.printHeader(TcpLog::INFO, "\n");
+    etiLog.log(info, "\n");
 
-    etiLog.printHeader(TcpLog::INFO, "Inputs format supported:");
+    etiLog.log(info, "Inputs format supported:");
 #if defined(HAVE_FORMAT_RAW)
-    etiLog.printHeader(TcpLog::INFO, " raw");
+    etiLog.log(info, " raw");
 #endif
 #if defined(HAVE_FORMAT_BRIDGE)
-    etiLog.printHeader(TcpLog::INFO, " bridge");
+    etiLog.log(info, " bridge");
 #endif
 #if defined(HAVE_FORMAT_MPEG)
-    etiLog.printHeader(TcpLog::INFO, " mpeg");
+    etiLog.log(info, " mpeg");
 #endif
 #if defined(HAVE_FORMAT_PACKET)
-    etiLog.printHeader(TcpLog::INFO, " packet");
+    etiLog.log(info, " packet");
 #endif
 #if defined(HAVE_FORMAT_DMB)
-    etiLog.printHeader(TcpLog::INFO, " dmb");
+    etiLog.log(info, " dmb");
 #endif
 #if defined(HAVE_FORMAT_EPM)
-    etiLog.printHeader(TcpLog::INFO, " epm");
+    etiLog.log(info, " epm");
 #endif
-    etiLog.printHeader(TcpLog::INFO, "\n");
+    etiLog.log(info, "\n");
 
-    etiLog.printHeader(TcpLog::INFO, "Output URLs supported:");
+    etiLog.log(info, "Output URLs supported:");
 #if defined(HAVE_OUTPUT_FILE)
-    etiLog.printHeader(TcpLog::INFO, " file");
+    etiLog.log(info, " file");
 #endif
 #if defined(HAVE_OUTPUT_FIFO)
-    etiLog.printHeader(TcpLog::INFO, " fifo");
+    etiLog.log(info, " fifo");
 #endif
 #if defined(HAVE_OUTPUT_UDP)
-    etiLog.printHeader(TcpLog::INFO, " udp");
+    etiLog.log(info, " udp");
 #endif
 #if defined(HAVE_OUTPUT_TCP)
-    etiLog.printHeader(TcpLog::INFO, " tcp");
+    etiLog.log(info, " tcp");
 #endif
 #if defined(HAVE_OUTPUT_RAW)
-    etiLog.printHeader(TcpLog::INFO, " raw");
+    etiLog.log(info, " raw");
 #endif
 #if defined(HAVE_OUTPUT_SIMUL)
-    etiLog.printHeader(TcpLog::INFO, " simul");
+    etiLog.log(info, " simul");
 #endif
-    etiLog.printHeader(TcpLog::INFO, "\n\n");
+    etiLog.log(info, "\n\n");
 
 }
 
@@ -217,7 +217,7 @@ void printUsage(char *name, FILE* out)
     fprintf(out, "  -h                   : get this help\n");
     fprintf(out, "  -m                   : DAB mode (default: 2)\n");
     fprintf(out, "  -n nbFrames          : number of frames to produce\n");
-    fprintf(out, "  -o                   : turn on TCP log on port 12222\n");
+    fprintf(out, "  -o                   : enable logging to syslog\n");
     fprintf(out, "  -r                   : throttle the output rate to one ETI frame every 24ms\n");
     fprintf(out, "  -V                   : print version information and "
             "exit\n");
@@ -280,10 +280,10 @@ void printOutputs(vector<dabOutput*>& outputs)
     int index = 0;
 
     for (output = outputs.begin(); output != outputs.end(); ++output) {
-        etiLog.printHeader(TcpLog::INFO, "Output      %i\n", index);
-        etiLog.printHeader(TcpLog::INFO, "  protocol: %s\n",
+        etiLog.log(info, "Output      %i\n", index);
+        etiLog.log(info, "  protocol: %s\n",
                 (*output)->outputProto.c_str());
-        etiLog.printHeader(TcpLog::INFO, "  name:     %s\n",
+        etiLog.log(info, "  name:     %s\n",
                 (*output)->outputName.c_str());
         ++index;
     }
@@ -299,20 +299,20 @@ void printServices(vector<dabService*>& services)
         memcpy(label, (*current)->label.text, 16);
         label[16] = 0;
 
-        etiLog.printHeader(TcpLog::INFO, "Service       %i\n", index);
-        etiLog.printHeader(TcpLog::INFO, " label:       %s\n", label);
-        etiLog.printHeader(TcpLog::INFO, " short label: ");
+        etiLog.log(info, "Service       %i\n", index);
+        etiLog.log(info, " label:       %s\n", label);
+        etiLog.log(info, " short label: ");
         for (int i = 0; i < 32; ++i) {
             if ((*current)->label.flag & 0x8000 >> i) {
-                etiLog.printHeader(TcpLog::INFO, "%c", (*current)->label.text[i]);
+                etiLog.log(info, "%c", (*current)->label.text[i]);
             }
         }
-        etiLog.printHeader(TcpLog::INFO, " (0x%x)\n", (*current)->label.flag);
-        etiLog.printHeader(TcpLog::INFO, " id:          0x%lx (%lu)\n",
+        etiLog.log(info, " (0x%x)\n", (*current)->label.flag);
+        etiLog.log(info, " id:          0x%lx (%lu)\n",
                 (*current)->id, (*current)->id);
-        etiLog.printHeader(TcpLog::INFO, " pty:         0x%x (%u)\n",
+        etiLog.log(info, " pty:         0x%x (%u)\n",
                 (*current)->pty, (*current)->pty);
-        etiLog.printHeader(TcpLog::INFO, " language:    0x%x (%u)\n",
+        etiLog.log(info, " language:    0x%x (%u)\n",
                 (*current)->language, (*current)->language);
         ++index;
     }
@@ -324,7 +324,7 @@ void printComponents(vector<dabComponent*>& components)
     unsigned int index = 0;
 
     for (current = components.begin(); current != components.end(); ++current) {
-        etiLog.printHeader(TcpLog::INFO, "Component       %i\n", index);
+        etiLog.log(info, "Component       %i\n", index);
         printComponent(*current);
         ++index;
     }
@@ -339,28 +339,28 @@ void printComponent(dabComponent* component)
         sprintf(label, "<none>");
     }
 
-    etiLog.printHeader(TcpLog::INFO, " service id:             %i\n",
+    etiLog.log(info, " service id:             %i\n",
             component->serviceId);
-    etiLog.printHeader(TcpLog::INFO, " subchannel id:          %i\n",
+    etiLog.log(info, " subchannel id:          %i\n",
             component->subchId);
-    etiLog.printHeader(TcpLog::INFO, " label:                  %s\n",
+    etiLog.log(info, " label:                  %s\n",
             label);
-    etiLog.printHeader(TcpLog::INFO, " short label:            ");
+    etiLog.log(info, " short label:            ");
     for (int i = 0; i < 32; ++i) {
         if (component->label.flag & 0x8000 >> i) {
-            etiLog.printHeader(TcpLog::INFO, "%c", component->label.text[i]);
+            etiLog.log(info, "%c", component->label.text[i]);
         }
     }
-    etiLog.printHeader(TcpLog::INFO, " (0x%x)\n", component->label.flag);
-    etiLog.printHeader(TcpLog::INFO, " service component type: 0x%x (%u)\n",
+    etiLog.log(info, " (0x%x)\n", component->label.flag);
+    etiLog.log(info, " service component type: 0x%x (%u)\n",
             component->type, component->type);
-    etiLog.printHeader(TcpLog::INFO, " (packet) id:            %u\n",
+    etiLog.log(info, " (packet) id:            %u\n",
             component->packet.id);
-    etiLog.printHeader(TcpLog::INFO, " (packet) address:       %u\n",
+    etiLog.log(info, " (packet) address:       %u\n",
             component->packet.address);
-    etiLog.printHeader(TcpLog::INFO, " (packet) app type:      %u\n",
+    etiLog.log(info, " (packet) app type:      %u\n",
             component->packet.appType);
-    etiLog.printHeader(TcpLog::INFO, " (packet) datagroup:     %u\n",
+    etiLog.log(info, " (packet) datagroup:     %u\n",
             component->packet.datagroup);
 }
 
@@ -372,57 +372,57 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     for (subchannel = subchannels.begin(); subchannel != subchannels.end();
             ++subchannel) {
         dabProtection* protection = &(*subchannel)->protection;
-        etiLog.printHeader(TcpLog::INFO, "Subchannel   %i\n", index);
-        etiLog.printHeader(TcpLog::INFO, " input\n");
-        etiLog.printHeader(TcpLog::INFO, "   protocol: %s\n",
+        etiLog.log(info, "Subchannel   %i\n", index);
+        etiLog.log(info, " input\n");
+        etiLog.log(info, "   protocol: %s\n",
                 (*subchannel)->inputProto);
-        etiLog.printHeader(TcpLog::INFO, "   name:     %s\n",
+        etiLog.log(info, "   name:     %s\n",
                 (*subchannel)->inputName);
-        etiLog.printHeader(TcpLog::INFO, " type:       ");
+        etiLog.log(info, " type:       ");
         switch ((*subchannel)->type) {
         case 0:
-            etiLog.printHeader(TcpLog::INFO, "audio\n");
+            etiLog.log(info, "audio\n");
             break;
         case 1:
-            etiLog.printHeader(TcpLog::INFO, "data\n");
+            etiLog.log(info, "data\n");
             break;
         case 2:
-            etiLog.printHeader(TcpLog::INFO, "fidc\n");
+            etiLog.log(info, "fidc\n");
             break;
         case 3:
-            etiLog.printHeader(TcpLog::INFO, "packet\n");
+            etiLog.log(info, "packet\n");
             break;
         default:
-            etiLog.printHeader(TcpLog::INFO, "Unknown data type "
+            etiLog.log(info, "Unknown data type "
                     "(service->type)\n");
             break;
         }
-        etiLog.printHeader(TcpLog::INFO, " id:         %i\n",
+        etiLog.log(info, " id:         %i\n",
                 (*subchannel)->id);
-        etiLog.printHeader(TcpLog::INFO, " bitrate:    %i\n",
+        etiLog.log(info, " bitrate:    %i\n",
                 (*subchannel)->bitrate);
-        etiLog.printHeader(TcpLog::INFO, " protection: ");
+        etiLog.log(info, " protection: ");
         if (protection->form == 0) {
-            etiLog.printHeader(TcpLog::INFO, "UEP %i\n", protection->level + 1);
+            etiLog.log(info, "UEP %i\n", protection->level + 1);
         } else {
-            etiLog.printHeader(TcpLog::INFO, "EEP %i-%c\n",
+            etiLog.log(info, "EEP %i-%c\n",
                     protection->level + 1,
                     protection->longForm.option == 0 ? 'A' : 'B');
         }
         if (protection->form == 0) {
-            etiLog.printHeader(TcpLog::INFO,
+            etiLog.log(info,
                     "  form:      short\n  switch:    %i\n  index:     %i\n",
                     protection->shortForm.tableSwitch,
                     protection->shortForm.tableIndex);
         } else {
-            etiLog.printHeader(TcpLog::INFO,
+            etiLog.log(info,
                     "  form:      long\n  option:    %i\n  level:     %i\n",
                     protection->longForm.option,
                     (*subchannel)->protection.level);
         }
-        etiLog.printHeader(TcpLog::INFO, " SAD:        %i\n",
+        etiLog.log(info, " SAD:        %i\n",
                 (*subchannel)->startAddress);
-        etiLog.printHeader(TcpLog::INFO, " size (CU):  %i\n",
+        etiLog.log(info, " size (CU):  %i\n",
                 getSizeCu(*subchannel));
         ++index;
     }
@@ -434,20 +434,20 @@ void printEnsemble(dabEnsemble* ensemble)
     memcpy(label, ensemble->label.text, 16);
     label[16] = 0;
 
-    etiLog.printHeader(TcpLog::INFO, "Ensemble\n");
-    etiLog.printHeader(TcpLog::INFO, " id:          0x%lx (%lu)\n",
+    etiLog.log(info, "Ensemble\n");
+    etiLog.log(info, " id:          0x%lx (%lu)\n",
             ensemble->id, ensemble->id);
-    etiLog.printHeader(TcpLog::INFO, " ecc:         0x%x (%u)\n",
+    etiLog.log(info, " ecc:         0x%x (%u)\n",
             ensemble->ecc, ensemble->ecc);
-    etiLog.printHeader(TcpLog::INFO, " label:       %s\n", label);
-    etiLog.printHeader(TcpLog::INFO, " short label: ");
+    etiLog.log(info, " label:       %s\n", label);
+    etiLog.log(info, " short label: ");
     for (int i = 0; i < 32; ++i) {
         if (ensemble->label.flag & 0x8000 >> i) {
-            etiLog.printHeader(TcpLog::INFO, "%c", ensemble->label.text[i]);
+            etiLog.log(info, "%c", ensemble->label.text[i]);
         }
     }
-    etiLog.printHeader(TcpLog::INFO, " (0x%x)\n", ensemble->label.flag);
-    etiLog.printHeader(TcpLog::INFO, " mode:        %u\n", ensemble->mode);
+    etiLog.log(info, " (0x%x)\n", ensemble->label.flag);
+    etiLog.log(info, " mode:        %u\n", ensemble->mode);
 }
 
 

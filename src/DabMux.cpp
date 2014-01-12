@@ -168,34 +168,34 @@ bool running = true;
 void signalHandler(int signum)
 {
 #ifdef _WIN32
-    etiLog.print(TcpLog::DBG, "\npid: %i\n", _getpid());
+    etiLog.log(debug, "\npid: %i\n", _getpid());
 #else
-    etiLog.print(TcpLog::DBG, "\npid: %i, ppid: %i\n", getpid(), getppid());
+    etiLog.log(debug, "\npid: %i, ppid: %i\n", getpid(), getppid());
 #endif
-    etiLog.print(TcpLog::DBG, "Signal handler called with signal ");
+    etiLog.log(debug, "Signal handler called with signal ");
     switch (signum) {
 #ifndef _WIN32
     case SIGHUP:
-        etiLog.print(TcpLog::DBG, "SIGHUP\n");
+        etiLog.log(debug, "SIGHUP\n");
         break;
     case SIGQUIT:
-        etiLog.print(TcpLog::DBG, "SIGQUIT\n");
+        etiLog.log(debug, "SIGQUIT\n");
         break;
     case SIGPIPE:
-        etiLog.print(TcpLog::DBG, "SIGPIPE\n");
+        etiLog.log(debug, "SIGPIPE\n");
         return;
         break;
 #endif
     case SIGINT:
-        etiLog.print(TcpLog::DBG, "SIGINT\n");
+        etiLog.log(debug, "SIGINT\n");
         break;
     case SIGTERM:
-        etiLog.print(TcpLog::DBG, "SIGTERM\n");
-        etiLog.print(TcpLog::DBG, "Exiting software\n");
+        etiLog.log(debug, "SIGTERM\n");
+        etiLog.log(debug, "Exiting software\n");
         exit(0);
         break;
     default:
-        etiLog.print(TcpLog::DBG, "number %i\n", signum);
+        etiLog.log(debug, "number %i\n", signum);
     }
 #ifndef _WIN32
     killpg(0, SIGPIPE);
@@ -222,19 +222,19 @@ int main(int argc, char *argv[])
 
 #ifdef _WIN32
     if (SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST) == 0) {
-        etiLog.printHeader(TcpLog::WARNING, "Can't increase priority: %s\n",
+        etiLog.log(warn, "Can't increase priority: %s\n",
                 strerror(errno));
     }
 #else
     if (setpriority(PRIO_PROCESS, 0, -20) == -1) {
-        etiLog.printHeader(TcpLog::WARNING, "Can't increase priority: %s\n",
+        etiLog.log(warn, "Can't increase priority: %s\n",
                 strerror(errno));
     }
 #endif
     /*sched_param scheduler;
       scheduler.sched_priority = 99;        // sched_get_priority_max(SCHED_RR)
       if (sched_setscheduler(0, SCHED_RR, &scheduler) == -1) {
-      etiLog.print(TcpLog::WARNING, "Can't increased priority: %s\n",
+      etiLog.log(warn, "Can't increased priority: %s\n",
       strerror(errno));
       }*/
 
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
         }
         catch (runtime_error &e) {
-            etiLog.printHeader(TcpLog::ERR, "Configuration file parsing error: %s\n",
+            etiLog.log(error, "Configuration file parsing error: %s\n",
                     e.what());
             goto EXIT;
         }
@@ -361,7 +361,7 @@ int main(int argc, char *argv[])
 
 
     if (outputs.size() == 0) {
-        etiLog.printHeader(TcpLog::WARNING, "no output defined\n");
+        etiLog.log(warn, "no output defined\n");
 
         // initialise a new dabOutput
         outputs.push_back(new dabOutput("simul", NULL));
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
                 subchannel != ensemble->subchannels.end();
                 ++subchannel) {
             if (ids.find((*subchannel)->id) != ids.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Subchannel %u is set more than once!\n",
                         (*subchannel)->id);
                 returnCode = -1;
@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
                 service != ensemble->services.end();
                 ++service) {
             if (ids.find((*service)->id) != ids.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Service id 0x%x (%u) is set more than once!\n",
                         (*service)->id, (*service)->id);
                 returnCode = -1;
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
             // Get first component of this service
             component = getComponent(ensemble->components, (*service)->id);
             if (component == ensemble->components.end()) {
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Service id 0x%x (%u) includes no component!\n",
                         (*service)->id, (*service)->id);
                 returnCode = -1;
@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
                 (*service)->program = false;
                 break;
             default:
-                etiLog.printHeader(TcpLog::ERR,
+                etiLog.log(error,
                         "Error, unknown service type: %u\n", (*service)->getType(ensemble));
                 returnCode = -1;
                 goto EXIT;
@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
                 subchannel =
                     getSubchannel(ensemble->subchannels, (*component)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
-                    etiLog.printHeader(TcpLog::ERR, "Error, service %u component "
+                    etiLog.log(error, "Error, service %u component "
                             "links to the invalid subchannel %u\n",
                             (*component)->serviceId, (*component)->subchId);
                     returnCode = -1;
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
                 case 3:
                     break;
                 default:
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Error, unknown subchannel type\n");
                     returnCode = -1;
                     goto EXIT;
@@ -504,19 +504,19 @@ int main(int argc, char *argv[])
             (*output)->output = new DabOutputZMQ("epgm");
 #endif // defined(HAVE_OUTPUT_ZEROMQ)
         } else {
-            etiLog.printHeader(TcpLog::ERR, "Output protcol unknown: %s\n",
+            etiLog.log(error, "Output protcol unknown: %s\n",
                     (*output)->outputProto.c_str());
             goto EXIT;
         }
 
         if ((*output)->output == NULL) {
-            etiLog.printHeader(TcpLog::ERR, "Unable to init output %s://%s\n",
+            etiLog.log(error, "Unable to init output %s://%s\n",
                     (*output)->outputProto.c_str(), (*output)->outputName.c_str());
             return -1;
         }
         if ((*output)->output->Open((*output)->outputName)
                 == -1) {
-            etiLog.printHeader(TcpLog::ERR, "Unable to open output %s://%s\n",
+            etiLog.log(error, "Unable to open output %s://%s\n",
                     (*output)->outputProto.c_str(), (*output)->outputName.c_str());
             return -1;
         }
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
                 &(*subchannel)->operations, (*subchannel)->data,
                 (*subchannel)->bitrate);
         if (result <= 0) {
-            etiLog.printHeader(TcpLog::ERR, "can't set bitrate for source %s\n",
+            etiLog.log(error, "can't set bitrate for source %s\n",
                     (*subchannel)->inputName);
             returnCode = -1;
             goto EXIT;
@@ -566,14 +566,14 @@ int main(int argc, char *argv[])
     }
 
     if (ensemble->subchannels.size() == 0) {
-        etiLog.printHeader(TcpLog::ERR, "can't multiplexed no subchannel!\n");
+        etiLog.log(error, "can't multiplexed no subchannel!\n");
         returnCode = -1;
         goto EXIT;
     }
 
     subchannel = ensemble->subchannels.end() - 1;
     if ((*subchannel)->startAddress + getSizeCu((*subchannel)) > 864) {
-        etiLog.printHeader(TcpLog::ERR, "Total size in CU exceeds 864\n");
+        etiLog.log(error, "Total size in CU exceeds 864\n");
         printSubchannels(ensemble->subchannels);
         returnCode = -1;
         goto EXIT;
@@ -587,7 +587,7 @@ int main(int argc, char *argv[])
         subchannel = getSubchannel(ensemble->subchannels,
                 (*component)->subchId);
         if (subchannel == ensemble->subchannels.end()) {
-            etiLog.printHeader(TcpLog::ERR,
+            etiLog.log(error,
                     "Subchannel %i does not exist for component "
                     "of service %i\n",
                     (*component)->subchId, (*component)->serviceId);
@@ -603,22 +603,22 @@ int main(int argc, char *argv[])
     memset(etiFrame, 0, 6144);
 
     // Print settings before starting
-    etiLog.printHeader(TcpLog::INFO, "\n--- Multiplex configuration ---\n");
+    etiLog.log(info, "\n--- Multiplex configuration ---\n");
     printEnsemble(ensemble);
 
-    etiLog.printHeader(TcpLog::INFO, "\n--- Subchannels list ---\n");
+    etiLog.log(info, "\n--- Subchannels list ---\n");
     printSubchannels(ensemble->subchannels);
 
-    etiLog.printHeader(TcpLog::INFO, "\n--- Services list ---\n");
+    etiLog.log(info, "\n--- Services list ---\n");
     printServices(ensemble->services);
 
-    etiLog.printHeader(TcpLog::INFO, "\n--- Components list ---\n");
+    etiLog.log(info, "\n--- Components list ---\n");
     printComponents(ensemble->components);
 
-    etiLog.printHeader(TcpLog::INFO, "\n--- Output list ---\n");
+    etiLog.log(info, "\n--- Output list ---\n");
     printOutputs(outputs);
 
-    etiLog.printHeader(TcpLog::INFO, "\n");
+    etiLog.log(info, "\n");
 
 
     /***************************************************************************
@@ -973,7 +973,7 @@ int main(int argc, char *argv[])
                     subchannel = getSubchannel(ensemble->subchannels,
                             (*component)->subchId);
                     if (subchannel == ensemble->subchannels.end()) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Subchannel %i does not exist for component "
                                 "of service %i\n",
                                 (*component)->subchId, (*component)->serviceId);
@@ -1009,7 +1009,7 @@ int main(int argc, char *argv[])
                         packet_description->CA_flag = 0;
                         break;
                     default:
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Component type not supported\n");
                         returnCode = -1;
                         goto EXIT;
@@ -1018,7 +1018,7 @@ int main(int argc, char *argv[])
                     fig0_2->Length += 2;
                     figSize += 2;
                     if (figSize > 30) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Sorry, no place left in FIG 0/2 to insert "
                                 "component %i of program service %i.\n",
                                 curCpnt, cur);
@@ -1089,7 +1089,7 @@ int main(int argc, char *argv[])
                     subchannel = getSubchannel(ensemble->subchannels,
                             (*component)->subchId);
                     if (subchannel == ensemble->subchannels.end()) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Subchannel %i does not exist for component "
                                 "of service %i\n",
                                 (*component)->subchId, (*component)->serviceId);
@@ -1125,7 +1125,7 @@ int main(int argc, char *argv[])
                         packet_description->CA_flag = 0;
                         break;
                     default:
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Component type not supported\n");
                         returnCode = -1;
                         goto EXIT;
@@ -1134,7 +1134,7 @@ int main(int argc, char *argv[])
                     fig0_2->Length += 2;
                     figSize += 2;
                     if (figSize > 30) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "Sorry, no place left in FIG 0/2 to insert "
                                 "component %i of data service %i.\n",
                                 curCpnt, cur);
@@ -1155,7 +1155,7 @@ int main(int argc, char *argv[])
                 subchannel = getSubchannel(ensemble->subchannels,
                         (*component)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Subchannel %i does not exist for component "
                             "of service %i\n",
                             (*component)->subchId, (*component)->serviceId);
@@ -1206,7 +1206,7 @@ int main(int argc, char *argv[])
                 }
 
                 if (figSize > 30) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "can't add to Fic Fig 0/3, "
                             "too much packet service\n");
                     returnCode = -1;
@@ -1273,7 +1273,7 @@ int main(int argc, char *argv[])
         }
 
         if (figSize > 30) {
-            etiLog.printHeader(TcpLog::ERR,
+            etiLog.log(error,
                     "FIG too big (%i > 30)\n", figSize);
             returnCode = -1;
             goto EXIT;
@@ -1304,7 +1304,7 @@ int main(int argc, char *argv[])
                 subchannel = getSubchannel(ensemble->subchannels,
                         (*componentIndicatorProgram)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Subchannel %i does not exist for component "
                             "of service %i\n",
                             (*componentIndicatorProgram)->subchId,
@@ -1385,7 +1385,7 @@ int main(int argc, char *argv[])
                 subchannel = getSubchannel(ensemble->subchannels,
                         (*componentIndicatorData)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Subchannel %i does not exist for component "
                             "of service %i\n",
                             (*componentIndicatorData)->subchId,
@@ -1483,7 +1483,7 @@ int main(int argc, char *argv[])
                 subchannel = getSubchannel(ensemble->subchannels,
                         (*component)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
-                    etiLog.printHeader(TcpLog::ERR,
+                    etiLog.log(error,
                             "Subchannel %i does not exist for component "
                             "of service %i\n",
                             (*component)->subchId, (*component)->serviceId);
@@ -1523,7 +1523,7 @@ int main(int argc, char *argv[])
                     fig0->Length += 2;
 
                     if (figSize > 30) {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "can't add to Fic Fig 0/13, "
                                 "too much packet service\n");
                         returnCode = -1;
@@ -1699,7 +1699,7 @@ int main(int argc, char *argv[])
         }
 
         if (ensemble->services.size() > 30) {
-            etiLog.printHeader(TcpLog::ERR,
+            etiLog.log(error,
                     "Sorry, but this software currently can't write "
                     "Service Label of more than 30 services.\n");
             returnCode = -1;
@@ -1731,7 +1731,7 @@ int main(int argc, char *argv[])
                 (*subchannel)->operations.unlock((*subchannel)->data);
             }
             if (result < 0) {
-                etiLog.print(TcpLog::INFO, "Subchannel %d read failed at ETI frame number: %i\n", (*subchannel)->id, currentFrame);
+                etiLog.log(info, "Subchannel %d read failed at ETI frame number: %i\n", (*subchannel)->id, currentFrame);
             }
             index += sizeSubchannel;
         }
@@ -1795,7 +1795,7 @@ int main(int argc, char *argv[])
         for (output = outputs.begin() ; output != outputs.end(); ++output) {
             if ((*output)->output->Write(etiFrame, index)
                     == -1) {
-                etiLog.print(TcpLog::ERR, "Can't write to output %s://%s\n",
+                etiLog.log(error, "Can't write to output %s://%s\n",
                         (*output)->outputProto.c_str(), (*output)->outputName.c_str());
             }
         }
@@ -1807,12 +1807,12 @@ int main(int argc, char *argv[])
 #if _DEBUG
         if (currentFrame % 100 == 0) {
             if (enableTist) {
-                etiLog.print(TcpLog::INFO, "ETI frame number %i Timestamp: %d + %f\n",
+                etiLog.log(info, "ETI frame number %i Timestamp: %d + %f\n",
                         currentFrame, mnsc_time.tv_sec, 
                         (timestamp & 0xFFFFFF) / 16384000.0);
             }
             else {
-                etiLog.print(TcpLog::INFO, "ETI frame number %i Time: %d, no TIST\n",
+                etiLog.log(info, "ETI frame number %i Time: %d, no TIST\n",
                         currentFrame, mnsc_time.tv_sec);
             }
         }
@@ -1820,7 +1820,7 @@ int main(int argc, char *argv[])
     }
 
 EXIT:
-    etiLog.print(TcpLog::DBG, "exiting...\n");
+    etiLog.log(debug, "exiting...\n");
     fflush(stderr);
     //fermeture des fichiers
     for (subchannel = ensemble->subchannels.begin();
@@ -1849,9 +1849,9 @@ EXIT:
     UdpSocket::clean();
 
     if (returnCode < 0) {
-        etiLog.print(TcpLog::EMERG, "...aborting\n");
+        etiLog.log(emerg, "...aborting\n");
     } else {
-        etiLog.print(TcpLog::DBG, "...done\n");
+        etiLog.log(debug, "...done\n");
     }
 
     return returnCode;

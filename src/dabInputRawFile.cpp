@@ -47,7 +47,7 @@ int dabInputRawFileRead(dabInputOperations* ops, void* args, void* buffer,
 {
     int ret = ops->read(args, buffer, size);
     if (ret == 0) {
-        etiLog.print(TcpLog::NOTICE, "reach end of raw file -> rewinding\n");
+        etiLog.log(info, "reach end of raw file -> rewinding\n");
         ops->rewind(args);
         ret = ops->read(args, buffer, size);
     }

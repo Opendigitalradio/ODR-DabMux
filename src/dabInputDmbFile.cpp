@@ -106,7 +106,7 @@ int dabInputDmbFileRead(dabInputOperations* ops, void* args, void* buffer, int s
         input->stats.frameRecords[input->stats.frameCount].curSize = nbBytes;
         input->bufferLength = fread(input->buffer, 188, 1, input->file);
         if (input->bufferLength == 0) {
-            etiLog.print(TcpLog::NOTICE, "reach end of file -> rewinding\n");
+            etiLog.log(info, "reach end of file -> rewinding\n");
             if (fseek(input->file, 0, SEEK_SET) == 0) {
                 input->bufferLength = fread(input->buffer, 188, 1, input->file);
             }
@@ -120,14 +120,14 @@ int dabInputDmbFileRead(dabInputOperations* ops, void* args, void* buffer, int s
     }
 
     if (++stats->frameCount == NB_RECORDS) {
-        etiLog.print(TcpLog::INFO, "Data subchannel usage: (%i)",
+        etiLog.log(info, "Data subchannel usage: (%i)",
                 stats->id);
         for (int i = 0; i < stats->frameCount; ++i) {
-            etiLog.print(TcpLog::INFO, " %i/%i",
+            etiLog.log(info, " %i/%i",
                     stats->frameRecords[i].curSize,
                     stats->frameRecords[i].maxSize);
         }
-        etiLog.print(TcpLog::INFO, "\n");
+        etiLog.log(info, "\n");
         stats->frameCount = 0;
     }
     return size;

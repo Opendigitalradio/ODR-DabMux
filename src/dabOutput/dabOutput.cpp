@@ -36,13 +36,13 @@ DabOutputFifo::open(const char* name)
                         this->type = ETI_FILE_TYPE_STREAMED;
                         break;
                     } else {
-                        etiLog.printHeader(TcpLog::ERR,
+                        etiLog.log(error,
                                 "File type '%s' is not supported.\n", value);
                         return -1;
                     }
                 }
                 else {
-                    etiLog.printHeader(TcpLog::WARNING, "Parameter '%s' unknown\n", key);
+                    etiLog.log(warn, "Parameter '%s' unknown\n", key);
                 }
             }
         } while (nextPair != NULL);
@@ -86,7 +86,7 @@ int DabOutputFifo::write(void* buffer, int size)
                 goto FIFO_WRITE_ERROR;
             break;
         default:
-            etiLog.printHeader(TcpLog::ERR, "File type is not supported.\n");
+            etiLog.log(error, "File type is not supported.\n");
             return -1;
     }
 

@@ -52,7 +52,7 @@ int DabOutputUdp::Open(const char* name)
     long port;
     address = strchr(hostport, ':');
     if (address == NULL) {
-        etiLog.printHeader(TcpLog::ERR,
+        etiLog.log(error,
                 "\"%s\" is an invalid format for UDP address: "
                 "should be [address]:port - > aborting\n",
                 hostport);
@@ -64,19 +64,19 @@ int DabOutputUdp::Open(const char* name)
 
     port = strtol(address, (char **)NULL, 10);
     if ((port == LONG_MIN) || (port == LONG_MAX)) {
-        etiLog.printHeader(TcpLog::ERR,
+        etiLog.log(error,
                 "can't convert port number in UDP address %s\n", address);
         goto udp_open_fail;
     }
     if (port == 0) {
-        etiLog.printHeader(TcpLog::ERR,
+        etiLog.log(error,
                 "can't use port number 0 in UDP address\n");
         goto udp_open_fail;
     }
     address = hostport;
     if (strlen(address) > 0) {
         if (this->packet_->getAddress().setAddress(address) == -1) {
-            etiLog.printHeader(TcpLog::ERR, "can't set address %s (%s: %s) "
+            etiLog.log(error, "can't set address %s (%s: %s) "
                     "-> aborting\n", address, inetErrDesc, inetErrMsg);
             goto udp_open_fail;
         }
@@ -84,7 +84,7 @@ int DabOutputUdp::Open(const char* name)
     this->packet_->getAddress().setPort(port);
 
     if (this->socket_->create() == -1) {
-        etiLog.printHeader(TcpLog::ERR, "can't create UDP socket (%s: %s) "
+        etiLog.log(error, "can't create UDP socket (%s: %s) "
                 "-> aborting\n)", inetErrDesc, inetErrMsg);
         goto udp_open_fail;
     }

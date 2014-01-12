@@ -43,8 +43,6 @@
 #include <string>
 #include <limits.h>
 
-extern TcpLog etiLog;
-
 #ifdef __MINGW32__
 #   define bzero(s, n) memset(s, 0, n)
 #endif

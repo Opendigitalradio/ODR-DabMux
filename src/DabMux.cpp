@@ -118,6 +118,8 @@ typedef DWORD32 uint32_t;
 #include "ParserCmdline.h"
 #include "ParserConfigfile.h"
 
+#include "Log.h"
+
 using namespace std;
 
 static unsigned char Padding_FIB[] = {

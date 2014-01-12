@@ -26,8 +26,7 @@
 #   include "config.h"
 #endif
 #include "dabInputFile.h"
-#include "TcpLog.h"
-extern TcpLog etiLog;
+#include "Log.h"
 
 
 #ifdef _WIN32

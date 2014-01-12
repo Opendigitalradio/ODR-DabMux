@@ -74,7 +74,7 @@ crc_dabmux_SOURCES  =DabMux.cpp \
                      ParserCmdline.cpp ParserCmdline.h \
                      ParserConfigfile.cpp ParserConfigfile.h \
                      Eti.h Eti.cpp \
-                     TcpLog.h TcpLog.cpp \
+                     Log.h Log.cpp \
                      UdpSocket.h UdpSocket.cpp \
                      InetAddress.h InetAddress.cpp \
                      prbs.h prbs.c \

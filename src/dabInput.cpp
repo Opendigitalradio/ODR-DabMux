@@ -23,9 +23,6 @@
 
 #include <string.h>
 
-TcpLog etiLog;
-
-
 bool dabInputOperations::operator==(const dabInputOperations& ops)
 {
     return memcmp(this, &ops, sizeof(*this)) == 0;

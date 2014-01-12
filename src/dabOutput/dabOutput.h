@@ -29,7 +29,7 @@
 
 #include "UdpSocket.h"
 #include "TcpServer.h"
-#include "TcpLog.h"
+#include "Log.h"
 #include <stdexcept>
 #include <signal.h>
 #ifdef _WIN32
@@ -49,8 +49,6 @@
 #ifdef HAVE_OUTPUT_ZEROMQ
 #  include "zmq.hpp"
 #endif
-
-extern TcpLog etiLog;
 
 // Abstract base class for all outputs
 class DabOutput

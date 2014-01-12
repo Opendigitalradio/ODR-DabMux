@@ -29,6 +29,7 @@
 #   include "config.h"
 #endif
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <fstream>
@@ -38,12 +39,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "porting.h"
-
 #define SYSLOG_IDENT "CRC-DABMUX"
 #define SYSLOG_FACILITY LOG_LOCAL0
-
-extern Logger etiLog;
 
 enum log_level_t {debug = 0, info, warn, error, alert, emerg};
 
@@ -132,14 +129,19 @@ class Logger {
         void register_backend(LogBackend* backend);
 
         /* Log the message to all backends */
-        void log(log_level_t level, std::string message);
+        void log(log_level_t level, const char* fmt, ...);
 
-        /* Return a LogLine for the given level */
+        void logstr(log_level_t level, const std::string message);
+
+        /* Return a LogLine for the given level
+         * so that you can write etiLog.level(info) << "stuff = " << 21 */
         LogLine level(log_level_t level);
 
     private:
         std::list<LogBackend*> backends;
 };
+
+extern Logger etiLog;
 
 // Accumulate a line of logs, using same syntax as stringstream
 // The line is logged when the LogLine gets destroyed
@@ -161,7 +163,7 @@ class LogLine {
 
         ~LogLine()
         {
-            logger_->log(level_, os.str());
+            logger_->logstr(level_, os.str());
         }
 
     private:
@@ -172,3 +174,4 @@ class LogLine {
 
 
 #endif
+

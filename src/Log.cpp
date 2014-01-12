@@ -23,9 +23,9 @@
  */
 
 #include <list>
+#include <stdarg.h>
 
 #include "Log.h"
-#include "porting.h"
 
 Logger etiLog;
 
@@ -36,7 +36,31 @@ void Logger::register_backend(LogBackend* backend) {
 }
 
 
-void Logger::log(log_level_t level, std::string message) {
+void Logger::log(log_level_t level, const char* fmt, ...)
+{
+    int size = 100;
+    std::string str;
+    va_list ap;
+    while (1) {
+        str.resize(size);
+        va_start(ap, fmt);
+        int n = vsnprintf((char *)str.c_str(), size, fmt, ap);
+        va_end(ap);
+        if (n > -1 && n < size) {
+            str.resize(n);
+            break;
+        }
+        if (n > -1)
+            size = n + 1;
+        else
+            size *= 2;
+    }
+
+    logstr(level, str);
+}
+
+void Logger::logstr(log_level_t level, const std::string message)
+{
     for (std::list<LogBackend*>::iterator it = backends.begin();
             it != backends.end();
             it++) {

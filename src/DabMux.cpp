@@ -362,16 +362,11 @@ int main(int argc, char *argv[])
     }
 
 
+    etiLog.log(info, "CRC-DABMUX starting up");
 
     if (outputs.size() == 0) {
-        etiLog.log(warn, "no output defined\n");
-
-        // initialise a new dabOutput
-        outputs.push_back(new dabOutput("simul", NULL));
-        output = outputs.end() - 1;
-
-        printf("Press enter to continue\n");
-        getchar();
+        etiLog.log(emerg, "no output defined");
+        goto EXIT;
     }
 
     // Check and adjust subchannels
@@ -606,22 +601,21 @@ int main(int argc, char *argv[])
     memset(etiFrame, 0, 6144);
 
     // Print settings before starting
-    etiLog.log(info, "\n--- Multiplex configuration ---\n");
+    etiLog.log(info, "--- Multiplex configuration ---");
     printEnsemble(ensemble);
 
-    etiLog.log(info, "\n--- Subchannels list ---\n");
+    etiLog.log(info, "--- Subchannels list ---");
     printSubchannels(ensemble->subchannels);
 
-    etiLog.log(info, "\n--- Services list ---\n");
+    etiLog.log(info, "--- Services list ---");
     printServices(ensemble->services);
 
-    etiLog.log(info, "\n--- Components list ---\n");
+    etiLog.log(info, "--- Components list ---");
     printComponents(ensemble->components);
 
-    etiLog.log(info, "\n--- Output list ---\n");
+    etiLog.log(info, "--- Output list ---");
     printOutputs(outputs);
 
-    etiLog.log(info, "\n");
 
 
     /***************************************************************************

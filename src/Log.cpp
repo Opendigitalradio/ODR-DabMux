@@ -59,15 +59,22 @@ void Logger::log(log_level_t level, const char* fmt, ...)
     logstr(level, str);
 }
 
-void Logger::logstr(log_level_t level, const std::string message)
+void Logger::logstr(log_level_t level, std::string message)
 {
+    /* Remove a potential trailing newline.
+     * It doesn't look good in syslog
+     */
+    if (message[message.length()-1] == '\n') {
+        message.resize(message.length()-1);
+    }
+
     for (std::list<LogBackend*>::iterator it = backends.begin();
             it != backends.end();
             it++) {
         (*it)->log(level, message);
     }
 
-    std::cerr << levels_as_str[level] << " " << message;
+    std::cerr << levels_as_str[level] << " " << message << std::endl;
 }
 
 

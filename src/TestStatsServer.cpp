@@ -9,6 +9,8 @@ int main(int argc, char **argv)
     StatsServer serv(2720);
 
     serv.registerInput("foo");
+    serv.registerInput("bar");
+
     while (true) {
         for (int i = 0; i < NUMOF(stats_example); i++) {
             usleep(400000);

@@ -84,7 +84,18 @@ class StatsServer
             m_listenport(listen_port),
             m_running(true),
             m_thread(&StatsServer::serverThread, this)
-            {}
+            {
+                m_sock = 0;
+            }
+
+        ~StatsServer()
+        {
+            m_running = false;
+            if (m_sock) {
+                close(m_sock);
+            }
+            m_thread.join();
+        }
 
         void registerInput(std::string id);
         // The input notifies the StatsServer about a new buffer size
@@ -105,6 +116,8 @@ class StatsServer
         // serverThread runs in a separate thread
         bool m_running;
         boost::thread m_thread;
+
+        int m_sock;
 
         /******* Statistics Data ********/
         std::map<std::string, InputStat> m_inputStats;

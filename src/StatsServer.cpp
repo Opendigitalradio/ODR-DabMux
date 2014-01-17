@@ -105,14 +105,14 @@ std::string StatsServer::getConfigJSON()
     ss << "{ \"config\" : [\n";
 
     std::map<std::string,InputStat>::iterator iter;
-    bool first = true;
-    for(iter = m_inputStats.begin(); iter != m_inputStats.end(); ++iter)
+    int i = 0;
+    for(iter = m_inputStats.begin(); iter != m_inputStats.end();
+            ++iter, i++)
     {
         std::string id = iter->first;
 
-        if (! first) {
+        if (i > 0) {
             ss << ", ";
-            first = false;
         }
 
         ss << " \"" << id << "\" ";
@@ -129,15 +129,15 @@ std::string StatsServer::getValuesJSON()
     ss << "{ \"values\" : {\n";
 
     std::map<std::string,InputStat>::iterator iter;
-    bool first = true;
-    for(iter = m_inputStats.begin(); iter != m_inputStats.end(); ++iter)
+    int i = 0;
+    for(iter = m_inputStats.begin(); iter != m_inputStats.end();
+            ++iter, i++)
     {
         const std::string& id = iter->first;
         InputStat& stats = iter->second;
 
-        if (! first) {
+        if (i > 0) {
             ss << " ,\n";
-            first = false;
         }
 
         ss << " \"" << id << "\" : ";
@@ -151,7 +151,7 @@ std::string StatsServer::getValuesJSON()
 }
 void StatsServer::serverThread()
 {
-    int sock, accepted_sock;
+    int accepted_sock;
     char buffer[256];
     char welcome_msg[256];
     struct sockaddr_in serv_addr, cli_addr;
@@ -166,8 +166,8 @@ void StatsServer::serverThread()
             PACKAGE_NAME, PACKAGE_VERSION, GITVERSION);
 
 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
+    m_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (m_sock < 0) {
         etiLog.level(error) << "Error opening Stats Server socket: " <<
             strerror(errno);
         return;
@@ -178,13 +178,13 @@ void StatsServer::serverThread()
     serv_addr.sin_addr.s_addr = INADDR_ANY; // TODO listen only on 127.0.0.1
     serv_addr.sin_port = htons(m_listenport);
 
-    if (bind(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+    if (bind(m_sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
         etiLog.level(error) << "Error binding Stats Server socket: " <<
             strerror(errno);
         goto end_serverthread;
     }
 
-    if (listen(sock, 5) < 0) {
+    if (listen(m_sock, 5) < 0) {
         etiLog.level(error) << "Error listening on Stats Server socket: " <<
             strerror(errno);
         goto end_serverthread;
@@ -195,7 +195,7 @@ void StatsServer::serverThread()
         socklen_t cli_addr_len = sizeof(cli_addr);
 
         /* Accept actual connection from the client */
-        accepted_sock = accept(sock, (struct sockaddr *)&cli_addr, &cli_addr_len);
+        accepted_sock = accept(m_sock, (struct sockaddr *)&cli_addr, &cli_addr_len);
         if (accepted_sock < 0) {
             etiLog.level(warn) << "Stats Server cound not accept connection: " <<
                 strerror(errno);
@@ -247,7 +247,7 @@ void StatsServer::serverThread()
     }
 
 end_serverthread:
-    close(sock);
+    close(m_sock);
 }
 
 

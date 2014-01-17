@@ -34,6 +34,8 @@ to the official one:
 - timestamping support required for SFN
 - a ZeroMQ ETI output that can be used with CRC-DABMOD
 - a ZeroMQ dabplus input that can be used with fdk-aac-dabplus-zmq
+- supports logging to syslog
+- supports ZMQ input monitoring with munin tool
 
 The src/ directory contains the source code of CRC-DabMux.
 

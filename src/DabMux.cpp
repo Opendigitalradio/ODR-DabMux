@@ -117,10 +117,13 @@ typedef DWORD32 uint32_t;
 #include "utils.h"
 #include "ParserCmdline.h"
 #include "ParserConfigfile.h"
-
+#include "StatsServer.h"
 #include "Log.h"
 
 using namespace std;
+
+/* Global stats server */
+StatsServer global_stats(12720); //TODO define port
 
 static unsigned char Padding_FIB[] = {
     0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

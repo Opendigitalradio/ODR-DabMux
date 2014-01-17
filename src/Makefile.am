@@ -38,7 +38,7 @@ ZMQ_LIBS    =
 endif
 
 crc_dabmux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
-crc_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread
+crc_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
 crc_dabmux_SOURCES  =DabMux.cpp \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
@@ -85,6 +85,7 @@ crc_dabmux_SOURCES  =DabMux.cpp \
                      Interleaver.h Interleaver.cpp \
                      ReedSolomon.h ReedSolomon.cpp \
                      mpeg.h mpeg.c \
+                     StatsServer.h StatsServer.cpp \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp
 

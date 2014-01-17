@@ -47,6 +47,7 @@
 #include <string>
 #include "dabInput.h"
 #include "dabInputFifo.h"
+#include "StatsServer.h"
 
 // Number of frames to prebuffer
 #define INPUT_ZMQ_PREBUFFERING 10
@@ -61,7 +62,6 @@ struct dabInputZmqData {
     void* zmq_context;
     void* zmq_sock;
     std::list<char*> frame_buffer; //stores elements of type char[<framesize>]
-    dabInputFifoStats stats;
     int prebuffering;
     std::string uri;
 };

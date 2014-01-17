@@ -18,6 +18,10 @@ int main(int argc, char **argv)
             if (stats_example[i] == 0) {
                 serv.notifyUnderrun("foo");
             }
+
+            if (stats_example[i] == 56) {
+                serv.notifyOverrun("foo");
+            }
         }
     }
 

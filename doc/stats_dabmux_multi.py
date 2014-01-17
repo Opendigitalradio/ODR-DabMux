@@ -9,26 +9,6 @@ import socket
 
 config_template_top = """
 multigraph zmq_inbuf
-graph_title {title}
-graph_order high low underruns overruns
-graph_args --base 1000
-graph_vlabel max/min buffer size bytes during last ${{graph_period}}
-graph_category dabmux
-graph_info This graph shows the high and low buffer sizes for ZMQ inputs
-
-high.info Max buffer size
-high.label Bytes
-high.min 0
-low.info Min buffer size
-low.label Bytes
-low.min 0
-underruns.info Number of underruns
-underruns.label Occurrencies
-underruns.min 0
-overruns.info Number of overruns
-overruns.label Occurrencies
-overruns.min 0
-
 """
 
 config_template_individual = """
@@ -52,17 +32,16 @@ low.warning 1:
 underruns.info Number of underruns
 underruns.label Occurrencies
 underruns.min 0
-underruns.warning 1:
+underruns.warning 0:0
 overruns.info Number of overruns
 overruns.label Occurrencies
 overruns.min 0
-overruns.warning 1:
+overruns.warning 0:0
 """
 
-#TODO enable
-#if not os.environ.get("MUNIN_CAP_MULTIGRAPH"):
-#    print("This needs munin version 1.4 at least")
-#    sys.exit(1)
+if not os.environ.get("MUNIN_CAP_MULTIGRAPH"):
+    print("This needs munin version 1.4 at least")
+    sys.exit(1)
 
 def connect():
     """Create a connection to the dabmux stats server

@@ -211,7 +211,7 @@ void StatsServer::serverThread()
         }
 
         /* receive command */
-        memset(buffer, 256, 0);
+        memset(buffer, 0, 256);
         int n = read(accepted_sock, buffer, 255);
         if (n < 0) {
             etiLog.level(warn) << "Error reading from Stats Server socket " <<

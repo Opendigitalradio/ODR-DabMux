@@ -82,7 +82,7 @@ def connect():
 
 def get_id_from_uri(uri):
     proto, _, port = uri.partition('://*:')
-    return "zmq-" + proto + "-" + port
+    return "zmq_" + proto + "_" + port
 
 if len(sys.argv) == 1:
     sock = connect()

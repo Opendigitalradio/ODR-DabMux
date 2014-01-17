@@ -6,6 +6,7 @@
 import sys
 import json
 import socket
+import os
 
 config_template_top = """
 multigraph zmq_inbuf

@@ -22,19 +22,19 @@ graph_category dabmux
 graph_info This graph shows the high and low buffer sizes for the {ident} ZMQ input
 
 high.info Max buffer size
-high.label Bytes
+high.label Max Buffer Bytes
 high.min 0
 high.warning 1:
 low.info Min buffer size
-low.label Bytes
+low.label Min Buffer Bytes
 low.min 0
 low.warning 1:
 underruns.info Number of underruns
-underruns.label Occurrencies
+underruns.label Number of underruns
 underruns.min 0
 underruns.warning 0:0
 overruns.info Number of overruns
-overruns.label Occurrencies
+overruns.label Number of overruns
 overruns.min 0
 overruns.warning 0:0
 """

@@ -8,6 +8,11 @@ import json
 import socket
 import os
 
+config_top = """
+multigraph zmq_inbuf
+graph_category dabux
+"""
+
 config_template = """
 multigraph zmq_inbuf.id_{ident}
 
@@ -91,7 +96,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 
     config = json.loads(sock.recv(256))
 
-    munin_config = ""
+    munin_config = config_top
 
     for conf in config['config']:
         munin_config += config_template.format(ident=get_id_from_uri(conf))

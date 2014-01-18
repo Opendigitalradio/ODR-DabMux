@@ -8,11 +8,7 @@ import json
 import socket
 import os
 
-config_template_top = """
-multigraph zmq_inbuf
-"""
-
-config_template_individual = """
+config_template = """
 multigraph zmq_inbuf.id_{ident}
 
 graph_title Contribution {ident} buffer
@@ -30,6 +26,14 @@ low.info Min buffer size
 low.label Min Buffer Bytes
 low.min 0
 low.warning 1:
+
+graph_title Contribution {ident} over/underruns
+graph_order underruns overruns
+graph_args --base 1000
+graph_vlabel number of underruns/overruns during last ${{graph_period}}
+graph_category dabmux
+graph_info This graph shows the number of under/overruns for the {ident} ZMQ input
+
 underruns.info Number of underruns
 underruns.label Number of underruns
 underruns.min 0
@@ -87,10 +91,10 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 
     config = json.loads(sock.recv(256))
 
-    munin_config = config_template_top.format(title="dabmux ZMQ input buffers")
+    munin_config = ""
 
     for conf in config['config']:
-        munin_config += config_template_individual.format(ident=get_id_from_uri(conf))
+        munin_config += config_template.format(ident=get_id_from_uri(conf))
 
     print(munin_config)
 

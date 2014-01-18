@@ -9,12 +9,10 @@ import socket
 import os
 
 config_top = """
-multigraph zmq_inbuf
-graph_category dabux
 """
 
 config_template = """
-multigraph zmq_inbuf.id_{ident}
+multigraph buffers_{ident}
 
 graph_title Contribution {ident} buffer
 graph_order high low
@@ -32,6 +30,7 @@ low.label Min Buffer Bytes
 low.min 0
 low.warning 1:
 
+multigraph over_underruns_{ident}
 graph_title Contribution {ident} over/underruns
 graph_order underruns overruns
 graph_args --base 1000
@@ -81,9 +80,10 @@ if len(sys.argv) == 1:
     munin_values = ""
     for ident in values:
         v = values[ident]['inputstat']
-        munin_values += "multigraph zmq_inbuf.id_{ident}\n".format(ident=get_id_from_uri(ident))
+        munin_values += "multigraph buffers_{ident}\n".format(ident=get_id_from_uri(ident))
         munin_values += "high.value {}\n".format(v['max_fill'])
         munin_values += "low.value {}\n".format(v['min_fill'])
+        munin_values += "multigraph over_underruns_{ident}\n".format(ident=get_id_from_uri(ident))
         munin_values += "underruns.value {}\n".format(v['num_underruns'])
         munin_values += "overruns.value {}\n".format(v['num_overruns'])
 

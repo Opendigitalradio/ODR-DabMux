@@ -107,6 +107,8 @@ bool parse_cmdline(char **argv,
     vector<dabService*>::iterator service = ensemble->services.end();
     dabProtection* protection = NULL;
 
+    dabInputOperations operations;
+
     int scids_temp = 0;
 
     char* progName = strrchr(argv[0], '/');
@@ -217,7 +219,7 @@ bool parse_cmdline(char **argv,
                 (*subchannel)->inputProto = "file";
                 (*subchannel)->type = 0;
                 (*subchannel)->bitrate = 0;
-                (*subchannel)->operations = dabInputMpegFileOperations;
+                operations = dabInputMpegFileOperations;
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
 #if defined(HAVE_FORMAT_DABPLUS)
             } else if (c == 'F') {
@@ -238,7 +240,7 @@ bool parse_cmdline(char **argv,
                 if (0) {
 #if defined(HAVE_INPUT_FILE)
                 } else if (strcmp((*subchannel)->inputProto, "file") == 0) {
-                    (*subchannel)->operations = dabInputDabplusFileOperations;
+                    operations = dabInputDabplusFileOperations;
 #endif // defined(HAVE_INPUT_FILE)
                 } else {
                     etiLog.log(error,
@@ -263,11 +265,11 @@ bool parse_cmdline(char **argv,
 #if defined(HAVE_FORMAT_BRIDGE)
 #if defined(HAVE_INPUT_UDP)
                 } else if (strcmp((*subchannel)->inputProto, "udp") == 0) {
-                    (*subchannel)->operations = dabInputBridgeUdpOperations;
+                    operations = dabInputBridgeUdpOperations;
 #endif // defined(HAVE_INPUT_UDP)
 #if defined(HAVE_INPUT_SLIP)
                 } else if (strcmp((*subchannel)->inputProto, "slip") == 0) {
-                    (*subchannel)->operations = dabInputSlipOperations;
+                    operations = dabInputSlipOperations;
 #endif // defined(HAVE_INPUT_SLIP)
 #endif // defined(HAVE_FORMAT_BRIDGE)
                 }
@@ -285,18 +287,18 @@ bool parse_cmdline(char **argv,
                 if (0) {
 #if defined(HAVE_INPUT_UDP)
                 } else if (strcmp((*subchannel)->inputProto, "udp") == 0) {
-                    (*subchannel)->operations = dabInputUdpOperations;
+                    operations = dabInputUdpOperations;
 #endif
 #if defined(HAVE_INPUT_PRBS) && defined(HAVE_FORMAT_RAW)
                 } else if (strcmp((*subchannel)->inputProto, "prbs") == 0) {
-                    (*subchannel)->operations = dabInputPrbsOperations;
+                    operations = dabInputPrbsOperations;
 #endif
 #if defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_RAW)
                 } else if (strcmp((*subchannel)->inputProto, "file") == 0) {
-                    (*subchannel)->operations = dabInputRawFileOperations;
+                    operations = dabInputRawFileOperations;
 #endif
                 } else if (strcmp((*subchannel)->inputProto, "fifo") == 0) {
-                    (*subchannel)->operations = dabInputRawFifoOperations;
+                    operations = dabInputRawFifoOperations;
                 } else {
                     etiLog.log(error,
                             "Invalid protocol for data input (%s)\n",
@@ -312,7 +314,7 @@ bool parse_cmdline(char **argv,
                 (*subchannel)->inputProto = "test";
                 (*subchannel)->type = 1;
                 (*subchannel)->bitrate = DEFAULT_DATA_BITRATE;
-                (*subchannel)->operations = dabInputTestOperations;
+                operations = dabInputTestOperations;
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
             } else if (c == 'P') {
@@ -320,9 +322,9 @@ bool parse_cmdline(char **argv,
                 (*subchannel)->type = 3;
                 (*subchannel)->bitrate = DEFAULT_PACKET_BITRATE;
 #ifdef HAVE_INPUT_FILE
-                (*subchannel)->operations = dabInputPacketFileOperations;
+                operations = dabInputPacketFileOperations;
 #elif defined(HAVE_INPUT_FIFO)
-                (*subchannel)->operations = dabInputFifoOperations;
+                operations = dabInputFifoOperations;
 #else
 #   pragma error("Must defined at least one packet input")
 #endif // defined(HAVE_INPUT_FILE)
@@ -331,7 +333,7 @@ bool parse_cmdline(char **argv,
                 (*subchannel)->inputProto = "file";
                 (*subchannel)->type = 3;
                 (*subchannel)->bitrate = DEFAULT_PACKET_BITRATE;
-                (*subchannel)->operations = dabInputEnhancedPacketFileOperations;
+                operations = dabInputEnhancedPacketFileOperations;
 #endif // defined(HAVE_FORMAT_EPM)
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_DMB
@@ -347,9 +349,9 @@ bool parse_cmdline(char **argv,
                     *proto = 0;
                 }
                 if (strcmp((*subchannel)->inputProto, "udp") == 0) {
-                    (*subchannel)->operations = dabInputDmbUdpOperations;
+                    operations = dabInputDmbUdpOperations;
                 } else if (strcmp((*subchannel)->inputProto, "file") == 0) {
-                    (*subchannel)->operations = dabInputDmbFileOperations;
+                    operations = dabInputDmbFileOperations;
                 } else {
                     etiLog.log(error,
                             "Invalid protocol for DMB input (%s)\n",
@@ -366,7 +368,8 @@ bool parse_cmdline(char **argv,
                         "Service '%c' not yet coded!\n", c);
                 goto EXIT;
             }
-            (*subchannel)->operations.init(&(*subchannel)->data);
+            (*subchannel)->input = new DabInputCompatible(operations);
+
             for (int i = 0; i < 64; ++i) { // Find first free subchannel
                 subchannel = getSubchannel(ensemble->subchannels, i);
                 if (subchannel == ensemble->subchannels.end()) {
@@ -588,36 +591,36 @@ bool parse_cmdline(char **argv,
             switch ((*subchannel)->type) {
 #ifdef HAVE_FORMAT_PACKET
             case 3:
-                (*subchannel)->operations.clean(&(*subchannel)->data);
-                if ((*subchannel)->operations == dabInputPacketFileOperations) {
-                    (*subchannel)->operations = dabInputFifoOperations;
+                if ( ((DabInputCompatible*)(*subchannel)->input)->getOpts() == dabInputPacketFileOperations) {
+                    operations = dabInputFifoOperations;
 #ifdef HAVE_FORMAT_EPM
-                } else if ((*subchannel)->operations == dabInputEnhancedPacketFileOperations) {
-                    (*subchannel)->operations = dabInputEnhancedFifoOperations;
+                } else if ( ((DabInputCompatible*)(*subchannel)->input)->getOpts() == dabInputEnhancedPacketFileOperations) {
+                    operations = dabInputEnhancedFifoOperations;
 #endif // defined(HAVE_FORMAT_EPM)
                 } else {
                     etiLog.log(error,
                             "Error, wrong packet subchannel operations!\n");
                     goto EXIT;
                 }
-                (*subchannel)->operations.init(&(*subchannel)->data);
+                delete (*subchannel)->input;
+                (*subchannel)->input = new DabInputCompatible(operations);
                 (*subchannel)->inputProto = "fifo";
                 break;
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_MPEG
             case 0:
-                (*subchannel)->operations.clean(&(*subchannel)->data);
-                if ((*subchannel)->operations == dabInputMpegFileOperations) {
-                    (*subchannel)->operations = dabInputMpegFifoOperations;
-                } else if ((*subchannel)->operations ==
+                if ( ((DabInputCompatible*)(*subchannel)->input)->getOpts() == dabInputMpegFileOperations) {
+                    operations = dabInputMpegFifoOperations;
+                } else if (((DabInputCompatible*)(*subchannel)->input)->getOpts() ==
                         dabInputDabplusFileOperations) {
-                    (*subchannel)->operations = dabInputDabplusFifoOperations;
+                    operations = dabInputDabplusFifoOperations;
                 } else {
                     etiLog.log(error,
                             "Error, wrong audio subchannel operations!\n");
                     goto EXIT;
                 }
-                (*subchannel)->operations.init(&(*subchannel)->data);
+                delete (*subchannel)->input;
+                (*subchannel)->input = new DabInputCompatible(operations);
                 (*subchannel)->inputProto = "fifo";
                 break;
 #endif // defined(HAVE_FORMAT_MPEG)

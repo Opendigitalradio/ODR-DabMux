@@ -26,8 +26,9 @@
 #   include "config.h"
 #endif
 #include "Log.h"
-extern Logger etiLog;
+#include <string>
 
+extern Logger etiLog;
 
 struct dabInputOperations {
     int (*init)(void** args);
@@ -44,6 +45,65 @@ struct dabInputOperations {
     bool operator==(const dabInputOperations&);
 };
 
+/* New input object base */
+class DabInputBase {
+    public:
+        virtual int open(const std::string name) = 0;
+        virtual int setbuf(int size) = 0;
+        virtual int readFrame(void* buffer, int size) = 0;
+        virtual int setBitrate(int bitrate) = 0;
+        virtual int close() = 0;
+        virtual int rewind() = 0;
+
+        virtual ~DabInputBase() {};
+};
+
+/* Wrapper class for old-style dabInputOperations inputs */
+class DabInputCompatible : public DabInputBase {
+    public:
+        DabInputCompatible(dabInputOperations ops)
+            : m_ops(ops)
+        { m_ops.init(&args); }
+
+        virtual ~DabInputCompatible()
+        { m_ops.clean(&args); }
+
+        virtual int open(const std::string name)
+        { return m_ops.open(args, name.c_str()); }
+
+        virtual int setbuf(int size)
+        { return m_ops.setbuf(args, size); }
+
+        virtual int readFrame(void* buffer, int size)
+        {
+            if (m_ops.lock) {
+                m_ops.lock(args);
+            }
+            int result = m_ops.readFrame(&m_ops, args, buffer, size);
+            if (m_ops.unlock) {
+                m_ops.unlock(args);
+            }
+            return result;
+        }
+
+        virtual int setBitrate(int bitrate)
+        { return m_ops.setBitrate(&m_ops, args, bitrate); }
+
+        virtual int close()
+        { return m_ops.close(args); }
+
+        virtual int rewind()
+        { return m_ops.rewind(args); }
+
+        virtual int read(void* buffer, int size)
+        { return m_ops.read(args, buffer, size); }
+
+        virtual dabInputOperations getOpts() { return m_ops; }
+
+    private:
+        dabInputOperations m_ops;
+        void* args;
+};
 
 int dabInputSetbuf(void* args, int size);
 int dabInputSetbitrate(dabInputOperations* ops, void* args, int bitrate);

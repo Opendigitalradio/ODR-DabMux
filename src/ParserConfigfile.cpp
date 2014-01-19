@@ -444,7 +444,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 
     subchan->inputName = inputName;
 
-
+    dabInputOperations operations;
     dabProtection* protection = &subchan->protection;
 
     if (0) {
@@ -453,7 +453,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->inputProto = "file";
         subchan->type = 0;
         subchan->bitrate = 0;
-        subchan->operations = dabInputMpegFileOperations;
+        operations = dabInputMpegFileOperations;
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
 #if defined(HAVE_FORMAT_DABPLUS)
     } else if (type == "dabplus") {
@@ -474,22 +474,22 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         if (0) {
 #if defined(HAVE_INPUT_FILE)
         } else if (strcmp(subchan->inputProto, "file") == 0) {
-            subchan->operations = dabInputDabplusFileOperations;
+            operations = dabInputDabplusFileOperations;
 #endif // defined(HAVE_INPUT_FILE)
 #if defined(HAVE_INPUT_ZEROMQ)
         }
         else if (strcmp(subchan->inputProto, "tcp") == 0) {
-            subchan->operations = dabInputZmqOperations;
+            operations = dabInputZmqOperations;
         }
         else if (strcmp(subchan->inputProto, "epmg") == 0) {
             etiLog.log(warn,
                     "Using untested epmg:// zeromq input\n");
-            subchan->operations = dabInputZmqOperations;
+            operations = dabInputZmqOperations;
         }
         else if (strcmp(subchan->inputProto, "ipc") == 0) {
             etiLog.log(warn,
                     "Using untested ipc:// zeromq input\n");
-            subchan->operations = dabInputZmqOperations;
+            operations = dabInputZmqOperations;
 #endif // defined(HAVE_INPUT_ZEROMQ)
         } else {
             stringstream ss;
@@ -514,11 +514,11 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #if defined(HAVE_FORMAT_BRIDGE)
 #if defined(HAVE_INPUT_UDP)
         } else if (strcmp(subchan->inputProto, "udp") == 0) {
-            subchan->operations = dabInputBridgeUdpOperations;
+            operations = dabInputBridgeUdpOperations;
 #endif // defined(HAVE_INPUT_UDP)
 #if defined(HAVE_INPUT_SLIP)
         } else if (strcmp(subchan->inputProto, "slip") == 0) {
-            subchan->operations = dabInputSlipOperations;
+            operations = dabInputSlipOperations;
 #endif // defined(HAVE_INPUT_SLIP)
 #endif // defined(HAVE_FORMAT_BRIDGE)
         }
@@ -536,18 +536,18 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         if (0) {
 #if defined(HAVE_INPUT_UDP)
         } else if (strcmp(subchan->inputProto, "udp") == 0) {
-            subchan->operations = dabInputUdpOperations;
+            operations = dabInputUdpOperations;
 #endif
 #if defined(HAVE_INPUT_PRBS) && defined(HAVE_FORMAT_RAW)
         } else if (strcmp(subchan->inputProto, "prbs") == 0) {
-            subchan->operations = dabInputPrbsOperations;
+            operations = dabInputPrbsOperations;
 #endif
 #if defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_RAW)
         } else if (strcmp(subchan->inputProto, "file") == 0) {
-            subchan->operations = dabInputRawFileOperations;
+            operations = dabInputRawFileOperations;
 #endif
         } else if (strcmp(subchan->inputProto, "fifo") == 0) {
-            subchan->operations = dabInputRawFifoOperations;
+            operations = dabInputRawFifoOperations;
         } else {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid << 
@@ -563,7 +563,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->inputProto = "test";
         subchan->type = 1;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
-        subchan->operations = dabInputTestOperations;
+        operations = dabInputTestOperations;
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
     } else if (type == "packet") {
@@ -571,9 +571,9 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->type = 3;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
 #ifdef HAVE_INPUT_FILE
-        subchan->operations = dabInputPacketFileOperations;
+        operations = dabInputPacketFileOperations;
 #elif defined(HAVE_INPUT_FIFO)
-        subchan->operations = dabInputFifoOperations;
+        operations = dabInputFifoOperations;
 #else
 #   pragma error("Must defined at least one packet input")
 #endif // defined(HAVE_INPUT_FILE)
@@ -582,7 +582,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->inputProto = "file";
         subchan->type = 3;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
-        subchan->operations = dabInputEnhancedPacketFileOperations;
+        operations = dabInputEnhancedPacketFileOperations;
 #endif // defined(HAVE_FORMAT_EPM)
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_DMB
@@ -598,9 +598,9 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             *proto = 0;
         }
         if (strcmp(subchan->inputProto, "udp") == 0) {
-            subchan->operations = dabInputDmbUdpOperations;
+            operations = dabInputDmbUdpOperations;
         } else if (strcmp(subchan->inputProto, "file") == 0) {
-            subchan->operations = dabInputDmbFileOperations;
+            operations = dabInputDmbFileOperations;
         } else {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid << 
@@ -617,7 +617,6 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         ss << "Subchannel with uid " << subchanuid << " has unknown type!";
         throw runtime_error(ss.str());
     }
-    subchan->operations.init(&subchan->data);
     subchan->startAddress = 0;
 
     if (type == "audio") {
@@ -649,37 +648,33 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         switch (subchan->type) {
 #ifdef HAVE_FORMAT_PACKET
             case 3:
-                subchan->operations.clean(&subchan->data);
-                if (subchan->operations == dabInputPacketFileOperations) {
-                    subchan->operations = dabInputFifoOperations;
+                if (operations == dabInputPacketFileOperations) {
+                    operations = dabInputFifoOperations;
 #ifdef HAVE_FORMAT_EPM
-                } else if (subchan->operations == dabInputEnhancedPacketFileOperations) {
-                    subchan->operations = dabInputEnhancedFifoOperations;
+                } else if (operations == dabInputEnhancedPacketFileOperations) {
+                    operations = dabInputEnhancedFifoOperations;
 #endif // defined(HAVE_FORMAT_EPM)
                 } else {
                     etiLog.log(error,
                             "Error, wrong packet subchannel operations!\n");
                     throw runtime_error("Error, wrong packet subchannel operations!\n");
                 }
-                subchan->operations.init(&subchan->data);
                 subchan->inputProto = "fifo";
                 break;
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_MPEG
             case 0:
-                subchan->operations.clean(&subchan->data);
-                if (subchan->operations == dabInputMpegFileOperations) {
-                    subchan->operations = dabInputMpegFifoOperations;
-                } else if (subchan->operations ==
+                if (operations == dabInputMpegFileOperations) {
+                    operations = dabInputMpegFifoOperations;
+                } else if (operations ==
                         dabInputDabplusFileOperations) {
-                    subchan->operations = dabInputDabplusFifoOperations;
+                    operations = dabInputDabplusFifoOperations;
                 } else {
                     etiLog.log(error,
                             "Error, wrong audio subchannel operations!\n");
                     throw runtime_error(
                             "Error, wrong audio subchannel operations!\n");
                 }
-                subchan->operations.init(&subchan->data);
                 subchan->inputProto = "fifo";
                 break;
 #endif // defined(HAVE_FORMAT_MPEG)
@@ -735,4 +730,6 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     }
     catch (ptree_error &e) {}
 
+    /* Create object */
+    subchan->input = new DabInputCompatible(operations);
 }

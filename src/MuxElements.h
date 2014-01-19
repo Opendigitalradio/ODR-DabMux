@@ -96,8 +96,7 @@ struct dabProtection {
 struct dabSubchannel {
     const char* inputProto;
     const char* inputName;
-    void* data;
-    dabInputOperations operations;
+    DabInputBase* input;
     unsigned char id;
     unsigned char type;
     uint16_t startAddress;

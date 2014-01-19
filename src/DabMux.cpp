@@ -531,17 +531,14 @@ int main(int argc, char *argv[])
             (*subchannel)->startAddress = (*(subchannel - 1))->startAddress +
                 getSizeCu(*(subchannel - 1));
         }
-        if ((*subchannel)->operations.open((*subchannel)->data,
-                    (*subchannel)->inputName) == -1) {
+        if ((*subchannel)->input->open((*subchannel)->inputName) == -1) {
             perror((*subchannel)->inputName);
             returnCode = -1;
             goto EXIT;
         }
 
         // TODO Check errors
-        int result = (*subchannel)->operations.setBitrate(
-                &(*subchannel)->operations, (*subchannel)->data,
-                (*subchannel)->bitrate);
+        result = (*subchannel)->input->setBitrate( (*subchannel)->bitrate);
         if (result <= 0) {
             etiLog.log(error, "can't set bitrate for source %s\n",
                     (*subchannel)->inputName);
@@ -1718,15 +1715,8 @@ int main(int argc, char *argv[])
                 subchannel != ensemble->subchannels.end();
                 ++subchannel) {
             int sizeSubchannel = getSizeByte(*subchannel);
-            if ((*subchannel)->operations.lock != NULL) {
-                (*subchannel)->operations.lock((*subchannel)->data);
-            }
-            result = (*subchannel)->operations.readFrame(
-                    &(*subchannel)->operations,
-                    (*subchannel)->data, &etiFrame[index], sizeSubchannel);
-            if ((*subchannel)->operations.unlock != NULL) {
-                (*subchannel)->operations.unlock((*subchannel)->data);
-            }
+            result = (*subchannel)->input->readFrame(
+                    &etiFrame[index], sizeSubchannel);
             if (result < 0) {
                 etiLog.log(info, "Subchannel %d read failed at ETI frame number: %i\n", (*subchannel)->id, currentFrame);
             }
@@ -1823,8 +1813,8 @@ EXIT:
     for (subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
-        (*subchannel)->operations.close((*subchannel)->data);
-        (*subchannel)->operations.clean(&(*subchannel)->data);
+        (*subchannel)->input->close();
+        delete (*subchannel)->input;
     }
     for (output = outputs.begin() ; output != outputs.end(); ++output) {
         if ((*output)->output) {

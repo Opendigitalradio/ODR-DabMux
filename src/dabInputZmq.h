@@ -42,11 +42,10 @@
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
-#include <zmq.h>
+#include <zmq.hpp>
 #include <list>
 #include <string>
 #include "dabInput.h"
-#include "dabInputFifo.h"
 #include "StatsServer.h"
 
 /* The frame_buffer contains DAB logical frames as defined in
@@ -61,26 +60,28 @@
 #define INPUT_ZMQ_MAX_BUFFER_SIZE (5*8) // 960ms
 
 
-extern struct dabInputOperations dabInputZmqOperations;
+class DabInputZmq : public DabInputBase {
+    public:
+        DabInputZmq(const std::string name)
+            : m_name(name), m_zmq_context(1),
+            m_zmq_sock(m_zmq_context, ZMQ_SUB),
+            m_prebuffering(INPUT_ZMQ_PREBUFFERING) {}
 
-struct dabInputZmqData {
-    void* zmq_context;
-    void* zmq_sock;
-    std::list<char*> frame_buffer; //stores elements of type char[<framesize>]
-    int prebuffering;
-    std::string uri;
+        virtual int open(const std::string inputUri);
+        virtual int readFrame(void* buffer, int size);
+        virtual int setBitrate(int bitrate);
+        virtual int close();
+
+    private:
+        int readFromSocket(int framesize);
+
+        std::string m_name;
+        zmq::context_t m_zmq_context;
+        zmq::socket_t m_zmq_sock; // handle for the zmq socket
+        int m_prebuffering;
+        std::list<char*> m_frame_buffer; //stores elements of type char[<framesize>]
+        int m_bitrate;
 };
-
-
-int dabInputZmqInit(void** args);
-int dabInputZmqOpen(void* args, const char* inputUri);
-int dabInputZmqReadFrame(dabInputOperations* ops, void* args, void* buffer, int size);
-int dabInputZmqClose(void* args);
-int dabInputZmqClean(void** args);
-
-// Get new message from ZeroMQ
-int dabInputZmqReadFromSocket(dabInputZmqData* input, int framesize);
-
 
 #endif // HAVE_INPUT_ZMQ
 

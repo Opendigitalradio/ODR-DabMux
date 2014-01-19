@@ -49,11 +49,9 @@ struct dabInputOperations {
 class DabInputBase {
     public:
         virtual int open(const std::string name) = 0;
-        virtual int setbuf(int size) = 0;
         virtual int readFrame(void* buffer, int size) = 0;
         virtual int setBitrate(int bitrate) = 0;
         virtual int close() = 0;
-        virtual int rewind() = 0;
 
         virtual ~DabInputBase() {};
 };

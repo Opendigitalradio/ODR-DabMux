@@ -444,6 +444,11 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 
     subchan->inputName = inputName;
 
+    /* The input is of the old_style type,
+     * with the struct of function pointers,
+     * and needs to be a DabInputCompatible
+     */
+    bool input_is_old_style = true;
     dabInputOperations operations;
     dabProtection* protection = &subchan->protection;
 
@@ -462,6 +467,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 
         char* proto;
 
+        char* full_inputName = new char[256];
+        full_inputName[255] = '\0';
+        memcpy(full_inputName, inputName, 255);
+
         proto = strstr(inputName, "://");
         if (proto == NULL) {
             subchan->inputProto = "file";
@@ -479,17 +488,21 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #if defined(HAVE_INPUT_ZEROMQ)
         }
         else if (strcmp(subchan->inputProto, "tcp") == 0) {
-            operations = dabInputZmqOperations;
+            input_is_old_style = false;
+            subchan->input = new DabInputZmq(subchanuid);
+            subchan->inputName = full_inputName;
         }
         else if (strcmp(subchan->inputProto, "epmg") == 0) {
-            etiLog.log(warn,
-                    "Using untested epmg:// zeromq input\n");
-            operations = dabInputZmqOperations;
+            etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            input_is_old_style = false;
+            subchan->input = new DabInputZmq(subchanuid);
+            subchan->inputName = full_inputName;
         }
         else if (strcmp(subchan->inputProto, "ipc") == 0) {
-            etiLog.log(warn,
-                    "Using untested ipc:// zeromq input\n");
-            operations = dabInputZmqOperations;
+            etiLog.level(warn) << "Using untested ipc:// zeromq input";
+            input_is_old_style = false;
+            subchan->input = new DabInputZmq(subchanuid);
+            subchan->inputName = full_inputName;
 #endif // defined(HAVE_INPUT_ZEROMQ)
         } else {
             stringstream ss;
@@ -731,5 +744,8 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     catch (ptree_error &e) {}
 
     /* Create object */
-    subchan->input = new DabInputCompatible(operations);
+    if (input_is_old_style) {
+        subchan->input = new DabInputCompatible(operations);
+    }
+    // else { it's already been created! }
 }

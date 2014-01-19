@@ -49,11 +49,16 @@
 #include "dabInputFifo.h"
 #include "StatsServer.h"
 
-// Number of frames to prebuffer
-#define INPUT_ZMQ_PREBUFFERING 10
+/* The frame_buffer contains DAB logical frames as defined in
+ * TS 102 563, section 6.
+ * Five elements of this buffer make one AAC superframe (120ms audio)
+ */
+
+// Number of elements to prebuffer before starting the pipeline
+#define INPUT_ZMQ_PREBUFFERING (5*4) // 480ms
 
 // Maximum frame_buffer size in number of elements
-#define INPUT_ZMQ_MAX_BUFFER_SIZE 200
+#define INPUT_ZMQ_MAX_BUFFER_SIZE (5*8) // 960ms
 
 
 extern struct dabInputOperations dabInputZmqOperations;

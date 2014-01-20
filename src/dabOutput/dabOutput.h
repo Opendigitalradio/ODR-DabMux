@@ -134,12 +134,15 @@ class DabOutputRaw : public DabOutput
 #ifndef _WIN32
             isCyclades_ = other.isCyclades_;
 #endif
-            buffer_ = other.buffer_;
+            buffer_ = new unsigned char[6144];
+            memcpy(buffer_, other.buffer_, 6144);
         }
 
         ~DabOutputRaw() {
             delete[] buffer_;
         }
+
+        const DabOutputRaw operator=(const DabOutputRaw& other);
 
         int Open(const char* name);
         int Write(void* buffer, int size);
@@ -164,11 +167,11 @@ class DabOutputUdp : public DabOutput
             socket_ = new UdpSocket();
         }
 
-        DabOutputUdp(const DabOutputUdp& other)
-        {
-            packet_ = other.packet_;
-            socket_ = other.socket_;
-        }
+        // make sure we don't copy this output around
+        // the UdpPacket and UdpSocket do not support
+        // copying either
+        DabOutputUdp(const DabOutputUdp& other);
+        DabOutputUdp operator=(const DabOutputUdp& other);
 
         ~DabOutputUdp() {
             delete socket_;
@@ -195,12 +198,8 @@ class DabOutputTcp : public DabOutput
             client = NULL;
         }
 
-        DabOutputTcp(const DabOutputTcp& other)
-        {
-            server = other.server;
-            client = other.client;
-            thread_ = other.thread_;
-        }
+        DabOutputTcp(const DabOutputTcp& other);
+        DabOutputTcp operator=(const DabOutputTcp& other);
 
         ~DabOutputTcp() {
 

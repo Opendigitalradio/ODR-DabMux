@@ -70,7 +70,7 @@ void Logger::logstr(log_level_t level, std::string message)
 
     for (std::list<LogBackend*>::iterator it = backends.begin();
             it != backends.end();
-            it++) {
+            ++it) {
         (*it)->log(level, message);
     }
 

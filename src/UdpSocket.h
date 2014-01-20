@@ -115,7 +115,7 @@ class UdpPacket {
   void setSize(unsigned newSize);
   InetAddress &getAddress();
   // Not implemented
-  const UdpPacket &operator=(const UdpPacket&);
+  const UdpPacket& operator=(const UdpPacket&);
   
  private:
   char *dataBuf;

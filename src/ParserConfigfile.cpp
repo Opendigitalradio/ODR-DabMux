@@ -213,7 +213,7 @@ void parse_configfile(string configuration_file,
 
     ptree pt_services = pt.get_child("services");
     for (ptree::iterator it = pt_services.begin();
-            it != pt_services.end(); it++) {
+            it != pt_services.end(); ++it) {
         string serviceuid = it->first;
         ptree pt_service = it->second;
         dabService* service = new dabService();
@@ -264,7 +264,7 @@ void parse_configfile(string configuration_file,
     map<string, dabSubchannel*> allsubchans;
 
     ptree pt_subchans = pt.get_child("subchannels");
-    for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); it++) {
+    for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
         dabSubchannel* subchan = new dabSubchannel();
 
@@ -294,7 +294,7 @@ void parse_configfile(string configuration_file,
     /******************** READ COMPONENT PARAMETERS ************/
     map<string, dabComponent*> allcomponents;
     ptree pt_components = pt.get_child("components");
-    for (ptree::iterator it = pt_components.begin(); it != pt_components.end(); it++) {
+    for (ptree::iterator it = pt_components.begin(); it != pt_components.end(); ++it) {
         string componentuid = it->first;
         ptree pt_comp = it->second;
 
@@ -371,7 +371,7 @@ void parse_configfile(string configuration_file,
     /******************** READ OUTPUT PARAMETERS ***************/
     map<string, dabOutput*> alloutputs;
     ptree pt_outputs = pt.get_child("outputs");
-    for (ptree::iterator it = pt_outputs.begin(); it != pt_outputs.end(); it++) {
+    for (ptree::iterator it = pt_outputs.begin(); it != pt_outputs.end(); ++it) {
         string outputuid = it->first;
         string uri = pt_outputs.get<string>(outputuid);
 

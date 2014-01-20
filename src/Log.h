@@ -135,7 +135,7 @@ class Logger {
         /* Log the message to all backends */
         void log(log_level_t level, const char* fmt, ...);
 
-        void logstr(log_level_t level, const std::string message);
+        void logstr(log_level_t level, std::string message);
 
         /* Return a LogLine for the given level
          * so that you can write etiLog.level(info) << "stuff = " << 21 */

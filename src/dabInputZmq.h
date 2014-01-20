@@ -65,7 +65,8 @@ class DabInputZmq : public DabInputBase {
         DabInputZmq(const std::string name)
             : m_name(name), m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
-            m_prebuffering(INPUT_ZMQ_PREBUFFERING) {}
+            m_prebuffering(INPUT_ZMQ_PREBUFFERING),
+            m_bitrate(0) {}
 
         virtual int open(const std::string inputUri);
         virtual int readFrame(void* buffer, int size);

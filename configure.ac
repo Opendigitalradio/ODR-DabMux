@@ -171,8 +171,7 @@ AS_IF([test "x$enable_output_tcp" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_TCP, [1], [Define if TCP output is enabled])])
 # RAW
 AC_ARG_ENABLE([output_raw],
-        [AS_HELP_STRING([--disable-output-raw], [Disable RAW output])],
-        [], [enable_output_raw=yes])
+        AS_HELP_STRING([--enable-output-raw], [Enable RAW output]))
 AS_IF([test "x$enable_output_raw" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_RAW, [1], [Define if RAW output is enabled])])
 # SIMUL

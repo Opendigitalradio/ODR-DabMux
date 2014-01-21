@@ -66,6 +66,9 @@ class DabInputCompatible : public DabInputBase {
         virtual ~DabInputCompatible()
         { m_ops.clean(&args); }
 
+        DabInputCompatible& operator=(const DabInputCompatible& other);
+        DabInputCompatible(const DabInputCompatible& other);
+
         virtual int open(const std::string name)
         { return m_ops.open(args, name.c_str()); }
 

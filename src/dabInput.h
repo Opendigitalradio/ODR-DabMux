@@ -26,6 +26,7 @@
 #   include "config.h"
 #endif
 #include "Log.h"
+#include "RemoteControl.h"
 #include <string>
 
 extern Logger etiLog;

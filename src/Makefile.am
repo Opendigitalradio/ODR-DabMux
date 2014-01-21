@@ -71,6 +71,7 @@ crc_dabmux_SOURCES  =DabMux.cpp \
                      bridge.h bridge.c \
                      utils.cpp utils.h \
                      MuxElements.cpp MuxElements.h \
+                     RemoteControl.cpp RemoteControl.h \
                      ParserCmdline.cpp ParserCmdline.h \
                      ParserConfigfile.cpp ParserConfigfile.h \
                      Eti.h Eti.cpp \

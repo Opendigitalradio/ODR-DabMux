@@ -60,18 +60,28 @@
 #define INPUT_ZMQ_MAX_BUFFER_SIZE (5*8) // 960ms
 
 
-class DabInputZmq : public DabInputBase {
+class DabInputZmq : public DabInputBase, public RemoteControllable {
     public:
         DabInputZmq(const std::string name)
-            : m_name(name), m_zmq_context(1),
+            : RemoteControllable(name),
+            m_name(name), m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
             m_prebuffering(INPUT_ZMQ_PREBUFFERING),
-            m_bitrate(0) {}
+            m_bitrate(0) {
+                RC_ADD_PARAMETER(buffer,
+                        "Size of the input buffer [aac superframes]");
+            }
 
         virtual int open(const std::string inputUri);
         virtual int readFrame(void* buffer, int size);
         virtual int setBitrate(int bitrate);
         virtual int close();
+
+        /* Remote control */
+        virtual void set_parameter(string parameter, string value);
+
+        /* Getting a parameter always returns a string. */
+        virtual string get_parameter(string parameter);
 
     private:
         int readFromSocket(int framesize);

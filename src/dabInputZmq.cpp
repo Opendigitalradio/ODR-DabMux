@@ -235,5 +235,38 @@ int DabInputZmq::setBitrate(int bitrate)
     return bitrate; // TODO do a nice check here
 }
 
+/********* REMOTE CONTROL ***********/
+
+void DabInputZmq::set_parameter(string parameter, string value)
+{
+    stringstream ss(value);
+    ss.exceptions ( stringstream::failbit | stringstream::badbit );
+
+    if (parameter == "buffer") {
+        throw ParameterError("Parameter 'ntaps' is read-only");
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+string DabInputZmq::get_parameter(string parameter)
+{
+    stringstream ss;
+    if (parameter == "buffer") {
+        ss << INPUT_ZMQ_MAX_BUFFER_SIZE;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+
+}
+
 #endif
 

@@ -74,8 +74,7 @@ typedef DWORD32 uint32_t;
 #   include <sys/times.h>
 #   include <sys/resource.h>
 
-#   include <linux/if_packet.h>
-#   include <linux/netdevice.h>
+#   include <net/if_packet.h>
 #endif
 
 #ifdef _WIN32
@@ -119,6 +118,7 @@ typedef DWORD32 uint32_t;
 #include "ParserConfigfile.h"
 #include "StatsServer.h"
 #include "Log.h"
+#include "RemoteControl.h"
 
 using namespace std;
 

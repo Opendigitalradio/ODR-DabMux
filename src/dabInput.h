@@ -55,6 +55,8 @@ class DabInputBase {
         virtual int close() = 0;
 
         virtual ~DabInputBase() {};
+    protected:
+        DabInputBase() {};
 };
 
 /* Wrapper class for old-style dabInputOperations inputs */
@@ -66,9 +68,6 @@ class DabInputCompatible : public DabInputBase {
 
         virtual ~DabInputCompatible()
         { m_ops.clean(&args); }
-
-        DabInputCompatible& operator=(const DabInputCompatible& other);
-        DabInputCompatible(const DabInputCompatible& other);
 
         virtual int open(const std::string name)
         { return m_ops.open(args, name.c_str()); }
@@ -103,6 +102,9 @@ class DabInputCompatible : public DabInputBase {
         virtual dabInputOperations getOpts() { return m_ops; }
 
     private:
+        DabInputCompatible& operator=(const DabInputCompatible& other);
+        DabInputCompatible(const DabInputCompatible& other);
+
         dabInputOperations m_ops;
         void* args;
 };

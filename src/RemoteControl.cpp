@@ -23,9 +23,9 @@
  */
 #include <list>
 #include <string>
-#include <iostream>
 #include <string>
 #include <boost/asio.hpp>
+#include "Log.h"
 
 #include "RemoteControl.h"
 
@@ -71,7 +71,7 @@ RemoteControllerTelnet::process(long)
                 std::getline(str, in_message);
 
                 if (length == 0) {
-                    std::cerr << "Connection terminated" << std::endl;
+                    etiLog.level(info) << "RC: Connection terminated";
                     break;
                 }
 
@@ -85,17 +85,17 @@ RemoteControllerTelnet::process(long)
                     continue;
                 }
 
-                std::cerr << "Got message '" << in_message << "'" << std::endl;
+                etiLog.level(info) << "RC: Got message '" << in_message << "'";
 
                 dispatch_command(socket, in_message);
             }
-            std::cerr << "Closing socket" << std::endl;
+            etiLog.level(info) << "RC: Closing socket";
             socket.close();
         }
     }
     catch (std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        etiLog.level(error) << "Remote control caught exception: " << e.what();
     }
 }
 

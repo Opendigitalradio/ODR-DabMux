@@ -31,7 +31,6 @@
 #include <list>
 #include <map>
 #include <string>
-#include <iostream>
 #include <string>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
@@ -93,7 +92,6 @@ class RemoteControllable {
 
         /* Return a list of possible parameters that can be set */
         virtual list<string> get_supported_parameters() {
-            cerr << "get_sup_par" << m_parameters.size() << endl;
             list<string> parameterlist;
             for (list< vector<string> >::iterator it = m_parameters.begin();
                     it != m_parameters.end(); ++it) {
@@ -191,7 +189,6 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
             list< vector<string> > allparams;
             list<string> params = controllable->get_supported_parameters();
-            cerr << "# of supported parameters " << params.size() << endl;
             for (list<string>::iterator it = params.begin(); it != params.end(); ++it) {
                 vector<string> item;
                 item.push_back(*it);

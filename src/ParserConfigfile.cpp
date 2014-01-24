@@ -190,10 +190,7 @@ void parse_configfile(string configuration_file,
 
     /************** READ REMOTE CONTROL PARAMETERS *************/
     ptree pt_rc = pt.get_child("remotecontrol");
-    int telnetport = 0;
-    if (pt_rc.get("telnet", 0)) {
-        telnetport = pt_rc.get<int>("port", 0);
-    }
+    int telnetport = pt_rc.get<int>("telnetport", 0);
 
     if (telnetport != 0) {
         rc = new RemoteControllerTelnet(telnetport);

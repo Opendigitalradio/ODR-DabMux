@@ -63,6 +63,7 @@
 #include "dabInputDmbUdp.h"
 #include "dabInputZmq.h"
 #include "DabMux.h"
+#include "StatsServer.h"
 
 
 #ifdef _WIN32
@@ -144,7 +145,9 @@ void parse_configfile(string configuration_file,
         bool* enableTist,
         unsigned* FICL,
         bool* factumAnalyzer,
-        unsigned long* limit
+        unsigned long* limit,
+        BaseRemoteController* rc,
+        int* statsServerPort
         )
 {
     using boost::property_tree::ptree;
@@ -182,6 +185,22 @@ void parse_configfile(string configuration_file,
     *factumAnalyzer = pt_general.get("writescca", false);
 
     *enableTist = pt_general.get("tist", false);
+
+    *statsServerPort = pt_general.get<int>("statsserverport", 0);
+
+    /************** READ REMOTE CONTROL PARAMETERS *************/
+    ptree pt_rc = pt.get_child("remotecontrol");
+    int telnetport = 0;
+    if (pt_rc.get("telnet", 0)) {
+        telnetport = pt_rc.get<int>("port", 0);
+    }
+
+    if (telnetport != 0) {
+        rc = new RemoteControllerTelnet(telnetport);
+    }
+    else {
+        rc = new RemoteControllerDummy();
+    }
 
     /******************** READ ENSEMBLE PARAMETERS *************/
     ptree pt_ensemble = pt.get_child("ensemble");
@@ -271,7 +290,7 @@ void parse_configfile(string configuration_file,
         ensemble->subchannels.push_back(subchan);
 
         try {
-            setup_subchannel_from_ptree(subchan, it->second, ensemble, subchanuid);
+            setup_subchannel_from_ptree(subchan, it->second, ensemble, subchanuid, rc);
         }
         catch (runtime_error &e) {
             etiLog.log(error,
@@ -409,7 +428,8 @@ void parse_configfile(string configuration_file,
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,
         dabEnsemble* ensemble,
-        string subchanuid)
+        string subchanuid,
+        BaseRemoteController* rc)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
@@ -489,19 +509,25 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         }
         else if (strcmp(subchan->inputProto, "tcp") == 0) {
             input_is_old_style = false;
-            subchan->input = new DabInputZmq(subchanuid);
+            DabInputZmq* inzmq = new DabInputZmq(subchanuid);
+            inzmq->enrol_at(*rc);
+            subchan->input     = inzmq;
             subchan->inputName = full_inputName;
         }
         else if (strcmp(subchan->inputProto, "epmg") == 0) {
             etiLog.level(warn) << "Using untested epmg:// zeromq input";
             input_is_old_style = false;
-            subchan->input = new DabInputZmq(subchanuid);
+            DabInputZmq* inzmq = new DabInputZmq(subchanuid);
+            inzmq->enrol_at(*rc);
+            subchan->input     = inzmq;
             subchan->inputName = full_inputName;
         }
         else if (strcmp(subchan->inputProto, "ipc") == 0) {
             etiLog.level(warn) << "Using untested ipc:// zeromq input";
             input_is_old_style = false;
-            subchan->input = new DabInputZmq(subchanuid);
+            DabInputZmq* inzmq = new DabInputZmq(subchanuid);
+            inzmq->enrol_at(*rc);
+            subchan->input     = inzmq;
             subchan->inputName = full_inputName;
 #endif // defined(HAVE_INPUT_ZEROMQ)
         } else {

@@ -80,6 +80,7 @@ struct InputStat
 class StatsServer
 {
     public:
+        StatsServer() : m_listenport(0), m_running(false) {}
         StatsServer(int listen_port) :
             m_listenport(listen_port),
             m_running(true),
@@ -138,6 +139,9 @@ class StatsServer
         // mutex for accessing the map
         mutable boost::mutex m_mutex;
 };
+
+
+extern StatsServer* global_stats;
 
 #endif
 

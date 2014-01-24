@@ -51,8 +51,6 @@
 
 #ifdef HAVE_INPUT_ZEROMQ
 
-extern StatsServer global_stats;
-
 int DabInputZmq::open(const std::string inputUri)
 {
     // Prepare the ZMQ socket to accept connections
@@ -75,7 +73,7 @@ int DabInputZmq::open(const std::string inputUri)
     }
 
     // We want to appear in the statistics !
-    global_stats.registerInput(m_name);
+    global_stats->registerInput(m_name);
 
     return 0;
 }
@@ -94,7 +92,7 @@ int DabInputZmq::readFrame(void* buffer, int size)
 
     /* Notify of a buffer overrun, and drop some frames */
     if (m_frame_buffer.size() >= INPUT_ZMQ_MAX_BUFFER_SIZE) {
-        global_stats.notifyOverrun(m_name);
+        global_stats->notifyOverrun(m_name);
 
         /* If the buffer is really too full, we drop as many frames as needed
          * to get down to the prebuffering size. We would like to have our buffer
@@ -136,13 +134,13 @@ int DabInputZmq::readFrame(void* buffer, int size)
                 m_name.c_str());
 
         /* During prebuffering, give a zeroed frame to the mux */
-        global_stats.notifyUnderrun(m_name);
+        global_stats->notifyUnderrun(m_name);
         memset(buffer, 0, size);
         return size;
     }
 
     // Save stats data in bytes, not in frames
-    global_stats.notifyBuffer(m_name, m_frame_buffer.size() * size);
+    global_stats->notifyBuffer(m_name, m_frame_buffer.size() * size);
 
     if (m_frame_buffer.empty()) {
         etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
@@ -151,7 +149,7 @@ int DabInputZmq::readFrame(void* buffer, int size)
         m_prebuffering = INPUT_ZMQ_PREBUFFERING;
 
         /* We have no data to give, we give a zeroed frame */
-        global_stats.notifyUnderrun(m_name);
+        global_stats->notifyUnderrun(m_name);
         memset(buffer, 0, size);
         return size;
     }

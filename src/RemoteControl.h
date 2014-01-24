@@ -123,20 +123,20 @@ class RemoteControllable {
  */
 class RemoteControllerTelnet : public BaseRemoteController {
     public:
-        RemoteControllerTelnet(int port) {
-            m_port = port;
-            m_running = false;
-        };
+        RemoteControllerTelnet()
+            : m_running(false), m_port(0) {}
 
-        void start() {
-            m_running = true;
-            m_child_thread = boost::thread(&RemoteControllerTelnet::process, this, 0);
-        }
+        RemoteControllerTelnet(int port)
+            : m_running(true), m_port(port),
+            m_child_thread(&RemoteControllerTelnet::process, this, 0)
+        {}
 
-        void stop() {
+        ~RemoteControllerTelnet() {
             m_running = false;
-            m_child_thread.interrupt();
-            m_child_thread.join();
+            if (m_port) {
+                m_child_thread.interrupt();
+                m_child_thread.join();
+            }
         }
 
         void process(long);
@@ -151,6 +151,9 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
 
     private:
+        RemoteControllerTelnet& operator=(const RemoteControllerTelnet& other);
+        RemoteControllerTelnet(const RemoteControllerTelnet& other);
+
         vector<string> tokenise_(string message) {
             vector<string> all_tokens;
 

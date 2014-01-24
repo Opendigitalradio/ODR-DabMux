@@ -123,7 +123,7 @@ typedef DWORD32 uint32_t;
 using namespace std;
 
 /* Global stats server */
-StatsServer global_stats(12720); //TODO define port
+StatsServer* global_stats;
 
 static unsigned char Padding_FIB[] = {
     0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -288,6 +288,8 @@ int main(int argc, char *argv[])
     vector<dabOutput*>::iterator output;
     dabProtection* protection = NULL;
 
+    BaseRemoteController* rc;
+
     unsigned int currentFrame;
     int returnCode = 0;
     int result;
@@ -311,6 +313,8 @@ int main(int argc, char *argv[])
     time_t date;
     bool enableTist = false;
     unsigned timestamp = 0;
+
+    int statsserverport = 0;
 
     unsigned long time_seconds = 0;
 
@@ -337,7 +341,7 @@ int main(int argc, char *argv[])
             string conf_file = argv[2];
 
             parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
-                    &factumAnalyzer, &limit);
+                    &factumAnalyzer, &limit, rc, &statsserverport);
 
             printSubchannels(ensemble->subchannels);
             cerr << endl;
@@ -359,6 +363,13 @@ int main(int argc, char *argv[])
                     &factumAnalyzer, &limit)) {
             goto EXIT;
         }
+    }
+
+    if (statsserverport != 0) {
+        global_stats = new StatsServer(statsserverport);
+    }
+    else {
+        global_stats = new StatsServer();
     }
 
 

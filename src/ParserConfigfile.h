@@ -41,13 +41,15 @@ void parse_configfile(std::string configuration_file,
         bool* enableTist,
         unsigned* FICL,
         bool* factumAnalyzer,
-        unsigned long* limit
-        );
+        unsigned long* limit,
+        BaseRemoteController* rc,
+        int* statsServerPort);
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,
         dabEnsemble* ensemble,
-        std::string uid);
+        string subchanuid,
+        BaseRemoteController* rc);
 
 #endif
 

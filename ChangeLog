@@ -1,6 +1,15 @@
 This file contains information about the changes done to
 the CRC-DabMux in this repository
 
+2014-01-32: Matthias P. Braendli <matthias@mpb.li>
+	(tag r11):
+	* crc-dabmux:
+		Replace TCPLog by Logger that supports syslog
+		Add TCP statistics server
+		Make ZMQ input publish buffer statistics
+		Add Munin helper script to graph ZMQ input stats
+		Fix ZMQ include when inputzmq disabled
+
 2014-01-05: Matthias P. Braendli <matthias@mpb.li>
 	(tag r10):
 	* crc-dabmux:

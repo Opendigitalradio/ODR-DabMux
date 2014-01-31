@@ -37,6 +37,12 @@
 #include "dabInputFifo.h"
 #include "StatsServer.h"
 
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
+#ifdef HAVE_INPUT_ZEROMQ
+
 #include <stdio.h>
 #include <zmq.h>
 #include <list>
@@ -47,8 +53,6 @@
 #ifdef __MINGW32__
 #   define bzero(s, n) memset(s, 0, n)
 #endif
-
-#ifdef HAVE_INPUT_ZEROMQ
 
 extern StatsServer global_stats;
 

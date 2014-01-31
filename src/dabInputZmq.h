@@ -37,11 +37,12 @@
 #ifndef DAB_INPUT_ZMQ_H
 #define DAB_INPUT_ZMQ_H
 
-#ifdef HAVE_INPUT_ZEROMQ
-
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
+
+#ifdef HAVE_INPUT_ZEROMQ
+
 #include <zmq.h>
 #include <list>
 #include <string>

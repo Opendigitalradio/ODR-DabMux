@@ -1,7 +1,15 @@
 This file contains information about the changes done to
 the CRC-DabMux in this repository
 
-2014-01-32: Matthias P. Braendli <matthias@mpb.li>
+2014-01-31: Matthias P. Braendli <matthias@mpb.li>
+	(tag r12):
+	* crc-dabmux:
+		Create new object-oriented abstraction for the
+		inputs, with a wrapper for all existing inputs
+		Adapt inputZMQ to the new internal interface
+		Add a telnet Remote Control interface
+
+2014-01-31: Matthias P. Braendli <matthias@mpb.li>
 	(tag r11):
 	* crc-dabmux:
 		Replace TCPLog by Logger that supports syslog
@@ -80,7 +88,7 @@ the CRC-DabMux in this repository
 Copyright (C) 2010,2011 Her Majesty the Queen in Right of Canada
 (Communications Research Center Canada)
 
-Copyright (C) 2013 Matthias P. Braendli, http://mpb.li
+Copyright (C) 2013,2014 Matthias P. Braendli, http://mpb.li
 
 This file is part of CRC-DabMux.
 

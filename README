@@ -37,6 +37,7 @@ to the official one:
 - supports logging to syslog
 - supports ZMQ input monitoring with munin tool
 - supports a Telnet Remote Control for setting/getting parameters
+  (this is, for now, not used yet)
 
 The src/ directory contains the source code of CRC-DabMux.
 

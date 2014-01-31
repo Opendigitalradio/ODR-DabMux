@@ -36,6 +36,12 @@
 #include "dabInputZmq.h"
 #include "StatsServer.h"
 
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
+#ifdef HAVE_INPUT_ZEROMQ
+
 #include <stdio.h>
 #include <zmq.hpp>
 #include <list>
@@ -49,7 +55,7 @@
 #   define bzero(s, n) memset(s, 0, n)
 #endif
 
-#ifdef HAVE_INPUT_ZEROMQ
+extern StatsServer* global_stats;
 
 int DabInputZmq::open(const std::string inputUri)
 {

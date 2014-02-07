@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 
     bool MNSC_increment_time = false;
 
-    if (strncmp(argv[1], "-e", 2) == 0) { // use external config file
+    if (argc > 1 && strncmp(argv[1], "-e", 2) == 0) { // use external config file
         try {
 
             if (argc != 3) {

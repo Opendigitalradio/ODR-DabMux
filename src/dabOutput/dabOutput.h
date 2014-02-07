@@ -30,6 +30,7 @@
 #include "UdpSocket.h"
 #include "TcpServer.h"
 #include "Log.h"
+#include "string.h"
 #include <stdexcept>
 #include <signal.h>
 #ifdef _WIN32

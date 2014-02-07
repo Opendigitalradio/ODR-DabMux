@@ -5,22 +5,22 @@
 # Copyright (C) 2014, Matthias P. Braendli, http://mpb.li
 #
 
-# This file is part of CRC-DabMux.
+# This file is part of ODR-DabMux.
 # 
-# CRC-DabMux is free software: you can redistribute it and/or modify
+# ODR-DabMux is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 # 
-# CRC-DabMux is distributed in the hope that it will be useful,
+# ODR-DabMux is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
+# along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
-bin_PROGRAMS=crc-dabmux crc-bridgetest
+bin_PROGRAMS=odr-dabmux odr-bridgetest
 
 if IS_GIT_REPO
 GITVERSION_FLAGS = -DGITVERSION="\"-`git describe --long --tags`\""
@@ -37,9 +37,9 @@ else
 ZMQ_LIBS    =
 endif
 
-crc_dabmux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
-crc_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
-crc_dabmux_SOURCES  =DabMux.cpp \
+odr_dabmux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
+odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
+odr_dabmux_SOURCES  =DabMux.cpp \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
                      dabInputDabplusFifo.h dabInputDabplusFifo.cpp \
@@ -90,7 +90,7 @@ crc_dabmux_SOURCES  =DabMux.cpp \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp
 
-crc_bridgetest_CFLAGS   =-DBRIDGE_TEST
-crc_bridgetest_SOURCES  =bridge.c \
+odr_bridgetest_CFLAGS   =-DBRIDGE_TEST
+odr_bridgetest_SOURCES  =bridge.c \
                          crc.c crc.h
 

@@ -6,44 +6,44 @@ the Queen in Right of Canada (Communications Research Center Canada)
 Copyright (C) 2013, 2014
 Matthias P. Braendli, http://mpb.li
 
-This file is part of CRC-DabMux.
+This file is part of ODR-DabMux.
 
-CRC-DabMux is free software: you can redistribute it and/or modify
+ODR-DabMux is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
-CRC-DabMux is distributed in the hope that it will be useful,
+ODR-DabMux is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
+along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 OVERVIEW
 ========
-This is CRC-DabMux 0.3.0.4-mpb
+This is ODR-DabMux 0.4.0
 
-CRC-DabMux is a DAB (Digital Audio Broadcasting) multiplexer compliant to
+ODR-DabMux is a DAB (Digital Audio Broadcasting) multiplexer compliant to
 ETSI EN 300 401.
 
 This version has been modified, and contains additional features compared
 to the official one:
 - configuration file support, see doc/example.mux
 - timestamping support required for SFN
-- a ZeroMQ ETI output that can be used with CRC-DABMOD
+- a ZeroMQ ETI output that can be used with ODR-DABMOD
 - a ZeroMQ dabplus input that can be used with fdk-aac-dabplus-zmq
 - supports logging to syslog
 - supports ZMQ input monitoring with munin tool
 - supports a Telnet Remote Control for setting/getting parameters
   (this is, for now, not used yet)
 
-The src/ directory contains the source code of CRC-DabMux.
+The src/ directory contains the source code of ODR-DabMux.
 
-The doc/ directory contains the CRC-DabMux documentation.
+The doc/ directory contains the ODR-DabMux documentation.
 
-The lib/ directory contains source code of libraries need to build CRC-DabMux.
+The lib/ directory contains source code of libraries need to build ODR-DabMux.
 
 INSTALL
 =======
@@ -54,7 +54,6 @@ CONTACT
 Pascal Charest <pascal [dot] charest [at] crc [dot] ca>
 Matthias P. Braendli <matthias [at] mpb [dot] li>
 
-http://mmbtools.crc.ca/
-http://www.crc.ca/mmb
-http://openmokast.org/
+http://opendigitalradio.org/
 http://mpb.li/
+http://mmbtools.crc.ca/

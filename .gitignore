@@ -4,8 +4,8 @@
 .*.swp
 .directory
 
-src/crc-bridgetest
-src/crc-dabmux
+src/odr-bridgetest
+src/odr-dabmux
 src/dabOutput/.deps/
 src/dabOutput/.dirstamp
 
@@ -28,4 +28,3 @@ cscope.out
 ctags
 tags
 .clang_complete
-.ycm_extra_conf.py*

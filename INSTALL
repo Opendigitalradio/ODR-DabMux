@@ -17,12 +17,12 @@ Simple install procedure using tarball release:
     [as root]
     % make install                          # Install the library
 
-    % tar xjf crc-dabmux-0.3.0.4.tar.bz2    # Unpack the source
-    % cd crc-dabmux-0.3.0.4                 # Change to the source directory
+    % tar xjf odr-dabmux-x.y.z.tar.bz2      # Unpack the source
+    % cd odr-dabmux-x.y.z                   # Change to the source directory
     % ./configure                           # Run the configure script
-    % make                                  # Build CRC-DabMux
+    % make                                  # Build ODR-DabMux
     [ as root ]
-    % make install                          # Install CRC-DabMux
+    % make install                          # Install ODR-DabMux
 
 Nearly as simple install procedure using repository:
 ====================================================

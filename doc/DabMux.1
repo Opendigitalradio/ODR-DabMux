@@ -2,19 +2,19 @@
 .\" groff -t -man -Tascii DabMux.1
 .\" groff -t -man DabMux.1 > DabMux.ps
 .\"
-.TH CRC-DABMUX 1 "2006-2014" "\(co Communications Research Centre Canada and Matthias P. Braendli" "User Manual"
+.TH ODR-DabMux 1 "2006-2014" "\(co Communications Research Centre Canada and Matthias P. Braendli" "User Manual"
 .SH NAME
-crc-dabmux \- A software DAB multiplexer
+odr-dabmux \- A software DAB multiplexer
 
 .SH SYNOPSIS
-crc-dabmux can be used in two ways: either with command line options, or with an external configuration file.
+odr-dabmux can be used in two ways: either with command line options, or with an external configuration file.
 It is not possible to use both simultaneously.
 .SS External Configuration File:
-.B  crc-dabmux -e config-file.mux
+.B  odr-dabmux -e config-file.mux
 
 An example configuration file with explanations is located in doc/
 .SS Configuration Through Command-Line Arguments:
-.B  crc-dabmux
+.B  odr-dabmux
 .BI [ ensemble ]
 .BI [ "subchannel1 subchannel2 ..." ]
 .BI [ "service1 component1 " [ "component2 ..." ] " service2 ..."]
@@ -60,7 +60,7 @@ An example configuration file with explanations is located in doc/
 .BI -O " outputName"
 
 .SH DESCRIPTION
-CRC-DABMUX is a software multiplexer that generates an ETI stream from audio and data streams. Because of its software based architecture, many typical DAB services can be generated and multiplexed on a single PC platform with live or pre-recorded sources.
+ODR-DabMux is a software multiplexer that generates an ETI stream from audio and data streams. Because of its software based architecture, many typical DAB services can be generated and multiplexed on a single PC platform with live or pre-recorded sources.
 
 A DAB multiplex configuration is composed of one ensemble. An ensemble is the entity that receivers tune to and process. An ensemble contains several services. A service is the listener-selectable output. Each service contains one mandatory service component which is called primary component. An audio primary component define a program service while a data primary component define a data service. Service can contain additional components which are called secondary components. Maximum total number of components is 12 for program services and 11 for data services. A service component is a link to one subchannel (or Fast Information Data Channel). A subchannel is the physical space used within the common interleaved frame. 
 
@@ -70,12 +70,12 @@ A DAB multiplex configuration is composed of one ensemble. An ensemble is the en
 .ps -1
 .nf
                      __________________________________________________
-                    |                   CRC-Ensemble                   |  ENSEMBLE
+                    |                   ODR-Ensemble                   |  ENSEMBLE
                     |__________________________________________________|
                             |                 |                 |
                             |                 |                 |
                      _______V______    _______V______    _______V______ 
-                    | CRC-Service1 |  | CRC-Service2 |  | CRC-Service3 |  SERVICES
+                    | ODR-Service1 |  | ODR-Service2 |  | ODR-Service3 |  SERVICES
                     |______________|  |______________|  |______________|
                        |        |        |        | |______         |
                        |        |        |        |        |        |
@@ -198,7 +198,7 @@ set non-blocking file input (audio and packet only)
 .
 .TP
 .BI -L " label"
-label of service <n> (default: CRC-Audio<n>)
+label of service <n> (default: ODR-Audio<n>)
 .
 .TP
 .BI -l " sLabel"
@@ -478,7 +478,7 @@ Example:
 This scheme is an simulation output. Drop the stream and add a 24 ms delay between each write operation.
 
 .SS LOGS
-Output logs can be sent to syslog, to facility LOCAL0 with identificator CRC-DABMUX. Use
+Output logs can be sent to syslog, to facility LOCAL0 with identificator ODR-DabMux. Use
 .RB ( -o )
 to turn the logging to syslog on. Priority codes can be found in the following table.
 .TS
@@ -544,25 +544,25 @@ crc-dabmux \\
 .br
 .M udp://224.8.8.8:1234 -b 256 -i 4 -p 4 \\
 .br
--S -L CRC-Karaoke -l 4064 -i 80 \\
+-S -L ODR-Karaoke -l 4064 -i 80 \\
 .RS
 -C -i 0 \\
 .br
 -C -i 2 \\
 .RE
--S -L "CRC-IP Tunneling" -l 4080 -i 81 \\
+-S -L "ODR-IP Tunneling" -l 4080 -i 81 \\
 .RS
 -C -i 1 \\
 .RE
--S -L CRC-WebSite -l 0x0fe0 -i 82 \\
+-S -L ODR-WebSite -l 0x0fe0 -i 82 \\
 .RS
 -C -i 2 \\
 .RE
--S -L "CRC-Slide Show" -l SlideShow -i 83 \\
+-S -L "ODR-Slide Show" -l SlideShow -i 83 \\
 .RS
 -C -i 3 \\
 .RE
--S -L CRC-DMB -l 07000 -i 84 \\
+-S -L ODR-DMB -l 07000 -i 84 \\
 .RS
 -C -i 4 \\
 .RE

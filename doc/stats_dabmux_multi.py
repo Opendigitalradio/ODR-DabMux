@@ -62,7 +62,7 @@ def connect():
 
     version = json.loads(sock.recv(256))
 
-    if not version['service'].startswith("CRC-DabMux"):
+    if not version['service'].startswith("ODR-DabMux"):
         sys.stderr.write("Wrong version\n")
         sys.exit(1)
 

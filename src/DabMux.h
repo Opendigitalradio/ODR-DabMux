@@ -10,20 +10,20 @@
    and defines default values for some parameters.
    */
 /*
-   This file is part of CRC-DabMux.
+   This file is part of ODR-DabMux.
 
-   CRC-DabMux is free software: you can redistribute it and/or modify
+   ODR-DabMux is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as
    published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
-   CRC-DabMux is distributed in the hope that it will be useful,
+   ODR-DabMux is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with CRC-DabMux.  If not, see <http://www.gnu.org/licenses/>.
+   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 #ifndef _DABMUX_H
 #define _DABMUX_H
@@ -56,7 +56,7 @@
 
 // Etiquettes des sous-canaux et de l'ensemble, 16 characteres incluant les
 // espaces
-#define DEFAULT_ENSEMBLE_LABEL          "CRC-Dr.Radio"
+#define DEFAULT_ENSEMBLE_LABEL          "ODR Dab Mux"
 #define DEFAULT_ENSEMBLE_SHORT_LABEL    0xe000
 #define DEFAULT_ENSEMBLE_ID             0xc000
 #define DEFAULT_ENSEMBLE_ECC            0xa1

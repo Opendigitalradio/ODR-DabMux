@@ -349,6 +349,10 @@ void parse_configfile(string configuration_file,
             throw runtime_error(ss.str());
         }
 
+        int figType = pt_comp.get<int>("figtype", -1);
+        int packet_address = pt_comp.get<int>("address", -1);
+        uint8_t component_type = pt_comp.get<uint8_t>("type", 0);
+
         dabComponent* component = new dabComponent();
 
         memset(component, 0, sizeof(dabComponent));
@@ -357,6 +361,7 @@ void parse_configfile(string configuration_file,
         component->serviceId = service->id;
         component->subchId = subchannel->id;
         component->SCIdS = SCIdS_per_service[service]++;
+        component->type = component_type;
 
         try {
             string label = pt_comp.get<string>("label");
@@ -378,6 +383,33 @@ void parse_configfile(string configuration_file,
             etiLog.log(warn,
                     "Component with uid %s has no short label.\n", componentuid.c_str());
         }
+
+        if (figType != -1) {
+            if (! component->isPacketComponent(ensemble->subchannels)) {
+                stringstream ss;
+                ss << "Component with uid " << componentuid << " is not packet, cannot have figtype defined !";
+                throw runtime_error(ss.str());
+            }
+
+            if (figType >= (1<<12)) {
+                stringstream ss;
+                ss << "Component with uid " << componentuid << ": figtype '" << figType << "' is too large !";
+                throw runtime_error(ss.str());
+            }
+
+            component->packet.appType = figType;
+        }
+
+        if (packet_address != -1) {
+            if (! component->isPacketComponent(ensemble->subchannels)) {
+                stringstream ss;
+                ss << "Component with uid " << componentuid << " is not packet, cannot have address defined !";
+                throw runtime_error(ss.str());
+            }
+
+            component->packet.address = packet_address;
+        }
+
 
         ensemble->components.push_back(component);
 

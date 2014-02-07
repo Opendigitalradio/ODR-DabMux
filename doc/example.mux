@@ -132,10 +132,22 @@ components {
     ; the component unique identifiers are not used anywhere, but
     ; are useful to disambiguate different components.
     funky {
+        ; specifies audio -or- packet type, defaults to zero when not given
+        ; audio: foreground=0, background=1, multi-channel=2
+        ; data: unspecified=0, TMC=1, EWS=2, ITTS=3, paging=4, TDC=5, IP=59, MOT=60, proprietary=61
+        type 0
+
         label funk
         shortlabel fu
         service funk
         subchannel funk
+
+        ; for packet components, the fields
+        ; "user application type in FIG 0/13 for packet mode"
+        ;figtype
+        ; and "packet address (default: 0x200 + <n> (512))"
+        ;address
+        ; are supported, with the same syntax as in the manpage
     }
 
     luschtigy {

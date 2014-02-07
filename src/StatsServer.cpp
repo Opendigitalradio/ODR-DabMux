@@ -157,13 +157,10 @@ void StatsServer::serverThread()
     struct sockaddr_in serv_addr, cli_addr;
     int n;
 
-#ifndef GITVERSION
-#define GITVERSION "-r???"
-#endif
     int welcome_msg_len = snprintf(welcome_msg, 256,
             "{ \"service\": \""
-            "%s %s%s Stats Server\" }\n",
-            PACKAGE_NAME, PACKAGE_VERSION, GITVERSION);
+            "%s %s Stats Server\" }\n",
+            PACKAGE_NAME, PACKAGE_VERSION);
 
 
     m_sock = socket(AF_INET, SOCK_STREAM, 0);

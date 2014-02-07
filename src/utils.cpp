@@ -47,8 +47,14 @@ time_t getDabTime()
 void header_message() 
 {
     etiLog.log(info,
-            "Welcome to %s %s%s, compiled at %s, %s\n\n",
-            PACKAGE_NAME, PACKAGE_VERSION, GITVERSION, __DATE__, __TIME__);
+            "Welcome to %s %s, compiled at %s, %s\n\n",
+            PACKAGE_NAME,
+#if defined(GITVERSION)
+            GITVERSION,
+#else
+            PACKAGE_VERSION,
+#endif
+            __DATE__, __TIME__);
     etiLog.log(info,
             "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n"
             "Her Majesty the Queen in Right of Canada,\n"

@@ -23,9 +23,9 @@
 bin_PROGRAMS=odr-dabmux odr-bridgetest
 
 if IS_GIT_REPO
-GITVERSION_FLAGS = -DGITVERSION="\"-`git describe --long --tags`\""
+GITVERSION_FLAGS = -DGITVERSION="\"`git describe`\""
 else
-GITVERSION_FLAGS = -DGITVERSION="\"-exported\""
+GITVERSION_FLAGS =
 endif
 
 FEC_FLAGS   =
@@ -39,7 +39,7 @@ endif
 
 odr_dabmux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
-odr_dabmux_SOURCES  =DabMux.cpp \
+odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
                      dabInputDabplusFifo.h dabInputDabplusFifo.cpp \

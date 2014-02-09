@@ -22,4 +22,7 @@ Matthias P. Braendli <matthias [at] mpb [dot] li>
     Refactoring of configuration input for command line.
     Creation of a configuration file format.
     ZeroMQ ETI output.
+    ZeroMQ DAB+ input with buffer monitoring (munin)
+    Remote Control
+    Improved logging (syslog)
 

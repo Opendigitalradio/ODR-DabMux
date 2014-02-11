@@ -60,21 +60,16 @@
 // Maximum frame_buffer size in number of elements
 #define INPUT_ZMQ_MAX_BUFFER_SIZE (5*8) // 960ms
 
-
-class DabInputZmq : public DabInputBase, public RemoteControllable {
+class DabInputZmqBase : public DabInputBase, public RemoteControllable {
     public:
-        DabInputZmq(const std::string name)
+        DabInputZmqBase(const std::string name)
             : RemoteControllable(name),
             m_name(name), m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
-            m_prebuffering(INPUT_ZMQ_PREBUFFERING),
-            m_bitrate(0) {
-                RC_ADD_PARAMETER(buffer,
-                        "Size of the input buffer [aac superframes]");
-            }
+            m_bitrate(0) { }
 
         virtual int open(const std::string inputUri);
-        virtual int readFrame(void* buffer, int size);
+        virtual int readFrame(void* buffer, int size) = 0;
         virtual int setBitrate(int bitrate);
         virtual int close();
 
@@ -84,15 +79,28 @@ class DabInputZmq : public DabInputBase, public RemoteControllable {
         /* Getting a parameter always returns a string. */
         virtual string get_parameter(string parameter);
 
-    private:
-        int readFromSocket(int framesize);
-
+    protected:
         std::string m_name;
         zmq::context_t m_zmq_context;
         zmq::socket_t m_zmq_sock; // handle for the zmq socket
+        int m_bitrate;
+};
+
+class DabInputZmqAAC : public DabInputZmqBase {
+    public:
+        DabInputZmqAAC(const std::string name)
+            : DabInputZmqBase(name),
+            m_prebuffering(INPUT_ZMQ_PREBUFFERING) {
+                RC_ADD_PARAMETER(buffer,
+                        "Size of the input buffer [aac superframes]");
+            }
+
+        virtual int readFrame(void* buffer, int size);
+    private:
+        int readFromSocket(int framesize);
+
         int m_prebuffering;
         std::list<char*> m_frame_buffer; //stores elements of type char[<framesize>]
-        int m_bitrate;
 };
 
 #endif // HAVE_INPUT_ZMQ

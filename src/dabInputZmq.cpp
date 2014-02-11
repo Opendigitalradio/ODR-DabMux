@@ -57,7 +57,9 @@
 
 extern StatsServer* global_stats;
 
-int DabInputZmq::open(const std::string inputUri)
+/***** Common functions (MPEG and AAC) ******/
+
+int DabInputZmqBase::open(const std::string inputUri)
 {
     // Prepare the ZMQ socket to accept connections
     try {
@@ -84,8 +86,22 @@ int DabInputZmq::open(const std::string inputUri)
     return 0;
 }
 
+int DabInputZmqBase::close()
+{
+    m_zmq_sock.close();
+    return 0;
+}
+
+int DabInputZmqBase::setBitrate(int bitrate)
+{
+    m_bitrate = bitrate;
+    return bitrate; // TODO do a nice check here
+}
+
+/******** AAC+ input ******/
+
 // size corresponds to a frame size. It is constant for a given bitrate
-int DabInputZmq::readFrame(void* buffer, int size)
+int DabInputZmqAAC::readFrame(void* buffer, int size)
 {
     int rc;
 
@@ -171,7 +187,7 @@ int DabInputZmq::readFrame(void* buffer, int size)
 }
 
 // Read a superframe from the socket, cut it into five frames, and push to list
-int DabInputZmq::readFromSocket(int framesize)
+int DabInputZmqAAC::readFromSocket(int framesize)
 {
     int rc;
     bool messageReceived;
@@ -226,21 +242,9 @@ int DabInputZmq::readFromSocket(int framesize)
     return msg.size();
 }
 
-int DabInputZmq::close()
-{
-    m_zmq_sock.close();
-    return 0;
-}
-
-int DabInputZmq::setBitrate(int bitrate)
-{
-    m_bitrate = bitrate;
-    return bitrate; // TODO do a nice check here
-}
-
 /********* REMOTE CONTROL ***********/
 
-void DabInputZmq::set_parameter(string parameter, string value)
+void DabInputZmqBase::set_parameter(string parameter, string value)
 {
     stringstream ss(value);
     ss.exceptions ( stringstream::failbit | stringstream::badbit );
@@ -256,7 +260,7 @@ void DabInputZmq::set_parameter(string parameter, string value)
     }
 }
 
-string DabInputZmq::get_parameter(string parameter)
+string DabInputZmqBase::get_parameter(string parameter)
 {
     stringstream ss;
     if (parameter == "buffer") {

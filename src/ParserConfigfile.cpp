@@ -538,7 +538,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         }
         else if (strcmp(subchan->inputProto, "tcp") == 0) {
             input_is_old_style = false;
-            DabInputZmq* inzmq = new DabInputZmq(subchanuid);
+            DabInputZmqAAC* inzmq = new DabInputZmqAAC(subchanuid);
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
             subchan->inputName = full_inputName;
@@ -546,7 +546,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         else if (strcmp(subchan->inputProto, "epmg") == 0) {
             etiLog.level(warn) << "Using untested epmg:// zeromq input";
             input_is_old_style = false;
-            DabInputZmq* inzmq = new DabInputZmq(subchanuid);
+            DabInputZmqAAC* inzmq = new DabInputZmqAAC(subchanuid);
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
             subchan->inputName = full_inputName;
@@ -554,7 +554,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         else if (strcmp(subchan->inputProto, "ipc") == 0) {
             etiLog.level(warn) << "Using untested ipc:// zeromq input";
             input_is_old_style = false;
-            DabInputZmq* inzmq = new DabInputZmq(subchanuid);
+            DabInputZmqAAC* inzmq = new DabInputZmqAAC(subchanuid);
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
             subchan->inputName = full_inputName;

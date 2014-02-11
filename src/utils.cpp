@@ -414,11 +414,10 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
                 (*subchannel)->id);
         etiLog.log(info, " bitrate:    %i\n",
                 (*subchannel)->bitrate);
-        etiLog.log(info, " protection: ");
         if (protection->form == 0) {
-            etiLog.log(info, "UEP %i\n", protection->level + 1);
+            etiLog.log(info, " protection: UEP %i\n", protection->level + 1);
         } else {
-            etiLog.log(info, "EEP %i-%c\n",
+            etiLog.log(info, " protection: EEP %i-%c\n",
                     protection->level + 1,
                     protection->longForm.option == 0 ? 'A' : 'B');
         }

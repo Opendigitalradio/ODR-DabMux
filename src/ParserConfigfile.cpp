@@ -502,12 +502,63 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     dabProtection* protection = &subchan->protection;
 
     if (0) {
-#if defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
+#if defined(HAVE_FORMAT_MPEG)
     } else if (type == "audio") {
-        subchan->inputProto = "file";
         subchan->type = 0;
         subchan->bitrate = 0;
-        operations = dabInputMpegFileOperations;
+
+        char* proto;
+
+        char* full_inputName = new char[256];
+        full_inputName[255] = '\0';
+        memcpy(full_inputName, inputName, 255);
+
+        proto = strstr(inputName, "://");
+        if (proto == NULL) {
+            subchan->inputProto = "file";
+        } else {
+            subchan->inputProto = inputName;
+            subchan->inputName = proto + 3;
+            *proto = 0;
+        }
+
+        if (0) {
+#if defined(HAVE_INPUT_FILE)
+        } else if (strcmp(subchan->inputProto, "file") == 0) {
+            operations = dabInputDabplusFileOperations;
+#endif // defined(HAVE_INPUT_FILE)
+#if defined(HAVE_INPUT_ZEROMQ)
+        }
+        else if (strcmp(subchan->inputProto, "tcp") == 0) {
+            input_is_old_style = false;
+            DabInputZmqMPEG* inzmq = new DabInputZmqMPEG(subchanuid);
+            inzmq->enrol_at(*rc);
+            subchan->input     = inzmq;
+            subchan->inputName = full_inputName;
+        }
+        else if (strcmp(subchan->inputProto, "epmg") == 0) {
+            etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            input_is_old_style = false;
+            DabInputZmqMPEG* inzmq = new DabInputZmqMPEG(subchanuid);
+            inzmq->enrol_at(*rc);
+            subchan->input     = inzmq;
+            subchan->inputName = full_inputName;
+        }
+        else if (strcmp(subchan->inputProto, "ipc") == 0) {
+            etiLog.level(warn) << "Using untested ipc:// zeromq input";
+            input_is_old_style = false;
+            DabInputZmqMPEG* inzmq = new DabInputZmqMPEG(subchanuid);
+            inzmq->enrol_at(*rc);
+            subchan->input     = inzmq;
+            subchan->inputName = full_inputName;
+#endif // defined(HAVE_INPUT_ZEROMQ)
+        } else {
+            stringstream ss;
+            ss << "Subchannel with uid " << subchanuid <<
+                ": Invalid protocol for MPEG input (" <<
+                subchan->inputProto << ")" << endl;
+            throw runtime_error(ss.str());
+        }
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
 #if defined(HAVE_FORMAT_DABPLUS)
     } else if (type == "dabplus") {

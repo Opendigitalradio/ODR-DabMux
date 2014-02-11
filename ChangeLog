@@ -1,6 +1,13 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2014-02-11: Matthias P. Braendli <matthias@mpb.li>
+	(v0.4.1)
+	* crc-dabmux:
+		Include zmq.hpp locally and prefer it over the
+		system one.
+		Fix wrong usage of zmq::socket_t.recv
+
 2014-02-07: Matthias P. Braendli <matthias@mpb.li>
 	(v0.4.0)
 	* crc-dabmux:

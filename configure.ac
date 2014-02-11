@@ -17,7 +17,7 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [0.4.0], [matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux], [0.4.1], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall subdir-objects])

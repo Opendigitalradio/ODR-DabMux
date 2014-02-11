@@ -2,6 +2,9 @@ This file contains information about the changes done to
 the ODR-DabMux in this repository
 
 2014-02-11: Matthias P. Braendli <matthias@mpb.li>
+	(v0.4.2)
+	* crc-dabmux:
+		Actually add zmq.hpp to Makefile.am
 	(v0.4.1)
 	* crc-dabmux:
 		Include zmq.hpp locally and prefer it over the

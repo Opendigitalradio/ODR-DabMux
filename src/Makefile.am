@@ -88,7 +88,8 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      mpeg.h mpeg.c \
                      StatsServer.h StatsServer.cpp \
                      TcpServer.h TcpServer.cpp \
-                     TcpSocket.h TcpSocket.cpp
+                     TcpSocket.h TcpSocket.cpp \
+                     zmq.hpp
 
 odr_bridgetest_CFLAGS   =-DBRIDGE_TEST
 odr_bridgetest_SOURCES  =bridge.c \

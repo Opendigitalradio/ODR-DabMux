@@ -7,6 +7,10 @@
 
    ZeroMQ input. see www.zeromq.org for more info
 
+   For the AAC+ input, each zeromq message must contain one superframe.
+
+   For the MPEG input, each zeromq message must contain one frame.
+
    From the ZeroMQ manpage 'zmq':
 
        The 0MQ lightweight messaging kernel is a library which extends the standard
@@ -98,10 +102,8 @@ int DabInputZmqBase::setBitrate(int bitrate)
     return bitrate; // TODO do a nice check here
 }
 
-/******** AAC+ input ******/
-
 // size corresponds to a frame size. It is constant for a given bitrate
-int DabInputZmqAAC::readFrame(void* buffer, int size)
+int DabInputZmqBase::readFrame(void* buffer, int size)
 {
     int rc;
 
@@ -139,6 +141,8 @@ int DabInputZmqAAC::readFrame(void* buffer, int size)
              * vs. AAC superframe alignment is preserved.
              *
              * TODO: of course this assumption probably doesn't hold. Fix this !
+             * TODO: also, with MPEG, the above doesn't hold, so we drop five
+             *       frames even though we could drop less.
              * */
             m_frame_buffer.pop_front();
             m_frame_buffer.pop_front();
@@ -186,7 +190,61 @@ int DabInputZmqAAC::readFrame(void* buffer, int size)
     }
 }
 
-// Read a superframe from the socket, cut it into five frames, and push to list
+
+/******** MPEG input *******/
+
+// Read a MPEG frame from the socket, and push to list
+int DabInputZmqMPEG::readFromSocket(int framesize)
+{
+    int rc;
+    bool messageReceived;
+    zmq::message_t msg;
+
+    try {
+        messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
+        if (!messageReceived) {
+            return 0;
+        }
+
+    }
+    catch (zmq::error_t& err)
+    {
+        etiLog.level(error) << "Failed to receive MPEG frame from zmq socket " <<
+                m_name << ": " << err.what();
+    }
+
+    char* data = (char*)msg.data();
+
+    if (msg.size() == framesize)
+    {
+        if (m_frame_buffer.size() > INPUT_ZMQ_MAX_BUFFER_SIZE) {
+            etiLog.level(warn) <<
+                "inputZMQ " << m_name <<
+                " buffer full (" << m_frame_buffer.size() << "),"
+                " dropping incoming frame !";
+            messageReceived = 0;
+        }
+        else {
+            // copy the input frame blockwise into the frame_buffer
+            char* frame = new char[framesize];
+            memcpy(frame, data, framesize);
+            m_frame_buffer.push_back(frame);
+        }
+    }
+    else {
+        etiLog.level(error) <<
+            "inputZMQ " << m_name <<
+            " wrong data size: recv'd " << msg.size() <<
+            ", need " << framesize << ".";
+    }
+
+    return msg.size();
+}
+
+/******** AAC+ input *******/
+
+// Read a AAC+ superframe from the socket, cut it into five frames,
+// and push to list
 int DabInputZmqAAC::readFromSocket(int framesize)
 {
     int rc;
@@ -202,8 +260,9 @@ int DabInputZmqAAC::readFromSocket(int framesize)
     }
     catch (zmq::error_t& err)
     {
-        etiLog.level(error) << "Failed to receive from zmq socket " <<
-                m_name << ": " << err.what();
+        etiLog.level(error) <<
+            "Failed to receive AAC superframe from zmq socket " <<
+            m_name << ": " << err.what();
     }
 
     char* data = (char*)msg.data();

@@ -7,6 +7,10 @@
 
    ZeroMQ input. see www.zeromq.org for more info
 
+   For the AAC+ input, each zeromq message must contain one superframe.
+
+   For the MPEG input, each zeromq message must contain one frame.
+
    From the ZeroMQ manpage 'zmq':
 
        The 0MQ lightweight messaging kernel is a library which extends the standard
@@ -66,10 +70,11 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
             : RemoteControllable(name),
             m_name(name), m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
-            m_bitrate(0) { }
+            m_bitrate(0), m_prebuffering(INPUT_ZMQ_PREBUFFERING) {
+            }
 
         virtual int open(const std::string inputUri);
-        virtual int readFrame(void* buffer, int size) = 0;
+        virtual int readFrame(void* buffer, int size);
         virtual int setBitrate(int bitrate);
         virtual int close();
 
@@ -80,27 +85,38 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         virtual string get_parameter(string parameter);
 
     protected:
+        virtual int readFromSocket(int framesize) = 0;
+
         std::string m_name;
         zmq::context_t m_zmq_context;
         zmq::socket_t m_zmq_sock; // handle for the zmq socket
         int m_bitrate;
+        int m_prebuffering;
+        std::list<char*> m_frame_buffer; //stores elements of type char[<framesize>]
+};
+
+class DabInputZmqMPEG : public DabInputZmqBase {
+    public:
+        DabInputZmqMPEG(const std::string name)
+            : DabInputZmqBase("MPEG " + name) {
+                RC_ADD_PARAMETER(buffer,
+                        "Size of the input buffer [mpeg frames]");
+            }
+
+    private:
+        virtual int readFromSocket(int framesize);
 };
 
 class DabInputZmqAAC : public DabInputZmqBase {
     public:
         DabInputZmqAAC(const std::string name)
-            : DabInputZmqBase(name),
-            m_prebuffering(INPUT_ZMQ_PREBUFFERING) {
+            : DabInputZmqBase("AAC+ " + name) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [aac superframes]");
             }
 
-        virtual int readFrame(void* buffer, int size);
     private:
-        int readFromSocket(int framesize);
-
-        int m_prebuffering;
-        std::list<char*> m_frame_buffer; //stores elements of type char[<framesize>]
+        virtual int readFromSocket(int framesize);
 };
 
 #endif // HAVE_INPUT_ZMQ

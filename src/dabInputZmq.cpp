@@ -35,6 +35,7 @@
 #include "dabInput.h"
 #include "dabInputZmq.h"
 #include "StatsServer.h"
+#include "zmq.hpp"
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
@@ -43,7 +44,6 @@
 #ifdef HAVE_INPUT_ZEROMQ
 
 #include <stdio.h>
-#include <zmq.hpp>
 #include <list>
 #include <exception>
 #include <string.h>
@@ -174,14 +174,15 @@ int DabInputZmq::readFrame(void* buffer, int size)
 int DabInputZmq::readFromSocket(int framesize)
 {
     int rc;
-    int nBytes;
+    bool messageReceived;
     zmq::message_t msg;
 
     try {
-        nBytes = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
-        if (nBytes == 0) {
+        messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
+        if (!messageReceived) {
             return 0;
         }
+
     }
     catch (zmq::error_t& err)
     {
@@ -195,14 +196,14 @@ int DabInputZmq::readFromSocket(int framesize)
      * Audio super frames are transported in five successive DAB logical frames
      * with additional error protection.
      */
-    if (nBytes == 5*framesize)
+    if (msg.size() == 5*framesize)
     {
         if (m_frame_buffer.size() > INPUT_ZMQ_MAX_BUFFER_SIZE) {
             etiLog.level(warn) <<
                 "inputZMQ " << m_name <<
                 " buffer full (" << m_frame_buffer.size() << "),"
                 " dropping incoming superframe !";
-            nBytes = 0;
+            messageReceived = 0;
         }
         else {
             // copy the input frame blockwise into the frame_buffer
@@ -215,16 +216,14 @@ int DabInputZmq::readFromSocket(int framesize)
             }
         }
     }
-    else
-    {
+    else {
         etiLog.level(error) <<
             "inputZMQ " << m_name <<
-            " wrong data size: recv'd " << nBytes <<
+            " wrong data size: recv'd " << msg.size() <<
             ", need " << 5*framesize << ".";
-        nBytes = 0;
     }
 
-    return nBytes;
+    return msg.size();
 }
 
 int DabInputZmq::close()

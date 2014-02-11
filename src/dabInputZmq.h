@@ -43,9 +43,9 @@
 
 #ifdef HAVE_INPUT_ZEROMQ
 
-#include <zmq.hpp>
 #include <list>
 #include <string>
+#include "zmq.hpp"
 #include "dabInput.h"
 #include "StatsServer.h"
 

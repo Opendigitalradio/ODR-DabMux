@@ -45,7 +45,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <errno.h>
-#include <zmq.hpp>
+#include "zmq.hpp"
 #include "dabOutput.h"
 
 using namespace std;

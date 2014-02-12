@@ -53,8 +53,8 @@ remotecontrol {
 
 ; Some ensemble parameters
 ensemble {
-    id 20479
-    ecc 1249 ; Extended Country Code (decimal)
+    id 0x4fff ; you can also use decimal if you want
+    ecc 0xec ; Extended Country Code
     label "TuxMux"
     shortlabel "Tux"
 }
@@ -87,7 +87,12 @@ services {
 subchannels {
     funk {
         type audio
+        ; example file input
         inputfile "funk.mp2"
+        ; example zmq input:
+        ; accept connections to port 9001 from any interface
+        ; use toolame-dab as encoder
+        ;inputfile "tcp://*:9001"
         nonblock false
         bitrate 128
         id 10

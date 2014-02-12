@@ -101,7 +101,28 @@ typedef DWORD32 uint32_t;
 
 using namespace std;
 
-void set_short_label(dabLabel& label, std::string& slabel, const char* applies_to)
+/* a helper class to parse hexadecimal ids */
+int hexparse(std::string input)
+{
+    int value;
+    fprintf(stderr, "**************************** %s\n", input.c_str());
+    if (input.find("0x") == 0) {
+        value = strtoll(input.c_str() + 2, NULL, 16);
+    }
+    else {
+        value = strtoll(input.c_str(), NULL, 10);
+    }
+
+    if (errno == ERANGE) {
+        throw runtime_error("hex conversion: value out of range");
+    }
+
+    return value;
+}
+
+
+void set_short_label(dabLabel& label, std::string& slabel,
+        const char* applies_to)
 {
     char* end;
     const char* lab;
@@ -203,10 +224,10 @@ void parse_configfile(string configuration_file,
     ptree pt_ensemble = pt.get_child("ensemble");
 
     /* Ensemble ID */
-    ensemble->id = pt_ensemble.get("id", 0);
+    ensemble->id = hexparse(pt_ensemble.get("id", "0"));
 
     /* Extended Country Code */
-    ensemble->ecc = pt_ensemble.get("ecc", 0);
+    ensemble->ecc = hexparse(pt_ensemble.get("ecc", "0"));
 
     string label = pt_ensemble.get("label", "");
     memset(ensemble->label.text, 0, 16);
@@ -256,10 +277,11 @@ void parse_configfile(string configuration_file,
                     "Service with uid %s has no short label.\n", serviceuid.c_str());
         }
 
-
-        service->id = pt_service.get("id", DEFAULT_SERVICE_ID + ensemble->services.size());
-        service->pty = pt_service.get("pty", 0);
-        service->language = pt_service.get("language", 0);
+        stringstream def_serviceid;
+        def_serviceid << DEFAULT_SERVICE_ID + ensemble->services.size();
+        service->id = hexparse(pt_service.get("id", def_serviceid.str()));
+        service->pty = hexparse(pt_service.get("pty", "0"));
+        service->language = hexparse(pt_service.get("language", "0"));
 
         // keep service in map, and check for uniqueness of the UID
         if (allservices.count(serviceuid) == 0) {
@@ -349,9 +371,9 @@ void parse_configfile(string configuration_file,
             throw runtime_error(ss.str());
         }
 
-        int figType = pt_comp.get<int>("figtype", -1);
-        int packet_address = pt_comp.get<int>("address", -1);
-        uint8_t component_type = pt_comp.get<uint8_t>("type", 0);
+        int figType = hexparse(pt_comp.get("figtype", "-1"));
+        int packet_address = hexparse(pt_comp.get("address", "-1"));
+        uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
         dabComponent* component = new dabComponent();
 
@@ -754,11 +776,16 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->bitrate = pt.get<int>("bitrate");
         if ((subchan->bitrate & 0x7) != 0) {
             stringstream ss;
-            ss << "Subchannel with uid " << subchanuid << ": Bitrate (" << subchan->bitrate << " not a multiple of 8!";
+            ss << "Subchannel with uid " << subchanuid <<
+                ": Bitrate (" << subchan->bitrate << " not a multiple of 8!";
             throw runtime_error(ss.str());
         }
     }
-    catch (ptree_error &e) {}
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Error, no bitrate defined for subchannel " << subchanuid;
+        throw runtime_error(ss.str());
+    }
 
 #if defined(HAVE_INPUT_FIFO) && defined(HAVE_INPUT_FILE)
     /* Get nonblock */
@@ -774,9 +801,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                     operations = dabInputEnhancedFifoOperations;
 #endif // defined(HAVE_FORMAT_EPM)
                 } else {
-                    etiLog.log(error,
-                            "Error, wrong packet subchannel operations!\n");
-                    throw runtime_error("Error, wrong packet subchannel operations!\n");
+                    stringstream ss;
+                    ss << "Error, wrong packet operations for subchannel " <<
+                        subchanuid;
+                    throw runtime_error(ss.str());
                 }
                 subchan->inputProto = "fifo";
                 break;
@@ -789,10 +817,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                         dabInputDabplusFileOperations) {
                     operations = dabInputDabplusFifoOperations;
                 } else {
-                    etiLog.log(error,
-                            "Error, wrong audio subchannel operations!\n");
-                    throw runtime_error(
-                            "Error, wrong audio subchannel operations!\n");
+                    stringstream ss;
+                    ss << "Error, wrong audio operations for subchannel " <<
+                        subchanuid;
+                    throw runtime_error(ss.str());
                 }
                 subchan->inputProto = "fifo";
                 break;
@@ -810,7 +838,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     /* Get id */
 
     try {
-        subchan->id = pt.get<int>("subchid");
+        subchan->id = hexparse(pt.get<std::string>("subchid"));
     }
     catch (ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel
@@ -847,7 +875,12 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         }
         protection->level = level - 1;
     }
-    catch (ptree_error &e) {}
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Subchannel with uid " << subchanuid <<
+            ": protection level undefined!";
+        throw runtime_error(ss.str());
+    }
 
     /* Create object */
     if (input_is_old_style) {
@@ -855,3 +888,4 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     }
     // else { it's already been created! }
 }
+

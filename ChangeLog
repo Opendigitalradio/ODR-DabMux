@@ -1,19 +1,25 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2014-02-12: Matthias P. Braendli <matthias@mpb.li>
+	(v0.4.3):
+	* odr-dabmux:
+		Add support for hexadecimal IDs in configuration file.
+		Add ZMQ input for toolame-dab.
+
 2014-02-11: Matthias P. Braendli <matthias@mpb.li>
 	(v0.4.2)
-	* crc-dabmux:
+	* odr-dabmux:
 		Actually add zmq.hpp to Makefile.am
 	(v0.4.1)
-	* crc-dabmux:
+	* odr-dabmux:
 		Include zmq.hpp locally and prefer it over the
 		system one.
 		Fix wrong usage of zmq::socket_t.recv
 
 2014-02-07: Matthias P. Braendli <matthias@mpb.li>
 	(v0.4.0)
-	* crc-dabmux:
+	* odr-dabmux:
 		CRC-DabMux renamed to ODR-DabMux
 		Version bump to 0.4.0
 

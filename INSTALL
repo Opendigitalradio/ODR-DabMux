@@ -17,9 +17,19 @@ Simple install procedure using tarball release:
     [as root]
     % make install                          # Install the library
 
+        # install zeromq 4.0.3
+    % wget http://download.zeromq.org/zeromq-4.0.3.tar.gz
+    % tar -f zeromq-4.0.3.tar.gz -x
+    % cd zeromq-4.0.3
+    % ./configure
+    % make
+    [as root]
+    % make install
+
     % tar xjf odr-dabmux-x.y.z.tar.bz2      # Unpack the source
     % cd odr-dabmux-x.y.z                   # Change to the source directory
-    % ./configure                           # Run the configure script
+    % ./configure --enable-input-zeromq --enable-output-zeromq
+                                            # Run the configure script
     % make                                  # Build ODR-DabMux
     [ as root ]
     % make install                          # Install ODR-DabMux
@@ -27,10 +37,14 @@ Simple install procedure using tarball release:
 Nearly as simple install procedure using repository:
 ====================================================
 
+The code in the repository is more recent than the latest
+release and could be less stable, but already have new
+features.
+
     * Download and install fec as above
     * Clone the git repository
     * Bootstrap autotools:
-        % aclocal && automake --gnu --add-missing && autoconf
+    % ./bootstrap.sh
     * Then use ./configure as above
 
 

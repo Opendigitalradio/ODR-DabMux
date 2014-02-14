@@ -26,6 +26,9 @@
 #   include "config.h"
 #endif
 
+#define STRINGIFY(x) XSTRINGIFY(x)
+#define XSTRINGIFY(x) #x
+
 #include <stdio.h>
 
 #define LOG	stderr

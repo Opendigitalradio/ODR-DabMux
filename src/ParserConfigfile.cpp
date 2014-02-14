@@ -121,6 +121,19 @@ int hexparse(std::string input)
 }
 
 
+/* The label.flag is a 16bit mask that tells which label
+ * characters are to be used for the short label
+ *
+ * From EN 300 401, clause 5.2.2.2.1:
+ *
+ * Character flag field: this 16-bit flag field shall indicate which of the
+ * characters of the character field are to be
+ * displayed in an abbreviated form of the label, as follows:
+ *  bi: (i = 0, ... ,15);
+ *  0: not to be displayed in abbreviated label;
+ *  1: to be displayed in abbreviated label.
+ * NOTE: Not more than 8 of the bi may be set to "1".
+ */
 void set_short_label(dabLabel& label, std::string& slabel,
         const char* applies_to)
 {
@@ -141,7 +154,7 @@ void set_short_label(dabLabel& label, std::string& slabel,
         if (*lab != 0) {
             stringstream ss;
             ss << "Error : " << applies_to << " short label '" << slabel <<
-                "'!\n" << "Not in label '" << label.text << "' !\n";
+                "' not subset of '" << label.text << "' !\n";
             throw runtime_error(ss.str());
         }
     }
@@ -154,7 +167,7 @@ void set_short_label(dabLabel& label, std::string& slabel,
     if (count > 8) {
         stringstream ss;
         ss << applies_to << " '" << slabel << "' short label too long!\n"
-            "Must be < 8 characters.\n";
+            "Must be less than 8 characters.\n";
         throw runtime_error(ss.str());
     }
 

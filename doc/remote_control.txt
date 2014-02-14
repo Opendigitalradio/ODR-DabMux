@@ -1,0 +1,101 @@
+Telnet Remote Control
+=====================
+
+ODR-DabMux can be configured to set up a simple telnet remote control that can
+be used to modify some parameters without restarting the multiplexer.
+
+The server only listens on localhost for security reasons. Remote access should
+be done using a VPN or SSH port forwarding.
+
+The principle is that parts of ODR-DabMux which have modifiable parameters
+register themselves as remote-controllable modules, and also register
+parameters. Each parameter has a value, that can be read/written using the
+get/set commands.
+
+The interface is quite simple, and supports the following commands:
+
+    > help
+    list
+      * Lists the modules that are loaded and their parameters
+    show MODULE
+      * Lists all parameters and their values from module MODULE
+    get MODULE PARAMETER
+      * Gets the value for the specified PARAMETER from module MODULE
+    set MODULE PARAMETER VALUE
+      * Sets the value for the PARAMETER ofr module MODULE
+    quit
+      * Terminate this session
+
+
+Example
+=======
+
+In this example, there is one service whose unique id (set in the configuration
+file) is 'srv-fb', one subchannel with uid 'sub-fb' and one component 'comp-fb'.
+
+The command 'list' will show all exported parameters, and a small description:
+
+    > list
+    srv-fb
+            label : Label and shortlabel [label,short]
+    sub-fb
+            buffer : Size of the input buffer [aac superframes]
+            enable : If the input is enabled. Set to zero to empty the buffer.
+    comp-fb
+            label : Label and shortlabel [label,short]
+
+The indication in square brackets can help you understand the format of the
+values, or the units used. e.g. for AAC subchannels, the 'buffer' parameter
+has values that are counted in number of AAC superframes. It is implicit that a
+number is meant.
+
+In contrast to this, the 'label' parameters of both services and components take
+a "label,short-label" pair, separated by a comma.
+
+Binary values accept the value 0 as false, and 1 as true.
+
+
+Remarks concerning specific modules
+===================================
+
+ZMQ input
+---------
+The ZMQ input (both for MPEG and AAC+) export a 'buffer' parameter which
+defines how many frames must be in the buffer *before* the input starts
+streaming.
+
+If you increase the size of the buffer, it will not fill up by itself (unless
+there is a clock drift between the mux and the encoder).
+
+In order to force the buffer to fill up, disable the input by setting 'enable'
+to 0, and, once the buffer is empty, re-enable it. It will fill to the desired
+value.
+
+Labels (Components and Services)
+--------------------------------
+The restrictions on short-labels, namely that they can only consist of letters
+appearing in the labels, and that they must be maximum 8 characters long, are
+verified by the 'label' parameters.
+
+If you try to set an invalid label/short-label combination, you will get an
+error, and the label is unchanged:
+
+example:
+    > set comp-fb label Programme1,prog1
+    comp-fb short label prog1 is not subset of label 'Programme1'
+
+example:
+    > set comp-fb label Programme1,Programme
+    comp-fb short label Programme is too long (max 8 characters)
+
+
+TODO
+====
+
+In addition to adding more configurable features to the RC, it will
+be necessary to add the ability to set several parameters at once,
+atomically.
+
+That's already somewhat of an issue with the labels. (How do you set a label
+that contains a comma ? Right now you cannot.)
+

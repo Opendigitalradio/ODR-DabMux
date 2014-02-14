@@ -1,6 +1,18 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2014-02-14: Matthias P. Braendli <matthias@mpb.li>
+	(v0.5.0):
+	* odr-dabmux:
+		Service and component labels can now be changed on
+		  the fly using the remote control.
+		ZMQ input buffer size can be changed using the RC.
+		Modify the RC 'list' command to simplify usage.
+		Clean up the startup configuration dump.
+		Added fault checking logic to RC that can restart
+		  it in case of a failure.
+		Add doc/remote_control.txt
+
 2014-02-12: Matthias P. Braendli <matthias@mpb.li>
 	(v0.4.3):
 	* odr-dabmux:
@@ -14,7 +26,7 @@ the ODR-DabMux in this repository
 	(v0.4.1)
 	* odr-dabmux:
 		Include zmq.hpp locally and prefer it over the
-		system one.
+		  system one.
 		Fix wrong usage of zmq::socket_t.recv
 
 2014-02-07: Matthias P. Braendli <matthias@mpb.li>
@@ -27,7 +39,7 @@ the ODR-DabMux in this repository
 	(tag r12):
 	* crc-dabmux:
 		Create new object-oriented abstraction for the
-		inputs, with a wrapper for all existing inputs
+		  inputs, with a wrapper for all existing inputs
 		Adapt inputZMQ to the new internal interface
 		Add a telnet Remote Control interface
 
@@ -58,7 +70,7 @@ the ODR-DabMux in this repository
 	* crc-dabmux:
 		Some configuration parsing and logging fixes.
 		Replaced the C-style function dispatching for the outputs
-		by C++ objects with inheritance.
+		  by C++ objects with inheritance.
 		Added support for ZeroMQ ETI output.
 		ZeroMQ dependency added in configure.ac
 		Versioning changed to make hg revision visible
@@ -79,10 +91,10 @@ the ODR-DabMux in this repository
 	(tag r5):
 	* crc-dabmux/*:
 		Refactoring command line handling for crc-dabmux,
-		added configuration file parser including example.
+		  added configuration file parser including example.
 		When the program is called as CRC-DabMux-cfg, it reads
-		the Ensemble definition from a file rather than from
-		the command line. An example file is in doc/
+		  the Ensemble definition from a file rather than from
+		  the command line. An example file is in doc/
 		DabMux now depends on Boost.
 
 2012-08-17: Matthias P. Braendli <matthias@mpb.li>

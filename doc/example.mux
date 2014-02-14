@@ -49,6 +49,10 @@ remotecontrol {
     ; some features export
     ; Set the port to 0 to disable the server
     telnetport 12721
+
+    ; the remote control server makes use of the unique identifiers
+    ; for the subchannels, services and components. Make sure you
+    ; chose them so that you can identify them.
 }
 
 ; Some ensemble parameters
@@ -62,19 +66,19 @@ ensemble {
 ; Definition of DAB services
 services {
     ; Each service has it's own unique identifier, that is
-    ; only used throughout the configuration file
-    funk {
+    ; used throughout the configuration file and for the RC.
+    srv-fu {
         label "Funk"
         shortlabel "Fu"
         pty 0
         language 0
         ; also supports id
     }
-    luschtig {
+    srv-lu {
         label "Luschtig"
         ; pty, language, shortlabel and id can be omitted, and will take default values
     }
-    rick {
+    srv-ri {
         label "rick"
         shortlabel "rick"
     }
@@ -85,7 +89,7 @@ services {
 ; supported types are : audio, bridge, data, enhancedpacket,
 ;                       dabplus, dmb, packet, test
 subchannels {
-    funk {
+    sub-fu {
         type audio
         ; example file input
         inputfile "funk.mp2"
@@ -98,7 +102,7 @@ subchannels {
         id 10
         protection 5
     }
-    luschtig {
+    sub-lu {
         type audio
         inputfile "luschtig.mp2"
         nonblock false
@@ -106,7 +110,7 @@ subchannels {
         id 3
         ;protection 5
     }
-    rick {
+    sub-ri {
         type dabplus
         ; example file input
         ;inputfile "rick.dabp"
@@ -120,7 +124,7 @@ subchannels {
         protection 1
     }
 
-    rick2 {
+    sub-ri2 {
         type dabplus
         ; for dabplus types, you can use the ZeroMQ input (if compiled in)
         ; with the following configuration:
@@ -134,9 +138,8 @@ subchannels {
 
 ; For now, each component links one service to one subchannel
 components {
-    ; the component unique identifiers are not used anywhere, but
-    ; are useful to disambiguate different components.
-    funky {
+    ; the component unique identifiers are used for the RC.
+    comp-fu {
         ; specifies audio -or- packet type, defaults to zero when not given
         ; audio: foreground=0, background=1, multi-channel=2
         ; data: unspecified=0, TMC=1, EWS=2, ITTS=3, paging=4, TDC=5, IP=59, MOT=60, proprietary=61
@@ -144,8 +147,8 @@ components {
 
         label funk
         shortlabel fu
-        service funk
-        subchannel funk
+        service srv-fu
+        subchannel sub-fu
 
         ; for packet components, the fields
         ; "user application type in FIG 0/13 for packet mode"
@@ -155,25 +158,29 @@ components {
         ; are supported, with the same syntax as in the manpage
     }
 
-    luschtigy {
+    comp-lu {
+        ; labels are maximum 16 characters in length
         label luschtig
+
+        ; a shortlabel is created by dropping some letters from the
+        ; label, max length 8
         shortlabel lu
-        service luschtig
-        subchannel luschtig
+        service srv-lu
+        subchannel sub-lu
     }
 
-    ricky {
+    comp-ri {
         label "rick"
         shortlabel "rick"
-        service rick
-        subchannel rick
+        service srv-ri
+        subchannel sub-ri
     }
 }
 
 ; A list of outputs, in the format
-; unique_id "uri"
+; unique-id "uri"
 outputs {
-    foobar "fifo:///dev/stdout?type=raw"
+    stdout "fifo:///dev/stdout?type=raw"
 
 ; ZeroMQ output example
     ; zmq  "zmq+tcp://*:8080"

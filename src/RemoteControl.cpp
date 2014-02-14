@@ -179,9 +179,18 @@ RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
         }
     }
     else if (cmd[0] == "set") {
-        if (cmd.size() == 4) {
+        if (cmd.size() >= 4) {
             try {
-                set_param_(cmd[1], cmd[2], cmd[3]);
+                stringstream new_param_value;
+                for (int i = 3; i < cmd.size(); i++) {
+                    new_param_value << cmd[i];
+
+                    if (i+1 < cmd.size()) {
+                        new_param_value << " ";
+                    }
+                }
+
+                set_param_(cmd[1], cmd[2], new_param_value.str());
                 reply(socket, "ok");
             }
             catch (ParameterError &e) {
@@ -193,7 +202,7 @@ RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
         }
         else
         {
-            reply(socket, "Incorrect parameters for command 'get'");
+            reply(socket, "Incorrect parameters for command 'set'");
         }
     }
     else if (cmd[0] == "quit") {

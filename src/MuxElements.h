@@ -168,7 +168,7 @@ class DabComponent : public RemoteControllable
 {
     public:
         DabComponent(std::string uid) :
-            RemoteControllable("Component " + uid)
+            RemoteControllable(uid)
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
         }
@@ -205,7 +205,7 @@ class DabService : public RemoteControllable
 {
     public:
         DabService(std::string uid) :
-            RemoteControllable("Service " + uid)
+            RemoteControllable(uid)
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
         }

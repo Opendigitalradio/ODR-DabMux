@@ -98,7 +98,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
 class DabInputZmqMPEG : public DabInputZmqBase {
     public:
         DabInputZmqMPEG(const std::string name)
-            : DabInputZmqBase("MPEG " + name) {
+            : DabInputZmqBase(name) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [mpeg frames]");
             }
@@ -110,7 +110,7 @@ class DabInputZmqMPEG : public DabInputZmqBase {
 class DabInputZmqAAC : public DabInputZmqBase {
     public:
         DabInputZmqAAC(const std::string name)
-            : DabInputZmqBase("AAC+ " + name) {
+            : DabInputZmqBase(name) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [aac superframes]");
             }

@@ -380,6 +380,8 @@ void parse_configfile(string configuration_file,
 
         DabComponent* component = new DabComponent(componentuid);
 
+        component->enrol_at(*rc);
+
         component->serviceId = service->id;
         component->subchId = subchannel->id;
         component->SCIdS = SCIdS_per_service[service]++;

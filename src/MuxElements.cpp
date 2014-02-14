@@ -218,7 +218,8 @@ bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
     return true;
 }
 
-void DabComponent::set_parameter(string parameter, string value)
+void DabComponent::set_parameter(const string& parameter,
+        const string& value)
 {
     stringstream ss(value);
     ss.exceptions ( stringstream::failbit | stringstream::badbit );
@@ -266,7 +267,7 @@ void DabComponent::set_parameter(string parameter, string value)
     }
 }
 
-string DabComponent::get_parameter(string parameter)
+const string DabComponent::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "label") {
@@ -315,7 +316,8 @@ unsigned char DabService::nbComponent(vector<DabComponent*>& components)
     return nb;
 }
 
-void DabService::set_parameter(string parameter, string value)
+void DabService::set_parameter(const string& parameter,
+        const string& value)
 {
     stringstream ss(value);
     ss.exceptions ( stringstream::failbit | stringstream::badbit );
@@ -363,7 +365,7 @@ void DabService::set_parameter(string parameter, string value)
     }
 }
 
-string DabService::get_parameter(string parameter)
+const string DabService::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "label") {

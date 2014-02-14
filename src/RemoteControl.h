@@ -84,7 +84,7 @@ class RemoteControllable {
          * It might be used in the commands the user has to type, so keep
          * it short
          */
-        virtual std::string get_rc_name() { return m_name; }
+        virtual std::string get_rc_name() const { return m_name; }
 
         /* Tell the controllable to enrol at the given controller */
         virtual void enrol_at(BaseRemoteController& controller) {
@@ -92,9 +92,9 @@ class RemoteControllable {
         }
 
         /* Return a list of possible parameters that can be set */
-        virtual list<string> get_supported_parameters() {
+        virtual list<string> get_supported_parameters() const {
             list<string> parameterlist;
-            for (list< vector<string> >::iterator it = m_parameters.begin();
+            for (list< vector<string> >::const_iterator it = m_parameters.begin();
                     it != m_parameters.end(); ++it) {
                 parameterlist.push_back((*it)[0]);
             }
@@ -102,15 +102,17 @@ class RemoteControllable {
         }
 
         /* Return a mapping of the descriptions of all parameters */
-        virtual std::list< std::vector<std::string> > get_parameter_descriptions() {
+        virtual std::list< std::vector<std::string> >
+            get_parameter_descriptions() const {
             return m_parameters;
         }
 
         /* Base function to set parameters. */
-        virtual void set_parameter(string parameter, string value) = 0;
+        virtual void set_parameter(const string& parameter,
+                const string& value) = 0;
 
         /* Getting a parameter always returns a string. */
-        virtual string get_parameter(string parameter) = 0;
+        virtual const string get_parameter(const string& parameter) const = 0;
 
     protected:
         std::string m_name;

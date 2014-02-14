@@ -311,7 +311,8 @@ int DabInputZmqAAC::readFromSocket(int framesize)
 
 /********* REMOTE CONTROL ***********/
 
-void DabInputZmqBase::set_parameter(string parameter, string value)
+void DabInputZmqBase::set_parameter(const string& parameter,
+        const string& value)
 {
     stringstream ss(value);
     ss.exceptions ( stringstream::failbit | stringstream::badbit );
@@ -349,7 +350,7 @@ void DabInputZmqBase::set_parameter(string parameter, string value)
     }
 }
 
-string DabInputZmqBase::get_parameter(string parameter)
+const string DabInputZmqBase::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "buffer") {

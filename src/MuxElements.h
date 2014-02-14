@@ -188,10 +188,11 @@ class DabComponent : public RemoteControllable
         bool isPacketComponent(vector<dabSubchannel*>& subchannels);
 
         /* Remote control */
-        virtual void set_parameter(string parameter, string value);
+        virtual void set_parameter(const string& parameter,
+               const string& value);
 
         /* Getting a parameter always returns a string. */
-        virtual string get_parameter(string parameter);
+        virtual const string get_parameter(const string& parameter) const;
 
 
     private:
@@ -221,10 +222,11 @@ class DabService : public RemoteControllable
         DabLabel label;
 
         /* Remote control */
-        virtual void set_parameter(string parameter, string value);
+        virtual void set_parameter(const string& parameter,
+               const string& value);
 
         /* Getting a parameter always returns a string. */
-        virtual string get_parameter(string parameter);
+        virtual const string get_parameter(const string& parameter) const;
 
     private:
         const DabService& operator=(const DabService& other);

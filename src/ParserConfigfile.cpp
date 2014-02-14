@@ -333,7 +333,7 @@ void parse_configfile(string configuration_file,
     }
 
     /******************** READ COMPONENT PARAMETERS ************/
-    map<string, dabComponent*> allcomponents;
+    map<string, DabComponent*> allcomponents;
     ptree pt_components = pt.get_child("components");
     for (ptree::iterator it = pt_components.begin(); it != pt_components.end(); ++it) {
         string componentuid = it->first;
@@ -378,9 +378,8 @@ void parse_configfile(string configuration_file,
         int packet_address = hexparse(pt_comp.get("address", "-1"));
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
-        dabComponent* component = new dabComponent();
+        DabComponent* component = new DabComponent(componentuid);
 
-        memset(component, 0, sizeof(dabComponent));
         component->serviceId = service->id;
         component->subchId = subchannel->id;
         component->SCIdS = SCIdS_per_service[service]++;

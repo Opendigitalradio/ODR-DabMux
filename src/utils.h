@@ -53,7 +53,7 @@ void printOutputs(vector<dabOutput*>& outputs);
 
 void printServices(vector<DabService*>& services);
 
-void printComponents(vector<dabComponent*>& components);
+void printComponents(vector<DabComponent*>& components);
 
 void printSubchannels(vector<dabSubchannel*>& subchannels);
 
@@ -61,5 +61,5 @@ void printSubchannels(vector<dabSubchannel*>& subchannels);
 void printEnsemble(dabEnsemble* ensemble);
 
 /* Print detailed component information */
-void printComponent(dabComponent* component);
+void printComponent(DabComponent* component);
 #endif

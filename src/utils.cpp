@@ -322,9 +322,9 @@ void printServices(vector<DabService*>& services)
     }
 }
 
-void printComponents(vector<dabComponent*>& components)
+void printComponents(vector<DabComponent*>& components)
 {
-    vector<dabComponent*>::const_iterator current;
+    vector<DabComponent*>::const_iterator current;
     unsigned int index = 0;
 
     for (current = components.begin(); current != components.end(); ++current) {
@@ -334,7 +334,7 @@ void printComponents(vector<dabComponent*>& components)
     }
 }
 
-void printComponent(dabComponent* component)
+void printComponent(DabComponent* component)
 {
     char label[17];
     memcpy(label, component->label.text(), 16);

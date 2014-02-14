@@ -103,7 +103,7 @@ bool parse_cmdline(char **argv,
 {
     vector<dabOutput*>::iterator output;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
-    vector<dabComponent*>::iterator component = ensemble->components.end();
+    vector<DabComponent*>::iterator component = ensemble->components.end();
     vector<DabService*>::iterator service = ensemble->services.end();
     dabProtection* protection = NULL;
 
@@ -171,7 +171,7 @@ bool parse_cmdline(char **argv,
                 goto EXIT;
             }
 
-            ensemble->components.push_back(new dabComponent);
+            ensemble->components.push_back(new DabComponent("?"));
 
             component = ensemble->components.end() - 1;
             subchannel = ensemble->subchannels.end();

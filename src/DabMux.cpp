@@ -279,9 +279,9 @@ int main(int argc, char *argv[])
     vector<DabService*>::iterator serviceProgramInd;
     vector<DabService*>::iterator serviceDataInd;
     vector<DabService*>::iterator servicePty;
-    vector<dabComponent*>::iterator component = ensemble->components.end();
-    vector<dabComponent*>::iterator componentIndicatorProgram;
-    vector<dabComponent*>::iterator componentIndicatorData;
+    vector<DabComponent*>::iterator component = ensemble->components.end();
+    vector<DabComponent*>::iterator componentIndicatorProgram;
+    vector<DabComponent*>::iterator componentIndicatorData;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
     vector<dabSubchannel*>::iterator subchannelIndicator;
     vector<dabOutput*>::iterator output;

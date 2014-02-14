@@ -86,8 +86,9 @@ class DabLabel
 };
 
 
-struct DabService;
-struct dabComponent;
+class DabService;
+class DabComponent;
+
 struct dabSubchannel;
 struct dabEnsemble {
     uint16_t id;
@@ -95,7 +96,7 @@ struct dabEnsemble {
     DabLabel label;
     uint8_t mode;
     vector<DabService*> services;
-    vector<dabComponent*> components;
+    vector<DabComponent*> components;
     vector<dabSubchannel*> subchannels;
 };
 
@@ -163,20 +164,39 @@ struct dabPacketComponent {
 };
 
 
-struct dabComponent {
-    DabLabel label;
-    uint32_t serviceId;
-    uint8_t subchId;
-    uint8_t type;
-    uint8_t SCIdS;
-    union {
-        dabAudioComponent audio;
-        dabDataComponent data;
-        dabFidcComponent fidc;
-        dabPacketComponent packet;
-    };
+class DabComponent : public RemoteControllable
+{
+    public:
+        DabComponent(std::string uid) :
+            RemoteControllable("Component " + uid)
+        {
+            RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
+        }
 
-    bool isPacketComponent(vector<dabSubchannel*>& subchannels);
+        DabLabel label;
+        uint32_t serviceId;
+        uint8_t subchId;
+        uint8_t type;
+        uint8_t SCIdS;
+        union {
+            dabAudioComponent audio;
+            dabDataComponent data;
+            dabFidcComponent fidc;
+            dabPacketComponent packet;
+        };
+
+        bool isPacketComponent(vector<dabSubchannel*>& subchannels);
+
+        /* Remote control */
+        virtual void set_parameter(string parameter, string value);
+
+        /* Getting a parameter always returns a string. */
+        virtual string get_parameter(string parameter);
+
+
+    private:
+        const DabComponent& operator=(const DabComponent& other);
+        DabComponent(const DabComponent& other);
 };
 
 
@@ -184,7 +204,8 @@ struct dabComponent {
 class DabService : public RemoteControllable
 {
     public:
-        DabService(std::string uid) : RemoteControllable(uid)
+        DabService(std::string uid) :
+            RemoteControllable("Service " + uid)
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
         }
@@ -195,7 +216,7 @@ class DabService : public RemoteControllable
         bool program;
 
         unsigned char getType(dabEnsemble* ensemble);
-        unsigned char nbComponent(vector<dabComponent*>& components);
+        unsigned char nbComponent(vector<DabComponent*>& components);
 
         DabLabel label;
 
@@ -213,17 +234,17 @@ class DabService : public RemoteControllable
 vector<dabSubchannel*>::iterator getSubchannel(
         vector<dabSubchannel*>& subchannels, int id);
 
-vector<dabComponent*>::iterator getComponent(
-        vector<dabComponent*>& components,
+vector<DabComponent*>::iterator getComponent(
+        vector<DabComponent*>& components,
         uint32_t serviceId,
-        vector<dabComponent*>::iterator current);
+        vector<DabComponent*>::iterator current);
 
-vector<dabComponent*>::iterator getComponent(
-        vector<dabComponent*>& components,
+vector<DabComponent*>::iterator getComponent(
+        vector<DabComponent*>& components,
         uint32_t serviceId);
 
 vector<DabService*>::iterator getService(
-        dabComponent* component,
+        DabComponent* component,
         vector<DabService*>& services);
 
 unsigned short getSizeCu(dabSubchannel* subchannel);

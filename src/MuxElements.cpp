@@ -153,10 +153,10 @@ vector<dabSubchannel*>::iterator getSubchannel(
             );
 }
 
-vector<dabComponent*>::iterator getComponent(
-        vector<dabComponent*>& components,
+vector<DabComponent*>::iterator getComponent(
+        vector<DabComponent*>& components,
         uint32_t serviceId,
-        vector<dabComponent*>::iterator current)
+        vector<DabComponent*>::iterator current)
 {
     if (current == components.end()) {
         current = components.begin();
@@ -175,14 +175,14 @@ vector<dabComponent*>::iterator getComponent(
 }
 
 
-vector<dabComponent*>::iterator getComponent(
-        vector<dabComponent*>& components,
+vector<DabComponent*>::iterator getComponent(
+        vector<DabComponent*>& components,
         uint32_t serviceId) {
     return getComponent(components, serviceId, components.end());
 }
 
 vector<DabService*>::iterator getService(
-        dabComponent* component,
+        DabComponent* component,
         vector<DabService*>& services)
 {
     vector<DabService*>::iterator service;
@@ -196,7 +196,7 @@ vector<DabService*>::iterator getService(
     return service;
 }
 
-bool dabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
+bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
 {
     if (subchId > 63) {
         etiLog.log(error,
@@ -218,11 +218,77 @@ bool dabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
     return true;
 }
 
+void DabComponent::set_parameter(string parameter, string value)
+{
+    stringstream ss(value);
+    ss.exceptions ( stringstream::failbit | stringstream::badbit );
+
+    if (parameter == "label") {
+        vector<string> fields;
+        boost::split(fields, value, boost::is_any_of(","));
+        if (fields.size() != 2) {
+            throw ParameterError("Parameter 'label' must have format"
+                   " 'label,shortlabel'");
+        }
+        int success = this->label.setLabel(fields[0], fields[1]);
+        stringstream ss;
+        switch (success)
+        {
+            case 0:
+                break;
+            case -1:
+                ss << m_name << " short label " <<
+                    fields[1] << " is not subset of label '" <<
+                    fields[0] << "'";
+                etiLog.level(warn) << ss.str();
+                throw ParameterError(ss.str());
+            case -2:
+                ss << m_name << " short label " <<
+                    fields[1] << " is too long (max 8 characters)";
+                etiLog.level(warn) << ss.str();
+                throw ParameterError(ss.str());
+            case -3:
+                ss << m_name << " label " <<
+                    fields[0] << " is too long (max 16 characters)";
+                etiLog.level(warn) << ss.str();
+                throw ParameterError(ss.str());
+            default:
+                ss << m_name << " short label definition: program error !";
+                etiLog.level(emerg) << ss.str();
+                throw ParameterError(ss.str());
+        }
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+string DabComponent::get_parameter(string parameter)
+{
+    stringstream ss;
+    if (parameter == "label") {
+        char l[17];
+        l[16] = '\0';
+        memcpy(l, label.text(), 16);
+        ss << l << "," << label.short_label();
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+
+}
+
 
 unsigned char DabService::getType(dabEnsemble* ensemble)
 {
     vector<dabSubchannel*>::iterator subchannel;
-    vector<dabComponent*>::iterator component =
+    vector<DabComponent*>::iterator component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
         return 4;
@@ -235,10 +301,10 @@ unsigned char DabService::getType(dabEnsemble* ensemble)
     return (*subchannel)->type;
 }
 
-unsigned char DabService::nbComponent(vector<dabComponent*>& components)
+unsigned char DabService::nbComponent(vector<DabComponent*>& components)
 {
     int nb = 0;
-    vector<dabComponent*>::iterator current;
+    vector<DabComponent*>::iterator current;
 
     for (current = components.begin(); current != components.end();
             ++current) {
@@ -268,23 +334,23 @@ void DabService::set_parameter(string parameter, string value)
             case 0:
                 break;
             case -1:
-                ss << "Ensemble short label " <<
+                ss << m_name << " short label " <<
                     fields[1] << " is not subset of label '" <<
                     fields[0] << "'";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -2:
-                ss << "Ensemble short label " <<
+                ss << m_name << " short label " <<
                     fields[1] << " is too long (max 8 characters)";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -3:
-                ss << "Ensemble label " <<
+                ss << m_name << " label " <<
                     fields[0] << " is too long (max 16 characters)";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             default:
-                ss << "Ensemble short label definition: program error !";
+                ss << m_name << " short label definition: program error !";
                 etiLog.level(emerg) << ss.str();
                 throw ParameterError(ss.str());
         }

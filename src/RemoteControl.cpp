@@ -26,16 +26,38 @@
 #include <string>
 #include <string>
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
 #include "Log.h"
 
 #include "RemoteControl.h"
 
 using boost::asio::ip::tcp;
 
-void
-RemoteControllerTelnet::process(long)
+
+void RemoteControllerTelnet::restart()
 {
-    m_welcome = "CRC-DABMUX Remote Control CLI\nWrite 'help' for help.\n**********\n";
+    m_restarter_thread = boost::thread(&RemoteControllerTelnet::restart_thread,
+            this, 0);
+}
+
+// This runs in a separate thread, because
+// it would take too long to be done in the main loop
+// thread.
+void RemoteControllerTelnet::restart_thread(long)
+{
+    m_running = false;
+
+    if (m_port) {
+        m_child_thread.interrupt();
+        m_child_thread.join();
+    }
+
+    m_child_thread = boost::thread(&RemoteControllerTelnet::process, this, 0);
+}
+
+void RemoteControllerTelnet::process(long)
+{
+    m_welcome = "ODR-DabMux Remote Control CLI\nWrite 'help' for help.\n**********\n";
     m_prompt = "> ";
 
     std::string in_message;
@@ -97,11 +119,11 @@ RemoteControllerTelnet::process(long)
     catch (std::exception& e)
     {
         etiLog.level(error) << "Remote control caught exception: " << e.what();
+        m_fault = true;
     }
 }
 
-void
-RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
+void RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
 {
     vector<string> cmd = tokenise_(command);
 
@@ -214,8 +236,7 @@ RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
     }
 }
 
-void
-RemoteControllerTelnet::reply(tcp::socket& socket, string message)
+void RemoteControllerTelnet::reply(tcp::socket& socket, string message)
 {
     boost::system::error_code ignored_error;
     stringstream ss;

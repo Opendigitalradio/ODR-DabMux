@@ -127,7 +127,7 @@ void parse_configfile(string configuration_file,
         unsigned* FICL,
         bool* factumAnalyzer,
         unsigned long* limit,
-        BaseRemoteController* rc,
+        BaseRemoteController** rc,
         int* statsServerPort
         )
 {
@@ -174,10 +174,10 @@ void parse_configfile(string configuration_file,
     int telnetport = pt_rc.get<int>("telnetport", 0);
 
     if (telnetport != 0) {
-        rc = new RemoteControllerTelnet(telnetport);
+        *rc = new RemoteControllerTelnet(telnetport);
     }
     else {
-        rc = new RemoteControllerDummy();
+        *rc = new RemoteControllerDummy();
     }
 
     /******************** READ ENSEMBLE PARAMETERS *************/
@@ -240,7 +240,7 @@ void parse_configfile(string configuration_file,
         ptree pt_service = it->second;
         DabService* service = new DabService(serviceuid);
         ensemble->services.push_back(service);
-        service->enrol_at(*rc);
+        service->enrol_at(**rc);
 
         int success = -5;
 
@@ -312,7 +312,7 @@ void parse_configfile(string configuration_file,
 
         try {
             setup_subchannel_from_ptree(subchan, it->second, ensemble,
-                    subchanuid, rc);
+                    subchanuid, *rc);
         }
         catch (runtime_error &e) {
             etiLog.log(error,
@@ -380,7 +380,7 @@ void parse_configfile(string configuration_file,
 
         DabComponent* component = new DabComponent(componentuid);
 
-        component->enrol_at(*rc);
+        component->enrol_at(**rc);
 
         component->serviceId = service->id;
         component->subchId = subchannel->id;

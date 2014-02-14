@@ -67,11 +67,23 @@ class ParameterError : public std::exception
 
 class RemoteControllable;
 
-/* Remote controllers (that recieve orders from the user) must implement BaseRemoteController */
+/* Remote controllers (that recieve orders from the user)
+ * must implement BaseRemoteController
+ */
 class BaseRemoteController {
     public:
         /* Add a new controllable under this controller's command */
         virtual void enrol(RemoteControllable* controllable) = 0;
+
+        /* When this returns one, the remote controller cannot be
+         * used anymore, and must be restarted by dabmux
+         */
+        virtual bool fault_detected() = 0;
+
+        /* In case of a fault, the remote controller can be
+         * restarted.
+         */
+        virtual void restart() = 0;
 };
 
 /* Objects that support remote control must implement the following class */
@@ -125,20 +137,34 @@ class RemoteControllable {
 class RemoteControllerTelnet : public BaseRemoteController {
     public:
         RemoteControllerTelnet()
-            : m_running(false), m_port(0) {}
+            : m_running(false), m_fault(false),
+            m_port(0) {}
 
         RemoteControllerTelnet(int port)
-            : m_running(true), m_port(port),
+            : m_running(false), m_fault(false),
+            m_port(port),
             m_child_thread(&RemoteControllerTelnet::process, this, 0)
         {}
 
         ~RemoteControllerTelnet() {
             m_running = false;
+            m_fault = false;
             if (m_port) {
                 m_child_thread.interrupt();
                 m_child_thread.join();
             }
         }
+
+        void enrol(RemoteControllable* controllable) {
+            m_cohort.push_back(controllable);
+        }
+
+        virtual bool fault_detected() { return m_fault; };
+
+        virtual void restart();
+
+    private:
+        void restart_thread(long);
 
         void process(long);
 
@@ -146,12 +172,6 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         void reply(tcp::socket& socket, string message);
 
-        void enrol(RemoteControllable* controllable) {
-            m_cohort.push_back(controllable);
-        }
-
-
-    private:
         RemoteControllerTelnet& operator=(const RemoteControllerTelnet& other);
         RemoteControllerTelnet(const RemoteControllerTelnet& other);
 
@@ -192,7 +212,8 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
             list< vector<string> > allparams;
             list<string> params = controllable->get_supported_parameters();
-            for (list<string>::iterator it = params.begin(); it != params.end(); ++it) {
+            for (list<string>::iterator it = params.begin();
+                    it != params.end(); ++it) {
                 vector<string> item;
                 item.push_back(*it);
                 item.push_back(controllable->get_parameter(*it));
@@ -213,6 +234,11 @@ class RemoteControllerTelnet : public BaseRemoteController {
         }
 
         bool m_running;
+
+        /* This is set to true if a fault occurred */
+        bool m_fault;
+        boost::thread m_restarter_thread;
+
         boost::thread m_child_thread;
 
         /* This controller commands the controllables in the cohort */
@@ -225,11 +251,15 @@ class RemoteControllerTelnet : public BaseRemoteController {
 };
 
 
-/* The Dummy remote controller does nothing
+/* The Dummy remote controller does nothing, and never fails
  */
 class RemoteControllerDummy : public BaseRemoteController {
     public:
         void enrol(RemoteControllable* controllable) {};
+
+        bool fault_detected() { return false; };
+
+        virtual void restart() {};
 };
 
 #endif

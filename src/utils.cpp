@@ -306,8 +306,13 @@ void printOutputs(vector<dabOutput*>& outputs)
         etiLog.log(info, "Output      %i", index);
         etiLog.level(info) << "  protocol: " <<
                 (*output)->outputProto;
+
         etiLog.level(info) << "  name:     " <<
-                (*output)->outputName;
+                (*output)->outputName.c_str();
+        // Daboutputfile mangles with outputName, inserting \0 to
+        // cut the string in several parts. That doesn't work
+        // with stl strings. Thats why the .c_str()
+
         ++index;
     }
 }

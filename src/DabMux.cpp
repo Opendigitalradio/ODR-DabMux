@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
             string conf_file = argv[2];
 
             parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
-                    &factumAnalyzer, &limit, rc, &statsserverport);
+                    &factumAnalyzer, &limit, &rc, &statsserverport);
 
         }
         catch (runtime_error &e) {
@@ -1812,6 +1812,12 @@ int main(int argc, char *argv[])
             }
         }
 #endif
+
+        /* Check every six seconds if the remote control is still working */
+        if (rc && fc->FCT == 249 && rc->fault_detected()) {
+                etiLog.level(warn) << "Detected Remote Control fault, restarting it";
+                rc->restart();
+        }
     }
 
 EXIT:

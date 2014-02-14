@@ -40,7 +40,7 @@ void parse_configfile(std::string configuration_file,
         unsigned* FICL,
         bool* factumAnalyzer,
         unsigned long* limit,
-        BaseRemoteController* rc,
+        BaseRemoteController** rc,
         int* statsServerPort);
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,

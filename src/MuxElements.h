@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Includes modifications
-   2012, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
    This file defines all data structures used in DabMux to represent
    and save ensemble data.
@@ -29,6 +29,7 @@
 #define _MUX_ELEMENTS
 
 #include <vector>
+#include <string>
 #include <functional>
 #include <algorithm>
 #include <stdint.h>
@@ -52,9 +53,32 @@ struct dabOutput {
 };
 
 
-struct dabLabel {
-    char text[16];
-    uint16_t flag;
+class DabLabel
+{
+    public:
+        /* Set a new label and short label.
+         * returns:  0 on success
+         *          -1 if the short_label is not a representable
+         *          -2 if the short_label is too long
+         *          -3 if the text is too long
+         */
+        int setLabel(const std::string& text, const std::string& short_label);
+
+        /* Same as above, but sets the flag to 0xff00, truncating at 8
+         * characters.
+         *
+         * returns:  0 on success
+         *          -3 if the text is too long
+         */
+        int setLabel(const std::string& text);
+
+        const char* text() const { return m_text; }
+        uint16_t flag() const { return m_flag; }
+
+    private:
+        char m_text[16];
+        uint16_t m_flag;
+        int setShortLabel(const std::string& slabel);
 };
 
 
@@ -64,7 +88,7 @@ struct dabSubchannel;
 struct dabEnsemble {
     uint16_t id;
     uint8_t ecc;
-    dabLabel label;
+    DabLabel label;
     uint8_t mode;
     vector<dabService*> services;
     vector<dabComponent*> components;
@@ -136,7 +160,7 @@ struct dabPacketComponent {
 
 
 struct dabComponent {
-    dabLabel label;
+    DabLabel label;
     uint32_t serviceId;
     uint8_t subchId;
     uint8_t type;
@@ -153,15 +177,17 @@ struct dabComponent {
 
 
 
-struct dabService {
-    dabLabel label;
-    uint32_t id;
-    unsigned char pty;
-    unsigned char language;
-    bool program;
+struct dabService
+{
+        uint32_t id;
+        unsigned char pty;
+        unsigned char language;
+        bool program;
 
-    unsigned char getType(dabEnsemble* ensemble);
-    unsigned char nbComponent(vector<dabComponent*>& components);
+        unsigned char getType(dabEnsemble* ensemble);
+        unsigned char nbComponent(vector<dabComponent*>& components);
+
+        DabLabel label;
 };
 
 vector<dabSubchannel*>::iterator getSubchannel(

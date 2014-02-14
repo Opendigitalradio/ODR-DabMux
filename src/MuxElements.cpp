@@ -42,6 +42,92 @@ const unsigned short Sub_Channel_SizeTable[64] = {
 
 using namespace std;
 
+int DabLabel::setLabel(const std::string& text)
+{
+    int len = text.length();
+    if (len > 16)
+        return -3;
+
+    memset(m_text, 0, 16);
+    memcpy(m_text, text.c_str(), len);
+
+    return 0;
+}
+
+int DabLabel::setLabel(const std::string& text, const std::string& short_label)
+{
+    DabLabel newlabel;
+
+    memset(newlabel.m_text, 0, 16);
+    int len = text.length();
+    if (len > 16)
+        return -3;
+    memcpy(newlabel.m_text, text.c_str(), len);
+
+    /* First check if we can actually create the short label */
+    int flag = newlabel.setShortLabel(short_label);
+    if (flag < 0)
+        return flag;
+
+    // short label is valid.
+    memcpy(this->m_text, newlabel.m_text, len);
+    this->m_flag = flag & 0xFFFF;
+
+    return 0;
+}
+
+/* The label.flag is a 16bit mask that tells which label
+ * characters are to be used for the short label
+ *
+ * From EN 300 401, clause 5.2.2.2.1:
+ *
+ * Character flag field: this 16-bit flag field shall indicate which of the
+ * characters of the character field are to be
+ * displayed in an abbreviated form of the label, as follows:
+ *  bi: (i = 0, ... ,15);
+ *  0: not to be displayed in abbreviated label;
+ *  1: to be displayed in abbreviated label.
+ * NOTE: Not more than 8 of the bi may be set to "1".
+ *
+ * returns:  the flag (16 bits) on success
+ *          -1 if the short_label is not a representable
+ *          -2 if the short_label is too long
+ */
+int DabLabel::setShortLabel(const std::string& slabel)
+{
+    char* end;
+    const char* lab;
+    uint16_t flag;
+    flag = strtoul(slabel.c_str(), &end, 0);
+    if (*end != 0) {
+        lab = slabel.c_str();
+        flag = 0;
+        for (int i = 0; i < 32; ++i) {
+            if (*lab == this->m_text[i]) {
+                flag |= 0x8000 >> i;
+                if (*(++lab) == 0) {
+                    break;
+                }
+            }
+        }
+        if (*lab != 0) {
+            return -1;
+        }
+    }
+    int count = 0;
+    for (int i = 0; i < 16; ++i) {
+        if (flag & (1 << i)) {
+            ++count;
+        }
+    }
+    if (count > 8) {
+        return -2;
+    }
+
+    return flag;
+}
+
+
 vector<dabSubchannel*>::iterator getSubchannel(
         vector<dabSubchannel*>& subchannels, int id)
 {

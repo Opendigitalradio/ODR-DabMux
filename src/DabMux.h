@@ -3,8 +3,8 @@
    2011 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Includes modifications
-   2012, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
    This file declares several structures used in the multiplexer,
    and defines default values for some parameters.
@@ -57,7 +57,7 @@
 // Etiquettes des sous-canaux et de l'ensemble, 16 characteres incluant les
 // espaces
 #define DEFAULT_ENSEMBLE_LABEL          "ODR Dab Mux"
-#define DEFAULT_ENSEMBLE_SHORT_LABEL    0xe000
+#define DEFAULT_ENSEMBLE_SHORT_LABEL    "ODRMux"
 #define DEFAULT_ENSEMBLE_ID             0xc000
 #define DEFAULT_ENSEMBLE_ECC            0xa1
 

@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Includes modifications
-   2012, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
    This file is part of ODR-DabMux.
@@ -269,9 +269,8 @@ int main(int argc, char *argv[])
 
 
     dabEnsemble* ensemble = new dabEnsemble;
-    strncpy(ensemble->label.text, DEFAULT_ENSEMBLE_LABEL, 16);
+    ensemble->label.setLabel(DEFAULT_ENSEMBLE_LABEL, DEFAULT_ENSEMBLE_SHORT_LABEL);
     ensemble->mode = DEFAULT_DAB_MODE;
-    ensemble->label.flag = DEFAULT_ENSEMBLE_SHORT_LABEL;
     ensemble->id = DEFAULT_ENSEMBLE_ID;
     ensemble->ecc = DEFAULT_ENSEMBLE_ECC;
 
@@ -1470,11 +1469,11 @@ int main(int argc, char *argv[])
             fig1_0->EId = htons(ensemble->id);
             index = index + 4;
 
-            memcpy(&etiFrame[index], ensemble->label.text, 16);
+            memcpy(&etiFrame[index], ensemble->label.text(), 16);
             index = index + 16;
 
-            etiFrame[index++] = ((char *) &ensemble->label.flag)[1];
-            etiFrame[index++] = ((char *) &ensemble->label.flag)[0];
+            etiFrame[index++] = ensemble->label.flag() >> 8;
+            etiFrame[index++] = ensemble->label.flag() & 0xFF;
 
             figSize += 22;
             break;
@@ -1601,7 +1600,7 @@ int main(int argc, char *argv[])
         if (alterneFIB < ensemble->services.size()) {
             service = ensemble->services.begin() + alterneFIB;
 
-            // FIG type 1/1, SI, Service label, une instance par sous-canal
+            // FIG type 1/1, SI, Service label, one instance per subchannel
             if ((*service)->getType(ensemble) == 0) {
                 fig1_1 = (FIGtype1_1 *) & etiFrame[index];
 
@@ -1626,12 +1625,11 @@ int main(int argc, char *argv[])
                 index += 6;
                 figSize += 6;
             }
-            memcpy(&etiFrame[index], (*service)->label.text, 16);
+            memcpy(&etiFrame[index], (*service)->label.text(), 16);
             index += 16;
             figSize += 16;
-
-            etiFrame[index++] = ((char *) &(*service)->label.flag)[1];
-            etiFrame[index++] = ((char *) &(*service)->label.flag)[0];
+            etiFrame[index++] = (*service)->label.flag() >> 8;
+            etiFrame[index++] = (*service)->label.flag() & 0xFF;
             figSize += 2;
         } else if (alterneFIB <
                 ensemble->services.size() + ensemble->components.size()) {
@@ -1641,7 +1639,7 @@ int main(int argc, char *argv[])
             subchannel =
                 getSubchannel(ensemble->subchannels, (*component)->subchId);
 
-            if ((*component)->label.text[0] != 0) {
+            if ((*component)->label.text()[0] != 0) {
                 if ((*service)->getType(ensemble) == 0) {   // Programme
                     FIGtype1_4_programme *fig1_4;
                     fig1_4 = (FIGtype1_4_programme*)&etiFrame[index];
@@ -1674,12 +1672,12 @@ int main(int argc, char *argv[])
                     index += 7;
                     figSize += 7;
                 }
-                memcpy(&etiFrame[index], (*component)->label.text, 16);
+                memcpy(&etiFrame[index], (*component)->label.text(), 16);
                 index += 16;
                 figSize += 16;
 
-                etiFrame[index++] = ((char *) &(*component)->label.flag)[1];
-                etiFrame[index++] = ((char *) &(*component)->label.flag)[0];
+                etiFrame[index++] = (*component)->label.flag() >> 8;
+                etiFrame[index++] = (*component)->label.flag() & 0xFF;
                 figSize += 2;
             }
         }

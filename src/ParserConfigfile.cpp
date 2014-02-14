@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Written by
-   Matthias P. Braendli, matthias.braendli@mpb.li, 2012
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
    The command-line parser reads settings from a configuration file
    whose definition is given in doc/example.config
@@ -121,58 +121,6 @@ int hexparse(std::string input)
 }
 
 
-/* The label.flag is a 16bit mask that tells which label
- * characters are to be used for the short label
- *
- * From EN 300 401, clause 5.2.2.2.1:
- *
- * Character flag field: this 16-bit flag field shall indicate which of the
- * characters of the character field are to be
- * displayed in an abbreviated form of the label, as follows:
- *  bi: (i = 0, ... ,15);
- *  0: not to be displayed in abbreviated label;
- *  1: to be displayed in abbreviated label.
- * NOTE: Not more than 8 of the bi may be set to "1".
- */
-void set_short_label(dabLabel& label, std::string& slabel,
-        const char* applies_to)
-{
-    char* end;
-    const char* lab;
-    label.flag = strtoul(slabel.c_str(), &end, 0);
-    if (*end != 0) {
-        lab = slabel.c_str();
-        label.flag = 0;
-        for (int i = 0; i < 32; ++i) {
-            if (*lab == label.text[i]) {
-                label.flag |= 0x8000 >> i;
-                if (*(++lab) == 0) {
-                    break;
-                }
-            }
-        }
-        if (*lab != 0) {
-            stringstream ss;
-            ss << "Error : " << applies_to << " short label '" << slabel <<
-                "' not subset of '" << label.text << "' !\n";
-            throw runtime_error(ss.str());
-        }
-    }
-    int count = 0;
-    for (int i = 0; i < 16; ++i) {
-        if (label.flag & (1 << i)) {
-            ++count;
-        }
-    }
-    if (count > 8) {
-        stringstream ss;
-        ss << applies_to << " '" << slabel << "' short label too long!\n"
-            "Must be less than 8 characters.\n";
-        throw runtime_error(ss.str());
-    }
-
-}
-
 void parse_configfile(string configuration_file,
         vector<dabOutput*> &outputs,
         dabEnsemble* ensemble,
@@ -242,16 +190,31 @@ void parse_configfile(string configuration_file,
     /* Extended Country Code */
     ensemble->ecc = hexparse(pt_ensemble.get("ecc", "0"));
 
-    string label = pt_ensemble.get("label", "");
-    memset(ensemble->label.text, 0, 16);
-    label.copy(ensemble->label.text, 16);
-    ensemble->label.flag = 0xff00;
-
-    try {
-        string label = pt_ensemble.get<string>("shortlabel");
-        set_short_label(ensemble->label, label, "Ensemble");
+    string label = pt_ensemble.get<string>("label");
+    string short_label = pt_ensemble.get<string>("shortlabel");
+    int success = ensemble->label.setLabel(label, short_label);
+    switch (success)
+    {
+        case 0:
+            break;
+        case -1:
+            etiLog.level(error) << "Ensemble short label " <<
+                short_label << " is not subset of label '" <<
+                label << "'";
+            throw runtime_error("ensemble label definition error");
+        case -2:
+            etiLog.level(error) << "Ensemble short label " <<
+                short_label << " is too long (max 8 characters)";
+            throw runtime_error("ensemble label definition error");
+        case -3:
+            etiLog.level(error) << "Ensemble label " <<
+                label << " is too long (max 16 characters)";
+            throw runtime_error("ensemble label definition error");
+        default:
+            etiLog.level(error) <<
+                "Ensemble short label definition: program error !";
+            abort();
     }
-    catch (ptree_error &e) { }
 
 
     /******************** READ SERVICES PARAMETERS *************/
@@ -269,25 +232,30 @@ void parse_configfile(string configuration_file,
         dabService* service = new dabService();
         ensemble->services.push_back(service);
 
-        memset(service->label.text, 0, 16);
-        try {
-            string servicelabel = pt_service.get<string>("label");
-            servicelabel.copy(service->label.text, 16);
-        }
-        catch (ptree_error &e)
+        string servicelabel = pt_service.get<string>("label");
+        string serviceshortlabel = pt_service.get<string>("shortlabel");
+        int success = service->label.setLabel(label, short_label);
+        switch (success)
         {
-            sprintf(service->label.text, "CRC-Service%i",
-                    (int)ensemble->services.size());
-        }
-        service->label.flag = 0xe01f;
-
-        try {
-            string label = pt_service.get<string>("shortlabel");
-            set_short_label(service->label, label, "Service");
-        }
-        catch (ptree_error &e) {
-            etiLog.log(warn,
-                    "Service with uid %s has no short label.\n", serviceuid.c_str());
+            case 0:
+                break;
+            case -1:
+                etiLog.level(error) << "Service short label " <<
+                    serviceshortlabel << " is not subset of label '" <<
+                    servicelabel << "'";
+                throw runtime_error("service label definition error");
+            case -2:
+                etiLog.level(error) << "Service short label " <<
+                    serviceshortlabel << " is too long (max 8 characters)";
+                throw runtime_error("service label definition error");
+            case -3:
+                etiLog.level(error) << "Service label " <<
+                    servicelabel << " is too long (max 16 characters)";
+                throw runtime_error("service label definition error");
+            default:
+                etiLog.level(error) <<
+                    "Service short label definition: program error !";
+                abort();
         }
 
         stringstream def_serviceid;
@@ -322,7 +290,8 @@ void parse_configfile(string configuration_file,
         ensemble->subchannels.push_back(subchan);
 
         try {
-            setup_subchannel_from_ptree(subchan, it->second, ensemble, subchanuid, rc);
+            setup_subchannel_from_ptree(subchan, it->second, ensemble,
+                    subchanuid, rc);
         }
         catch (runtime_error &e) {
             etiLog.log(error,
@@ -391,44 +360,49 @@ void parse_configfile(string configuration_file,
         dabComponent* component = new dabComponent();
 
         memset(component, 0, sizeof(dabComponent));
-        memset(component->label.text, 0, 16);
-        component->label.flag = 0xffff;
         component->serviceId = service->id;
         component->subchId = subchannel->id;
         component->SCIdS = SCIdS_per_service[service]++;
         component->type = component_type;
 
-        try {
-            string label = pt_comp.get<string>("label");
-
-            memset(component->label.text, 0, 16);
-            label.copy(component->label.text, 16);
-            component->label.flag = 0xff00;
-        }
-        catch (ptree_error &e) {
-            etiLog.log(warn,
-                    "Service with uid %s has no label.\n", componentuid.c_str());
-        }
-
-        try {
-            string label = pt_comp.get<string>("shortlabel");
-            set_short_label(component->label, label, "Component");
-        }
-        catch (ptree_error &e) {
-            etiLog.log(warn,
-                    "Component with uid %s has no short label.\n", componentuid.c_str());
+        string componentlabel = pt_comp.get<string>("label");
+        string componentshortlabel = pt_comp.get<string>("shortlabel");
+        int success = component->label.setLabel(label, short_label);
+        switch (success)
+        {
+            case 0:
+                break;
+            case -1:
+                etiLog.level(error) << "Component short label " <<
+                    componentshortlabel << " is not subset of label '" <<
+                    componentlabel << "'";
+                throw runtime_error("component label definition error");
+            case -2:
+                etiLog.level(error) << "Component short label " <<
+                    componentshortlabel << " is too long (max 8 characters)";
+                throw runtime_error("component label definition error");
+            case -3:
+                etiLog.level(error) << "Component label " <<
+                    componentlabel << " is too long (max 16 characters)";
+                throw runtime_error("component label definition error");
+            default:
+                etiLog.level(error) <<
+                    "Component short label definition: program error !";
+                abort();
         }
 
         if (figType != -1) {
             if (! component->isPacketComponent(ensemble->subchannels)) {
                 stringstream ss;
-                ss << "Component with uid " << componentuid << " is not packet, cannot have figtype defined !";
+                ss << "Component with uid " << componentuid <<
+                    " is not packet, cannot have figtype defined !";
                 throw runtime_error(ss.str());
             }
 
             if (figType >= (1<<12)) {
                 stringstream ss;
-                ss << "Component with uid " << componentuid << ": figtype '" << figType << "' is too large !";
+                ss << "Component with uid " << componentuid <<
+                    ": figtype '" << figType << "' is too large !";
                 throw runtime_error(ss.str());
             }
 
@@ -438,13 +412,13 @@ void parse_configfile(string configuration_file,
         if (packet_address != -1) {
             if (! component->isPacketComponent(ensemble->subchannels)) {
                 stringstream ss;
-                ss << "Component with uid " << componentuid << " is not packet, cannot have address defined !";
+                ss << "Component with uid " << componentuid <<
+                    " is not packet, cannot have address defined !";
                 throw runtime_error(ss.str());
             }
 
             component->packet.address = packet_address;
         }
-
 
         ensemble->components.push_back(component);
 

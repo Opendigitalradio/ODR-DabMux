@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Written by
-   Matthias P. Braendli, matthias.braendli@mpb.li, 2012
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
    The command-line parser reads settings from a configuration file
    whose definition is given in doc/example.config
@@ -32,9 +32,6 @@
 #include <string>
 #include "MuxElements.h"
 #include <boost/property_tree/ptree.hpp>
-
-void set_short_label(dabLabel& label, std::string& slabel,
-        const char* applies_to);
 
 void parse_configfile(std::string configuration_file,
         vector<dabOutput*> &outputs,

@@ -303,7 +303,7 @@ void printServices(vector<dabService*>& services)
 
     for (current = services.begin(); current != services.end(); ++current) {
         char label[17];
-        memcpy(label, (*current)->label.text, 16);
+        memcpy(label, (*current)->label.text(), 16);
         label[16] = 0;
 
         etiLog.log(info, "Service       %i\n", index);
@@ -312,12 +312,12 @@ void printServices(vector<dabService*>& services)
         {
             LogLine line = etiLog.level(info);
             for (int i = 0; i < 32; ++i) {
-                if ((*current)->label.flag & 0x8000 >> i) {
-                    line << (*current)->label.text[i];
+                if ((*current)->label.flag() & 0x8000 >> i) {
+                    line << label[i];
                 }
             }
         }
-        etiLog.log(info, " (0x%x)\n", (*current)->label.flag);
+        etiLog.log(info, " (0x%x)\n", (*current)->label.flag());
         etiLog.log(info, " id:          0x%lx (%lu)\n",
                 (*current)->id, (*current)->id);
         etiLog.log(info, " pty:         0x%x (%u)\n",
@@ -343,7 +343,7 @@ void printComponents(vector<dabComponent*>& components)
 void printComponent(dabComponent* component)
 {
     char label[17];
-    memcpy(label, component->label.text, 16);
+    memcpy(label, component->label.text(), 16);
     label[16] = 0;
     if (label[0] == 0) {
         sprintf(label, "<none>");
@@ -359,12 +359,12 @@ void printComponent(dabComponent* component)
     {
         LogLine line = etiLog.level(info);
         for (int i = 0; i < 32; ++i) {
-            if (component->label.flag & 0x8000 >> i) {
-                line << component->label.text[i];
+            if (component->label.flag() & 0x8000 >> i) {
+                line << label[i];
             }
         }
     }
-    etiLog.log(info, " (0x%x)\n", component->label.flag);
+    etiLog.log(info, " (0x%x)\n", component->label.flag());
     etiLog.log(info, " service component type: 0x%x (%u)\n",
             component->type, component->type);
     etiLog.log(info, " (packet) id:            %u\n",
@@ -443,7 +443,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
 void printEnsemble(dabEnsemble* ensemble)
 {
     char label[17];
-    memcpy(label, ensemble->label.text, 16);
+    memcpy(label, ensemble->label.text(), 16);
     label[16] = 0;
 
     etiLog.log(info, "Ensemble\n");
@@ -456,14 +456,13 @@ void printEnsemble(dabEnsemble* ensemble)
         LogLine line = etiLog.level(info);
         line << " short label: ";
         for (int i = 0; i < 32; ++i) {
-            if (ensemble->label.flag & 0x8000 >> i) {
-                line << ensemble->label.text[i];
+            if (ensemble->label.flag() & 0x8000 >> i) {
+                line << label[i];
             }
         }
     }
-    etiLog.log(info, " (0x%x)\n", ensemble->label.flag);
+    etiLog.log(info, " (0x%x)\n", ensemble->label.flag());
     etiLog.log(info, " mode:        %u\n", ensemble->mode);
 }
-
 
 

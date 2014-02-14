@@ -111,6 +111,9 @@ bool parse_cmdline(char **argv,
 
     int scids_temp = 0;
 
+    const char* error_at = "";
+    int success;
+
     char* progName = strrchr(argv[0], '/');
     if (progName == NULL) {
         progName = argv[0];
@@ -153,10 +156,7 @@ bool parse_cmdline(char **argv,
             service = ensemble->services.end() - 1;
             output = outputs.end();
 
-            memset((*service)->label.text, 0, 16);
-            sprintf((*service)->label.text, "CRC-Service%i",
-                    (int)ensemble->services.size());
-            (*service)->label.flag = 0xe01f;
+            (*service)->label.setLabel("Service", "Serv");
             (*service)->id = DEFAULT_SERVICE_ID + ensemble->services.size();
             (*service)->pty = 0;
             (*service)->language = 0;
@@ -178,9 +178,7 @@ bool parse_cmdline(char **argv,
             protection = NULL;
             output = outputs.end();
 
-            memset(*component, 0, sizeof(dabComponent));
-            memset((*component)->label.text, 0, 16);
-            (*component)->label.flag = 0xffff;
+            (*component)->label.setLabel("Component", "Comp");
             (*component)->serviceId = (*service)->id;
             (*component)->subchId = (*(ensemble->subchannels.end() - 1))->id;
             (*component)->SCIdS = scids_temp++;
@@ -399,20 +397,12 @@ bool parse_cmdline(char **argv,
                 goto EXIT;
             }
             if (service == ensemble->services.end()) {
-                memset(ensemble->label.text, 0, 16);
-                strncpy(ensemble->label.text, optarg, 16);
-                ensemble->label.flag = 0xff00;
+                ensemble->label.setLabel(optarg);
             } else if (component != ensemble->components.end()) {
-                memset((*component)->label.text, 0, 16);
-                strncpy((*component)->label.text, optarg, 16);
-                (*component)->label.flag = 0xff00;
+                (*component)->label.setLabel(optarg);
             } else {    // Service
-                memset((*service)->label.text, 0, 16);
-                strncpy((*service)->label.text, optarg, 16);
-                (*service)->label.flag = 0xff00;
+                (*service)->label.setLabel(optarg);
             }
-            // TODO Check strlen before doing short label
-            // TODO Check if short label already set
             break;
         case 'V':
             goto EXIT;
@@ -423,108 +413,40 @@ bool parse_cmdline(char **argv,
                 printUsage(progName);
                 goto EXIT;
             }
+
             if (service == ensemble->services.end()) {
-                char* end;
-                ensemble->label.flag = strtoul(optarg, &end, 0);
-                if (*end != 0) {
-                    end = optarg;
-                    ensemble->label.flag = 0;
-                    for (int i = 0; i < 32; ++i) {
-                        if (*end == ensemble->label.text[i]) {
-                            ensemble->label.flag |= 0x8000 >> i;
-                            if (*(++end) == 0) {
-                                break;
-                            }
-                        }
-                    }
-                    if (*end != 0) {
-                        etiLog.log(error,
-                                "Error at '%c' in ensemble short label '%s'!\n"
-                                "Not in label '%s'!\n",
-                                *end, optarg, ensemble->label.text);
-                        goto EXIT;
-                    }
-                }
-                int count = 0;
-                for (int i = 0; i < 16; ++i) {
-                    if (ensemble->label.flag & (1 << i)) {
-                        ++count;
-                    }
-                }
-                if (count > 8) {
-                    etiLog.log(error,
-                            "Ensemble short label too long!\n"
-                            "Must be < 8 characters.\n");
+                success = ensemble->label.setLabel(ensemble->label.text(), optarg);
+                error_at = "Ensemble";
+            }
+            else if (component != ensemble->components.end()) {
+                success = (*component)->label.setLabel(ensemble->label.text(), optarg);
+                error_at = "Component";
+            }
+            else {
+                success = (*service)->label.setLabel(ensemble->label.text(), optarg);
+                error_at = "Service";
+            }
+
+            switch (success)
+            {
+                case 0:
+                    break;
+                case -1:
+                    etiLog.level(error) << error_at << " short label " <<
+                        optarg << " is not subset of label '" <<
+                        ensemble->label.text() << "'";
                     goto EXIT;
-                }
-            } else if (component != ensemble->components.end()) {
-                char* end;
-                (*component)->label.flag = strtoul(optarg, &end, 0);
-                if (*end != 0) {
-                    end = optarg;
-                    (*component)->label.flag = 0;
-                    for (int i = 0; i < 32; ++i) {
-                        if (*end == (*component)->label.text[i]) {
-                            (*component)->label.flag |= 0x8000 >> i;
-                            if (*(++end) == 0) {
-                                break;
-                            }
-                        }
-                    }
-                    if (*end != 0) {
-                        etiLog.log(error,
-                                "Error at '%c' in component short label '%s'!\n"
-                                "Not in label '%s'!\n",
-                                *end, optarg, (*component)->label.text);
-                        goto EXIT;
-                    }
-                }
-                int count = 0;
-                for (int i = 0; i < 16; ++i) {
-                    if ((*component)->label.flag & (1 << i)) {
-                        ++count;
-                    }
-                }
-                if (count > 8) {
-                    etiLog.log(error,
-                            "Service '%s' short label too long!\n"
-                            "Must be < 8 characters.\n", (*component)->label.text);
+                case -2:
+                    etiLog.level(error) << error_at << " short label " <<
+                        optarg << " is too long (max 8 characters)";
                     goto EXIT;
-                }
-            } else {
-                char* end;
-                (*service)->label.flag = strtoul(optarg, &end, 0);
-                if (*end != 0) {
-                    end = optarg;
-                    (*service)->label.flag = 0;
-                    for (int i = 0; i < 32; ++i) {
-                        if (*end == (*service)->label.text[i]) {
-                            (*service)->label.flag |= 0x8000 >> i;
-                            if (*(++end) == 0) {
-                                break;
-                            }
-                        }
-                    }
-                    if (*end != 0) {
-                        etiLog.log(error,
-                                "Error at '%c' in service short label '%s'!\n"
-                                "Not in label '%s'!\n",
-                                *end, optarg, (*service)->label.text);
-                        goto EXIT;
-                    }
-                }
-                int count = 0;
-                for (int i = 0; i < 16; ++i) {
-                    if ((*service)->label.flag & (1 << i)) {
-                        ++count;
-                    }
-                }
-                if (count > 8) {
-                    etiLog.log(error,
-                            "Service '%s' short label too long!\n"
-                            "Must be < 8 characters.\n", (*service)->label.text);
+                case -3:
+                    etiLog.level(error) << error_at << " label " <<
+                        ensemble->label.text() << " is too long (max 16 characters)";
                     goto EXIT;
-                }
+                default:
+                    etiLog.level(error) << error_at << " short label definition: program error !";
+                    abort();
             }
             break;
         case 'i':
@@ -828,5 +750,5 @@ bool parse_cmdline(char **argv,
     return true;
 EXIT:
     return false;
-    
 }
+

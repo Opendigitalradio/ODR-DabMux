@@ -275,10 +275,10 @@ int main(int argc, char *argv[])
     ensemble->ecc = DEFAULT_ENSEMBLE_ECC;
 
     vector<dabOutput*> outputs;
-    vector<dabService*>::iterator service = ensemble->services.end();
-    vector<dabService*>::iterator serviceProgramInd;
-    vector<dabService*>::iterator serviceDataInd;
-    vector<dabService*>::iterator servicePty;
+    vector<DabService*>::iterator service = ensemble->services.end();
+    vector<DabService*>::iterator serviceProgramInd;
+    vector<DabService*>::iterator serviceDataInd;
+    vector<DabService*>::iterator servicePty;
     vector<dabComponent*>::iterator component = ensemble->components.end();
     vector<dabComponent*>::iterator componentIndicatorProgram;
     vector<dabComponent*>::iterator componentIndicatorData;

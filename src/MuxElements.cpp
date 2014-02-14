@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Includes modifications
-   2012, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
    This file is part of ODR-DabMux.
@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "MuxElements.h"
+#include <boost/algorithm/string.hpp>
 
 const unsigned short Sub_Channel_SizeTable[64] = {
     16, 21, 24, 29, 35, 24, 29, 35,
@@ -48,8 +49,10 @@ int DabLabel::setLabel(const std::string& text)
     if (len > 16)
         return -3;
 
-    memset(m_text, 0, 16);
+    memset(m_text, 0, 17);
     memcpy(m_text, text.c_str(), len);
+
+    m_flag = 0xFF00; // truncate the label to the eight first characters
 
     return 0;
 }
@@ -58,7 +61,7 @@ int DabLabel::setLabel(const std::string& text, const std::string& short_label)
 {
     DabLabel newlabel;
 
-    memset(newlabel.m_text, 0, 16);
+    memset(newlabel.m_text, 0, 17);
     int len = text.length();
     if (len > 16)
         return -3;
@@ -70,7 +73,7 @@ int DabLabel::setLabel(const std::string& text, const std::string& short_label)
         return flag;
 
     // short label is valid.
-    memcpy(this->m_text, newlabel.m_text, len);
+    memcpy(this->m_text, newlabel.m_text, 17);
     this->m_flag = flag & 0xFFFF;
 
     return 0;
@@ -127,6 +130,18 @@ int DabLabel::setShortLabel(const std::string& slabel)
     return flag;
 }
 
+const string DabLabel::short_label() const
+{
+    stringstream shortlabel;
+    for (int i = 0; i < 32; ++i) {
+        if (m_flag & 0x8000 >> i) {
+            shortlabel << m_text[i];
+        }
+    }
+
+    return shortlabel.str();
+}
+
 
 vector<dabSubchannel*>::iterator getSubchannel(
         vector<dabSubchannel*>& subchannels, int id)
@@ -166,11 +181,11 @@ vector<dabComponent*>::iterator getComponent(
     return getComponent(components, serviceId, components.end());
 }
 
-vector<dabService*>::iterator getService(
+vector<DabService*>::iterator getService(
         dabComponent* component,
-        vector<dabService*>& services)
+        vector<DabService*>& services)
 {
-    vector<dabService*>::iterator service;
+    vector<DabService*>::iterator service;
 
     for (service = services.begin(); service != services.end(); ++service) {
         if ((*service)->id == component->serviceId) {
@@ -204,7 +219,7 @@ bool dabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
 }
 
 
-unsigned char dabService::getType(dabEnsemble* ensemble)
+unsigned char DabService::getType(dabEnsemble* ensemble)
 {
     vector<dabSubchannel*>::iterator subchannel;
     vector<dabComponent*>::iterator component =
@@ -220,7 +235,7 @@ unsigned char dabService::getType(dabEnsemble* ensemble)
     return (*subchannel)->type;
 }
 
-unsigned char dabService::nbComponent(vector<dabComponent*>& components)
+unsigned char DabService::nbComponent(vector<dabComponent*>& components)
 {
     int nb = 0;
     vector<dabComponent*>::iterator current;
@@ -232,6 +247,72 @@ unsigned char dabService::nbComponent(vector<dabComponent*>& components)
         }
     }
     return nb;
+}
+
+void DabService::set_parameter(string parameter, string value)
+{
+    stringstream ss(value);
+    ss.exceptions ( stringstream::failbit | stringstream::badbit );
+
+    if (parameter == "label") {
+        vector<string> fields;
+        boost::split(fields, value, boost::is_any_of(","));
+        if (fields.size() != 2) {
+            throw ParameterError("Parameter 'label' must have format"
+                   " 'label,shortlabel'");
+        }
+        int success = this->label.setLabel(fields[0], fields[1]);
+        stringstream ss;
+        switch (success)
+        {
+            case 0:
+                break;
+            case -1:
+                ss << "Ensemble short label " <<
+                    fields[1] << " is not subset of label '" <<
+                    fields[0] << "'";
+                etiLog.level(warn) << ss.str();
+                throw ParameterError(ss.str());
+            case -2:
+                ss << "Ensemble short label " <<
+                    fields[1] << " is too long (max 8 characters)";
+                etiLog.level(warn) << ss.str();
+                throw ParameterError(ss.str());
+            case -3:
+                ss << "Ensemble label " <<
+                    fields[0] << " is too long (max 16 characters)";
+                etiLog.level(warn) << ss.str();
+                throw ParameterError(ss.str());
+            default:
+                ss << "Ensemble short label definition: program error !";
+                etiLog.level(emerg) << ss.str();
+                throw ParameterError(ss.str());
+        }
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+string DabService::get_parameter(string parameter)
+{
+    stringstream ss;
+    if (parameter == "label") {
+        char l[17];
+        l[16] = '\0';
+        memcpy(l, label.text(), 16);
+        ss << l << "," << label.short_label();
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+
 }
 
 unsigned short getSizeCu(dabSubchannel* subchannel)

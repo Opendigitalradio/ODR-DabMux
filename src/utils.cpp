@@ -296,9 +296,9 @@ void printOutputs(vector<dabOutput*>& outputs)
     }
 }
 
-void printServices(vector<dabService*>& services)
+void printServices(vector<DabService*>& services)
 {
-    vector<dabService*>::const_iterator current;
+    vector<DabService*>::const_iterator current;
     int index = 0;
 
     for (current = services.begin(); current != services.end(); ++current) {
@@ -307,16 +307,10 @@ void printServices(vector<dabService*>& services)
         label[16] = 0;
 
         etiLog.log(info, "Service       %i\n", index);
-        etiLog.log(info, " label:       %s\n", label);
-        etiLog.log(info, " short label: ");
-        {
-            LogLine line = etiLog.level(info);
-            for (int i = 0; i < 32; ++i) {
-                if ((*current)->label.flag() & 0x8000 >> i) {
-                    line << label[i];
-                }
-            }
-        }
+        etiLog.log(info, " label:       %s\n",
+                (*current)->label.text());
+        etiLog.log(info, " short label: %s\n",
+                (*current)->label.short_label().c_str());
         etiLog.log(info, " (0x%x)\n", (*current)->label.flag());
         etiLog.log(info, " id:          0x%lx (%lu)\n",
                 (*current)->id, (*current)->id);

@@ -309,7 +309,7 @@ void DabInputZmqBase::set_parameter(string parameter, string value)
     ss.exceptions ( stringstream::failbit | stringstream::badbit );
 
     if (parameter == "buffer") {
-        throw ParameterError("Parameter 'ntaps' is read-only");
+        throw ParameterError("Parameter 'buffer' is read-only");
     }
     else {
         stringstream ss;

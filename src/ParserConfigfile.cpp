@@ -105,7 +105,6 @@ using namespace std;
 int hexparse(std::string input)
 {
     int value;
-    fprintf(stderr, "**************************** %s\n", input.c_str());
     if (input.find("0x") == 0) {
         value = strtoll(input.c_str() + 2, NULL, 16);
     }
@@ -190,25 +189,35 @@ void parse_configfile(string configuration_file,
     /* Extended Country Code */
     ensemble->ecc = hexparse(pt_ensemble.get("ecc", "0"));
 
-    string label = pt_ensemble.get<string>("label");
-    string short_label = pt_ensemble.get<string>("shortlabel");
-    int success = ensemble->label.setLabel(label, short_label);
+    int success = -5;
+    string ensemble_label = pt_ensemble.get<string>("label");
+    string ensemble_short_label(ensemble_label);
+    try {
+        ensemble_short_label = pt_ensemble.get<string>("shortlabel");
+        success = ensemble->label.setLabel(ensemble_label, ensemble_short_label);
+    }
+    catch (ptree_error &e) {
+        etiLog.level(warn) << "Ensemble short label undefined, "
+            "truncating label " << ensemble_label;
+
+        success = ensemble->label.setLabel(ensemble_label);
+    }
     switch (success)
     {
         case 0:
             break;
         case -1:
             etiLog.level(error) << "Ensemble short label " <<
-                short_label << " is not subset of label '" <<
-                label << "'";
+                ensemble_short_label << " is not subset of label '" <<
+                ensemble_label << "'";
             throw runtime_error("ensemble label definition error");
         case -2:
             etiLog.level(error) << "Ensemble short label " <<
-                short_label << " is too long (max 8 characters)";
+                ensemble_short_label << " is too long (max 8 characters)";
             throw runtime_error("ensemble label definition error");
         case -3:
             etiLog.level(error) << "Ensemble label " <<
-                label << " is too long (max 16 characters)";
+                ensemble_label << " is too long (max 16 characters)";
             throw runtime_error("ensemble label definition error");
         default:
             etiLog.level(error) <<
@@ -219,22 +228,34 @@ void parse_configfile(string configuration_file,
 
     /******************** READ SERVICES PARAMETERS *************/
 
-    map<string, dabService*> allservices;
+    map<string, DabService*> allservices;
 
     /* For each service, we keep a separate SCIdS counter */
-    map<dabService*, int> SCIdS_per_service;
+    map<DabService*, int> SCIdS_per_service;
 
     ptree pt_services = pt.get_child("services");
     for (ptree::iterator it = pt_services.begin();
             it != pt_services.end(); ++it) {
         string serviceuid = it->first;
         ptree pt_service = it->second;
-        dabService* service = new dabService();
+        DabService* service = new DabService(serviceuid);
         ensemble->services.push_back(service);
+        service->enrol_at(*rc);
+
+        int success = -5;
 
         string servicelabel = pt_service.get<string>("label");
-        string serviceshortlabel = pt_service.get<string>("shortlabel");
-        int success = service->label.setLabel(label, short_label);
+        string serviceshortlabel(servicelabel);
+        try {
+            serviceshortlabel = pt_service.get<string>("shortlabel");
+            success = service->label.setLabel(servicelabel, serviceshortlabel);
+        }
+        catch (ptree_error &e) {
+            etiLog.level(warn) << "Service short label undefined, "
+                "truncating label " << servicelabel;
+
+            success = service->label.setLabel(servicelabel);
+        }
         switch (success)
         {
             case 0:
@@ -318,7 +339,7 @@ void parse_configfile(string configuration_file,
         string componentuid = it->first;
         ptree pt_comp = it->second;
 
-        dabService* service;
+        DabService* service;
         try {
             // Those two uids serve as foreign keys to select the service+subchannel
             string service_uid = pt_comp.get<string>("service");
@@ -365,9 +386,19 @@ void parse_configfile(string configuration_file,
         component->SCIdS = SCIdS_per_service[service]++;
         component->type = component_type;
 
+        int success = -5;
         string componentlabel = pt_comp.get<string>("label");
-        string componentshortlabel = pt_comp.get<string>("shortlabel");
-        int success = component->label.setLabel(label, short_label);
+        string componentshortlabel(componentlabel);
+        try {
+            componentshortlabel = pt_comp.get<string>("shortlabel");
+            success = component->label.setLabel(componentlabel, componentshortlabel);
+        }
+        catch (ptree_error &e) {
+            etiLog.level(warn) << "Component short label undefined, "
+                "truncating label " << componentlabel;
+
+            success = component->label.setLabel(componentlabel);
+        }
         switch (success)
         {
             case 0:

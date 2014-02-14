@@ -51,7 +51,7 @@ void printUsageConfigfile(char *name, FILE* out = stderr);
  * resp. subchannels*/
 void printOutputs(vector<dabOutput*>& outputs);
 
-void printServices(vector<dabService*>& services);
+void printServices(vector<DabService*>& services);
 
 void printComponents(vector<dabComponent*>& components);
 

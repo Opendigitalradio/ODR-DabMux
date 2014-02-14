@@ -3,9 +3,9 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013,2014
-   Matthias P. Braendli, http://mpb.li, matthias.braendli@mpb.li
-   */
+   Copyright (C) 2013, 2014 Matthias P. Braendli
+   http://mpb.li
+*/
 /*
    This file is part of ODR-DabMux.
 
@@ -23,6 +23,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <cstring>
+#include <iostream>
 #include "DabMux.h"
 #include "utils.h"
 
@@ -44,10 +45,18 @@ time_t getDabTime()
 }
 
 
-void header_message() 
+/* We use fprintf here because this doesn't have
+ * to go to the log.
+ * But all information below must go into the log.
+ *
+ * Do not use \n in the log, it messes presentation and logging
+ * up.
+ */
+
+void header_message()
 {
-    etiLog.log(info,
-            "Welcome to %s %s, compiled at %s, %s\n\n",
+    fprintf(stderr,
+            "Welcome to %s %s, compiled at %s, %s",
             PACKAGE_NAME,
 #if defined(GITVERSION)
             GITVERSION,
@@ -55,13 +64,19 @@ void header_message()
             PACKAGE_VERSION,
 #endif
             __DATE__, __TIME__);
-    etiLog.log(info,
-            "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n"
-            "Her Majesty the Queen in Right of Canada,\n"
-            "(Communications Research Centre Canada) All rights reserved.\n\n"
-            "Copyright (C) 2013,2014\nMatthias P. Braendli, http://mpb.li\n\n");
+    fprintf(stderr, "\n\n");
+    fprintf(stderr,
+            "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n");
+    fprintf(stderr,
+            "Her Majesty the Queen in Right of Canada\n");
+    fprintf(stderr,
+            "(Communications Research Centre Canada) All rights reserved.\n\n");
+    fprintf(stderr,
+            "Copyright (C) 2013, 2014 Matthias P. Braendli\n");
+    fprintf(stderr,
+            "http://opendigitalradio.org\n\n");
 
-    etiLog.level(info) << "Input URLs supported:" <<
+    std::cerr << "Input URLs supported:" << std::endl <<
 #if defined(HAVE_INPUT_PRBS)
     " prbs" <<
 #endif
@@ -80,9 +95,9 @@ void header_message()
 #if defined(HAVE_INPUT_FILE)
     " file" <<
 #endif
-    "\n";
+    std::endl;
 
-    etiLog.level(info) << "Inputs format supported:"
+    std::cerr << "Inputs format supported:" << std::endl <<
 #if defined(HAVE_FORMAT_RAW)
     " raw" <<
 #endif
@@ -101,9 +116,9 @@ void header_message()
 #if defined(HAVE_FORMAT_EPM)
     " epm" <<
 #endif
-    "\n";
+    std::endl;
 
-    etiLog.level(info) << "Output URLs supported:"
+    std::cerr << "Output URLs supported:" << std::endl <<
 #if defined(HAVE_OUTPUT_FILE)
     " file" <<
 #endif
@@ -122,7 +137,7 @@ void header_message()
 #if defined(HAVE_OUTPUT_SIMUL)
     " simul" <<
 #endif
-    "\n\n";
+    std::endl << std::endl;
 
 }
 
@@ -264,7 +279,8 @@ void printUsage(char *name, FILE* out)
     fprintf(out, "  -l sLabel<n>         : short label flag of service <n>"
             " (default: 0xf040)\n");
     fprintf(out, "  -p protection<n>     : protection level (default: 3)\n");
-    fprintf(out, "  -s                   : enable TIST, synchronized on 1PPS at level 2. This also transmits time using the MNSC.\n");
+    fprintf(out, "  -s                   : enable TIST, synchronized on 1PPS at level 2.\n");
+    fprintf(out, "                         This also transmits time using the MNSC.\n");
     fprintf(out, "  -t type              : audio/data service component type"
             " (default: 0)\n");
     fprintf(out, "                         audio: foreground=0, "
@@ -287,11 +303,11 @@ void printOutputs(vector<dabOutput*>& outputs)
     int index = 0;
 
     for (output = outputs.begin(); output != outputs.end(); ++output) {
-        etiLog.log(info, "Output      %i\n", index);
-        etiLog.log(info, "  protocol: %s\n",
-                (*output)->outputProto.c_str());
-        etiLog.log(info, "  name:     %s\n",
-                (*output)->outputName.c_str());
+        etiLog.log(info, "Output      %i", index);
+        etiLog.level(info) << "  protocol: " <<
+                (*output)->outputProto;
+        etiLog.level(info) << "  name:     " <<
+                (*output)->outputName;
         ++index;
     }
 }
@@ -302,21 +318,20 @@ void printServices(vector<DabService*>& services)
     int index = 0;
 
     for (current = services.begin(); current != services.end(); ++current) {
-        char label[17];
-        memcpy(label, (*current)->label.text(), 16);
-        label[16] = 0;
 
-        etiLog.log(info, "Service       %i\n", index);
-        etiLog.log(info, " label:       %s\n",
-                (*current)->label.text());
-        etiLog.log(info, " short label: %s\n",
-                (*current)->label.short_label().c_str());
-        etiLog.log(info, " (0x%x)\n", (*current)->label.flag());
-        etiLog.log(info, " id:          0x%lx (%lu)\n",
-                (*current)->id, (*current)->id);
-        etiLog.log(info, " pty:         0x%x (%u)\n",
-                (*current)->pty, (*current)->pty);
-        etiLog.log(info, " language:    0x%x (%u)\n",
+        etiLog.level(info) << "Service       " << (*current)->get_rc_name();
+        etiLog.level(info) << " label:       " << (*current)->label.text();
+        etiLog.level(info) << " short label: " <<
+                (*current)->label.short_label();
+
+        etiLog.log(info, " (0x%x)", (*current)->label.flag());
+        etiLog.log(info, " id:          0x%lx (%lu)", (*current)->id,
+                (*current)->id);
+
+        etiLog.log(info, " pty:         0x%x (%u)", (*current)->pty,
+                (*current)->pty);
+
+        etiLog.log(info, " language:    0x%x (%u)",
                 (*current)->language, (*current)->language);
         ++index;
     }
@@ -328,7 +343,7 @@ void printComponents(vector<DabComponent*>& components)
     unsigned int index = 0;
 
     for (current = components.begin(); current != components.end(); ++current) {
-        etiLog.log(info, "Component       %i\n", index);
+        etiLog.level(info) << "Component     " << (*current)->get_rc_name();
         printComponent(*current);
         ++index;
     }
@@ -336,38 +351,24 @@ void printComponents(vector<DabComponent*>& components)
 
 void printComponent(DabComponent* component)
 {
-    char label[17];
-    memcpy(label, component->label.text(), 16);
-    label[16] = 0;
-    if (label[0] == 0) {
-        sprintf(label, "<none>");
-    }
+    etiLog.log(info, " service id:             %i", component->serviceId);
+    etiLog.log(info, " subchannel id:          %i", component->subchId);
+    etiLog.log(info, " label:                  %s", component->label.text());
+    etiLog.level(info) << " short label:            " <<
+            component->label.short_label();
 
-    etiLog.log(info, " service id:             %i\n",
-            component->serviceId);
-    etiLog.log(info, " subchannel id:          %i\n",
-            component->subchId);
-    etiLog.log(info, " label:                  %s\n",
-            label);
-    etiLog.log(info, " short label:            ");
-    {
-        LogLine line = etiLog.level(info);
-        for (int i = 0; i < 32; ++i) {
-            if (component->label.flag() & 0x8000 >> i) {
-                line << label[i];
-            }
-        }
-    }
-    etiLog.log(info, " (0x%x)\n", component->label.flag());
-    etiLog.log(info, " service component type: 0x%x (%u)\n",
-            component->type, component->type);
-    etiLog.log(info, " (packet) id:            %u\n",
-            component->packet.id);
-    etiLog.log(info, " (packet) address:       %u\n",
+    etiLog.log(info, " (0x%x)", component->label.flag());
+    etiLog.log(info, " service component type: 0x%x (%u)", component->type,
+            component->type);
+
+    etiLog.log(info, " (packet) id:            %u", component->packet.id);
+    etiLog.log(info, " (packet) address:       %u",
             component->packet.address);
-    etiLog.log(info, " (packet) app type:      %u\n",
+
+    etiLog.log(info, " (packet) app type:      %u",
             component->packet.appType);
-    etiLog.log(info, " (packet) datagroup:     %u\n",
+
+    etiLog.log(info, " (packet) datagroup:     %u",
             component->packet.datagroup);
 }
 
@@ -379,56 +380,56 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     for (subchannel = subchannels.begin(); subchannel != subchannels.end();
             ++subchannel) {
         dabProtection* protection = &(*subchannel)->protection;
-        etiLog.log(info, "Subchannel   %i\n", index);
-        etiLog.log(info, " input\n");
-        etiLog.log(info, "   protocol: %s\n",
+        etiLog.log(info, "Subchannel   %i", index);
+        etiLog.log(info, " input");
+        etiLog.log(info, "   protocol: %s",
                 (*subchannel)->inputProto);
-        etiLog.log(info, "   name:     %s\n",
+        etiLog.log(info, "   name:     %s",
                 (*subchannel)->inputName);
-        etiLog.log(info, " type:       ");
         switch ((*subchannel)->type) {
         case 0:
-            etiLog.log(info, "audio\n");
+            etiLog.log(info, " type:       audio");
             break;
         case 1:
-            etiLog.log(info, "data\n");
+            etiLog.log(info, " type:       data");
             break;
         case 2:
-            etiLog.log(info, "fidc\n");
+            etiLog.log(info, " type:       fidc");
             break;
         case 3:
-            etiLog.log(info, "packet\n");
+            etiLog.log(info, " type:       packet");
             break;
         default:
-            etiLog.log(info, "Unknown data type "
-                    "(service->type)\n");
+            etiLog.log(info, " type:       unknown");
             break;
         }
-        etiLog.log(info, " id:         %i\n",
+        etiLog.log(info, " id:         %i",
                 (*subchannel)->id);
-        etiLog.log(info, " bitrate:    %i\n",
+        etiLog.log(info, " bitrate:    %i",
                 (*subchannel)->bitrate);
         if (protection->form == 0) {
-            etiLog.log(info, " protection: UEP %i\n", protection->level + 1);
+            etiLog.log(info, " protection: UEP %i", protection->level + 1);
         } else {
-            etiLog.log(info, " protection: EEP %i-%c\n",
+            etiLog.log(info, " protection: EEP %i-%c",
                     protection->level + 1,
                     protection->longForm.option == 0 ? 'A' : 'B');
         }
         if (protection->form == 0) {
-            etiLog.log(info,
-                    "  form:      short\n  switch:    %i\n  index:     %i\n",
-                    protection->shortForm.tableSwitch,
+            etiLog.log(info, "  form:      short");
+            etiLog.log(info, "  switch:    %i",
+                    protection->shortForm.tableSwitch);
+            etiLog.log(info, "  index:     %i",
                     protection->shortForm.tableIndex);
         } else {
-            etiLog.log(info,
-                    "  form:      long\n  option:    %i\n  level:     %i\n",
-                    protection->longForm.option,
+            etiLog.log(info, "  form:      long");
+            etiLog.log(info, "  option:    %i",
+                    protection->longForm.option);
+            etiLog.log(info, "  level:     %i",
                     (*subchannel)->protection.level);
         }
-        etiLog.log(info, " SAD:        %i\n",
+        etiLog.log(info, " SAD:        %i",
                 (*subchannel)->startAddress);
-        etiLog.log(info, " size (CU):  %i\n",
+        etiLog.log(info, " size (CU):  %i",
                 getSizeCu(*subchannel));
         ++index;
     }
@@ -436,27 +437,14 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
 
 void printEnsemble(dabEnsemble* ensemble)
 {
-    char label[17];
-    memcpy(label, ensemble->label.text(), 16);
-    label[16] = 0;
+    etiLog.log(info, "Ensemble");
+    etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);
+    etiLog.log(info, " ecc:         0x%x (%u)", ensemble->ecc, ensemble->ecc);
+    etiLog.log(info, " label:       %s", ensemble->label.text());
+    etiLog.level(info) << " short label: " <<
+            ensemble->label.short_label();
 
-    etiLog.log(info, "Ensemble\n");
-    etiLog.log(info, " id:          0x%lx (%lu)\n",
-            ensemble->id, ensemble->id);
-    etiLog.log(info, " ecc:         0x%x (%u)\n",
-            ensemble->ecc, ensemble->ecc);
-    etiLog.log(info, " label:       %s\n", label);
-    {
-        LogLine line = etiLog.level(info);
-        line << " short label: ";
-        for (int i = 0; i < 32; ++i) {
-            if (ensemble->label.flag() & 0x8000 >> i) {
-                line << label[i];
-            }
-        }
-    }
-    etiLog.log(info, " (0x%x)\n", ensemble->label.flag());
-    etiLog.log(info, " mode:        %u\n", ensemble->mode);
+    etiLog.log(info, " (0x%x)", ensemble->label.flag());
+    etiLog.log(info, " mode:        %u", ensemble->mode);
 }
-
 

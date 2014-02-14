@@ -342,14 +342,6 @@ int main(int argc, char *argv[])
             parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
                     &factumAnalyzer, &limit, rc, &statsserverport);
 
-            printSubchannels(ensemble->subchannels);
-            cerr << endl;
-            printServices(ensemble->services);
-            cerr << endl;
-            printComponents(ensemble->components);
-            cerr << endl;
-            printOutputs(outputs);
-
         }
         catch (runtime_error &e) {
             etiLog.log(error, "Configuration file parsing error: %s\n",
@@ -372,7 +364,14 @@ int main(int argc, char *argv[])
     }
 
 
-    etiLog.log(info, "ODR-DabMux starting up");
+    etiLog.level(info) <<
+            PACKAGE_NAME << " " <<
+#if defined(GITVERSION)
+            GITVERSION <<
+#else
+            PACKAGE_VERSION <<
+#endif
+            " starting up";
 
     if (outputs.size() == 0) {
         etiLog.log(emerg, "no output defined");

@@ -108,9 +108,7 @@ RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
         reply(socket,
                 "The following commands are supported:\n"
                 "  list\n"
-                "    * Lists the modules that are loaded\n"
-                "  list MODULE\n"
-                "    * Lists the parameters exported by module MODULE\n"
+                "    * Lists the modules that are loaded and their parameters\n"
                 "  show MODULE\n"
                 "    * Lists all parameters and their values from module MODULE\n"
                 "  get MODULE PARAMETER\n"
@@ -127,22 +125,15 @@ RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
         if (cmd.size() == 1) {
             for (list<RemoteControllable*>::iterator it = m_cohort.begin();
                     it != m_cohort.end(); ++it) {
-                ss << (*it)->get_rc_name() << " ";
-            }
-        }
-        else if (cmd.size() == 2) {
-            try {
-                stringstream ss;
+                ss << (*it)->get_rc_name() << endl;
 
-                list< vector<string> > params = get_parameter_descriptions_(cmd[1]);
-                for (list< vector<string> >::iterator it = params.begin();
-                        it != params.end(); ++it) {
-                    ss << (*it)[0] << " : " << (*it)[1] << endl;
+                list< vector<string> >::iterator param;
+                list< vector<string> > params = (*it)->get_parameter_descriptions();
+                for (param = params.begin();
+                        param != params.end();
+                        ++param) {
+                    ss << "\t" << (*param)[0] << " : " << (*param)[1] << endl;
                 }
-                reply(socket, ss.str());
-            }
-            catch (ParameterError &e) {
-                reply(socket, e.what());
             }
         }
         else {

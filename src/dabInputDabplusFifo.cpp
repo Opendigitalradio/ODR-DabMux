@@ -74,6 +74,8 @@ int dabInputDabplusFifoInit(void** args)
     data->bufferOffset = 0;
 
     *args = data;
+
+    return 0;
 }
 
 

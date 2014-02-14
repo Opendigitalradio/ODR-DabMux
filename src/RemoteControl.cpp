@@ -3,7 +3,8 @@
    Her Majesty the Queen in Right of Canada (Communications Research
    Center Canada)
 
-   Written by Matthias P. Braendli, matthias.braendli@mpb.li, 2012
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
  */
 /*
    This file is part of ODR-DabMux.

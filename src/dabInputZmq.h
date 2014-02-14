@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
+   Copyright (C) 2013, 2014 Matthias P. Braendli
    http://mpb.li
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -61,17 +61,28 @@
 // Number of elements to prebuffer before starting the pipeline
 #define INPUT_ZMQ_PREBUFFERING (5*4) // 480ms
 
+// Default frame_buffer size in number of elements
+#define INPUT_ZMQ_DEF_BUFFER_SIZE (5*8) // 960ms
+
+// Minimum frame_buffer size in number of elements
+// This is one AAC superframe, but you probably don't want to
+// go that low anyway.
+#define INPUT_ZMQ_MIN_BUFFER_SIZE (5*1) // 120ms
+
 // Maximum frame_buffer size in number of elements
-#define INPUT_ZMQ_MAX_BUFFER_SIZE (5*8) // 960ms
+// One minute is clearly way over what everybody would
+// want.
+#define INPUT_ZMQ_MAX_BUFFER_SIZE (5*500) // 60s
 
 class DabInputZmqBase : public DabInputBase, public RemoteControllable {
     public:
         DabInputZmqBase(const std::string name)
             : RemoteControllable(name),
-            m_name(name), m_zmq_context(1),
+            m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
-            m_bitrate(0), m_prebuffering(INPUT_ZMQ_PREBUFFERING) {
-            }
+            m_bitrate(0), m_prebuffering(INPUT_ZMQ_PREBUFFERING),
+            m_enable_input(true),
+            m_frame_buffer_limit(INPUT_ZMQ_DEF_BUFFER_SIZE) { }
 
         virtual int open(const std::string inputUri);
         virtual int readFrame(void* buffer, int size);
@@ -87,11 +98,15 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
     protected:
         virtual int readFromSocket(int framesize) = 0;
 
-        std::string m_name;
         zmq::context_t m_zmq_context;
         zmq::socket_t m_zmq_sock; // handle for the zmq socket
         int m_bitrate;
         int m_prebuffering;
+
+        /* set this to zero to empty the input buffer */
+        bool m_enable_input;
+
+        size_t m_frame_buffer_limit;
         std::list<char*> m_frame_buffer; //stores elements of type char[<framesize>]
 };
 
@@ -101,6 +116,8 @@ class DabInputZmqMPEG : public DabInputZmqBase {
             : DabInputZmqBase(name) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [mpeg frames]");
+                RC_ADD_PARAMETER(enable,
+                        "If the input is enabled. Set to zero to empty the buffer.");
             }
 
     private:
@@ -113,6 +130,8 @@ class DabInputZmqAAC : public DabInputZmqBase {
             : DabInputZmqBase(name) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [aac superframes]");
+                RC_ADD_PARAMETER(enable,
+                        "If the input is enabled. Set to zero to empty the buffer.");
             }
 
     private:

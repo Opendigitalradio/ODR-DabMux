@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    //Relatif aux fichiers d'entre
+    // Prepare and check the data inputs
     for (subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
@@ -603,9 +603,6 @@ int main(int argc, char *argv[])
         (*component)->packet.id = cur++;
     }
 
-    //Initialisation a 0 des cases de la trame ETI
-    memset(etiFrame, 0, 6144);
-
     // Print settings before starting
     etiLog.log(info, "--- Multiplex configuration ---");
     printEnsemble(ensemble);
@@ -624,9 +621,8 @@ int main(int argc, char *argv[])
 
 
 
-    /***************************************************************************
-     **********   Boucle principale, chaque passage cree une trame  ************
-     **************************************************************************/
+    /*   Each iteration of the main loop creates one ETI frame */
+
     serviceProgramInd = ensemble->services.end();
     serviceDataInd = ensemble->services.end();
     componentIndicatorProgram = ensemble->components.end();
@@ -641,64 +637,69 @@ int main(int argc, char *argv[])
         }
         date = getDabTime();
 
-        //Initialisation a 0 des cases de la trame
+        // Initialise the ETI frame
         memset(etiFrame, 0, 6144);
 
         /**********************************************************************
-         **********   Section SYNC du ETI(NI, G703)   *************************
+         **********   Section SYNC of ETI(NI, G703)   *************************
          **********************************************************************/
 
-        //declare une instance d'une structure eti_SYNC
-        eti_SYNC *etiSync = (eti_SYNC *) etiFrame;    
-        //****** Section ERR ******//
-        // 1 octet
-        etiSync->ERR = 0xFF;    //Indique qu'il n'y a pas d'erreur
-        //****** Section FSYNC *****//
-        // 3 octets, pour la synchronisation, alterne a chaque trame entre les
-        // deux symboles
+        // See ETS 300 799 Clause 6
+        eti_SYNC *etiSync = (eti_SYNC *) etiFrame;
+
+        etiSync->ERR = 0xFF; // ETS 300 799, 5.2, no error
+
+        //****** Field FSYNC *****//
+        // See ETS 300 799, 6.2.1.2
         sync ^= 0xffffff;
         etiSync->FSYNC = sync;
 
         /**********************************************************************
-         ***********   Section LIDATA du ETI(NI, G703)   **********************
+         ***********   Section LIDATA of ETI(NI, G703)   **********************
          **********************************************************************/
 
-        //****** Section FC ***************************************************/
-        // 4 octets
-        // declare une instance d une structure eti_FC et la place dans la trame
-        eti_FC *fc = (eti_FC *) & etiFrame[4];
+        // See ETS 300 799 Figure 5 for a better overview of these fields.
 
-        //****** FCT **********************//
-        //Incremente a chaque trame, de 0 a 249, 1 octet
+        //****** Section FC ***************************************************/
+        // 4 octets, starts at offset 4
+        eti_FC *fc = (eti_FC *) &etiFrame[4];
+
+        //****** FCT ******//
+        // Incremente for each frame, overflows at 249
         fc->FCT = currentFrame % 250;
 
         //****** FICF ******//
-        //Fast Information Channel Flag, 1 bit, =1 si le FIC est present
+        // Fast Information Channel Flag, 1 bit, =1 if FIC present
         fc->FICF = 1;
 
         //****** NST ******//
-        //Number of Stream, 7 bits,  0-64, 0 si reconfiguration du multiplex
+        /* Number of audio of data sub-channels, 7 bits, 0-64.
+         * In the 15-frame period immediately preceding a multiplex
+         * re-configuration, NST can take the value 0 (see annex E).
+         */
         fc->NST = ensemble->subchannels.size();
 
         //****** FP ******//
-        // Frame Phase, 3 bits, compteur sur 3 bits, permet au COFDM generator
-        // de savoir quand inserer le TII utilise egalement par le MNSC
+        /* Frame Phase, 3 bit counter, tells the COFDM generator
+         * when to insert the TII. Is also used by the MNSC.
+         */
         fc->FP = currentFrame & 0x7;
 
         //****** MID ******//
         //Mode Identity, 2 bits, 01 ModeI, 10 modeII, 11 ModeIII, 00 ModeIV
-        fc->MID = ensemble->mode;      //mode 2 demande 3 FIB, 3*32octets = 96octets
+        fc->MID = ensemble->mode;      //mode 2 needs 3 FIB, 3*32octets = 96octets
 
         //****** FL ******//
-        //Frame Length, 11 bits, nb of words(4 bytes) in STC, EOH and MST  
-        // si NST=0, FL=1+FICL words, FICL=24 ou 32 selon le mode
-        //en word ( 4 bytes), +1 pour la partie EOH
+        /* Frame Length, 11 bits, nb of words(4 bytes) in STC, EOH and MST
+         * if NST=0, FL=1+FICL words, FICL=24 or 32 depending on the mode.
+         * The FL is given in words (4 octets), see ETS 300 799 5.3.6 for details
+         */
         FLtmp = 1 + FICL + (fc->NST);
 
         for (subchannel = ensemble->subchannels.begin();
                 subchannel != ensemble->subchannels.end();
                 ++subchannel) {
-            //Taille d'une trame audio mp2 en paquet de 64 bits
+            // Add STLsbch
             FLtmp += getSizeWord(*subchannel);
         }
 

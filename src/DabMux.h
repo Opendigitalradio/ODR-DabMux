@@ -54,23 +54,24 @@
 #define DEFAULT_DATA_BITRATE    384
 #define DEFAULT_PACKET_BITRATE  32
 
-// Etiquettes des sous-canaux et de l'ensemble, 16 characteres incluant les
-// espaces
+/* default ensemble parameters. Label must be max 16 chars, short label
+ * a subset of the label, max 8 chars
+ */
 #define DEFAULT_ENSEMBLE_LABEL          "ODR Dab Mux"
 #define DEFAULT_ENSEMBLE_SHORT_LABEL    "ODRMux"
 #define DEFAULT_ENSEMBLE_ID             0xc000
 #define DEFAULT_ENSEMBLE_ECC            0xa1
 
-//Numeros des sous-canaux
+// start value for default service IDs (if not overridden by configuration)
 #define DEFAULT_SERVICE_ID      50
 #define DEFAULT_PACKET_ADDRESS  0
 
 using namespace std;
 
 
-/******************************************************************************
- *****************   Definitions des stuctures des FIGs  **********************
- ******************************************************************************/
+/*****************************************************************************
+ *****************   Definition of FIG structures ****************************
+ *****************************************************************************/
 struct FIGtype0 {
     uint8_t Length:5;
     uint8_t FIGtypeNumber:3;
@@ -398,3 +399,4 @@ struct FIGtype1_4_data {
 #endif
 
 #endif
+

@@ -138,13 +138,13 @@ class RemoteControllerTelnet : public BaseRemoteController {
     public:
         RemoteControllerTelnet()
             : m_running(false), m_fault(false),
-            m_port(0) {}
+            m_port(0) { }
 
         RemoteControllerTelnet(int port)
-            : m_running(false), m_fault(false),
+            : m_running(true), m_fault(false),
             m_port(port),
             m_child_thread(&RemoteControllerTelnet::process, this, 0)
-        {}
+        { }
 
         ~RemoteControllerTelnet() {
             m_running = false;

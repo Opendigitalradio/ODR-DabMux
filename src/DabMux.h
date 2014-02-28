@@ -311,6 +311,7 @@ struct FIG_01_SubChannel_LongF {
 } PACKED;
 
 
+// See EN 300 401, Clause 8.1.20 for the FIG0_13 description
 struct FIG0_13_shortAppInfo {
     uint16_t SId;
     uint8_t No:4;
@@ -333,7 +334,17 @@ struct FIG0_13_app {
         typeHigh = type >> 3;
         typeLow = type & 0x1f;
     }
+    uint32_t xpad;
 } PACKED;
+
+#define FIG0_13_APPTYPE_SLIDESHOW  0x2
+#define FIG0_13_APPTYPE_WEBSITE    0x3
+#define FIG0_13_APPTYPE_TPEG       0x4
+#define FIG0_13_APPTYPE_DGPS       0x5
+#define FIG0_13_APPTYPE_TMC        0x6
+#define FIG0_13_APPTYPE_EPG        0x7
+#define FIG0_13_APPTYPE_DABJAVA    0x8
+// 0x441 is Frauenhofer IIS Journaline
 
 
 struct FIGtype1_0 {

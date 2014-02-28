@@ -127,6 +127,11 @@ struct dabSubchannel {
     const char* inputName;
     DabInputBase* input;
     unsigned char id;
+    /* The type is:
+     * 0 for mpeg, dabplus
+     * 1 for data, dmb
+     * 3 for packet
+     */
     unsigned char type;
     uint16_t startAddress;
     uint16_t bitrate;

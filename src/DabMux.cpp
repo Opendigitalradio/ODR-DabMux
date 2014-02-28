@@ -1495,9 +1495,50 @@ int main(int argc, char *argv[])
                     goto EXIT;
                 }
 
-                if ((*subchannel)->type != 3) continue;
+                if ((*subchannel)->type == 0) { // audio
+                    if (fig0 == NULL) {
+                        fig0 = (FIGtype0*)&etiFrame[index];
+                        fig0->FIGtypeNumber = 0;
+                        fig0->Length = 1;
+                        fig0->CN = 0;
+                        fig0->OE = 0;
+                        fig0->PD = 1;
+                        fig0->Extension = 13;
+                        index += 2;
+                        figSize += 2;
+                    }
 
-                if ((*component)->packet.appType != 0xffff) {
+                    FIG0_13_longAppInfo* info =
+                        (FIG0_13_longAppInfo*)&etiFrame[index];
+                    info->SId = htonl((*component)->serviceId);
+                    info->SCIdS = (*component)->SCIdS;
+                    info->No = 1;
+                    index += 5;
+                    figSize += 5;
+                    fig0->Length += 5;
+
+                    FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
+                    app->setType(FIG0_13_APPTYPE_SLIDESHOW);
+                    app->length = 4;
+                    app->xpad = 0x0cbc0000;
+                    /* xpad meaning
+                       CA        = 0
+                       CAOrg     = 0
+                       Rfu       = 0
+                       AppTy(5)  = 12 (MOT, start of X-PAD data group)
+                       DG        = 1 (MSC data groups not used)
+                       Rfu       = 0
+                       DSCTy(6)  = 60 (MOT)
+                       CAOrg(16) = 0
+                    */
+
+                    index += 2 + app->length;
+                    figSize += 2 + app->length;
+                    fig0->Length += 2 + app->length;
+                }
+                else if ((*subchannel)->type == 3 && // packet
+                    (*component)->packet.appType != 0xffff) {
+
                     if (fig0 == NULL) {
                         fig0 = (FIGtype0*)&etiFrame[index];
                         fig0->FIGtypeNumber = 0;

@@ -37,7 +37,7 @@ else
 ZMQ_LIBS    =
 endif
 
-odr_dabmux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
+odr_dabmux_CPPFLAGS =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      dabInput.h dabInput.cpp \

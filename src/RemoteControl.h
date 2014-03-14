@@ -142,8 +142,8 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         RemoteControllerTelnet(int port)
             : m_running(true), m_fault(false),
-            m_port(port),
-            m_child_thread(&RemoteControllerTelnet::process, this, 0)
+            m_child_thread(&RemoteControllerTelnet::process, this, 0),
+            m_port(port)
         { }
 
         ~RemoteControllerTelnet() {

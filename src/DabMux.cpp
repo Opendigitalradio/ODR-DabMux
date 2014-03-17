@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
     vector<dabOutput*> outputs;
     vector<DabService*>::iterator service = ensemble->services.end();
     vector<DabService*>::iterator serviceProgFIG0_2;
-    vector<DabService*>::iterator serviceDataInd;
+    vector<DabService*>::iterator serviceDataFIG0_2;
     vector<DabService*>::iterator servicePty;
     vector<DabComponent*>::iterator component = ensemble->components.end();
     vector<DabComponent*>::iterator componentIndicatorProgram;
@@ -614,7 +614,7 @@ int main(int argc, char *argv[])
 
     /* Used for FIG0/2 insertion */
     serviceProgFIG0_2 = ensemble->services.end();
-    serviceDataInd = ensemble->services.end();
+    serviceDataFIG0_2 = ensemble->services.end();
 
     componentIndicatorProgram = ensemble->components.end();
     componentIndicatorData = ensemble->components.end();
@@ -1031,15 +1031,15 @@ int main(int argc, char *argv[])
             fig0_2 = NULL;
             cur = 0;
 
-            if (serviceDataInd == ensemble->services.end()) {
-                serviceDataInd = ensemble->services.begin();
+            if (serviceDataFIG0_2 == ensemble->services.end()) {
+                serviceDataFIG0_2 = ensemble->services.begin();
             }
-            for (; serviceDataInd != ensemble->services.end();
-                    ++serviceDataInd) {
-                if (!(*serviceDataInd)->nbComponent(ensemble->components)) {
+            for (; serviceDataFIG0_2 != ensemble->services.end();
+                    ++serviceDataFIG0_2) {
+                if (!(*serviceDataFIG0_2)->nbComponent(ensemble->components)) {
                     continue;
                 }
-                unsigned char type = (*serviceDataInd)->getType(ensemble);
+                unsigned char type = (*serviceDataFIG0_2)->getType(ensemble);
                 if ((type == 0) || (type == 2)) {
                     continue;
                 }
@@ -1060,7 +1060,7 @@ int main(int argc, char *argv[])
                 }
 
                 if (figSize + 5
-                        + (*serviceDataInd)->nbComponent(ensemble->components)
+                        + (*serviceDataFIG0_2)->nbComponent(ensemble->components)
                         * 2 > 30) {
                     break;
                 }
@@ -1068,21 +1068,21 @@ int main(int argc, char *argv[])
                 fig0_2serviceData =
                     (FIGtype0_2_Service_data*) &etiFrame[index];
 
-                fig0_2serviceData->SId = htonl((*serviceDataInd)->id);
+                fig0_2serviceData->SId = htonl((*serviceDataFIG0_2)->id);
                 fig0_2serviceData->Local_flag = 0;
                 fig0_2serviceData->CAId = 0;
                 fig0_2serviceData->NbServiceComp =
-                    (*serviceDataInd)->nbComponent(ensemble->components);
+                    (*serviceDataFIG0_2)->nbComponent(ensemble->components);
                 fig0_2->Length += 5;
                 index += 5;
                 figSize += 5;
 
                 int curCpnt = 0;
                 for (component = getComponent(ensemble->components,
-                            (*serviceDataInd)->id);
+                            (*serviceDataFIG0_2)->id);
                         component != ensemble->components.end();
                         component = getComponent(ensemble->components,
-                            (*serviceDataInd)->id, component)) {
+                            (*serviceDataFIG0_2)->id, component)) {
                     subchannel = getSubchannel(ensemble->subchannels,
                             (*component)->subchId);
                     if (subchannel == ensemble->subchannels.end()) {

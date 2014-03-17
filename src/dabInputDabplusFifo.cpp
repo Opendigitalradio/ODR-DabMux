@@ -151,8 +151,6 @@ int dabInputDabplusFifoUnlock(void* args)
 int dabInputDabplusFifoReadFrame(dabInputOperations* ops, void* args,
         void* buffer, int size)
 {
-    dabInputDabplusFifoData* data = (dabInputDabplusFifoData*)args;
-
     return ops->read(args, buffer, size);
 }
 

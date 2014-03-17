@@ -132,15 +132,6 @@ static unsigned char Padding_FIB[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-/******************************************************************************
- *************  Tables pour l'identification des fichiers mp2  ****************
- *****************************************************************************/
-const unsigned short Bit_Rate_SpecifiedTable[16] = {
-    0, 32, 48, 56, 64, 80, 96, 112,
-    128, 160, 192, 224, 256, 320, 384, 0
-};
-
-
 
 const unsigned char ProtectionLevelTable[64] = {
     4, 3, 2, 1, 0, 4, 3, 2,
@@ -314,8 +305,6 @@ int main(int argc, char *argv[])
     unsigned timestamp = 0;
 
     int statsserverport = 0;
-
-    unsigned long time_seconds = 0;
 
     struct timeval mnsc_time;
 

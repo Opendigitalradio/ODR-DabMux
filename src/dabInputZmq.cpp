@@ -198,7 +198,6 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
 // Read a MPEG frame from the socket, and push to list
 int DabInputZmqMPEG::readFromSocket(int framesize)
 {
-    int rc;
     bool messageReceived;
     zmq::message_t msg;
 
@@ -252,7 +251,6 @@ int DabInputZmqMPEG::readFromSocket(int framesize)
 // and push to list
 int DabInputZmqAAC::readFromSocket(int framesize)
 {
-    int rc;
     bool messageReceived;
     zmq::message_t msg;
 

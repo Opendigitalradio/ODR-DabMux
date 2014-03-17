@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
     vector<DabService*>::iterator service = ensemble->services.end();
     vector<DabService*>::iterator serviceProgFIG0_2;
     vector<DabService*>::iterator serviceDataFIG0_2;
-    vector<DabService*>::iterator servicePty;
+    vector<DabService*>::iterator serviceFIG0_17;
     vector<DabComponent*>::iterator component = ensemble->components.end();
     vector<DabComponent*>::iterator componentIndicatorProgram;
     vector<DabComponent*>::iterator componentIndicatorData;
@@ -618,7 +618,7 @@ int main(int argc, char *argv[])
 
     componentIndicatorProgram = ensemble->components.end();
     componentIndicatorData = ensemble->components.end();
-    servicePty = ensemble->services.end();
+    serviceFIG0_17 = ensemble->services.end();
 
     /* used for FIG0/1 insertion */
     subchannelFIG0_1 = ensemble->subchannels.end();
@@ -1214,12 +1214,12 @@ int main(int argc, char *argv[])
 
         case 7:
             fig0 = NULL;
-            if (servicePty == ensemble->services.end()) {
-                servicePty = ensemble->services.begin();
+            if (serviceFIG0_17 == ensemble->services.end()) {
+                serviceFIG0_17 = ensemble->services.begin();
             }
-            for (; servicePty != ensemble->services.end();
-                    ++servicePty) {
-                if ((*servicePty)->pty == 0 && (*servicePty)->language == 0) {
+            for (; serviceFIG0_17 != ensemble->services.end();
+                    ++serviceFIG0_17) {
+                if ((*serviceFIG0_17)->pty == 0 && (*serviceFIG0_17)->language == 0) {
                     continue;
                 }
                 if (fig0 == NULL) {
@@ -1234,7 +1234,7 @@ int main(int argc, char *argv[])
                     figSize += 2;
                 }
 
-                if ((*servicePty)->language == 0) {
+                if ((*serviceFIG0_17)->language == 0) {
                     if (figSize + 4 > 30) {
                         break;
                     }
@@ -1246,21 +1246,21 @@ int main(int argc, char *argv[])
 
                 programme = 
                     (FIGtype0_17_programme*)&etiFrame[index];
-                programme->SId = htons((*servicePty)->id);
+                programme->SId = htons((*serviceFIG0_17)->id);
                 programme->SD = 1;
                 programme->PS = 0;
-                programme->L = (*servicePty)->language != 0;
+                programme->L = (*serviceFIG0_17)->language != 0;
                 programme->CC = 0;
                 programme->Rfa = 0;
                 programme->NFC = 0;
-                if ((*servicePty)->language == 0) {
-                    etiFrame[index + 3] = (*servicePty)->pty;
+                if ((*serviceFIG0_17)->language == 0) {
+                    etiFrame[index + 3] = (*serviceFIG0_17)->pty;
                     fig0->Length += 4;
                     index += 4;
                     figSize += 4;
                 } else {
-                    etiFrame[index + 3] = (*servicePty)->language;
-                    etiFrame[index + 4] = (*servicePty)->pty;
+                    etiFrame[index + 3] = (*serviceFIG0_17)->language;
+                    etiFrame[index + 4] = (*serviceFIG0_17)->pty;
                     fig0->Length += 5;
                     index += 5;
                     figSize += 5;

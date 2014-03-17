@@ -609,20 +609,22 @@ int main(int argc, char *argv[])
     printOutputs(outputs);
 
 
-
-    /*   Each iteration of the main loop creates one ETI frame */
-
-    /* Used for FIG0/2 insertion */
+    /* These iterators are used to fill the respective FIG.
+     * It is necessary to cycle through all the FIGs that have
+     * to be transmitted because they do not fit in a single
+     * FIB.
+     *
+     * ETSI EN 300 799 Clauses 5.2 and 8.1
+     */
     serviceProgFIG0_2 = ensemble->services.end();
     serviceDataFIG0_2 = ensemble->services.end();
-
     componentProgFIG0_8 = ensemble->components.end();
     componentDataFIG0_8 = ensemble->components.end();
     serviceFIG0_17 = ensemble->services.end();
-
-    /* used for FIG0/1 insertion */
     subchannelFIG0_1 = ensemble->subchannels.end();
 
+
+    /*   Each iteration of the main loop creates one ETI frame */
 
     for (currentFrame = 0; running; currentFrame++) {
         if ((limit > 0) && (currentFrame >= limit)) {

@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
     vector<DabService*>::iterator serviceFIG0_17;
     vector<DabComponent*>::iterator component = ensemble->components.end();
     vector<DabComponent*>::iterator componentProgFIG0_8;
-    vector<DabComponent*>::iterator componentIndicatorData;
+    vector<DabComponent*>::iterator componentDataFIG0_8;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
     vector<dabSubchannel*>::iterator subchannelFIG0_1;
     vector<dabOutput*>::iterator output;
@@ -617,7 +617,7 @@ int main(int argc, char *argv[])
     serviceDataFIG0_2 = ensemble->services.end();
 
     componentProgFIG0_8 = ensemble->components.end();
-    componentIndicatorData = ensemble->components.end();
+    componentDataFIG0_8 = ensemble->components.end();
     serviceFIG0_17 = ensemble->services.end();
 
     /* used for FIG0/1 insertion */
@@ -1372,21 +1372,21 @@ int main(int argc, char *argv[])
         case 1:     // FIG 0/8 data
             fig0 = NULL;
 
-            if (componentIndicatorData == ensemble->components.end()) {
-                componentIndicatorData = ensemble->components.begin();
+            if (componentDataFIG0_8 == ensemble->components.end()) {
+                componentDataFIG0_8 = ensemble->components.begin();
             }
-            for (; componentIndicatorData != ensemble->components.end();
-                    ++componentIndicatorData) {
-                service = getService(*componentIndicatorData,
+            for (; componentDataFIG0_8 != ensemble->components.end();
+                    ++componentDataFIG0_8) {
+                service = getService(*componentDataFIG0_8,
                         ensemble->services);
                 subchannel = getSubchannel(ensemble->subchannels,
-                        (*componentIndicatorData)->subchId);
+                        (*componentDataFIG0_8)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
                     etiLog.log(error,
                             "Subchannel %i does not exist for component "
                             "of service %i\n",
-                            (*componentIndicatorData)->subchId,
-                            (*componentIndicatorData)->serviceId);
+                            (*componentDataFIG0_8)->subchId,
+                            (*componentDataFIG0_8)->serviceId);
                     returnCode = -1;
                     goto EXIT;
                 }
@@ -1410,7 +1410,7 @@ int main(int argc, char *argv[])
                         break;
                     }
                     *((uint32_t*)&etiFrame[index]) =
-                        htonl((*componentIndicatorData)->serviceId);
+                        htonl((*componentDataFIG0_8)->serviceId);
                     fig0->Length += 4;
                     index += 4;
                     figSize += 4;
@@ -1419,9 +1419,9 @@ int main(int argc, char *argv[])
                         (FIGtype0_8_long*)&etiFrame[index];
                     memset(definition, 0, 3);
                     definition->ext = 0;    // no rfa
-                    definition->SCIdS = (*componentIndicatorData)->SCIdS;
+                    definition->SCIdS = (*componentDataFIG0_8)->SCIdS;
                     definition->LS = 1;
-                    definition->setSCId((*componentIndicatorData)->packet.id);
+                    definition->setSCId((*componentDataFIG0_8)->packet.id);
                     fig0->Length += 3;
                     index += 3;             // 8 minus rfa
                     figSize += 3;
@@ -1430,7 +1430,7 @@ int main(int argc, char *argv[])
                         break;
                     }
                     *((uint32_t*)&etiFrame[index]) =
-                        htonl((*componentIndicatorData)->serviceId);
+                        htonl((*componentDataFIG0_8)->serviceId);
                     fig0->Length += 4;
                     index += 4;
                     figSize += 4;
@@ -1439,10 +1439,10 @@ int main(int argc, char *argv[])
                         (FIGtype0_8_short*)&etiFrame[index];
                     memset(definition, 0, 2);
                     definition->ext = 0;    // no rfa
-                    definition->SCIdS = (*componentIndicatorData)->SCIdS;
+                    definition->SCIdS = (*componentDataFIG0_8)->SCIdS;
                     definition->LS = 0;
                     definition->MscFic = 0;
-                    definition->Id = (*componentIndicatorData)->subchId;
+                    definition->Id = (*componentDataFIG0_8)->subchId;
                     fig0->Length += 2;
                     index += 2;             // 4 minus rfa
                     figSize += 2;

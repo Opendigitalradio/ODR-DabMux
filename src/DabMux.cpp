@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
     vector<DabService*>::iterator serviceDataFIG0_2;
     vector<DabService*>::iterator serviceFIG0_17;
     vector<DabComponent*>::iterator component = ensemble->components.end();
-    vector<DabComponent*>::iterator componentIndicatorProgram;
+    vector<DabComponent*>::iterator componentProgFIG0_8;
     vector<DabComponent*>::iterator componentIndicatorData;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
     vector<dabSubchannel*>::iterator subchannelFIG0_1;
@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
     serviceProgFIG0_2 = ensemble->services.end();
     serviceDataFIG0_2 = ensemble->services.end();
 
-    componentIndicatorProgram = ensemble->components.end();
+    componentProgFIG0_8 = ensemble->components.end();
     componentIndicatorData = ensemble->components.end();
     serviceFIG0_17 = ensemble->services.end();
 
@@ -1291,21 +1291,21 @@ int main(int argc, char *argv[])
         case 0:     // FIG 0/8 program
             fig0 = NULL;
 
-            if (componentIndicatorProgram == ensemble->components.end()) {
-                componentIndicatorProgram = ensemble->components.begin();
+            if (componentProgFIG0_8 == ensemble->components.end()) {
+                componentProgFIG0_8 = ensemble->components.begin();
             }
-            for (; componentIndicatorProgram != ensemble->components.end();
-                    ++componentIndicatorProgram) {
-                service = getService(*componentIndicatorProgram,
+            for (; componentProgFIG0_8 != ensemble->components.end();
+                    ++componentProgFIG0_8) {
+                service = getService(*componentProgFIG0_8,
                         ensemble->services);
                 subchannel = getSubchannel(ensemble->subchannels,
-                        (*componentIndicatorProgram)->subchId);
+                        (*componentProgFIG0_8)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
                     etiLog.log(error,
                             "Subchannel %i does not exist for component "
                             "of service %i\n",
-                            (*componentIndicatorProgram)->subchId,
-                            (*componentIndicatorProgram)->serviceId);
+                            (*componentProgFIG0_8)->subchId,
+                            (*componentProgFIG0_8)->serviceId);
                     returnCode = -1;
                     goto EXIT;
                 }
@@ -1329,7 +1329,7 @@ int main(int argc, char *argv[])
                         break;
                     }
                     *((uint16_t*)&etiFrame[index]) =
-                        htons((*componentIndicatorProgram)->serviceId);
+                        htons((*componentProgFIG0_8)->serviceId);
                     fig0->Length += 2;
                     index += 2;
                     figSize += 2;
@@ -1338,9 +1338,9 @@ int main(int argc, char *argv[])
                         (FIGtype0_8_long*)&etiFrame[index];
                     memset(definition, 0, 3);
                     definition->ext = 0;    // no rfa
-                    definition->SCIdS = (*componentIndicatorProgram)->SCIdS;
+                    definition->SCIdS = (*componentProgFIG0_8)->SCIdS;
                     definition->LS = 1;
-                    definition->setSCId((*componentIndicatorProgram)->packet.id);
+                    definition->setSCId((*componentProgFIG0_8)->packet.id);
                     fig0->Length += 3;
                     index += 3;             // 8 minus rfa
                     figSize += 3;
@@ -1349,7 +1349,7 @@ int main(int argc, char *argv[])
                         break;
                     }
                     *((uint16_t*)&etiFrame[index]) =
-                        htons((*componentIndicatorProgram)->serviceId);
+                        htons((*componentProgFIG0_8)->serviceId);
                     fig0->Length += 2;
                     index += 2;
                     figSize += 2;
@@ -1358,10 +1358,10 @@ int main(int argc, char *argv[])
                         (FIGtype0_8_short*)&etiFrame[index];
                     memset(definition, 0, 2);
                     definition->ext = 0;    // no rfa
-                    definition->SCIdS = (*componentIndicatorProgram)->SCIdS;
+                    definition->SCIdS = (*componentProgFIG0_8)->SCIdS;
                     definition->LS = 0;
                     definition->MscFic = 0;
-                    definition->Id = (*componentIndicatorProgram)->subchId;
+                    definition->Id = (*componentProgFIG0_8)->subchId;
                     fig0->Length += 2;
                     index += 2;             // 4 minus rfa
                     figSize += 2;

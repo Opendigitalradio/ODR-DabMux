@@ -1626,6 +1626,7 @@ int main(int argc, char *argv[])
             break;
         }
 
+        assert(figSize <= 30);
         memcpy(&etiFrame[index], Padding_FIB, 30 - figSize);
         index += 30 - figSize;
 
@@ -1731,6 +1732,10 @@ int main(int argc, char *argv[])
         etiFrame[index++] = ((char *) &CRCtmp)[1];
         etiFrame[index++] = ((char *) &CRCtmp)[0];
 
+        /* ETSI EN 300 799 Table 2:
+         * Only TM3 has a FIB count to CIF count that is
+         * not 3 to 1.
+         */
         if (ensemble->mode == 3) {
             memcpy(&etiFrame[index], Padding_FIB, 30);
             index += 30;

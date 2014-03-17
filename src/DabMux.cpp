@@ -272,6 +272,7 @@ int main(int argc, char *argv[])
     vector<DabService*>::iterator serviceFIG0_17;
     vector<DabComponent*>::iterator component = ensemble->components.end();
     vector<DabComponent*>::iterator componentProgFIG0_8;
+    vector<DabComponent*>::iterator componentFIG0_13;
     vector<DabComponent*>::iterator componentDataFIG0_8;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
     vector<dabSubchannel*>::iterator subchannelFIG0_1;
@@ -619,6 +620,7 @@ int main(int argc, char *argv[])
     serviceProgFIG0_2 = ensemble->services.end();
     serviceDataFIG0_2 = ensemble->services.end();
     componentProgFIG0_8 = ensemble->components.end();
+    componentFIG0_13 = ensemble->components.end();
     componentDataFIG0_8 = ensemble->components.end();
     serviceFIG0_17 = ensemble->services.end();
     subchannelFIG0_1 = ensemble->subchannels.end();
@@ -1476,16 +1478,21 @@ int main(int argc, char *argv[])
             // FIG 0 / 13
             fig0 = NULL;
 
-            for (component = ensemble->components.begin();
-                    component != ensemble->components.end();
-                    ++component) {
+            if (componentFIG0_13 == ensemble->components.end()) {
+                componentFIG0_13 = ensemble->components.begin();
+            }
+
+            for (; componentFIG0_13 != ensemble->components.end();
+                    ++componentFIG0_13) {
+
                 subchannel = getSubchannel(ensemble->subchannels,
-                        (*component)->subchId);
+                        (*componentFIG0_13)->subchId);
                 if (subchannel == ensemble->subchannels.end()) {
                     etiLog.log(error,
                             "Subchannel %i does not exist for component "
                             "of service %i\n",
-                            (*component)->subchId, (*component)->serviceId);
+                            (*componentFIG0_13)->subchId,
+                            (*componentFIG0_13)->serviceId);
                     returnCode = -1;
                     goto EXIT;
                 }
@@ -1503,10 +1510,14 @@ int main(int argc, char *argv[])
                         figSize += 2;
                     }
 
+                    if (figSize > 30 - (5+4+11)) {
+                        break;
+                    }
+
                     FIG0_13_longAppInfo* info =
                         (FIG0_13_longAppInfo*)&etiFrame[index];
-                    info->SId = htonl((*component)->serviceId);
-                    info->SCIdS = (*component)->SCIdS;
+                    info->SId = htonl((*componentFIG0_13)->serviceId);
+                    info->SCIdS = (*componentFIG0_13)->SCIdS;
                     info->No = 1;
                     index += 5;
                     figSize += 5;
@@ -1532,7 +1543,7 @@ int main(int argc, char *argv[])
                     fig0->Length += 2 + app->length;
                 }
                 else if ((*subchannel)->type == 3 && // packet
-                    (*component)->packet.appType != 0xffff) {
+                    (*componentFIG0_13)->packet.appType != 0xffff) {
 
                     if (fig0 == NULL) {
                         fig0 = (FIGtype0*)&etiFrame[index];
@@ -1546,17 +1557,21 @@ int main(int argc, char *argv[])
                         figSize += 2;
                     }
 
+                    if (figSize > 30 - (5+2)) {
+                        break;
+                    }
+
                     FIG0_13_longAppInfo* info =
                         (FIG0_13_longAppInfo*)&etiFrame[index];
-                    info->SId = htonl((*component)->serviceId);
-                    info->SCIdS = (*component)->SCIdS;
+                    info->SId = htonl((*componentFIG0_13)->serviceId);
+                    info->SCIdS = (*componentFIG0_13)->SCIdS;
                     info->No = 1;
                     index += 5;
                     figSize += 5;
                     fig0->Length += 5;
 
                     FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
-                    app->setType((*component)->packet.appType);
+                    app->setType((*componentFIG0_13)->packet.appType);
                     app->length = 0;
                     index += 2;
                     figSize += 2;

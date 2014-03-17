@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 
     vector<dabOutput*> outputs;
     vector<DabService*>::iterator service = ensemble->services.end();
-    vector<DabService*>::iterator serviceProgramInd;
+    vector<DabService*>::iterator serviceProgFIG0_2;
     vector<DabService*>::iterator serviceDataInd;
     vector<DabService*>::iterator servicePty;
     vector<DabComponent*>::iterator component = ensemble->components.end();
@@ -613,7 +613,7 @@ int main(int argc, char *argv[])
     /*   Each iteration of the main loop creates one ETI frame */
 
     /* Used for FIG0/2 insertion */
-    serviceProgramInd = ensemble->services.end();
+    serviceProgFIG0_2 = ensemble->services.end();
     serviceDataInd = ensemble->services.end();
 
     componentIndicatorProgram = ensemble->components.end();
@@ -917,15 +917,15 @@ int main(int argc, char *argv[])
             fig0_2 = NULL;
             cur = 0;
 
-            if (serviceProgramInd == ensemble->services.end()) {
-                serviceProgramInd = ensemble->services.begin();
+            if (serviceProgFIG0_2 == ensemble->services.end()) {
+                serviceProgFIG0_2 = ensemble->services.begin();
             }
-            for (; serviceProgramInd != ensemble->services.end();
-                    ++serviceProgramInd) {
-                if (!(*serviceProgramInd)->nbComponent(ensemble->components)) {
+            for (; serviceProgFIG0_2 != ensemble->services.end();
+                    ++serviceProgFIG0_2) {
+                if (!(*serviceProgFIG0_2)->nbComponent(ensemble->components)) {
                     continue;
                 }
-                if ((*serviceProgramInd)->getType(ensemble) != 0) {
+                if ((*serviceProgFIG0_2)->getType(ensemble) != 0) {
                     continue;
                 }
 
@@ -945,28 +945,28 @@ int main(int argc, char *argv[])
                 }
 
                 if (figSize + 3
-                        + (*serviceProgramInd)->nbComponent(ensemble->components)
+                        + (*serviceProgFIG0_2)->nbComponent(ensemble->components)
                         * 2 > 30) {
                     break;
                 }
 
                 fig0_2serviceAudio = (FIGtype0_2_Service*) &etiFrame[index];
 
-                fig0_2serviceAudio->SId = htons((*serviceProgramInd)->id);
+                fig0_2serviceAudio->SId = htons((*serviceProgFIG0_2)->id);
                 fig0_2serviceAudio->Local_flag = 0;
                 fig0_2serviceAudio->CAId = 0;
                 fig0_2serviceAudio->NbServiceComp =
-                    (*serviceProgramInd)->nbComponent(ensemble->components);
+                    (*serviceProgFIG0_2)->nbComponent(ensemble->components);
                 index += 3;
                 fig0_2->Length += 3;
                 figSize += 3;
 
                 int curCpnt = 0;
                 for (component = getComponent(ensemble->components,
-                            (*serviceProgramInd)->id);
+                            (*serviceProgFIG0_2)->id);
                         component != ensemble->components.end();
                         component = getComponent(ensemble->components,
-                            (*serviceProgramInd)->id, component)) {
+                            (*serviceProgFIG0_2)->id, component)) {
                     subchannel = getSubchannel(ensemble->subchannels,
                             (*component)->subchId);
                     if (subchannel == ensemble->subchannels.end()) {

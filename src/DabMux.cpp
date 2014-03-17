@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
     vector<DabComponent*>::iterator componentIndicatorProgram;
     vector<DabComponent*>::iterator componentIndicatorData;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
-    vector<dabSubchannel*>::iterator subchannelIndicator;
+    vector<dabSubchannel*>::iterator subchannelFIG0_1;
     vector<dabOutput*>::iterator output;
     dabProtection* protection = NULL;
 
@@ -623,12 +623,16 @@ int main(int argc, char *argv[])
 
     /*   Each iteration of the main loop creates one ETI frame */
 
+    /* Used for FIG0/2 insertion */
     serviceProgramInd = ensemble->services.end();
     serviceDataInd = ensemble->services.end();
+
     componentIndicatorProgram = ensemble->components.end();
     componentIndicatorData = ensemble->components.end();
     servicePty = ensemble->services.end();
-    subchannelIndicator = ensemble->subchannels.end();
+
+    /* used for FIG0/1 insertion */
+    subchannelFIG0_1 = ensemble->subchannels.end();
 
 
     for (currentFrame = 0; running; currentFrame++) {
@@ -866,12 +870,12 @@ int main(int argc, char *argv[])
             figSize += 2;
 
             //Sous-partie du FIG type 0/1
-            if (subchannelIndicator == ensemble->subchannels.end()) {
-                subchannelIndicator = ensemble->subchannels.begin();
+            if (subchannelFIG0_1 == ensemble->subchannels.end()) {
+                subchannelFIG0_1 = ensemble->subchannels.begin();
             }
-            for (; subchannelIndicator != ensemble->subchannels.end();
-                    ++subchannelIndicator) {
-                protection = &(*subchannelIndicator)->protection;
+            for (; subchannelFIG0_1 != ensemble->subchannels.end();
+                    ++subchannelFIG0_1) {
+                protection = &(*subchannelFIG0_1)->protection;
 
                 if ((protection->form == 0 && figSize > 27) ||
                         (protection->form != 0 && figSize > 26)) {
@@ -881,11 +885,11 @@ int main(int argc, char *argv[])
                 if (protection->form == 0) {
                     fig0_1subchShort =
                         (FIG_01_SubChannel_ShortF*) &etiFrame[index];
-                    fig0_1subchShort->SubChId = (*subchannelIndicator)->id;
+                    fig0_1subchShort->SubChId = (*subchannelFIG0_1)->id;
                     fig0_1subchShort->StartAdress_high =
-                        (*subchannelIndicator)->startAddress / 256;
+                        (*subchannelFIG0_1)->startAddress / 256;
                     fig0_1subchShort->StartAdress_low =
-                        (*subchannelIndicator)->startAddress % 256;
+                        (*subchannelFIG0_1)->startAddress % 256;
                     fig0_1subchShort->Short_Long_form = 0;
                     fig0_1subchShort->TableSwitch = 0;
                     fig0_1subchShort->TableIndex =
@@ -897,19 +901,19 @@ int main(int argc, char *argv[])
                 } else {
                     fig0_1subchLong1 =
                         (FIG_01_SubChannel_LongF*) &etiFrame[index];
-                    fig0_1subchLong1->SubChId = (*subchannelIndicator)->id;
+                    fig0_1subchLong1->SubChId = (*subchannelFIG0_1)->id;
                     fig0_1subchLong1->StartAdress_high =
-                        (*subchannelIndicator)->startAddress / 256;
+                        (*subchannelFIG0_1)->startAddress / 256;
                     fig0_1subchLong1->StartAdress_low =
-                        (*subchannelIndicator)->startAddress % 256;
+                        (*subchannelFIG0_1)->startAddress % 256;
                     fig0_1subchLong1->Short_Long_form = 1;
                     fig0_1subchLong1->Option = protection->longForm.option;
                     fig0_1subchLong1->ProtectionLevel =
                         protection->level;
                     fig0_1subchLong1->Sub_ChannelSize_high =
-                        getSizeCu(*subchannelIndicator) / 256;
+                        getSizeCu(*subchannelFIG0_1) / 256;
                     fig0_1subchLong1->Sub_ChannelSize_low =
-                        getSizeCu(*subchannelIndicator) % 256;
+                        getSizeCu(*subchannelFIG0_1) % 256;
 
                     index = index + 4;
                     figSize += 4;

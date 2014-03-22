@@ -95,6 +95,9 @@ struct dabEnsemble {
     uint8_t ecc;
     DabLabel label;
     uint8_t mode;
+    int lto; // local time offset in half-hours
+             // range: -24 to +24
+    int international_table;
     vector<DabService*> services;
     vector<DabComponent*> components;
     vector<dabSubchannel*> subchannels;

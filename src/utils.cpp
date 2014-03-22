@@ -451,5 +451,8 @@ void printEnsemble(dabEnsemble* ensemble)
 
     etiLog.log(info, " (0x%x)", ensemble->label.flag());
     etiLog.log(info, " mode:        %u", ensemble->mode);
+    etiLog.log(info, " lto:         %f", 2.0 * ensemble->lto);
+    etiLog.log(info, " intl. table. %d", ensemble->international_table);
+
 }
 

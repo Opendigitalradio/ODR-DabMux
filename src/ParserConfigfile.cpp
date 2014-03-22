@@ -189,6 +189,25 @@ void parse_configfile(string configuration_file,
     /* Extended Country Code */
     ensemble->ecc = hexparse(pt_ensemble.get("ecc", "0"));
 
+    ensemble->international_table = pt_ensemble.get("international-table", 0);
+
+    double lto_hours = pt_ensemble.get("local-time-offset", 0.0);
+    if (round(lto_hours * 2) != lto_hours * 2) {
+        etiLog.level(error) << "Ensemble local time offset " <<
+            lto_hours << "h cannot be expressed in half-hour blocks.";
+        throw runtime_error("ensemble local-time-offset definition error");
+    }
+    if (lto_hours > 12 || lto_hours < -12) {
+        etiLog.level(error) << "Ensemble local time offset " <<
+            lto_hours << "h out of bounds [-12, +12].";
+        throw runtime_error("ensemble local-time-offset definition error");
+    }
+    ensemble->lto = abs(rint(lto_hours * 2));
+
+    if (lto_hours < 0.0) { // ensemble->lto is 1-bit complement
+        ensemble->lto |= (1<<5); // sign bit
+    }
+
     int success = -5;
     string ensemble_label = pt_ensemble.get<string>("label");
     string ensemble_short_label(ensemble_label);

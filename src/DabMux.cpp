@@ -1599,7 +1599,7 @@ int main(int argc, char *argv[])
             fig0_10->Extension = 10;
             index = index + 2;
 
-            timeData = localtime(&date);
+            timeData = gmtime(&date);
 
             fig0_10->RFU = 0;
             fig0_10->setMJD(gregorian2mjd(timeData->tm_year + 1900,
@@ -1627,9 +1627,9 @@ int main(int argc, char *argv[])
 
             fig0_9->ext = 0;
             fig0_9->lto = 0;
-            fig0_9->ensembleLto = 0;
+            fig0_9->ensembleLto = ensemble->lto;
             fig0_9->ensembleEcc = ensemble->ecc;
-            fig0_9->tableId = 0x2;
+            fig0_9->tableId = ensemble->international_table;
             index += 5;
             figSize += 5;
 

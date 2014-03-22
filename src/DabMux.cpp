@@ -273,6 +273,7 @@ int main(int argc, char *argv[])
     vector<DabComponent*>::iterator component = ensemble->components.end();
     vector<DabComponent*>::iterator componentProgFIG0_8;
     vector<DabComponent*>::iterator componentFIG0_13;
+    bool  transmitFIG0_13programme; // Alternate between programme and data
     vector<DabComponent*>::iterator componentDataFIG0_8;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
     vector<dabSubchannel*>::iterator subchannelFIG0_1;
@@ -1480,6 +1481,11 @@ int main(int argc, char *argv[])
 
             if (componentFIG0_13 == ensemble->components.end()) {
                 componentFIG0_13 = ensemble->components.begin();
+
+                transmitFIG0_13programme = !transmitFIG0_13programme;
+                // Alternate between data and and programme FIG0/13,
+                // do not mix fig0 with PD=0 with extension 13 stuff
+                // that actually needs PD=1, and vice versa
             }
 
             for (; componentFIG0_13 != ensemble->components.end();
@@ -1497,14 +1503,15 @@ int main(int argc, char *argv[])
                     goto EXIT;
                 }
 
-                if ((*subchannel)->type == 0) { // audio
+                if (transmitFIG0_13programme &&
+                        (*subchannel)->type == 0) { // audio
                     if (fig0 == NULL) {
                         fig0 = (FIGtype0*)&etiFrame[index];
                         fig0->FIGtypeNumber = 0;
                         fig0->Length = 1;
                         fig0->CN = 0;
                         fig0->OE = 0;
-                        fig0->PD = 1;
+                        fig0->PD = 0;
                         fig0->Extension = 13;
                         index += 2;
                         figSize += 2;
@@ -1514,14 +1521,14 @@ int main(int argc, char *argv[])
                         break;
                     }
 
-                    FIG0_13_longAppInfo* info =
-                        (FIG0_13_longAppInfo*)&etiFrame[index];
+                    FIG0_13_shortAppInfo* info =
+                        (FIG0_13_shortAppInfo*)&etiFrame[index];
                     info->SId = htonl((*componentFIG0_13)->serviceId);
                     info->SCIdS = (*componentFIG0_13)->SCIdS;
                     info->No = 1;
-                    index += 5;
-                    figSize += 5;
-                    fig0->Length += 5;
+                    index += 3;
+                    figSize += 3;
+                    fig0->Length += 3;
 
                     FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
                     app->setType(FIG0_13_APPTYPE_SLIDESHOW);
@@ -1542,8 +1549,9 @@ int main(int argc, char *argv[])
                     figSize += 2 + app->length;
                     fig0->Length += 2 + app->length;
                 }
-                else if ((*subchannel)->type == 3 && // packet
-                    (*componentFIG0_13)->packet.appType != 0xffff) {
+                else if (!transmitFIG0_13programme &&
+                        (*subchannel)->type == 3 && // packet
+                        (*componentFIG0_13)->packet.appType != 0xffff) {
 
                     if (fig0 == NULL) {
                         fig0 = (FIGtype0*)&etiFrame[index];
@@ -1576,14 +1584,6 @@ int main(int argc, char *argv[])
                     index += 2;
                     figSize += 2;
                     fig0->Length += 2;
-
-                    if (figSize > 30) {
-                        etiLog.log(error,
-                                "can't add to Fic Fig 0/13, "
-                                "too much packet service\n");
-                        returnCode = -1;
-                        goto EXIT;
-                    }
                 }
             }
             break;

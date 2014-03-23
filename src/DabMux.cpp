@@ -1517,7 +1517,7 @@ int main(int argc, char *argv[])
                         figSize += 2;
                     }
 
-                    if (figSize > 30 - (5+4+11)) {
+                    if (figSize > 30 - (3+4+11)) {
                         break;
                     }
 

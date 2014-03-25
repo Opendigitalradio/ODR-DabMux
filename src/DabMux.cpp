@@ -1523,7 +1523,7 @@ int main(int argc, char *argv[])
 
                     FIG0_13_shortAppInfo* info =
                         (FIG0_13_shortAppInfo*)&etiFrame[index];
-                    info->SId = htonl((*componentFIG0_13)->serviceId);
+                    info->SId = htonl((*componentFIG0_13)->serviceId) >> 16;
                     info->SCIdS = (*componentFIG0_13)->SCIdS;
                     info->No = 1;
                     index += 3;
@@ -1533,13 +1533,13 @@ int main(int argc, char *argv[])
                     FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
                     app->setType(FIG0_13_APPTYPE_SLIDESHOW);
                     app->length = 4;
-                    app->xpad = 0x0cbc0000;
+                    app->xpad = htonl(0x0cbc0000);
                     /* xpad meaning
                        CA        = 0
                        CAOrg     = 0
                        Rfu       = 0
                        AppTy(5)  = 12 (MOT, start of X-PAD data group)
-                       DG        = 1 (MSC data groups not used)
+                       DG        = 0 (MSC data groups used)
                        Rfu       = 0
                        DSCTy(6)  = 60 (MOT)
                        CAOrg(16) = 0

@@ -2,8 +2,10 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
+   Copyright (C) 2013, 2014 Matthias P. Braendli
    http://mpb.li
+
+    http://opendigitalradio.org
 
    ZeroMQ output. see www.zeromq.org for more info
 
@@ -66,9 +68,40 @@ int DabOutputZMQ::Open(const char* endpoint)
 
 int DabOutputZMQ::Write(void* buffer, int size)
 {
-    int flags = 0;
+    int offset = 0;
 
-    return zmq_send(zmq_pub_sock_, buffer, size, flags);
+    for (int i = 0; i < zmq_message_ix; i++) {
+        offset += zmq_message.buflen[i];
+    }
+
+    if (offset + size > NUM_FRAMES_PER_ZMQ_MESSAGE*6144) {
+        throw std::runtime_error("FAULT: invalid ETI frame size!");
+    }
+    memcpy(zmq_message.buf + offset, buffer, size);
+    zmq_message.buflen[zmq_message_ix] = size;
+    zmq_message_ix++;
+
+    if (zmq_message_ix == NUM_FRAMES_PER_ZMQ_MESSAGE) {
+        int full_length = 0;
+
+        for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
+            full_length += zmq_message.buflen[i];
+        }
+
+        zmq_message_ix = 0;
+
+        const int flags = 0;
+        zmq_send(zmq_pub_sock_,
+                (uint8_t*)&zmq_message,
+                NUM_FRAMES_PER_ZMQ_MESSAGE * sizeof(*zmq_message.buflen) +
+                full_length, flags);
+
+        for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
+            zmq_message.buflen[i] = -1;
+        }
+    }
+
+    return size;
 }
 
 
@@ -78,3 +111,4 @@ int DabOutputZMQ::Close()
 }
 
 #endif
+

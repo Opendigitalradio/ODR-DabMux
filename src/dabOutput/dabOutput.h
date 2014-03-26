@@ -2,8 +2,10 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
+   Copyright (C) 2013, 2014 Matthias P. Braendli
    http://mpb.li
+
+    http://opendigitalradio.org
 
    An object-oriented version of the output channels.
    */
@@ -247,26 +249,56 @@ class DabOutputSimul : public DabOutput
 };
 
 #if defined(HAVE_OUTPUT_ZEROMQ)
+
+#define NUM_FRAMES_PER_ZMQ_MESSAGE 4
+/* A concatenation of four ETI frames,
+ * whose maximal size is 6144.
+ *
+ * If we transmit four frames in one zmq message,
+ * we do not risk breaking ETI vs. transmission frame
+ * phase.
+ *
+ * The frames are concatenated in buf, and
+ * their sizes is given in the buflen array.
+ *
+ * Most of the time, the buf will not be completely
+ * filled
+ */
+struct zmq_dab_message_t
+{
+    zmq_dab_message_t()
+    {
+        /* set buf lengths to invalid */
+        buflen[0] = -1;
+        buflen[1] = -1;
+        buflen[2] = -1;
+        buflen[3] = -1;
+
+        version = 1;
+    }
+    uint32_t version;
+    uint16_t buflen[NUM_FRAMES_PER_ZMQ_MESSAGE];
+    uint8_t  buf[NUM_FRAMES_PER_ZMQ_MESSAGE*6144];
+};
+
 // -------------- ZeroMQ message queue ------------------
 class DabOutputZMQ : public DabOutput
 {
     public:
         DabOutputZMQ() :
-            zmq_proto_(""), zmq_context_(1), zmq_pub_sock_(zmq_context_, ZMQ_PUB)
+            zmq_proto_(""), zmq_context_(1),
+            zmq_pub_sock_(zmq_context_, ZMQ_PUB),
+            zmq_message_ix(0)
         {
             throw std::runtime_error("ERROR: No ZMQ protocol specified !");
         }
 
         DabOutputZMQ(std::string zmq_proto) :
-            zmq_proto_(zmq_proto), zmq_context_(1), zmq_pub_sock_(zmq_context_, ZMQ_PUB)
+            zmq_proto_(zmq_proto), zmq_context_(1),
+            zmq_pub_sock_(zmq_context_, ZMQ_PUB),
+            zmq_message_ix(0)
         { }
 
-
-        DabOutputZMQ(const DabOutputZMQ& other) :
-            zmq_proto_(other.zmq_proto_), zmq_context_(1), zmq_pub_sock_(zmq_context_, ZMQ_PUB)
-        {
-            // cannot copy context
-        }
 
         ~DabOutputZMQ()
         {
@@ -277,9 +309,19 @@ class DabOutputZMQ : public DabOutput
         int Write(void* buffer, int size);
         int Close();
     private:
+        DabOutputZMQ(const DabOutputZMQ& other) :
+            zmq_proto_(other.zmq_proto_), zmq_context_(1),
+            zmq_pub_sock_(zmq_context_, ZMQ_PUB)
+        {
+            /* Forbid copy constructor */
+        }
+
         std::string zmq_proto_;
         zmq::context_t zmq_context_; // handle for the zmq context
         zmq::socket_t zmq_pub_sock_; // handle for the zmq publisher socket
+
+        zmq_dab_message_t zmq_message;
+        int zmq_message_ix;
 };
 
 #endif

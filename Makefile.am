@@ -1,5 +1,8 @@
 # Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
+#
+# Copyright (C) 2014 Matthias P. Braendli
+# http://opendigitalradio.org
 
 # This file is part of ODR-DabMux.
 # 
@@ -20,5 +23,5 @@ SUBDIRS	=src lib
 
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST	=COPYING NEWS README AUTHORS ChangeLog TODO doc
+EXTRA_DIST	=COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO doc
 

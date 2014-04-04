@@ -97,7 +97,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         virtual const string get_parameter(const string& parameter) const;
 
     protected:
-        virtual int readFromSocket(int framesize) = 0;
+        virtual int readFromSocket(size_t framesize) = 0;
 
         zmq::context_t m_zmq_context;
         zmq::socket_t m_zmq_sock; // handle for the zmq socket
@@ -122,7 +122,7 @@ class DabInputZmqMPEG : public DabInputZmqBase {
             }
 
     private:
-        virtual int readFromSocket(int framesize);
+        virtual int readFromSocket(size_t framesize);
 };
 
 class DabInputZmqAAC : public DabInputZmqBase {
@@ -136,7 +136,7 @@ class DabInputZmqAAC : public DabInputZmqBase {
             }
 
     private:
-        virtual int readFromSocket(int framesize);
+        virtual int readFromSocket(size_t framesize);
 };
 
 #endif // HAVE_INPUT_ZMQ

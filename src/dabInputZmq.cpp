@@ -196,7 +196,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
 /******** MPEG input *******/
 
 // Read a MPEG frame from the socket, and push to list
-int DabInputZmqMPEG::readFromSocket(int framesize)
+int DabInputZmqMPEG::readFromSocket(size_t framesize)
 {
     bool messageReceived;
     zmq::message_t msg;
@@ -249,7 +249,7 @@ int DabInputZmqMPEG::readFromSocket(int framesize)
 
 // Read a AAC+ superframe from the socket, cut it into five frames,
 // and push to list
-int DabInputZmqAAC::readFromSocket(int framesize)
+int DabInputZmqAAC::readFromSocket(size_t framesize)
 {
     bool messageReceived;
     zmq::message_t msg;

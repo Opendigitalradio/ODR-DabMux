@@ -99,7 +99,7 @@ int dabInputDabplusFifoRead(void* args, void* buffer, int size)
 {
     dabInputDabplusFifoData* data = (dabInputDabplusFifoData*)args;
 
-    if (data->bufferSize != size * 5) {
+    if (data->bufferSize != (size_t)size * 5) {
         if (data->buffer != NULL) {
             delete[] data->buffer;
         }

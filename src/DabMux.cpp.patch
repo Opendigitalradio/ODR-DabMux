@@ -1,0 +1,58 @@
++++ DabMux.cpp	2014-02-27 17:56:41.108646157 +0100
+--- DabMux.cpp.orig	2014-02-27 17:56:01.080447673 +0100
+@@ -616,8 +616,6 @@
+         typeHigh = type >> 3;
+         typeLow = type & 0x1f;
+     }
++    //CSP - SERGIO
++    uint32_t xpad;
+ } PACKED;
+ 
+ 
+@@ -2060,14 +2058,12 @@
+                 returnCode = -1;
+                 goto EXIT;
+             }
++            /* CSP - SERGIO
+             if (!(*component)->isPacketComponent(ensemble->subchannels)) {
+                 etiLog.printHeader(TcpLog::ERR, "application type\n");
+                 printUsage(progName);
+                 returnCode = -1;
+                 goto EXIT;
+             }
++            */
+             (*component)->packet.appType = strtoul(optarg, NULL, 0);
+             break;
+         case 'g':
+@@ -3210,7 +3206,7 @@
+                     goto EXIT;
+                 }
+ 
++                // CSP - SERGIO if ((*subchannel)->type != 3) continue;
+-                if ((*subchannel)->type != 3) continue;
+ 
+                 if ((*component)->packet.appType != 0xffff) {
+                     if (fig0 == NULL) {
+@@ -3236,18 +3232,10 @@
+ 
+                     FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
+                     app->setType((*component)->packet.appType);
++                    // CSP - SERGIO app->length = 0;
++                    app->length = 4;
++                    app->xpad = 0x0cbc0000;
++
++
++                    //index += 2;
++                    //figSize += 2;
++                    //fig0->Length += 2;
++
++                    index += 6;
++                    figSize += 6;
++                    fig0->Length += 6;
+-                    app->length = 0;
+-                    index += 2;
+-                    figSize += 2;
+-                    fig0->Length += 2;
+ 
+                     if (figSize > 30) {
+                         etiLog.printHeader(TcpLog::ERR,

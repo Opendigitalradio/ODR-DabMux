@@ -483,7 +483,7 @@ void parse_configfile(string configuration_file,
         string outputuid = it->first;
         string uri = pt_outputs.get<string>(outputuid);
 
-        int proto_pos = uri.find("://");
+        size_t proto_pos = uri.find("://");
         if (proto_pos == std::string::npos) {
             stringstream ss;
             ss << "Output with uid " << outputuid << " no protocol defined!";

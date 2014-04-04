@@ -58,7 +58,7 @@ class ParameterError : public std::exception
 {
     public:
         ParameterError(string message) : m_message(message) {}
-        ~ParameterError() throw() {};
+        ~ParameterError() throw() {}
         const char* what() const throw() { return m_message.c_str(); }
 
     private:
@@ -84,6 +84,8 @@ class BaseRemoteController {
          * restarted.
          */
         virtual void restart() = 0;
+
+        virtual ~BaseRemoteController() {}
 };
 
 /* Objects that support remote control must implement the following class */
@@ -91,6 +93,8 @@ class RemoteControllable {
     public:
 
         RemoteControllable(string name) : m_name(name) {}
+
+        virtual ~RemoteControllable() {}
 
         /* return a short name used to identify the controllable.
          * It might be used in the commands the user has to type, so keep
@@ -159,7 +163,7 @@ class RemoteControllerTelnet : public BaseRemoteController {
             m_cohort.push_back(controllable);
         }
 
-        virtual bool fault_detected() { return m_fault; };
+        virtual bool fault_detected() { return m_fault; }
 
         virtual void restart();
 
@@ -255,11 +259,11 @@ class RemoteControllerTelnet : public BaseRemoteController {
  */
 class RemoteControllerDummy : public BaseRemoteController {
     public:
-        void enrol(RemoteControllable* controllable) {};
+        void enrol(RemoteControllable*) {}
 
-        bool fault_detected() { return false; };
+        bool fault_detected() { return false; }
 
-        virtual void restart() {};
+        virtual void restart() {}
 };
 
 #endif

@@ -96,7 +96,7 @@ int dabInputRawFifoSetbuf(void* args, int size)
         return size;
     }
 
-    if (data->bufferSize != size) {
+    if (data->bufferSize != (size_t)size) {
         if (data->buffer != NULL) {
             delete[] data->buffer;
         }
@@ -130,7 +130,7 @@ int dabInputRawFifoReadFrame(dabInputOperations* ops, void* args,
         return -1;
     }
 
-    if (result + data->bufferOffset < size) {
+    if (result + data->bufferOffset < (size_t)size) {
         data->bufferOffset += result;
 
         etiLog.log(info, "reach end of fifo -> rewinding\n");

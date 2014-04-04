@@ -79,7 +79,7 @@ int dabInputDabplusFileOpen(void* args, const char* filename)
 int dabInputDabplusFileRead(void* args, void* buffer, int size)
 {
     dabInputDabplusFileData* data = (dabInputDabplusFileData*)args;
-    if (data->bufferSize != size * 5) {
+    if (data->bufferSize != (size_t)size * 5) {
         if (data->buffer == NULL) {
             delete[] data->buffer;
         }
@@ -90,7 +90,7 @@ int dabInputDabplusFileRead(void* args, void* buffer, int size)
 
     if (data->bufferIndex + size > data->bufferSize) {
         int ret = read(data->file, data->buffer, data->bufferSize);
-        if (ret != data->bufferSize) {
+        if (ret != (int)data->bufferSize) {
             if (ret != 0) {
                 etiLog.log(alert, "ERROR: Incomplete DAB+ frame!\n");
             }

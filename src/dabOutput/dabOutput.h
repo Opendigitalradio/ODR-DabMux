@@ -65,7 +65,7 @@ class DabOutput
         virtual int Write(void* buffer, int size) = 0;
         virtual int Close() = 0;
 
-        virtual ~DabOutput() {};
+        virtual ~DabOutput() {}
 };
 
 // ----- used in File and Fifo outputs
@@ -277,7 +277,7 @@ struct zmq_dab_message_t
         version = 1;
     }
     uint32_t version;
-    uint16_t buflen[NUM_FRAMES_PER_ZMQ_MESSAGE];
+    int16_t buflen[NUM_FRAMES_PER_ZMQ_MESSAGE];
     uint8_t  buf[NUM_FRAMES_PER_ZMQ_MESSAGE*6144];
 };
 

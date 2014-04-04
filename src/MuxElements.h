@@ -202,6 +202,7 @@ class DabComponent : public RemoteControllable
         /* Getting a parameter always returns a string. */
         virtual const string get_parameter(const string& parameter) const;
 
+        virtual ~DabComponent() {}
 
     private:
         const DabComponent& operator=(const DabComponent& other);
@@ -235,6 +236,8 @@ class DabService : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const string get_parameter(const string& parameter) const;
+
+        virtual ~DabService() {}
 
     private:
         const DabService& operator=(const DabService& other);

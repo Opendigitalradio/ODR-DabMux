@@ -273,14 +273,14 @@ int main(int argc, char *argv[])
     vector<DabComponent*>::iterator component = ensemble->components.end();
     vector<DabComponent*>::iterator componentProgFIG0_8;
     vector<DabComponent*>::iterator componentFIG0_13;
-    bool  transmitFIG0_13programme; // Alternate between programme and data
+    bool  transmitFIG0_13programme = false; // Alternate between programme and data
     vector<DabComponent*>::iterator componentDataFIG0_8;
     vector<dabSubchannel*>::iterator subchannel = ensemble->subchannels.end();
     vector<dabSubchannel*>::iterator subchannelFIG0_1;
     vector<dabOutput*>::iterator output;
     dabProtection* protection = NULL;
 
-    BaseRemoteController* rc;
+    BaseRemoteController* rc = NULL;
 
     unsigned int currentFrame;
     int returnCode = 0;
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
     //FIC Length, DAB Mode I, II, IV -> FICL = 24, DAB Mode III -> FICL = 32
     unsigned FICL  = (ensemble->mode == 3 ? 32 : 24);
 
-    unsigned long sync = 0x49C5F8;
+    uint32_t sync = 0x49C5F8;
     unsigned short FLtmp = 0;
     unsigned short nbBytesCRC = 0;
     unsigned short CRCtmp = 0xFFFF;
@@ -1333,8 +1333,8 @@ int main(int argc, char *argv[])
                     if (figSize > 30 - 5) {
                         break;
                     }
-                    *((uint16_t*)&etiFrame[index]) =
-                        htons((*componentProgFIG0_8)->serviceId);
+                    etiFrame[index]   = ((*componentProgFIG0_8)->serviceId >> 8) & 0xFF;
+                    etiFrame[index+1] = ((*componentProgFIG0_8)->serviceId) & 0xFF;
                     fig0->Length += 2;
                     index += 2;
                     figSize += 2;
@@ -1353,8 +1353,8 @@ int main(int argc, char *argv[])
                     if (figSize > 30 - 4) {
                         break;
                     }
-                    *((uint16_t*)&etiFrame[index]) =
-                        htons((*componentProgFIG0_8)->serviceId);
+                    etiFrame[index]   = ((*componentProgFIG0_8)->serviceId >> 8) & 0xFF;
+                    etiFrame[index+1] = ((*componentProgFIG0_8)->serviceId) & 0xFF;
                     fig0->Length += 2;
                     index += 2;
                     figSize += 2;
@@ -1414,8 +1414,8 @@ int main(int argc, char *argv[])
                     if (figSize > 30 - 7) {
                         break;
                     }
-                    *((uint32_t*)&etiFrame[index]) =
-                        htonl((*componentDataFIG0_8)->serviceId);
+                    etiFrame[index]   = ((*componentDataFIG0_8)->serviceId >> 8) & 0xFF;
+                    etiFrame[index+1] = ((*componentDataFIG0_8)->serviceId) & 0xFF;
                     fig0->Length += 4;
                     index += 4;
                     figSize += 4;
@@ -1434,8 +1434,8 @@ int main(int argc, char *argv[])
                     if (figSize > 30 - 6) {
                         break;
                     }
-                    *((uint32_t*)&etiFrame[index]) =
-                        htonl((*componentDataFIG0_8)->serviceId);
+                    etiFrame[index]   = ((*componentDataFIG0_8)->serviceId >> 8) & 0xFF;
+                    etiFrame[index+1] = ((*componentDataFIG0_8)->serviceId) & 0xFF;
                     fig0->Length += 4;
                     index += 4;
                     figSize += 4;
@@ -1626,7 +1626,7 @@ int main(int argc, char *argv[])
             fig0_9->Extension = 9;
 
             fig0_9->ext = 0;
-            fig0_9->lto = 0;
+            fig0_9->lto = 0; // Unique LTO for ensemble
             fig0_9->ensembleLto = ensemble->lto;
             fig0_9->ensembleEcc = ensemble->ecc;
             fig0_9->tableId = ensemble->international_table;

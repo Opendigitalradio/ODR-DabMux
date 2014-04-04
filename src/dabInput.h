@@ -54,9 +54,9 @@ class DabInputBase {
         virtual int setBitrate(int bitrate) = 0;
         virtual int close() = 0;
 
-        virtual ~DabInputBase() {};
+        virtual ~DabInputBase() {}
     protected:
-        DabInputBase() {};
+        DabInputBase() {}
 };
 
 /* Wrapper class for old-style dabInputOperations inputs */

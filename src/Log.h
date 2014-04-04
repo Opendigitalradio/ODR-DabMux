@@ -45,12 +45,13 @@
 
 enum log_level_t {debug = 0, info, warn, error, alert, emerg};
 
-const std::string levels_as_str[] =
+static const std::string levels_as_str[] =
     { "     ", "     ", "WARN ", "ERROR", "ALERT", "EMERG"} ;
 
 /** Abstract class all backends must inherit from */
 class LogBackend {
     public:
+        virtual ~LogBackend() {}
         virtual void log(log_level_t level, std::string message) = 0;
         virtual std::string get_name() = 0;
 };
@@ -82,7 +83,7 @@ class LogToSyslog : public LogBackend {
             syslog(syslog_level, SYSLOG_IDENT " %s", message.c_str());
         }
 
-        std::string get_name() { return name; };
+        std::string get_name() { return name; }
 
     private:
         std::string name;
@@ -117,7 +118,7 @@ class LogToFile : public LogBackend {
             fflush(log_file);
         }
 
-        std::string get_name() { return name; };
+        std::string get_name() { return name; }
 
     private:
         std::string name;
@@ -128,7 +129,7 @@ class LogLine;
 
 class Logger {
     public:
-        Logger() {};
+        Logger() {}
 
         void register_backend(LogBackend* backend);
 

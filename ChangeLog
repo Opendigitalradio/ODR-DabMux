@@ -1,7 +1,7 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
-2014-03-04: Matthias P. Braendli <matthias@mpb.li>
+2014-04-04: Matthias P. Braendli <matthias@mpb.li>
 	(v0.6.0):
 		Adds support for MOT Slideshow and DLS,
 		  compatible with mot-encoder from

@@ -1,6 +1,18 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2014-03-04: Matthias P. Braendli <matthias@mpb.li>
+	(v0.6.0):
+		Adds support for MOT Slideshow and DLS,
+		  compatible with mot-encoder from
+		  fdk-aac-dabplus
+	* odr-dabmux:
+		Add FIG0/13 signalling for MOT slideshow
+		Add local-time-offset and intl table options
+		Fix some unseen compilation warnings
+		Change ZMQ output format to guarantee frame
+		  alignment (not backward compatible)
+
 2014-02-14: Matthias P. Braendli <matthias@mpb.li>
 	(v0.5.0):
 	* odr-dabmux:

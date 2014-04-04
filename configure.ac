@@ -17,10 +17,10 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [0.5.0], [matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux], [0.6.0], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([-Wall subdir-objects])
+AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])
 AC_CONFIG_SRCDIR([src/DabMux.cpp])
 AC_CONFIG_HEADER([config.h])
 AM_SILENT_RULES([yes])

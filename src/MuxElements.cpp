@@ -383,6 +383,47 @@ const string DabService::get_parameter(const string& parameter) const
 
 }
 
+void dabEnsemble::set_parameter(const string& parameter, const string& value)
+{
+    stringstream ss(value);
+    ss.exceptions ( stringstream::failbit | stringstream::badbit );
+
+    if (parameter == "localtimeoffset") {
+        int new_lto = atol(value.c_str());
+
+        if (new_lto < -24) {
+            throw ParameterError("Desired local time offset too small."
+                   " Minimum -24" );
+        }
+        else if (new_lto > 24) {
+            throw ParameterError("Desired local time offset too large."
+                   " Maximum 24" );
+        }
+
+        this->lto = new_lto;
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+const string dabEnsemble::get_parameter(const string& parameter) const
+{
+    stringstream ss;
+    if (parameter == "localtimeoffset") {
+        ss << this->lto;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+}
+
 unsigned short getSizeCu(dabSubchannel* subchannel)
 {
     if (subchannel->protection.form == 0) {

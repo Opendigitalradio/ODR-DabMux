@@ -90,17 +90,34 @@ class DabService;
 class DabComponent;
 
 struct dabSubchannel;
-struct dabEnsemble {
-    uint16_t id;
-    uint8_t ecc;
-    DabLabel label;
-    uint8_t mode;
-    int lto; // local time offset in half-hours
-             // range: -24 to +24
-    int international_table;
-    vector<DabService*> services;
-    vector<DabComponent*> components;
-    vector<dabSubchannel*> subchannels;
+class dabEnsemble : public RemoteControllable {
+    public:
+        dabEnsemble()
+            : RemoteControllable("ensemble")
+        {
+            RC_ADD_PARAMETER(localtimeoffset,
+                    "local time offset, -24 to +24 [half-hours]");
+        }
+
+        /* Remote control */
+        virtual void set_parameter(const string& parameter,
+               const string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const string get_parameter(const string& parameter) const;
+
+        /* all fields are public, since this was a struct before */
+        uint16_t id;
+        uint8_t ecc;
+        DabLabel label;
+        uint8_t mode;
+        int lto; // local time offset in half-hours
+        // range: -24 to +24
+        int international_table;
+
+        vector<DabService*> services;
+        vector<DabComponent*> components;
+        vector<dabSubchannel*> subchannels;
 };
 
 

@@ -354,6 +354,10 @@ int main(int argc, char *argv[])
         global_stats = new StatsServer();
     }
 
+    if (rc) {
+        ensemble->enrol_at(*rc);
+    }
+
 
     etiLog.level(info) <<
             PACKAGE_NAME << " " <<
@@ -1627,7 +1631,13 @@ int main(int argc, char *argv[])
 
             fig0_9->ext = 0;
             fig0_9->lto = 0; // Unique LTO for ensemble
-            fig0_9->ensembleLto = ensemble->lto;
+            if (ensemble->lto >= 0) {
+                fig0_9->ensembleLto = ensemble->lto;
+            }
+            else {
+                /* Convert to 1-complement representation */
+                fig0_9->ensembleLto = (-ensemble->lto) | (1<<5);
+            }
             fig0_9->ensembleEcc = ensemble->ecc;
             fig0_9->tableId = ensemble->international_table;
             index += 5;

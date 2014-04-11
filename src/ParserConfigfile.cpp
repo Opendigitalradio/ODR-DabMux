@@ -204,10 +204,6 @@ void parse_configfile(string configuration_file,
     }
     ensemble->lto = abs(rint(lto_hours * 2));
 
-    if (lto_hours < 0.0) { // ensemble->lto is 1-bit complement
-        ensemble->lto |= (1<<5); // sign bit
-    }
-
     int success = -5;
     string ensemble_label = pt_ensemble.get<string>("label");
     string ensemble_short_label(ensemble_label);

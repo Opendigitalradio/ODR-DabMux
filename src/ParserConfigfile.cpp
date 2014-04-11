@@ -585,28 +585,43 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_FILE)
 #if defined(HAVE_INPUT_ZEROMQ)
         }
-        else if (strcmp(subchan->inputProto, "tcp") == 0) {
+        else if ((strcmp(subchan->inputProto, "tcp") == 0) ||
+                (strcmp(subchan->inputProto, "epmg") == 0) ||
+                (strcmp(subchan->inputProto, "ipc") == 0) ) {
             input_is_old_style = false;
-            DabInputZmqMPEG* inzmq = new DabInputZmqMPEG(subchanuid);
+
+            int buffer_size;
+            int prebuffering;
+            try {
+                buffer_size = pt.get<int>("zmq-buffer");
+            }
+            catch (ptree_error &e) {
+                stringstream ss;
+                ss << "ZMQ Subchannel with uid " << subchanuid <<
+                    " has no zmq-buffer defined!";
+                throw runtime_error(ss.str());
+            }
+            try {
+                prebuffering = pt.get<int>("zmq-prebuffering");
+            }
+            catch (ptree_error &e) {
+                stringstream ss;
+                ss << "ZMQ Subchannel with uid " << subchanuid <<
+                    " has no zmq-buffer defined!";
+                throw runtime_error(ss.str());
+            }
+            DabInputZmqMPEG* inzmq =
+                new DabInputZmqMPEG(subchanuid, buffer_size, prebuffering);
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
             subchan->inputName = full_inputName;
-        }
-        else if (strcmp(subchan->inputProto, "epmg") == 0) {
-            etiLog.level(warn) << "Using untested epmg:// zeromq input";
-            input_is_old_style = false;
-            DabInputZmqMPEG* inzmq = new DabInputZmqMPEG(subchanuid);
-            inzmq->enrol_at(*rc);
-            subchan->input     = inzmq;
-            subchan->inputName = full_inputName;
-        }
-        else if (strcmp(subchan->inputProto, "ipc") == 0) {
-            etiLog.level(warn) << "Using untested ipc:// zeromq input";
-            input_is_old_style = false;
-            DabInputZmqMPEG* inzmq = new DabInputZmqMPEG(subchanuid);
-            inzmq->enrol_at(*rc);
-            subchan->input     = inzmq;
-            subchan->inputName = full_inputName;
+
+            if (strcmp(subchan->inputProto, "epmg") == 0) {
+                etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            }
+            else if (strcmp(subchan->inputProto, "ipc") == 0) {
+                etiLog.level(warn) << "Using untested ipc:// zeromq input";
+            }
 #endif // defined(HAVE_INPUT_ZEROMQ)
         } else {
             stringstream ss;
@@ -643,28 +658,43 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_FILE)
 #if defined(HAVE_INPUT_ZEROMQ)
         }
-        else if (strcmp(subchan->inputProto, "tcp") == 0) {
+        else if ((strcmp(subchan->inputProto, "tcp") == 0) ||
+                (strcmp(subchan->inputProto, "epmg") == 0) ||
+                (strcmp(subchan->inputProto, "ipc") == 0) ) {
             input_is_old_style = false;
-            DabInputZmqAAC* inzmq = new DabInputZmqAAC(subchanuid);
+
+            int buffer_size;
+            int prebuffering;
+            try {
+                buffer_size = pt.get<int>("zmq-buffer");
+            }
+            catch (ptree_error &e) {
+                stringstream ss;
+                ss << "ZMQ Subchannel with uid " << subchanuid <<
+                    " has no zmq-buffer defined!";
+                throw runtime_error(ss.str());
+            }
+            try {
+                prebuffering = pt.get<int>("zmq-prebuffering");
+            }
+            catch (ptree_error &e) {
+                stringstream ss;
+                ss << "ZMQ Subchannel with uid " << subchanuid <<
+                    " has no zmq-buffer defined!";
+                throw runtime_error(ss.str());
+            }
+            DabInputZmqAAC* inzmq =
+                new DabInputZmqAAC(subchanuid, buffer_size, prebuffering);
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
             subchan->inputName = full_inputName;
-        }
-        else if (strcmp(subchan->inputProto, "epmg") == 0) {
-            etiLog.level(warn) << "Using untested epmg:// zeromq input";
-            input_is_old_style = false;
-            DabInputZmqAAC* inzmq = new DabInputZmqAAC(subchanuid);
-            inzmq->enrol_at(*rc);
-            subchan->input     = inzmq;
-            subchan->inputName = full_inputName;
-        }
-        else if (strcmp(subchan->inputProto, "ipc") == 0) {
-            etiLog.level(warn) << "Using untested ipc:// zeromq input";
-            input_is_old_style = false;
-            DabInputZmqAAC* inzmq = new DabInputZmqAAC(subchanuid);
-            inzmq->enrol_at(*rc);
-            subchan->input     = inzmq;
-            subchan->inputName = full_inputName;
+
+            if (strcmp(subchan->inputProto, "epmg") == 0) {
+                etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            }
+            else if (strcmp(subchan->inputProto, "ipc") == 0) {
+                etiLog.level(warn) << "Using untested ipc:// zeromq input";
+            }
 #endif // defined(HAVE_INPUT_ZEROMQ)
         } else {
             stringstream ss;

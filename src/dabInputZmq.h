@@ -76,13 +76,14 @@
 
 class DabInputZmqBase : public DabInputBase, public RemoteControllable {
     public:
-        DabInputZmqBase(const std::string name)
+        DabInputZmqBase(const std::string name,
+                int buffer_size, int prebuffering)
             : RemoteControllable(name),
             m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
-            m_bitrate(0), m_prebuffering(INPUT_ZMQ_DEF_PREBUFFERING),
+            m_bitrate(0), m_prebuffering(prebuffering),
             m_enable_input(true),
-            m_frame_buffer_limit(INPUT_ZMQ_DEF_BUFFER_SIZE) {
+            m_frame_buffer_limit(buffer_size) {
                 RC_ADD_PARAMETER(enable,
                         "If the input is enabled. Set to zero to empty the buffer.");
             }
@@ -119,8 +120,9 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
 
 class DabInputZmqMPEG : public DabInputZmqBase {
     public:
-        DabInputZmqMPEG(const std::string name)
-            : DabInputZmqBase(name) {
+        DabInputZmqMPEG(const std::string name,
+                int buffer_size, int prebuffering)
+            : DabInputZmqBase(name, buffer_size, prebuffering) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [mpeg frames]");
 
@@ -134,8 +136,9 @@ class DabInputZmqMPEG : public DabInputZmqBase {
 
 class DabInputZmqAAC : public DabInputZmqBase {
     public:
-        DabInputZmqAAC(const std::string name)
-            : DabInputZmqBase(name) {
+        DabInputZmqAAC(const std::string name,
+                int buffer_size, int prebuffering)
+            : DabInputZmqBase(name, buffer_size, prebuffering) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [aac superframes]");
 
@@ -150,3 +153,4 @@ class DabInputZmqAAC : public DabInputZmqBase {
 #endif // HAVE_INPUT_ZMQ
 
 #endif // DAB_INPUT_ZMQ_H
+

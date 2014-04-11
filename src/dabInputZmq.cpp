@@ -125,7 +125,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
          * filled to the prebuffering length.
          */
         if (m_frame_buffer.size() >= 1.5*m_frame_buffer_limit) {
-            size_t over_max = m_frame_buffer.size() - INPUT_ZMQ_PREBUFFERING;
+            size_t over_max = m_frame_buffer.size() - m_prebuffering;
 
             while (over_max--) {
                 m_frame_buffer.pop_front();
@@ -154,10 +154,10 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
         }
     }
 
-    if (m_prebuffering > 0) {
+    if (m_prebuf_current > 0) {
         if (rc > 0)
-            m_prebuffering--;
-        if (m_prebuffering == 0)
+            m_prebuf_current--;
+        if (m_prebuf_current == 0)
             etiLog.log(info, "inputZMQ %s input pre-buffering complete\n",
                 m_name.c_str());
 
@@ -174,7 +174,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
         etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
                 m_name.c_str());
         // reset prebuffering
-        m_prebuffering = INPUT_ZMQ_PREBUFFERING;
+        m_prebuf_current = m_prebuffering;
 
         /* We have no data to give, we give a zeroed frame */
         global_stats->notifyUnderrun(m_name);
@@ -329,6 +329,20 @@ void DabInputZmqBase::set_parameter(const string& parameter,
 
         m_frame_buffer_limit = new_limit;
     }
+    else if (parameter == "prebuffering") {
+        size_t new_prebuf = atol(value.c_str());
+
+        if (new_prebuf < INPUT_ZMQ_MIN_BUFFER_SIZE) {
+            throw ParameterError("Desired prebuffering too small."
+                   " Minimum " STRINGIFY(INPUT_ZMQ_MIN_BUFFER_SIZE) );
+        }
+        else if (new_prebuf > INPUT_ZMQ_MAX_BUFFER_SIZE) {
+            throw ParameterError("Desired prebuffering too large."
+                   " Maximum " STRINGIFY(INPUT_ZMQ_MAX_BUFFER_SIZE) );
+        }
+
+        m_prebuffering = new_prebuf;
+    }
     else if (parameter == "enable") {
         if (value == "1") {
             m_enable_input = true;
@@ -353,6 +367,9 @@ const string DabInputZmqBase::get_parameter(const string& parameter) const
     stringstream ss;
     if (parameter == "buffer") {
         ss << m_frame_buffer_limit;
+    }
+    else if (parameter == "prebuffering") {
+        ss << m_prebuffering;
     }
     else if (parameter == "enable") {
         if (m_enable_input)

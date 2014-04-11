@@ -59,7 +59,7 @@
  */
 
 // Number of elements to prebuffer before starting the pipeline
-#define INPUT_ZMQ_PREBUFFERING (5*4) // 480ms
+#define INPUT_ZMQ_DEF_PREBUFFERING (5*4) // 480ms
 
 // Default frame_buffer size in number of elements
 #define INPUT_ZMQ_DEF_BUFFER_SIZE (5*8) // 960ms
@@ -80,9 +80,12 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
             : RemoteControllable(name),
             m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
-            m_bitrate(0), m_prebuffering(INPUT_ZMQ_PREBUFFERING),
+            m_bitrate(0), m_prebuffering(INPUT_ZMQ_DEF_PREBUFFERING),
             m_enable_input(true),
-            m_frame_buffer_limit(INPUT_ZMQ_DEF_BUFFER_SIZE) { }
+            m_frame_buffer_limit(INPUT_ZMQ_DEF_BUFFER_SIZE) {
+                RC_ADD_PARAMETER(enable,
+                        "If the input is enabled. Set to zero to empty the buffer.");
+            }
 
         virtual int open(const std::string inputUri);
         virtual int readFrame(void* buffer, int size);
@@ -109,6 +112,9 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
 
         size_t m_frame_buffer_limit;
         std::list<char*> m_frame_buffer; //stores elements of type char[<framesize>]
+
+    private:
+        int m_prebuf_current;
 };
 
 class DabInputZmqMPEG : public DabInputZmqBase {
@@ -117,8 +123,9 @@ class DabInputZmqMPEG : public DabInputZmqBase {
             : DabInputZmqBase(name) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [mpeg frames]");
-                RC_ADD_PARAMETER(enable,
-                        "If the input is enabled. Set to zero to empty the buffer.");
+
+                RC_ADD_PARAMETER(prebuffering,
+                        "Min buffer level before streaming starts [mpeg frames]");
             }
 
     private:
@@ -131,8 +138,9 @@ class DabInputZmqAAC : public DabInputZmqBase {
             : DabInputZmqBase(name) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [aac superframes]");
-                RC_ADD_PARAMETER(enable,
-                        "If the input is enabled. Set to zero to empty the buffer.");
+
+                RC_ADD_PARAMETER(prebuffering,
+                        "Min buffer level before streaming starts [aac superframes]");
             }
 
     private:

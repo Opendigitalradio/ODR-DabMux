@@ -14,7 +14,7 @@ In addition to the features of CRC-DabMux, this fork contains:
 - timestamping support required for SFN
 - a ZeroMQ ETI output that can be used with ODR-DabMod
 - a ZeroMQ dabplus input that can be used with fdk-aac-dabplus
-  and toolame-dab
+  and toolame-dab, and support ZMQ-CURVE authentication
 - supports logging to syslog
 - supports ZMQ input monitoring with munin tool
 - includes a Telnet Remote Control for setting/getting parameters

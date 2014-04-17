@@ -145,7 +145,7 @@ void DabInputZmqBase::rebind()
                  KEY_VALID(m_curve_secret_key) &&
                  KEY_VALID(m_curve_encoder_key) ) ) ) {
         throw std::runtime_error("When enabling encryption, all three "
-                "keyfiles must be set!");
+                "keyfiles must be valid!");
     }
 
     if (m_config.enable_encryption) {
@@ -495,6 +495,36 @@ void DabInputZmqBase::set_parameter(const string& parameter,
             throw ParameterError("Value not understood, specify 0 or 1.");
         }
     }
+    else if (parameter == "encryption") {
+        if (value == "1") {
+            m_config.enable_encryption = true;
+        }
+        else if (value == "0") {
+            m_config.enable_encryption = false;
+        }
+        else {
+            throw ParameterError("Value not understood, specify 0 or 1.");
+        }
+
+        try {
+            rebind();
+        }
+        catch (std::runtime_error &e) {
+            stringstream ss;
+            ss << "Could not bind socket again with new keys." <<
+                e.what();
+            throw ParameterError(ss.str());
+        }
+    }
+    else if (parameter == "secretkey") {
+        m_config.curve_secret_keyfile = value;
+    }
+    else if (parameter == "publickey") {
+        m_config.curve_public_keyfile = value;
+    }
+    else if (parameter == "encoderkey") {
+        m_config.curve_encoder_keyfile = value;
+    }
     else {
         stringstream ss;
         ss << "Parameter '" << parameter <<
@@ -517,6 +547,21 @@ const string DabInputZmqBase::get_parameter(const string& parameter) const
             ss << "true";
         else
             ss << "false";
+    }
+    else if (parameter == "encryption") {
+        if (m_config.enable_encryption)
+            ss << "true";
+        else
+            ss << "false";
+    }
+    else if (parameter == "secretkey") {
+        ss << m_config.curve_secret_keyfile;
+    }
+    else if (parameter == "publickey") {
+        ss << m_config.curve_public_keyfile;
+    }
+    else if (parameter == "encoderkey") {
+        ss << m_config.curve_encoder_keyfile;
     }
     else {
         ss << "Parameter '" << parameter <<

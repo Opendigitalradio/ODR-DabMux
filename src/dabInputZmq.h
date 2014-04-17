@@ -142,6 +142,19 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
                 RC_ADD_PARAMETER(enable,
                         "If the input is enabled. Set to zero to empty the buffer.");
 
+                RC_ADD_PARAMETER(encryption,
+                        "If encryption is enabled or disabled [1 or 0]."
+                        " If 1 is written, the keys are reloaded.");
+
+                RC_ADD_PARAMETER(publickey,
+                        "The multiplexer's public key file.");
+
+                RC_ADD_PARAMETER(secretkey,
+                        "The multiplexer's secret key file.");
+
+                RC_ADD_PARAMETER(encoderkey,
+                        "The encoder's public key file.");
+
                 /* Set all keys to zero */
                 INVALIDATE_KEY(m_curve_public_key);
                 INVALIDATE_KEY(m_curve_secret_key);

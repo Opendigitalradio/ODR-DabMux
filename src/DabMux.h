@@ -28,9 +28,6 @@
 #ifndef _DABMUX_H
 #define _DABMUX_H
 
-#include <vector>
-#include <functional>
-#include <algorithm>
 #include <stdint.h>
 #include "dabOutput/dabOutput.h"
 #include "dabInput.h"
@@ -65,8 +62,6 @@
 // start value for default service IDs (if not overridden by configuration)
 #define DEFAULT_SERVICE_ID      50
 #define DEFAULT_PACKET_ADDRESS  0
-
-using namespace std;
 
 
 /*****************************************************************************

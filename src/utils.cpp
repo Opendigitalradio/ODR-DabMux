@@ -27,6 +27,7 @@
 #include "DabMux.h"
 #include "utils.h"
 
+using namespace std;
 
 time_t getDabTime()
 {

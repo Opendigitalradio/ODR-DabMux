@@ -3,13 +3,15 @@
    Research Center Canada)
 
    Copyright (C) 2013, 2014 Matthias P. Braendli
-   http://mpb.li
+    http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
 
    For the AAC+ input, each zeromq message must contain one superframe.
 
    For the MPEG input, each zeromq message must contain one frame.
+
+   Encryption is provided by zmq_curve, see the corresponding manpage.
 
    From the ZeroMQ manpage 'zmq':
 
@@ -94,11 +96,11 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         virtual int close();
 
         /* Remote control */
-        virtual void set_parameter(const string& parameter,
-               const string& value);
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
 
         /* Getting a parameter always returns a string. */
-        virtual const string get_parameter(const string& parameter) const;
+        virtual const std::string get_parameter(const std::string& parameter) const;
 
     protected:
         virtual int readFromSocket(size_t framesize) = 0;

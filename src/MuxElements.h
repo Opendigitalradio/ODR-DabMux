@@ -38,8 +38,6 @@
 #include "RemoteControl.h"
 #include "Eti.h"
 
-using namespace std;
-
 struct dabOutput {
     dabOutput(const char* proto, const char* name) :
         outputProto(proto), outputName(name), output(NULL) { }
@@ -75,7 +73,7 @@ class DabLabel
 
         const char* text() const { return m_text; }
         uint16_t flag() const { return m_flag; }
-        const string short_label() const;
+        const std::string short_label() const;
 
     private:
         // In the DAB standard, the label is 16 chars.
@@ -100,11 +98,11 @@ class dabEnsemble : public RemoteControllable {
         }
 
         /* Remote control */
-        virtual void set_parameter(const string& parameter,
-               const string& value);
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
 
         /* Getting a parameter always returns a string. */
-        virtual const string get_parameter(const string& parameter) const;
+        virtual const std::string get_parameter(const std::string& parameter) const;
 
         /* all fields are public, since this was a struct before */
         uint16_t id;
@@ -115,9 +113,9 @@ class dabEnsemble : public RemoteControllable {
         // range: -24 to +24
         int international_table;
 
-        vector<DabService*> services;
-        vector<DabComponent*> components;
-        vector<dabSubchannel*> subchannels;
+        std::vector<DabService*> services;
+        std::vector<DabComponent*> components;
+        std::vector<dabSubchannel*> subchannels;
 };
 
 
@@ -210,14 +208,14 @@ class DabComponent : public RemoteControllable
             dabPacketComponent packet;
         };
 
-        bool isPacketComponent(vector<dabSubchannel*>& subchannels);
+        bool isPacketComponent(std::vector<dabSubchannel*>& subchannels);
 
         /* Remote control */
-        virtual void set_parameter(const string& parameter,
-               const string& value);
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
 
         /* Getting a parameter always returns a string. */
-        virtual const string get_parameter(const string& parameter) const;
+        virtual const std::string get_parameter(const std::string& parameter) const;
 
         virtual ~DabComponent() {}
 
@@ -243,16 +241,16 @@ class DabService : public RemoteControllable
         bool program;
 
         unsigned char getType(dabEnsemble* ensemble);
-        unsigned char nbComponent(vector<DabComponent*>& components);
+        unsigned char nbComponent(std::vector<DabComponent*>& components);
 
         DabLabel label;
 
         /* Remote control */
-        virtual void set_parameter(const string& parameter,
-               const string& value);
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
 
         /* Getting a parameter always returns a string. */
-        virtual const string get_parameter(const string& parameter) const;
+        virtual const std::string get_parameter(const std::string& parameter) const;
 
         virtual ~DabService() {}
 
@@ -261,21 +259,21 @@ class DabService : public RemoteControllable
         DabService(const DabService& other);
 };
 
-vector<dabSubchannel*>::iterator getSubchannel(
-        vector<dabSubchannel*>& subchannels, int id);
+std::vector<dabSubchannel*>::iterator getSubchannel(
+        std::vector<dabSubchannel*>& subchannels, int id);
 
-vector<DabComponent*>::iterator getComponent(
-        vector<DabComponent*>& components,
+std::vector<DabComponent*>::iterator getComponent(
+        std::vector<DabComponent*>& components,
         uint32_t serviceId,
-        vector<DabComponent*>::iterator current);
+        std::vector<DabComponent*>::iterator current);
 
-vector<DabComponent*>::iterator getComponent(
-        vector<DabComponent*>& components,
+std::vector<DabComponent*>::iterator getComponent(
+        std::vector<DabComponent*>& components,
         uint32_t serviceId);
 
-vector<DabService*>::iterator getService(
+std::vector<DabService*>::iterator getService(
         DabComponent* component,
-        vector<DabService*>& services);
+        std::vector<DabService*>& services);
 
 unsigned short getSizeCu(dabSubchannel* subchannel);
 

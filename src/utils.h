@@ -49,13 +49,13 @@ void printUsageConfigfile(char *name, FILE* out = stderr);
 /* The following four utility functions display a
  * description of all outputs, services, components
  * resp. subchannels*/
-void printOutputs(vector<dabOutput*>& outputs);
+void printOutputs(std::vector<dabOutput*>& outputs);
 
-void printServices(vector<DabService*>& services);
+void printServices(std::vector<DabService*>& services);
 
-void printComponents(vector<DabComponent*>& components);
+void printComponents(std::vector<DabComponent*>& components);
 
-void printSubchannels(vector<dabSubchannel*>& subchannels);
+void printSubchannels(std::vector<dabSubchannel*>& subchannels);
 
 /* Print information about the whole ensemble */
 void printEnsemble(dabEnsemble* ensemble);

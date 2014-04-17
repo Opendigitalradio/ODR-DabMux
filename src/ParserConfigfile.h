@@ -34,7 +34,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 void parse_configfile(std::string configuration_file,
-        vector<dabOutput*> &outputs,
+        std::vector<dabOutput*> &outputs,
         dabEnsemble* ensemble,
         bool* enableTist,
         unsigned* FICL,
@@ -46,7 +46,7 @@ void parse_configfile(std::string configuration_file,
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,
         dabEnsemble* ensemble,
-        string subchanuid,
+        std::string subchanuid,
         BaseRemoteController* rc);
 
 #endif

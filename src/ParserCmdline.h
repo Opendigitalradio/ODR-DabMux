@@ -33,7 +33,7 @@
 
 bool parse_cmdline(char **argv,
         int argc,
-        vector<dabOutput*> &outputs,
+        std::vector<dabOutput*> &outputs,
         dabEnsemble* ensemble,
         bool* enableTist,
         unsigned* FICL,

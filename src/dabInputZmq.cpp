@@ -3,13 +3,15 @@
    Research Center Canada)
 
    Copyright (C) 2013, 2014 Matthias P. Braendli
-   http://mpb.li
+    http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
 
    For the AAC+ input, each zeromq message must contain one superframe.
 
    For the MPEG input, each zeromq message must contain one frame.
+
+   Encryption is provided by zmq_curve, see the corresponding manpage.
 
    From the ZeroMQ manpage 'zmq':
 
@@ -60,6 +62,8 @@
 #ifdef __MINGW32__
 #   define bzero(s, n) memset(s, 0, n)
 #endif
+
+using namespace std;
 
 extern StatsServer* global_stats;
 

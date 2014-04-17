@@ -91,6 +91,8 @@ typedef DWORD32 uint32_t;
 #   include <sys/times.h>
 #endif
 
+using namespace std;
+
 bool parse_cmdline(char **argv,
         int argc,
         vector<dabOutput*> &outputs,

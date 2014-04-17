@@ -141,6 +141,31 @@ subchannels {
         ; Network latency jitter can make it temporarily go lower or higher.
         ; Encoder clock drift will make the buffer either slowly fill or
         ; empty, which will create intermittent glitches.
+
+
+        ; the ZMQ inputs support encryption using the CURVE method.
+        ; The multiplexer must have a public and a private key, which
+        ; can be shared among several zmq inputs.
+        ;
+        ; each encoder also has a public and private key, and the
+        ; encoder *public* key has to be known to the multiplexer.
+        ; Using this system, the multiplexer can be sure that
+        ; only the encoder possessing the right secret key can
+        ; connect here. This inhibits third parties to hijack the
+        ; input.
+
+        ; by default, it is disabled, set encryption to 1 to enable
+        encryption 1
+
+        ; the multiplexer key pair. Keep these secret.
+        secret-key "keys/mux.sec"
+        public-key "keys/mux.pub"
+
+        ; The public key from the encoder. Only the encoder you want
+        ; to accept must know the corresponding secret key.
+        encoder-key "keys/encoder1.pub"
+
+        ; key pairs can be generated using the zmqinput-keygen tool.
     }
 
     sub-ri2 {

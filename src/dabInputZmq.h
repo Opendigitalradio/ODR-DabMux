@@ -76,6 +76,24 @@
 // want.
 #define INPUT_ZMQ_MAX_BUFFER_SIZE (5*500) // 60s
 
+/* The ZeroMQ Curve key is 40 bytes long in Z85 representation
+ *
+ * But we need to store it as zero-terminated string.
+ */
+#define CURVE_KEYLEN 40
+
+/* helper to invalidate a key */
+#define INVALIDATE_KEY(k) memset(k, 0, CURVE_KEYLEN+1)
+
+/* Verification for key validity */
+#define KEY_VALID(k) (k[0] != '\0')
+
+/* Read a key from file into key
+ *
+ * Returns 0 on success, negative value on failure
+ */
+int readkey(std::string& keyfile, char* key);
+
 struct dab_input_zmq_config_t
 {
     /* The size of the internal buffer, measured in number
@@ -116,12 +134,18 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
             : RemoteControllable(name),
             m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
+            m_zmq_sock_bound_to(""),
             m_bitrate(0),
             m_enable_input(true),
             m_config(config),
             m_prebuf_current(0) {
                 RC_ADD_PARAMETER(enable,
                         "If the input is enabled. Set to zero to empty the buffer.");
+
+                /* Set all keys to zero */
+                INVALIDATE_KEY(m_curve_public_key);
+                INVALIDATE_KEY(m_curve_secret_key);
+                INVALIDATE_KEY(m_curve_encoder_key);
             }
 
         virtual int open(const std::string inputUri);
@@ -139,8 +163,15 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
     protected:
         virtual int readFromSocket(size_t framesize) = 0;
 
+        virtual void rebind();
+
         zmq::context_t m_zmq_context;
         zmq::socket_t m_zmq_sock; // handle for the zmq socket
+
+        /* If the socket is bound, this saves the endpoint,
+         * otherwise, it's an empty string
+         */
+        std::string m_zmq_sock_bound_to;
         int m_bitrate;
 
         /* set this to zero to empty the input buffer */
@@ -150,6 +181,13 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         std::list<char*> m_frame_buffer;
 
         dab_input_zmq_config_t m_config;
+
+        /* Key management, keys need to be zero-terminated */
+        char m_curve_public_key[CURVE_KEYLEN+1];
+        char m_curve_secret_key[CURVE_KEYLEN+1];
+        char m_curve_encoder_key[CURVE_KEYLEN+1];
+
+        std::string m_inputUri;
 
     private:
         int m_prebuf_current;

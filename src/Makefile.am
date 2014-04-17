@@ -20,8 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
-bin_PROGRAMS=odr-dabmux odr-bridgetest
-
 if IS_GIT_REPO
 GITVERSION_FLAGS = -DGITVERSION="\"`git describe`\""
 else
@@ -32,8 +30,12 @@ FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
 if HAVE_ZEROMQ_TEST
+bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen
+
 ZMQ_LIBS    =-lzmq
 else
+bin_PROGRAMS=odr-dabmux odr-bridgetest
+
 ZMQ_LIBS    =
 endif
 
@@ -94,4 +96,8 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 odr_bridgetest_CFLAGS   =-DBRIDGE_TEST
 odr_bridgetest_SOURCES  =bridge.c \
                          crc.c crc.h
+
+zmqinput_keygen_SOURCES  = zmqinput-keygen.c
+zmqinput_keygen_LDADD    = $(ZMQ_LIBS)
+zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS)
 

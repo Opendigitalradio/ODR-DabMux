@@ -676,6 +676,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                     " has no zmq-buffer defined!";
                 throw runtime_error(ss.str());
             }
+
             try {
                 zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
             }
@@ -686,7 +687,11 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 throw runtime_error(ss.str());
             }
 
-            zmqconfig.enable_encryption = false;
+            zmqconfig.curve_encoder_keyfile = pt.get<string>("encoder-key","");
+            zmqconfig.curve_secret_keyfile = pt.get<string>("secret-key","");
+            zmqconfig.curve_public_keyfile = pt.get<string>("public-key","");
+
+            zmqconfig.enable_encryption = pt.get<int>("encryption", 0);
 
             DabInputZmqAAC* inzmq =
                 new DabInputZmqAAC(subchanuid, zmqconfig);

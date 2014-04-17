@@ -590,10 +590,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 (strcmp(subchan->inputProto, "ipc") == 0) ) {
             input_is_old_style = false;
 
-            int buffer_size;
-            int prebuffering;
+            dab_input_zmq_config_t zmqconfig;
+
             try {
-                buffer_size = pt.get<int>("zmq-buffer");
+                zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
             }
             catch (ptree_error &e) {
                 stringstream ss;
@@ -602,7 +602,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 throw runtime_error(ss.str());
             }
             try {
-                prebuffering = pt.get<int>("zmq-prebuffering");
+                zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
             }
             catch (ptree_error &e) {
                 stringstream ss;
@@ -610,8 +610,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                     " has no zmq-buffer defined!";
                 throw runtime_error(ss.str());
             }
+            zmqconfig.enable_encryption = false;
+
             DabInputZmqMPEG* inzmq =
-                new DabInputZmqMPEG(subchanuid, buffer_size, prebuffering);
+                new DabInputZmqMPEG(subchanuid, zmqconfig);
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
             subchan->inputName = full_inputName;
@@ -663,10 +665,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 (strcmp(subchan->inputProto, "ipc") == 0) ) {
             input_is_old_style = false;
 
-            int buffer_size;
-            int prebuffering;
+            dab_input_zmq_config_t zmqconfig;
+
             try {
-                buffer_size = pt.get<int>("zmq-buffer");
+                zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
             }
             catch (ptree_error &e) {
                 stringstream ss;
@@ -675,7 +677,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 throw runtime_error(ss.str());
             }
             try {
-                prebuffering = pt.get<int>("zmq-prebuffering");
+                zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
             }
             catch (ptree_error &e) {
                 stringstream ss;
@@ -683,8 +685,12 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                     " has no zmq-buffer defined!";
                 throw runtime_error(ss.str());
             }
+
+            zmqconfig.enable_encryption = false;
+
             DabInputZmqAAC* inzmq =
-                new DabInputZmqAAC(subchanuid, buffer_size, prebuffering);
+                new DabInputZmqAAC(subchanuid, zmqconfig);
+
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
             subchan->inputName = full_inputName;

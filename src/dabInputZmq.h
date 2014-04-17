@@ -76,16 +76,50 @@
 // want.
 #define INPUT_ZMQ_MAX_BUFFER_SIZE (5*500) // 60s
 
+struct dab_input_zmq_config_t
+{
+    /* The size of the internal buffer, measured in number
+     * of elements.
+     *
+     * Each element corresponds to five frames,
+     * or one AAC superframe.
+     */
+    int buffer_size;
+
+    /* The amount of prebuffering to do before we start streaming
+     *
+     * Same units as buffer_size
+     */
+    int prebuffering;
+
+    /* Whether to enforce encryption or not
+     */
+    bool enable_encryption;
+
+    /* Full path to file containing public key.
+     */
+    std::string curve_public_keyfile;
+
+    /* Full path to file containing secret key.
+     */
+    std::string curve_secret_keyfile;
+
+    /* Full path to file containing encoder public key.
+     */
+    std::string curve_encoder_keyfile;
+};
+
 class DabInputZmqBase : public DabInputBase, public RemoteControllable {
     public:
         DabInputZmqBase(const std::string name,
-                int buffer_size, int prebuffering)
+                dab_input_zmq_config_t config)
             : RemoteControllable(name),
             m_zmq_context(1),
             m_zmq_sock(m_zmq_context, ZMQ_SUB),
-            m_bitrate(0), m_prebuffering(prebuffering),
+            m_bitrate(0),
             m_enable_input(true),
-            m_frame_buffer_limit(buffer_size) {
+            m_config(config),
+            m_prebuf_current(0) {
                 RC_ADD_PARAMETER(enable,
                         "If the input is enabled. Set to zero to empty the buffer.");
             }
@@ -108,13 +142,14 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         zmq::context_t m_zmq_context;
         zmq::socket_t m_zmq_sock; // handle for the zmq socket
         int m_bitrate;
-        int m_prebuffering;
 
         /* set this to zero to empty the input buffer */
         bool m_enable_input;
 
-        size_t m_frame_buffer_limit;
-        std::list<char*> m_frame_buffer; //stores elements of type char[<framesize>]
+        /* stores elements of type char[<superframesize>] */
+        std::list<char*> m_frame_buffer;
+
+        dab_input_zmq_config_t m_config;
 
     private:
         int m_prebuf_current;
@@ -123,8 +158,8 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
 class DabInputZmqMPEG : public DabInputZmqBase {
     public:
         DabInputZmqMPEG(const std::string name,
-                int buffer_size, int prebuffering)
-            : DabInputZmqBase(name, buffer_size, prebuffering) {
+                dab_input_zmq_config_t config)
+            : DabInputZmqBase(name, config) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [mpeg frames]");
 
@@ -139,8 +174,8 @@ class DabInputZmqMPEG : public DabInputZmqBase {
 class DabInputZmqAAC : public DabInputZmqBase {
     public:
         DabInputZmqAAC(const std::string name,
-                int buffer_size, int prebuffering)
-            : DabInputZmqBase(name, buffer_size, prebuffering) {
+                dab_input_zmq_config_t config)
+            : DabInputZmqBase(name, config) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [aac superframes]");
 

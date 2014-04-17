@@ -121,15 +121,15 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
     rc = readFromSocket(size);
 
     /* Notify of a buffer overrun, and drop some frames */
-    if (m_frame_buffer.size() >= m_frame_buffer_limit) {
+    if (m_frame_buffer.size() >= m_config.buffer_size) {
         global_stats->notifyOverrun(m_name);
 
         /* If the buffer is really too full, we drop as many frames as needed
          * to get down to the prebuffering size. We would like to have our buffer
          * filled to the prebuffering length.
          */
-        if (m_frame_buffer.size() >= 1.5*m_frame_buffer_limit) {
-            size_t over_max = m_frame_buffer.size() - m_prebuffering;
+        if (m_frame_buffer.size() >= 1.5*m_config.buffer_size) {
+            size_t over_max = m_frame_buffer.size() - m_config.prebuffering;
 
             while (over_max--) {
                 m_frame_buffer.pop_front();
@@ -178,7 +178,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
         etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
                 m_name.c_str());
         // reset prebuffering
-        m_prebuf_current = m_prebuffering;
+        m_prebuf_current = m_config.prebuffering;
 
         /* We have no data to give, we give a zeroed frame */
         global_stats->notifyUnderrun(m_name);
@@ -222,7 +222,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
 
     if (msg.size() == framesize)
     {
-        if (m_frame_buffer.size() > m_frame_buffer_limit) {
+        if (m_frame_buffer.size() > m_config.buffer_size) {
             etiLog.level(warn) <<
                 "inputZMQ " << m_name <<
                 " buffer full (" << m_frame_buffer.size() << "),"
@@ -280,7 +280,7 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
      */
     if (msg.size() == 5*framesize)
     {
-        if (m_frame_buffer.size() > m_frame_buffer_limit) {
+        if (m_frame_buffer.size() > m_config.buffer_size) {
             etiLog.level(warn) <<
                 "inputZMQ " << m_name <<
                 " buffer full (" << m_frame_buffer.size() << "),"
@@ -331,7 +331,7 @@ void DabInputZmqBase::set_parameter(const string& parameter,
                    " Maximum " STRINGIFY(INPUT_ZMQ_MAX_BUFFER_SIZE) );
         }
 
-        m_frame_buffer_limit = new_limit;
+        m_config.buffer_size = new_limit;
     }
     else if (parameter == "prebuffering") {
         size_t new_prebuf = atol(value.c_str());
@@ -345,7 +345,7 @@ void DabInputZmqBase::set_parameter(const string& parameter,
                    " Maximum " STRINGIFY(INPUT_ZMQ_MAX_BUFFER_SIZE) );
         }
 
-        m_prebuffering = new_prebuf;
+        m_config.prebuffering = new_prebuf;
     }
     else if (parameter == "enable") {
         if (value == "1") {
@@ -370,10 +370,10 @@ const string DabInputZmqBase::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "buffer") {
-        ss << m_frame_buffer_limit;
+        ss << m_config.buffer_size;
     }
     else if (parameter == "prebuffering") {
-        ss << m_prebuffering;
+        ss << m_config.prebuffering;
     }
     else if (parameter == "enable") {
         if (m_enable_input)

@@ -24,6 +24,7 @@
  */
 #include <list>
 #include <string>
+#include <iostream>
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
@@ -32,6 +33,7 @@
 #include "RemoteControl.h"
 
 using boost::asio::ip::tcp;
+using namespace std;
 
 
 void RemoteControllerTelnet::restart()

@@ -389,18 +389,24 @@ void dabEnsemble::set_parameter(const string& parameter, const string& value)
     ss.exceptions ( stringstream::failbit | stringstream::badbit );
 
     if (parameter == "localtimeoffset") {
-        int new_lto = atol(value.c_str());
-
-        if (new_lto < -24) {
-            throw ParameterError("Desired local time offset too small."
-                   " Minimum -24" );
+        if (value == "auto") {
+            lto_auto = true;
         }
-        else if (new_lto > 24) {
-            throw ParameterError("Desired local time offset too large."
-                   " Maximum 24" );
-        }
+        else {
+            lto_auto = false;
+            int new_lto = atol(value.c_str());
 
-        this->lto = new_lto;
+            if (new_lto < -24) {
+                throw ParameterError("Desired local time offset too small."
+                        " Minimum -24" );
+            }
+            else if (new_lto > 24) {
+                throw ParameterError("Desired local time offset too large."
+                        " Maximum 24" );
+            }
+
+            this->lto = new_lto;
+        }
     }
     else {
         stringstream ss;
@@ -414,7 +420,12 @@ const string dabEnsemble::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "localtimeoffset") {
-        ss << this->lto;
+        if (this->lto_auto) {
+            ss << "auto(" << this->lto << ")";
+        }
+        else {
+            ss << this->lto;
+        }
     }
     else {
         ss << "Parameter '" << parameter <<

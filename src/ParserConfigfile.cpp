@@ -191,18 +191,26 @@ void parse_configfile(string configuration_file,
 
     ensemble->international_table = pt_ensemble.get("international-table", 0);
 
-    double lto_hours = pt_ensemble.get("local-time-offset", 0.0);
-    if (round(lto_hours * 2) != lto_hours * 2) {
-        etiLog.level(error) << "Ensemble local time offset " <<
-            lto_hours << "h cannot be expressed in half-hour blocks.";
-        throw runtime_error("ensemble local-time-offset definition error");
+    string lto_auto = pt_ensemble.get("local-time-offset", "");
+    if (lto_auto == "auto") {
+        ensemble->lto_auto = true;
+        ensemble->lto = 0;
     }
-    if (lto_hours > 12 || lto_hours < -12) {
-        etiLog.level(error) << "Ensemble local time offset " <<
-            lto_hours << "h out of bounds [-12, +12].";
-        throw runtime_error("ensemble local-time-offset definition error");
+    else {
+        double lto_hours = pt_ensemble.get("local-time-offset", 0.0);
+        if (round(lto_hours * 2) != lto_hours * 2) {
+            etiLog.level(error) << "Ensemble local time offset " <<
+                lto_hours << "h cannot be expressed in half-hour blocks.";
+            throw runtime_error("ensemble local-time-offset definition error");
+        }
+        if (lto_hours > 12 || lto_hours < -12) {
+            etiLog.level(error) << "Ensemble local time offset " <<
+                lto_hours << "h out of bounds [-12, +12].";
+            throw runtime_error("ensemble local-time-offset definition error");
+        }
+        ensemble->lto_auto = false;
+        ensemble->lto = abs(rint(lto_hours * 2));
     }
-    ensemble->lto = abs(rint(lto_hours * 2));
 
     int success = -5;
     string ensemble_label = pt_ensemble.get<string>("label");

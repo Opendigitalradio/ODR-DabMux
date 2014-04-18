@@ -59,7 +59,11 @@ remotecontrol {
 ensemble {
     id 0x4fff ; you can also use decimal if you want
     ecc 0xec ; Extended Country Code
-    local-time-offset 1 ; in hours, supports half-hour offsets
+
+    local-time-offset 1     ; in hours, supports half-hour offsets
+                            ; or
+    ;local-time-offset auto ; autmatically calculate from system local time
+
     international-table 1 ; See TS 101 756 clause 5.7
                           ; 1 corresponds to the PTy used in RDS
                           ; 2 corresponds to program types used in north america

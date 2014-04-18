@@ -77,6 +77,8 @@ typedef DWORD32 uint32_t;
 #   include <net/if_packet.h>
 #endif
 
+#include <time.h>
+
 #ifdef _WIN32
 #   pragma warning ( disable : 4103 )
 #   include "Eti.h"
@@ -1631,6 +1633,14 @@ int main(int argc, char *argv[])
 
             fig0_9->ext = 0;
             fig0_9->lto = 0; // Unique LTO for ensemble
+
+            if (ensemble->lto_auto) {
+                time_t now = time(NULL);
+                struct tm* ltime = localtime(&now);
+                time_t now2 = timegm(ltime);
+                ensemble->lto = (now2 - now) / 1800;
+            }
+
             if (ensemble->lto >= 0) {
                 fig0_9->ensembleLto = ensemble->lto;
             }
@@ -1638,6 +1648,7 @@ int main(int argc, char *argv[])
                 /* Convert to 1-complement representation */
                 fig0_9->ensembleLto = (-ensemble->lto) | (1<<5);
             }
+
             fig0_9->ensembleEcc = ensemble->ecc;
             fig0_9->tableId = ensemble->international_table;
             index += 5;

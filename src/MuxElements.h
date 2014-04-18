@@ -94,7 +94,7 @@ class dabEnsemble : public RemoteControllable {
             : RemoteControllable("ensemble")
         {
             RC_ADD_PARAMETER(localtimeoffset,
-                    "local time offset, -24 to +24 [half-hours]");
+                    "local time offset, 'auto' or -24 to +24 [half-hours]");
         }
 
         /* Remote control */
@@ -109,8 +109,13 @@ class dabEnsemble : public RemoteControllable {
         uint8_t ecc;
         DabLabel label;
         uint8_t mode;
+
+        /* Use the local time to calculate the lto */
+        bool lto_auto;
+
         int lto; // local time offset in half-hours
         // range: -24 to +24
+
         int international_table;
 
         std::vector<DabService*> services;

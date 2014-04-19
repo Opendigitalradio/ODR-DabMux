@@ -158,7 +158,8 @@ void DabInputZmqBase::rebind()
         }
         catch (zmq::error_t& err) {
             std::ostringstream os;
-            os << "ZMQ set encoder key for input " << m_name << " failed";
+            os << "ZMQ set encoder key for input " << m_name << " failed" <<
+                err.what();
             throw std::runtime_error(os.str());
         }
 
@@ -168,7 +169,8 @@ void DabInputZmqBase::rebind()
         }
         catch (zmq::error_t& err) {
             std::ostringstream os;
-            os << "ZMQ set public key for input " << m_name << " failed";
+            os << "ZMQ set public key for input " << m_name << " failed" <<
+                err.what();
             throw std::runtime_error(os.str());
         }
 
@@ -178,7 +180,8 @@ void DabInputZmqBase::rebind()
         }
         catch (zmq::error_t& err) {
             std::ostringstream os;
-            os << "ZMQ set secret key for input " << m_name << " failed";
+            os << "ZMQ set secret key for input " << m_name << " failed" <<
+                err.what();
             throw std::runtime_error(os.str());
         }
     }
@@ -192,7 +195,8 @@ void DabInputZmqBase::rebind()
         }
         catch (zmq::error_t& err) {
             std::ostringstream os;
-            os << "ZMQ remove keys for input " << m_name << " failed";
+            os << "ZMQ remove keys for input " << m_name << " failed: " <<
+                err.what();
             throw std::runtime_error(os.str());
         }
 
@@ -204,7 +208,8 @@ void DabInputZmqBase::rebind()
     }
     catch (zmq::error_t& err) {
         std::ostringstream os;
-        os << "ZMQ bind for input " << m_name << " failed";
+        os << "ZMQ bind for input " << m_name << " failed" <<
+            err.what();
         throw std::runtime_error(os.str());
     }
 
@@ -215,7 +220,8 @@ void DabInputZmqBase::rebind()
     }
     catch (zmq::error_t& err) {
         std::ostringstream os;
-        os << "ZMQ set socket options for input " << m_name << " failed";
+        os << "ZMQ set socket options for input " << m_name << " failed" <<
+            err.what();
         throw std::runtime_error(os.str());
     }
 }

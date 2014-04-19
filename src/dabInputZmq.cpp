@@ -194,10 +194,8 @@ void DabInputZmqBase::rebind()
             m_zmq_sock.setsockopt(ZMQ_CURVE_SERVER, &no, sizeof(no));
         }
         catch (zmq::error_t& err) {
-            std::ostringstream os;
-            os << "ZMQ remove keys for input " << m_name << " failed: " <<
-                err.what();
-            throw std::runtime_error(os.str());
+            etiLog.level(warn) << "ZMQ disable encryption keys for input " <<
+                m_name << " failed: " << err.what();
         }
 
     }

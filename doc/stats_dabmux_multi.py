@@ -8,6 +8,8 @@ import json
 import socket
 import os
 
+SOCK_RECV_SIZE = 10240
+
 config_top = """
 """
 
@@ -60,7 +62,7 @@ def connect():
     sock = socket.socket()
     sock.connect(("localhost", 12720))
 
-    version = json.loads(sock.recv(256))
+    version = json.loads(sock.recv(SOCK_RECV_SIZE))
 
     if not version['service'].startswith("ODR-DabMux"):
         sys.stderr.write("Wrong version\n")
@@ -75,7 +77,7 @@ def get_id_from_uri(uri):
 if len(sys.argv) == 1:
     sock = connect()
     sock.send("values\n")
-    values = json.loads(sock.recv(256))['values']
+    values = json.loads(sock.recv(SOCK_RECV_SIZE))['values']
 
     munin_values = ""
     for ident in values:
@@ -94,7 +96,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 
     sock.send("config\n")
 
-    config = json.loads(sock.recv(256))
+    config = json.loads(sock.recv(SOCK_RECV_SIZE))
 
     munin_config = config_top
 

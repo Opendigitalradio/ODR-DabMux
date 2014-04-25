@@ -14,7 +14,7 @@ In addition to the features of CRC-DabMux, this fork contains:
 - timestamping support required for SFN
 - a ZeroMQ ETI output that can be used with ODR-DabMod
 - a ZeroMQ dabplus input that can be used with fdk-aac-dabplus
-  and toolame-dab, and support ZMQ-CURVE authentication
+  and toolame-dab, and supports CURVE authentication
 - supports logging to syslog
 - supports ZMQ input monitoring with munin tool
 - includes a Telnet Remote Control for setting/getting parameters
@@ -23,8 +23,9 @@ In addition to the features of CRC-DabMux, this fork contains:
 
 The src/ directory contains the source code of ODR-DabMux.
 
-The doc/ directory contains the ODR-DabMux documentation, and an example
-configuration file.
+The doc/ directory contains the ODR-DabMux documentation, an example
+configuration file, and the example munin script for the statistics
+server.
 
 The lib/ directory contains source code of libraries needed to build
 ODR-DabMux.
@@ -41,6 +42,11 @@ See the files LICENCE and COPYING
 
 Contact
 =======
+
+You can reach users and developers through the CRC-mmbTools
+google group.
+
+Developed by:
 
 Matthias P. Braendli *matthias [at] mpb [dot] li*
 

@@ -1,6 +1,21 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2014-04-25: Matthias P. Braendli <matthias@mpb.li>
+	(v0.7.0):
+		This version supports a new ZeroMQ frame format. The
+		old format is still used by toolame-dab, and by
+		older versions of fdk-aac-dabplus, and will stay
+		supported.
+	* odr-dabmux:
+		Add local-time-offset to remote control,
+		and support 'auto' setting in configuration file.
+		Update the munin script.
+		Support the new ZeroMQ framing format.
+		Support ZeroMQ CURVE authentication.
+		Make ZeroMQ buffering better configurable.
+		Include peak audio level in munin statistics.
+
 2014-04-04: Matthias P. Braendli <matthias@mpb.li>
 	(v0.6.0):
 		Adds support for MOT Slideshow and DLS,

@@ -15,7 +15,6 @@ config_top = """
 
 config_template = """
 multigraph buffers_{ident}
-
 graph_title Contribution {ident} buffer
 graph_order high low
 graph_args --base 1000
@@ -48,6 +47,23 @@ overruns.info Number of overruns
 overruns.label Number of overruns
 overruns.min 0
 overruns.warning 0:0
+
+multigraph audio_levels_{ident}
+graph_title Contribution {ident} audio level (peak)
+graph_order left right
+graph_args --base 1
+graph_vlabel peak audio level during last ${{graph_period}}
+graph_category dabmux
+graph_info This graph shows the audio level of both channels of the {ident} ZMQ input
+
+left.info Left channel audio level
+left.label Left channel audio level
+left.min -90
+left.warning -90:-90
+right.info Right channel audio level
+right.label Right channel audio level
+right.min -90
+right.warning -90:-90
 """
 
 if not os.environ.get("MUNIN_CAP_MULTIGRAPH"):
@@ -84,6 +100,8 @@ if len(sys.argv) == 1:
         munin_values += "multigraph over_underruns_{ident}\n".format(ident=ident)
         munin_values += "underruns.value {}\n".format(v['num_underruns'])
         munin_values += "overruns.value {}\n".format(v['num_overruns'])
+        munin_values += "left.value {}\n".format(v['peak_left'])
+        munin_values += "right.value {}\n".format(v['peak_right'])
 
     print(munin_values)
 

@@ -59,10 +59,12 @@ graph_info This graph shows the audio level of both channels of the {ident} ZMQ 
 left.info Left channel audio level
 left.label Left channel audio level
 left.min -90
+left.max 0
 left.warning -90:-90
 right.info Right channel audio level
 right.label Right channel audio level
 right.min -90
+right.max 0
 right.warning -90:-90
 """
 
@@ -100,6 +102,7 @@ if len(sys.argv) == 1:
         munin_values += "multigraph over_underruns_{ident}\n".format(ident=ident)
         munin_values += "underruns.value {}\n".format(v['num_underruns'])
         munin_values += "overruns.value {}\n".format(v['num_overruns'])
+        munin_values += "multigraph audio_levels_{ident}\n".format(ident=ident)
         munin_values += "left.value {}\n".format(v['peak_left'])
         munin_values += "right.value {}\n".format(v['peak_right'])
 

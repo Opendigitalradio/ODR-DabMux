@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
 #include <sstream>
 #include "StatsServer.h"
 #include "Log.h"

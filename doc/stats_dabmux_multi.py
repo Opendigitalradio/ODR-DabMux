@@ -51,7 +51,7 @@ overruns.warning 0:0
 multigraph audio_levels_{ident}
 graph_title Contribution {ident} audio level (peak)
 graph_order left right
-graph_args --base 1
+graph_args --base 1000
 graph_vlabel peak audio level during last ${{graph_period}}
 graph_category dabmux
 graph_info This graph shows the audio level of both channels of the {ident} ZMQ input

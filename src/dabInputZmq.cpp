@@ -329,7 +329,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
     else
     {
         /* Normal situation, give a frame from the frame_buffer */
-        char* newframe = m_frame_buffer.front();
+        uint8_t* newframe = m_frame_buffer.front();
         memcpy(buffer, newframe, size);
         delete[] newframe;
         m_frame_buffer.pop_front();
@@ -372,7 +372,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
         }
         else if (m_enable_input) {
             // copy the input frame blockwise into the frame_buffer
-            char* frame = new char[framesize];
+            uint8_t* frame = new uint8_t[framesize];
             memcpy(frame, data, framesize);
             m_frame_buffer.push_back(frame);
         }
@@ -413,43 +413,66 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
             m_name << ": " << err.what();
     }
 
-    char* data = (char*)msg.data();
+    /* This is the old 'one superframe per ZMQ message' format */
+    uint8_t* data  = (uint8_t*)msg.data();
+    size_t datalen = msg.size();
+
+    /* Look for the new zmq_frame_header_t format */
+    zmq_frame_header_t* frame = (zmq_frame_header_t*)msg.data();
+
+    if (msg.size() == ZMQ_FRAME_SIZE(frame) &&
+            frame->version == 1 &&
+            frame->encoder == ZMQ_ENCODER_FDK) {
+        datalen = frame->datasize;
+        data = ZMQ_FRAME_DATA(frame);
+    }
+
 
     /* TS 102 563, Section 6:
      * Audio super frames are transported in five successive DAB logical frames
      * with additional error protection.
      */
-    if (msg.size() == 5*framesize)
+    if (datalen)
     {
-        if (m_frame_buffer.size() > m_config.buffer_size) {
-            etiLog.level(warn) <<
-                "inputZMQ " << m_name <<
-                " buffer full (" << m_frame_buffer.size() << "),"
-                " dropping incoming superframe !";
-            messageReceived = 0;
-        }
-        else if (m_enable_input) {
-            // copy the input frame blockwise into the frame_buffer
-            for (char* framestart = data;
-                    framestart < &data[5*framesize];
-                    framestart += framesize) {
-                char* frame = new char[framesize];
-                memcpy(frame, framestart, framesize);
-                m_frame_buffer.push_back(frame);
+        if (datalen == 5*framesize)
+        {
+            if (m_frame_buffer.size() > m_config.buffer_size) {
+                etiLog.level(warn) <<
+                    "inputZMQ " << m_name <<
+                    " buffer full (" << m_frame_buffer.size() << "),"
+                    " dropping incoming superframe !";
+                messageReceived = 0;
+            }
+            else if (m_enable_input) {
+                // copy the input frame blockwise into the frame_buffer
+                for (uint8_t* framestart = data;
+                        framestart < &data[5*framesize];
+                        framestart += framesize) {
+                    uint8_t* audioframe = new uint8_t[framesize];
+                    memcpy(audioframe, framestart, framesize);
+                    m_frame_buffer.push_back(audioframe);
+                }
+            }
+            else {
+                datalen = 0;
             }
         }
         else {
-            return 0;
+            etiLog.level(error) <<
+                "inputZMQ " << m_name <<
+                " wrong data size: recv'd " << msg.size() <<
+                ", need " << 5*framesize << ".";
+
+            datalen = 0;
         }
     }
     else {
         etiLog.level(error) <<
             "inputZMQ " << m_name <<
-            " wrong data size: recv'd " << msg.size() <<
-            ", need " << 5*framesize << ".";
+            " invalid frame received";
     }
 
-    return msg.size();
+    return datalen;
 }
 
 /********* REMOTE CONTROL ***********/

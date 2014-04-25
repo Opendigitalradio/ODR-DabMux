@@ -51,6 +51,7 @@
 
 #include <list>
 #include <string>
+#include <stdint.h>
 #include "zmq.hpp"
 #include "dabInput.h"
 #include "StatsServer.h"
@@ -127,6 +128,33 @@ struct dab_input_zmq_config_t
     std::string curve_encoder_keyfile;
 };
 
+#define ZMQ_ENCODER_FDK 1
+#define ZMQ_ENCODER_TOOLAME 2
+
+/* This defines the on-wire representation of a ZMQ message header.
+ *
+ * The data follows right after this header */
+struct zmq_frame_header_t
+{
+    uint16_t version; // we support version=1 now
+    uint16_t encoder; // see ZMQ_ENCODER_XYZ
+
+    /* length of the 'data' field */
+    uint32_t datasize;
+
+    /* Audio level, peak, linear PCM */
+    int16_t audiolevel_left;
+    int16_t audiolevel_right;
+
+    /* Data follows this header */
+} __attribute__ ((packed));
+
+/* The expected frame size incl data of the given frame */
+#define ZMQ_FRAME_SIZE(f) (sizeof(zmq_frame_header_t) + f->datasize)
+
+#define ZMQ_FRAME_DATA(f) ( ((uint8_t*)f)+sizeof(zmq_frame_header_t) )
+
+
 class DabInputZmqBase : public DabInputBase, public RemoteControllable {
     public:
         DabInputZmqBase(const std::string name,
@@ -191,7 +219,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         bool m_enable_input;
 
         /* stores elements of type char[<superframesize>] */
-        std::list<char*> m_frame_buffer;
+        std::list<uint8_t*> m_frame_buffer;
 
         dab_input_zmq_config_t m_config;
 

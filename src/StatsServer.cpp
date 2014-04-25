@@ -28,6 +28,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <math.h>
 #include <sstream>
 #include "StatsServer.h"
 #include "Log.h"
@@ -66,6 +67,27 @@ void StatsServer::notifyBuffer(std::string id, long bufsize)
     if (bufsize < is.min_fill_buffer ||
             is.min_fill_buffer == MIN_FILL_BUFFER_UNDEF) {
         is.min_fill_buffer = bufsize;
+    }
+}
+
+void StatsServer::notifyPeakLevels(std::string id, int peak_left, int peak_right)
+{
+    boost::mutex::scoped_lock lock(m_mutex);
+
+    if (m_inputStats.count(id) == 0) {
+        etiLog.level(error) <<
+            "Stats Server id '" <<
+            id << "' does was not registered";
+        return;
+    }
+
+    InputStat& is = m_inputStats[id];
+    if (peak_left > is.peak_left) {
+        is.peak_left = peak_left;
+    }
+
+    if (peak_right > is.peak_right) {
+        is.peak_right = peak_right;
     }
 }
 
@@ -252,10 +274,16 @@ std::string InputStat::encodeJSON()
 {
     std::ostringstream ss;
 
+    /* convert to dB */
+    int dB_l = peak_left  ? round(20*log10((double)peak_left / INT16_MAX))  : -90;
+    int dB_r = peak_right ? round(20*log10((double)peak_right / INT16_MAX)) : -90;
+
     ss <<
     "{ \"inputstat\" : {"
         "\"min_fill\": " << min_fill_buffer << ", "
         "\"max_fill\": " << max_fill_buffer << ", "
+        "\"peak_left\": " << dB_l << ", "
+        "\"peak_right\": " << dB_r << ", "
         "\"num_underruns\": " << num_underruns << ", "
         "\"num_overruns\": " << num_overruns <<
     " } }";

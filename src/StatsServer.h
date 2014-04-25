@@ -65,6 +65,10 @@ struct InputStat
     long num_underruns;
     long num_overruns;
 
+    // peak audio levels (linear 16-bit PCM) for the two channels
+    int peak_left;
+    int peak_right;
+
     void reset()
     {
         min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
@@ -72,6 +76,9 @@ struct InputStat
 
         num_underruns = 0;
         num_overruns = 0;
+
+        peak_left = 0;
+        peak_right = 0;
     }
 
     std::string encodeJSON();
@@ -99,9 +106,12 @@ class StatsServer
         }
 
         void registerInput(std::string id);
-        // The input notifies the StatsServer about a new buffer size
-        void notifyBuffer(std::string id, long bufsize);
 
+        /* The following notify functions are used by the input to
+         * inform the StatsServer about new values
+         */
+        void notifyBuffer(std::string id, long bufsize);
+        void notifyPeakLevels(std::string id, int peak_left, int peak_right);
         void notifyUnderrun(std::string id);
         void notifyOverrun(std::string id);
 

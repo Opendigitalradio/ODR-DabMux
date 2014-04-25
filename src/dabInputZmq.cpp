@@ -425,6 +425,9 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
             frame->encoder == ZMQ_ENCODER_FDK) {
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
+
+        global_stats->notifyPeakLevels(m_name, frame->audiolevel_left,
+                frame->audiolevel_right);
     }
 
 

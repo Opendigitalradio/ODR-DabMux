@@ -30,6 +30,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include <limits>
 #include <sstream>
 #include "StatsServer.h"
 #include "Log.h"
@@ -275,9 +276,11 @@ std::string InputStat::encodeJSON()
 {
     std::ostringstream ss;
 
+    const int16_t int16_max = std::numeric_limits<int16_t>::max();
+
     /* convert to dB */
-    int dB_l = peak_left  ? round(20*log10((double)peak_left / INT16_MAX))  : -90;
-    int dB_r = peak_right ? round(20*log10((double)peak_right / INT16_MAX)) : -90;
+    int dB_l = peak_left  ? round(20*log10((double)peak_left / int16_max))  : -90;
+    int dB_r = peak_right ? round(20*log10((double)peak_right / int16_max)) : -90;
 
     ss <<
     "{ \"inputstat\" : {"

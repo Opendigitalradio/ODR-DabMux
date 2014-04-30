@@ -53,19 +53,21 @@ graph_title Contribution {ident} audio level (peak)
 graph_order left right
 graph_args --base 1000
 graph_vlabel peak audio level during last ${{graph_period}}
-graph_category dabmux
+graph_category encoders
 graph_info This graph shows the audio level of both channels of the {ident} ZMQ input
 
 left.info Left channel audio level
 left.label Left channel audio level
 left.min -90
 left.max 0
-left.warning -90:-90
+left.warning -40:0
+left.critical -80:0
 right.info Right channel audio level
 right.label Right channel audio level
 right.min -90
 right.max 0
-right.warning -90:-90
+right.warning -40:0
+right.critical -80:0
 """
 
 if not os.environ.get("MUNIN_CAP_MULTIGRAPH"):

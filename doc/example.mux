@@ -234,8 +234,28 @@ components {
 ; A list of outputs, in the format
 ; unique-id "uri"
 outputs {
+    ; The unique-id has no signification. It can be used by the
+    ; remote control or the statistics server to identify the
+    ; output
+
+    ;supported output types for file and fifo outputs are
+    ; raw, framed and streamed
+    ;
+    ; Please see doc/dab_output_formats.txt
     stdout "fifo:///dev/stdout?type=raw"
 
-; ZeroMQ output example
-    ; zmq  "zmq+tcp://*:8080"
+    ; ZeroMQ output example
+    ; Listen on all interfaces, on port 8080
+    ;zmq  "zmq+tcp://*:8080"
+
+    ; Throttle output to real-time (one ETI frame every 24ms)
+    ;throttle "simul://"
+
+    ; Other outputs:
+    ; TCP listen on port
+    ;net "tcp://host:port"
+    ; UDP send to host:port
+    ;net "ucp://host:port"
+    ; RAW (for farsync ETI card)
+    ;farsync "raw://device"
 }

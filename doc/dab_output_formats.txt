@@ -1,0 +1,39 @@
+ODR-DabMux supports three output formats for the ETI stream.
+
+The three formats are called 'framed', 'streamed' and 'raw'.
+
+The framed format is used for saving a finite ETI stream into a file. Each frame does
+not contain any padding, and the format can be described as follows:
+
+ uint32_t nbFrames
+ // for each frame
+     uint16_t frameSize
+     uint8_t data[ frameSize ]
+
+
+When streaming data, in which case the number of frames is not known in advance,
+the streamed format can be used. This format is identical to the first one except for the
+missing nbFrames.
+
+ // for each frame
+     uint16_t frameSize
+     uint8_t data[ frameSize ]
+
+
+The raw format corresponds to ETI(NI), where each frame has a constant size of 6144
+Bytes. The padding in this case is necessary.
+
+ // for each frame
+ uint8_t data [6144]
+
+In order to select the format, the following syntax for the -O option or the
+output setting in the configuration file is:
+
+  file://filename?type=format
+
+where format is one of framed, streamed or raw, e.g.
+
+  file:///tmp/mux.eti?type=raw
+
+saves a raw ETI file to /tmp/mux.eti
+

@@ -722,7 +722,7 @@ bool parse_cmdline(char **argv,
         case 'r':
             etiLog.log(info,
                     "Enabling throttled output using simul, one frame every 24ms\n");
-            outputs.push_back(new dabOutput("simul", NULL));
+            outputs.push_back(new dabOutput("simul", "simul"));
             output = outputs.end() - 1;
 
             subchannel = ensemble->subchannels.end();

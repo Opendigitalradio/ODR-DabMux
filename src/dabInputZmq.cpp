@@ -7,7 +7,8 @@
 
    ZeroMQ input. see www.zeromq.org for more info
 
-   For the AAC+ input, each zeromq message must contain one superframe.
+   For the AAC+ input, each zeromq message must contain one superframe
+   or one zmq_frame_header_t followed by a superframe.
 
    For the MPEG input, each zeromq message must contain one frame.
 
@@ -283,7 +284,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
              * Dropping this superframe amounts to dropping 120ms of audio.
              *
              * We're actually not sure to drop five DAB logical frames
-             * beloning to the same AAC superframe. It is assumed that no
+             * belonging to the same AAC superframe. It is assumed that no
              * receiver will crash because of this. At least, the DAB logical frame
              * vs. AAC superframe alignment is preserved.
              *

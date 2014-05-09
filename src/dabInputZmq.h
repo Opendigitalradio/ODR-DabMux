@@ -7,7 +7,8 @@
 
    ZeroMQ input. see www.zeromq.org for more info
 
-   For the AAC+ input, each zeromq message must contain one superframe.
+   For the AAC+ input, each zeromq message must contain one superframe,
+   or one zmq_frame_header_t followed by a superframe.
 
    For the MPEG input, each zeromq message must contain one frame.
 

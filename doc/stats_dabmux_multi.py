@@ -43,10 +43,12 @@ underruns.info Number of underruns
 underruns.label Number of underruns
 underruns.min 0
 underruns.warning 0:0
+underruns.type COUNTER
 overruns.info Number of overruns
 overruns.label Number of overruns
 overruns.min 0
 overruns.warning 0:0
+overruns.type COUNTER
 
 multigraph audio_levels_{ident}
 graph_title Contribution {ident} audio level (peak)

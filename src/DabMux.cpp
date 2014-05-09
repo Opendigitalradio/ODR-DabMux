@@ -1896,6 +1896,13 @@ int main(int argc, char *argv[])
                 etiLog.level(warn) << "Detected Remote Control fault, restarting it";
                 rc->restart();
         }
+
+        /* Same for statistics server */
+        if (global_stats && fc->FCT == 249 && global_stats->fault_detected()) {
+                etiLog.level(warn) <<
+                    "Detected Statistics Server fault, restarting it";
+                global_stats->restart();
+        }
     }
 
 EXIT:

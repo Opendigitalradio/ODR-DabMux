@@ -159,7 +159,7 @@ void parse_configfile(string configuration_file,
     *limit = pt_general.get("nbframes", 0);
 
     /* Enable Logging to syslog conditionally */
-    if (pt_general.get("syslog", 0)) {
+    if (pt_general.get<bool>("syslog", false)) {
         etiLog.register_backend(new LogToSyslog()); // TODO don't leak the LogToSyslog backend
     }
 

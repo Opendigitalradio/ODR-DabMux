@@ -360,6 +360,9 @@ std::string InputStat::encodeStateJSON()
         case Unstable:
             ss << "\"Unstable\"";
             break;
+        case Silence:
+            ss << "\"Silent\"";
+            break;
         case Streaming:
             ss << "\"Streaming\"";
             break;
@@ -400,7 +403,14 @@ input_state_t InputStat::determineState(void)
         state = Unstable;
     }
     else {
-        state = Streaming;
+        /* The input is streaming, check if the audio level is too low */
+
+        if (m_silence_counter > INPUT_AUDIO_LEVEL_SILENCE_COUNT) {
+            state = Silence;
+        }
+        else {
+            state = Streaming;
+        }
     }
 
     return state;

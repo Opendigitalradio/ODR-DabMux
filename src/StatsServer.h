@@ -55,6 +55,7 @@
 #include <map>
 #include <boost/thread.hpp>
 #include <ctime>
+#include <math.h>
 
 #define MIN_FILL_BUFFER_UNDEF (-1)
 
@@ -66,8 +67,13 @@ enum input_state_t
     /* The input is waiting for data, all buffers are empty */
     NoData,
 
-    /* The input is running, but has seen many underruns or overruns */
+    /* The input is running, but has seen many underruns or overruns recently */
     Unstable,
+
+    /* The input is running, but the audio level is too low, or has
+     * been too low recently
+     */
+    Silence,
 
     /* The input is running stable */
     Streaming
@@ -87,6 +93,21 @@ enum input_state_t
  * NoData state.
  */
 #define INPUT_NODATA_TIMEOUT 30 // seconds
+
+/* For silence detection, we count the number of occurrences the audio level
+ * falls below a threshold.
+ *
+ * The counter is decreased for each frame that has good audio level.
+ *
+ * The counter saturates, and this value defines for how long the
+ * input will be considered silent after a cut.
+ *
+ * If the count reaches a certain value, the input changes state
+ * to Silence.
+ */
+#define INPUT_AUDIO_LEVEL_THRESHOLD       -50  // dB
+#define INPUT_AUDIO_LEVEL_SILENCE_COUNT    100 // superframes (120ms)
+#define INPUT_AUDIO_LEVEL_COUNT_SATURATION 500 // superframes (120ms)
 
 /* An example of how the state changes work.
  * The timeout is set to expire in 30 minutes
@@ -136,6 +157,7 @@ class InputStat
             m_time_last_buffer_nonempty = 0;
             m_buffer_empty = true;
             m_glitch_counter = 0;
+            m_silence_counter = 0;
 
             reset();
         }
@@ -186,7 +208,27 @@ class InputStat
             }
 
             // State
-            // TODO add silence detection
+
+            // using the smallest of the two channels
+            // allows us to detect if only one channel
+            // is silent.
+            int minpeak = peak_left < peak_right ? peak_left : peak_right;
+
+            const int16_t int16_max = std::numeric_limits<int16_t>::max();
+            int peak_dB = minpeak ?
+                round(20*log10((double)minpeak / int16_max)) :
+                -90;
+
+            if (peak_dB < INPUT_AUDIO_LEVEL_THRESHOLD) {
+                if (m_silence_counter < INPUT_AUDIO_LEVEL_COUNT_SATURATION) {
+                    m_silence_counter++;
+                }
+            }
+            else {
+                if (m_silence_counter > 0) {
+                    m_silence_counter--;
+                }
+            }
         }
 
         void notifyUnderrun(void)
@@ -236,6 +278,7 @@ class InputStat
         /************* STATE ***************/
         /* Variables used for determining the input state */
         int m_glitch_counter; // saturating counter
+        int m_silence_counter; // saturating counter
         time_t m_time_last_event;
         time_t m_time_last_buffer_nonempty;
         bool m_buffer_empty;

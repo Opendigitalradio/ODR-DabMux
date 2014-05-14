@@ -299,16 +299,13 @@ void StatsServer::serverThread()
             else
             {
                 int len = snprintf(buffer, 256, "Invalid command\n");
-
                 n = write(accepted_sock, buffer, len);
-                if (n < 0) {
-                    etiLog.level(warn) << "Error writing to Stats Server socket " <<
-                        strerror(errno);
-                }
-                close(accepted_sock);
-                continue;
             }
 
+            if (n < 0) {
+                etiLog.level(warn) << "Error writing to Stats Server socket " <<
+                    strerror(errno);
+            }
             close(accepted_sock);
         }
 

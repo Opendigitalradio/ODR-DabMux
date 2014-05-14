@@ -344,7 +344,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
 // Read a MPEG frame from the socket, and push to list
 int DabInputZmqMPEG::readFromSocket(size_t framesize)
 {
-    bool messageReceived;
+    bool messageReceived = false;
     zmq::message_t msg;
 
     try {
@@ -369,7 +369,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
                 "inputZMQ " << m_name <<
                 " buffer full (" << m_frame_buffer.size() << "),"
                 " dropping incoming frame !";
-            messageReceived = 0;
+            messageReceived = false;
         }
         else if (m_enable_input) {
             // copy the input frame blockwise into the frame_buffer
@@ -386,9 +386,10 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
             "inputZMQ " << m_name <<
             " wrong data size: recv'd " << msg.size() <<
             ", need " << framesize << ".";
+        messageReceived = false;
     }
 
-    return msg.size();
+    return messageReceived ? msg.size() : 0;
 }
 
 /******** AAC+ input *******/
@@ -445,7 +446,7 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
                     "inputZMQ " << m_name <<
                     " buffer full (" << m_frame_buffer.size() << "),"
                     " dropping incoming superframe !";
-                messageReceived = 0;
+                datalen = 0;
             }
             else if (m_enable_input) {
                 // copy the input frame blockwise into the frame_buffer

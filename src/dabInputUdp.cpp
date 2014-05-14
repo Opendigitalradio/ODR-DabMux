@@ -68,6 +68,8 @@ int dabInputUdpOpen(void* args, const char* inputName)
     char* address;
     char* ptr;
     long port;
+    dabInputUdpData* input = (dabInputUdpData*)args;
+
     address = strdup(inputName);
     ptr = strchr(address, ':');
     if (ptr == NULL) {
@@ -75,6 +77,7 @@ int dabInputUdpOpen(void* args, const char* inputName)
                 "\"%s\" is an invalid format for udp address: "
                 "should be [address]:port - > aborting\n", address);
         returnCode = -1;
+        goto udpopen_ptr_null_out;
     }
     *(ptr++) = 0;
     port = strtol(ptr, (char **)NULL, 10);
@@ -88,7 +91,6 @@ int dabInputUdpOpen(void* args, const char* inputName)
         etiLog.log(error, "can't use port number 0 in udp address\n");
         returnCode = -1;
     }
-    dabInputUdpData* input = (dabInputUdpData*)args;
     if (input->socket->create(port) == -1) {
         etiLog.log(error, "can't set port %i on Udp input (%s: %s)\n",
                 port, inetErrDesc, inetErrMsg);
@@ -110,9 +112,10 @@ int dabInputUdpOpen(void* args, const char* inputName)
         returnCode = -1;
     }
 
+udpopen_ptr_null_out:
     free(address);
     etiLog.log(debug, "check return code of create\n");
-    return returnCode;;
+    return returnCode;
 }
 
 

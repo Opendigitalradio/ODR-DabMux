@@ -1929,7 +1929,7 @@ EXIT:
     ensemble->components.clear();
     ensemble->services.clear();
     ensemble->subchannels.clear();
-    free(ensemble);
+    delete ensemble;
     outputs.clear();
 
     UdpSocket::clean();

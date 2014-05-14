@@ -245,8 +245,7 @@ void StatsServer::serverThread()
 
         m_running = true;
 
-        while (m_running)
-        {
+        while (m_running) {
             socklen_t cli_addr_len = sizeof(cli_addr);
 
             /* Accept actual connection from the client */
@@ -278,26 +277,22 @@ void StatsServer::serverThread()
                 continue;
             }
 
-            if (strcmp(buffer, "config\n") == 0)
-            {
+            if (strcmp(buffer, "config\n") == 0) {
                 boost::mutex::scoped_lock lock(m_mutex);
                 std::string json = getConfigJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
-            else if (strcmp(buffer, "values\n") == 0)
-            {
+            else if (strcmp(buffer, "values\n") == 0) {
                 boost::mutex::scoped_lock lock(m_mutex);
                 std::string json = getValuesJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
-            else if (strcmp(buffer, "state\n") == 0)
-            {
+            else if (strcmp(buffer, "state\n") == 0) {
                 boost::mutex::scoped_lock lock(m_mutex);
                 std::string json = getStateJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
-            else
-            {
+            else {
                 int len = snprintf(buffer, 256, "Invalid command\n");
                 n = write(accepted_sock, buffer, len);
             }

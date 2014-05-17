@@ -73,6 +73,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      dabOutput/edi/AFPacket.cpp dabOutput/edi/AFPacket.h \
                      dabOutput/edi/TagItems.cpp dabOutput/edi/TagItems.h \
                      dabOutput/edi/TagPacket.cpp dabOutput/edi/TagPacket.h \
+                     dabOutput/edi/PFT.cpp dabOutput/edi/PFT.h \
                      bridge.h bridge.c \
                      utils.cpp utils.h \
                      MuxElements.cpp MuxElements.h \

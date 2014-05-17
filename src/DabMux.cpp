@@ -116,6 +116,7 @@ typedef DWORD32 uint32_t;
 #include "dabOutput/edi/TagItems.h"
 #include "dabOutput/edi/TagPacket.h"
 #include "dabOutput/edi/AFPacket.h"
+#include "dabOutput/edi/PFT.h"
 #include "crc.h"
 #include "UdpSocket.h"
 #include "InetAddress.h"
@@ -673,7 +674,10 @@ int main(int argc, char *argv[])
             TagPacket edi_tagpacket;
 
             // The TagPacket will then be placed into an AFPacket
-            AFPacketiser edi_afPacket(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
+            AFPacketiser edi_afPacketiser(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
+
+            // The AF Packet will be protected with reed-solomon and split in fragments
+            PFT edi_pft(128, 3);
 
             edi_tagDETI.atstf = 0; // TODO add ATST support
 
@@ -1954,11 +1958,14 @@ int main(int argc, char *argv[])
                 edi_tagpacket.tag_items.push_back(&(*tag));
             }
 
-            vector<uint8_t> edi_afpacketData = edi_afPacket.Assemble(edi_tagpacket);
+            AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
+
+            vector< vector<uint8_t> > edi_fragments = edi_pft.ProtectAndFragment(edi_afpacket);
 
 #if EDI_DEBUG
             std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-            std::copy(edi_afpacketData.begin(), edi_afpacketData.end(), debug_iterator);
+            std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
+            fprintf(stderr, "EDI number of fragments %zu\n", edi_fragments.size());
 #endif
 
 #if _DEBUG

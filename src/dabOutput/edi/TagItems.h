@@ -71,8 +71,7 @@ class TagDETI : public TagItem
         uint8_t rfa;
         uint8_t rfu;
         uint16_t mnsc;
-        uint8_t fcth;
-        uint8_t fct;
+        uint16_t dflc; // modulo 5000 frame counter
 
         // ATST (optional)
         bool atstf; // presence of atst data

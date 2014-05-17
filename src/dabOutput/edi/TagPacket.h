@@ -27,6 +27,7 @@
 
 #include "config.h"
 #include "Eti.h"
+#include "TagItems.h"
 #include <vector>
 #include <string>
 #include <list>

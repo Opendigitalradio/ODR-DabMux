@@ -20,6 +20,7 @@
    */
 
 #include "ReedSolomon.h"
+#include <stdexcept>
 #include <stdio.h>          // For galois.h ...
 #include <string.h>         // For memcpy
 
@@ -46,8 +47,7 @@ ReedSolomon::ReedSolomon(int N, int K, bool reverse, int gfpoly, int firstRoot, 
     rsData = init_rs_char(symsize, gfpoly, firstRoot, primElem, nroots, pad);
 
     if (rsData == NULL) {
-        fprintf(stderr, "ERROR: Invalid Reed Solomon parameters!\n");
-        abort();
+        throw std::invalid_argument("Invalid Reed-Solomon parameters!");
     }
 }
 

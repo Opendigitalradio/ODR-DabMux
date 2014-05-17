@@ -31,6 +31,8 @@
 #include "config.h"
 #include <vector>
 #include <list>
+#include <cstdio>
+#include <cstring>
 #include <stdint.h>
 #include "PFT.h"
 #include "ReedSolomon.h"
@@ -44,7 +46,14 @@ RSPacket PFT::Protect(AFPacket af_packet)
 {
     RSPacket rs_packet;
 
-    m_num_chunks = af_packet.size() / 207 + 1;
+    // number of chunks is ceil(afpacketsize / m_k)
+    if (af_packet.size() % m_k == 0) {
+        m_num_chunks = af_packet.size() / m_k;
+    }
+    else {
+        m_num_chunks = af_packet.size() / m_k + 1;
+    }
+
     const size_t zero_pad = m_num_chunks * m_k - af_packet.size();
 
     // add zero padding to last chunk
@@ -53,16 +62,15 @@ RSPacket PFT::Protect(AFPacket af_packet)
     }
 
     for (size_t i = 1; i < af_packet.size(); i+= m_k) {
-        // add new chunk to the list
         Chunk c(m_k + ParityBytes);
 
-        for (size_t j = 0; j < m_k; j++) {
-            c[j] = af_packet[i+j];
-        }
+        // copy m_k bytes into new chunk
+        memcpy(&c.front(), &af_packet[i], m_k);
 
         // calculate RS for chunk
         m_encoder.encode(&c.front(), c.size());
 
+        // append new chunk to the RS Packet
         rs_packet.insert(rs_packet.end(), c.begin(), c.end());
     }
 
@@ -81,8 +89,9 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
     vector< vector<uint8_t> > fragments(num_fragments);
 
     for (size_t i = 0; i < num_fragments; i++) {
+        fragments[i].resize(fragment_size);
         for (size_t j = 0; j < fragment_size; j++) {
-            fragments[i][j] = rs_packet[j*num_fragments + i]; //TODO that's wrong. fix it.
+            fragments[i][j] = rs_packet[j*num_fragments + i];
         }
     }
 

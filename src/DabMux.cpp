@@ -677,7 +677,7 @@ int main(int argc, char *argv[])
             AFPacketiser edi_afPacketiser(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
 
             // The AF Packet will be protected with reed-solomon and split in fragments
-            PFT edi_pft(128, 3);
+            PFT edi_pft(208, 3);
 
             edi_tagDETI.atstf = 0; // TODO add ATST support
 
@@ -1946,10 +1946,10 @@ int main(int argc, char *argv[])
 #endif // DUMP_BRIDGE
 
             /********************************************************************** 
-             ***********   Finalise EDI   *****************************************
+             ***********   Finalise and send EDI   ********************************
              **********************************************************************/
 
-            // put all tags into one TagPacket
+            // put tags *ptr, DETI and all subchannels into one TagPacket
             edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
             edi_tagpacket.tag_items.push_back(&edi_tagDETI);
 
@@ -1958,9 +1958,12 @@ int main(int argc, char *argv[])
                 edi_tagpacket.tag_items.push_back(&(*tag));
             }
 
+            // Assemble into one AF Packet
             AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
 
-            vector< vector<uint8_t> > edi_fragments = edi_pft.ProtectAndFragment(edi_afpacket);
+            // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
+            vector< vector<uint8_t> > edi_fragments =
+                edi_pft.ProtectAndFragment(edi_afpacket);
 
 #if EDI_DEBUG
             std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
@@ -2004,6 +2007,13 @@ int main(int argc, char *argv[])
         etiLog.level(error) << "Caught multiplex initialisation error: " <<
             except.what();
     }
+    catch (std::invalid_argument& except) {
+        etiLog.level(error) << "Caught invalid argument : %s", except.what();
+    }
+    catch (std::runtime_error& except) {
+        etiLog.level(error) << "Caught runtime error : %s", except.what();
+    }
+
     etiLog.log(debug, "exiting...\n");
     fflush(stderr);
     //fermeture des fichiers

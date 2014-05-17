@@ -34,6 +34,7 @@
 #include "config.h"
 #include <vector>
 #include <list>
+#include <stdexcept>
 #include <stdint.h>
 #include "AFPacket.h"
 #include "Log.h"
@@ -44,11 +45,19 @@ typedef std::vector<uint8_t> RSPacket;
 class PFT
 {
     public:
-        static const int ParityBytes = 255 - 207;
+        static const int ParityBytes = 48;
 
         PFT(unsigned int RSDataWordLength, unsigned int NumRecoverableFragments) :
-            m_k(RSDataWordLength), m_m(NumRecoverableFragments), m_encoder(255, 207)
+            m_k(RSDataWordLength),
+            m_m(NumRecoverableFragments),
+            m_encoder(m_k + ParityBytes, m_k)
         {
+            if (m_k > 207) {
+                etiLog.level(warn) <<
+                        "EDI PFT: maximum chunk size is 207.";
+                throw std::out_of_range("EDI PFT Chunk size too large.");
+            }
+
             if (m_m > 5) {
                 etiLog.level(warn) <<
                     "EDI PFT: high number of recoverable fragments"

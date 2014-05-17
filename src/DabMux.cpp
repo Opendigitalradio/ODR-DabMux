@@ -753,7 +753,7 @@ int main(int argc, char *argv[])
             /******* Section STC **************************************************/
             // Stream Characterization,
             //  number of channel * 4 octets = nb octets total
-            int edi_stream_id = 0;
+            int edi_stream_id = 1;
             for (subchannel = ensemble->subchannels.begin();
                     subchannel != ensemble->subchannels.end();
                     ++subchannel) {
@@ -785,7 +785,7 @@ int main(int argc, char *argv[])
                 assert(getSizeByte(*subchannel) % 8 == 0);
 
                 edi_subchannels.push_back(tag_ESTn);
-                edi_subchannelToTag[*subchannel] = &tag_ESTn;
+                edi_subchannelToTag[*subchannel] = &edi_subchannels.back();
                 index += 4;
             }
 

@@ -43,10 +43,6 @@ std::vector<uint8_t> AFPacket::Assemble(TagPacket tag_packet)
 {
     std::vector<uint8_t> payload = tag_packet.Assemble();
 
-    header.ar_maj = 1;
-    header.ar_min = 0;
-    header.pt = protocol_type;
-
     std::string pack_data("AF"); // SYNC
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
 

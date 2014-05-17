@@ -32,22 +32,10 @@
 #include <stdint.h>
 #include "TagItems.h"
 #include "TagPacket.h"
-#define PACKED __attribute__ ((packed))
 
 #define EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS ('T')
 
 // ETSI TS 102 821, 6.1 AF packet structure
-struct AFHeader
-{
-    uint16_t sync;
-    uint32_t len;
-    uint16_t seq;
-    uint8_t  ar_cf:1;
-    uint8_t  ar_maj:3;
-    uint8_t  ar_min:4;
-    uint8_t  pt;
-} PACKED;
-
 class AFPacket
 {
     public:
@@ -58,7 +46,6 @@ class AFPacket
     private:
         static const bool have_crc = true;
 
-        AFHeader header;
         uint16_t seq; //counter that overflows at 0xFFFF
 
         char protocol_type;

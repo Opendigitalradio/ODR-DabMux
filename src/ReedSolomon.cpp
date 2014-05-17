@@ -98,7 +98,7 @@ int ReedSolomon::encode(void* data, unsigned long size)
     if (reverse) {
         ret = decode_rs_char(rsData, input, NULL, 0);
     } else {
-        encode_rs_char(rsData, input, &input[188]);
+        encode_rs_char(rsData, input, &input[myK]);
     }
 
     return ret;

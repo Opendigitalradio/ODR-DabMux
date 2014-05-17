@@ -39,7 +39,7 @@
 // AF Packet Major (3 bits) and Minor (4 bits) version
 #define AFHEADER_VERSION 0x8 // MAJ=1, MIN=0
 
-std::vector<uint8_t> AFPacket::Assemble(TagPacket tag_packet)
+AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
 {
     std::vector<uint8_t> payload = tag_packet.Assemble();
 

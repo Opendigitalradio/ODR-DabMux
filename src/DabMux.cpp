@@ -673,7 +673,7 @@ int main(int argc, char *argv[])
             TagPacket edi_tagpacket;
 
             // The TagPacket will then be placed into an AFPacket
-            AFPacket edi_afPacket(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
+            AFPacketiser edi_afPacket(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
 
             edi_tagDETI.atstf = 0; // TODO add ATST support
 

@@ -35,13 +35,15 @@
 
 #define EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS ('T')
 
+typedef std::vector<uint8_t> AFPacket;
+
 // ETSI TS 102 821, 6.1 AF packet structure
-class AFPacket
+class AFPacketiser
 {
     public:
-        AFPacket(char protocolType) : protocol_type(protocolType) {};
+        AFPacketiser(char protocolType) : protocol_type(protocolType) {};
 
-        std::vector<uint8_t> Assemble(TagPacket tag_packet);
+        AFPacket Assemble(TagPacket tag_packet);
 
     private:
         static const bool have_crc = true;

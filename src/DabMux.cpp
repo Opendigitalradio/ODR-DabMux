@@ -657,6 +657,9 @@ int main(int argc, char *argv[])
         /*   Each iteration of the main loop creates one ETI frame */
 #if EDI_DEBUG
         std::ofstream edi_debug_file("./edi.debug");
+
+        DabOutputTcp edi_output;
+        edi_output.Open("0.0.0.0:12000");
 #endif
 
         for (currentFrame = 0; running; currentFrame++) {
@@ -1964,6 +1967,14 @@ int main(int argc, char *argv[])
             // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
             vector< vector<uint8_t> > edi_fragments =
                 edi_pft.ProtectAndFragment(edi_afpacket);
+
+            // Send over ethernet
+            vector< vector<uint8_t> >::iterator edi_frag;
+            for (edi_frag = edi_fragments.begin();
+                    edi_frag != edi_fragments.end();
+                    ++edi_frag) {
+                edi_output.Write(&(edi_frag->front()), edi_frag->size());
+            }
 
 #if EDI_DEBUG
             std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);

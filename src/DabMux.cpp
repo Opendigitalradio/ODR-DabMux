@@ -2014,15 +2014,15 @@ int main(int argc, char *argv[])
         }
 
     }
-    catch (MuxInitException& except) {
+    catch (const MuxInitException& except) {
         etiLog.level(error) << "Caught multiplex initialisation error: " <<
             except.what();
     }
-    catch (std::invalid_argument& except) {
-        etiLog.level(error) << "Caught invalid argument : %s", except.what();
+    catch (const std::invalid_argument& except) {
+        etiLog.level(error) << "Caught invalid argument : " << except.what();
     }
-    catch (std::runtime_error& except) {
-        etiLog.level(error) << "Caught runtime error : %s", except.what();
+    catch (const std::runtime_error& except) {
+        etiLog.level(error) << "Caught runtime error : " << except.what();
     }
 
     etiLog.log(debug, "exiting...\n");

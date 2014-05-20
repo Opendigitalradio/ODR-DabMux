@@ -21,6 +21,7 @@
 
 #include "ReedSolomon.h"
 #include <stdexcept>
+#include <sstream>
 #include <stdio.h>          // For galois.h ...
 #include <string.h>         // For memcpy
 
@@ -47,7 +48,10 @@ ReedSolomon::ReedSolomon(int N, int K, bool reverse, int gfpoly, int firstRoot, 
     rsData = init_rs_char(symsize, gfpoly, firstRoot, primElem, nroots, pad);
 
     if (rsData == NULL) {
-        throw std::invalid_argument("Invalid Reed-Solomon parameters!");
+        std::stringstream ss;
+        ss << "Invalid Reed-Solomon parameters! " <<
+            "N=" << N << " ; K=" << K << " ; pad=" << pad;
+        throw std::invalid_argument(ss.str());
     }
 }
 

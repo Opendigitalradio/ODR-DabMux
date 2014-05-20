@@ -27,7 +27,8 @@
 #   include "config.h"
 #endif
 
-#define EDI_DEBUG 1
+#define EDI_DEBUG 0
+#define EDI_PFT 0
 
 #include <cstdio>
 #include <stdlib.h>
@@ -654,14 +655,14 @@ int main(int argc, char *argv[])
         subchannelFIG0_1 = ensemble->subchannels.end();
 
 
-        /*   Each iteration of the main loop creates one ETI frame */
 #if EDI_DEBUG
-        std::ofstream edi_debug_file("./edi.debug");
-
-        DabOutputTcp edi_output;
-        edi_output.Open("0.0.0.0:12000");
+        etiLog.log(info, "Setup EDI debug");
+        //std::ofstream edi_debug_file("./edi.debug");
+        UdpSocket edi_output(13000);
+        etiLog.log(info, "EDI debug set up");
 #endif
 
+        /*   Each iteration of the main loop creates one ETI frame */
         for (currentFrame = 0; running; currentFrame++) {
             if ((limit > 0) && (currentFrame >= limit)) {
                 break;
@@ -680,7 +681,9 @@ int main(int argc, char *argv[])
             AFPacketiser edi_afPacketiser(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
 
             // The AF Packet will be protected with reed-solomon and split in fragments
+#if EDI_PFT
             PFT edi_pft(208, 3);
+#endif
 
             edi_tagDETI.atstf = 0; // TODO add ATST support
 
@@ -1952,6 +1955,7 @@ int main(int argc, char *argv[])
              ***********   Finalise and send EDI   ********************************
              **********************************************************************/
 
+#if EDI_DEBUG
             // put tags *ptr, DETI and all subchannels into one TagPacket
             edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
             edi_tagpacket.tag_items.push_back(&edi_tagDETI);
@@ -1964,6 +1968,7 @@ int main(int argc, char *argv[])
             // Assemble into one AF Packet
             AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
 
+#  if EDI_PFT
             // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
             vector< vector<uint8_t> > edi_fragments =
                 edi_pft.ProtectAndFragment(edi_afpacket);
@@ -1973,12 +1978,33 @@ int main(int argc, char *argv[])
             for (edi_frag = edi_fragments.begin();
                     edi_frag != edi_fragments.end();
                     ++edi_frag) {
-                edi_output.Write(&(edi_frag->front()), edi_frag->size());
-            }
 
-#if EDI_DEBUG
-            std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-            std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
+                UdpPacket udppacket;
+
+                InetAddress& addr = udppacket.getAddress();
+                addr.setAddress("192.168.2.2");
+                addr.setPort(12000);
+
+                udppacket.addData(&(edi_frag->front()), edi_frag->size());
+
+                edi_output.send(udppacket);
+            }
+#  else
+            // Send over ethernet
+
+            UdpPacket udppacket;
+
+            InetAddress& addr = udppacket.getAddress();
+            addr.setAddress("192.168.3.2");
+            addr.setPort(12000);
+
+            udppacket.addData(&(edi_afpacket.front()), edi_afpacket.size());
+
+            edi_output.send(udppacket);
+#  endif
+
+            //std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+            //std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
             fprintf(stderr, "EDI number of fragments %zu\n", edi_fragments.size());
 #endif
 

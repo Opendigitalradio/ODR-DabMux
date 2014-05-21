@@ -34,7 +34,9 @@
 #include <cstdio>
 #include <cstring>
 #include <stdint.h>
+#include <arpa/inet.h>
 #include "PFT.h"
+#include "crc.h"
 #include "ReedSolomon.h"
 
 using namespace std;
@@ -96,5 +98,65 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
     }
 
     return fragments;
+}
+
+std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
+{
+    vector< vector<uint8_t> > fragments = ProtectAndFragment(af_packet);
+    vector< vector<uint8_t> > pft_fragments;
+
+    unsigned int findex = 0;
+
+    unsigned fcount = fragments.size();
+
+    const size_t zero_pad = m_num_chunks * m_k - af_packet.size();
+
+    for (size_t i = 0; i < fragments.size(); i++) {
+        const vector<uint8_t>& fragment = fragments[i];
+
+        std::string psync("PF"); // SYNC
+        std::vector<uint8_t> packet(psync.begin(), psync.end());
+
+        packet.push_back(m_pseq >> 8);
+        packet.push_back(m_pseq & 0xFF);
+        m_pseq++;
+
+        packet.push_back(findex >> 16);
+        packet.push_back(findex >> 8);
+        packet.push_back(findex & 0xFF);
+        findex++;
+
+        packet.push_back(fcount >> 16);
+        packet.push_back(fcount >> 8);
+        packet.push_back(fcount & 0xFF);
+
+        unsigned int plen = fragment.size();
+        plen |= 0x8000; // Set FEC bit
+
+        packet.push_back(plen >> 16);
+        packet.push_back(plen >> 8);
+        packet.push_back(plen & 0xFF);
+
+        packet.push_back(m_k);
+        packet.push_back(zero_pad);
+
+        // calculate CRC over AF Header and payload
+        uint16_t crc = 0xffff;
+        crc = crc16(crc, &(packet.back()), packet.size());
+        crc ^= 0xffff;
+        crc = htons(crc);
+
+        packet.push_back((crc >> 24) & 0xFF);
+        packet.push_back((crc >> 16) & 0xFF);
+        packet.push_back((crc >> 8) & 0xFF);
+        packet.push_back(crc & 0xFF);
+
+        // insert payload, must have a length multiple of 8 bytes
+        packet.insert(packet.end(), fragment.begin(), fragment.end());
+
+        pft_fragments.push_back(packet);
+    }
+
+    return pft_fragments;
 }
 

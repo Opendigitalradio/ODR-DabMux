@@ -41,6 +41,7 @@
 #include "ReedSolomon.h"
 
 typedef std::vector<uint8_t> RSPacket;
+typedef std::vector<uint8_t> PFTFragment;
 
 class PFT
 {
@@ -50,6 +51,7 @@ class PFT
         PFT(unsigned int RSDataWordLength, unsigned int NumRecoverableFragments) :
             m_k(RSDataWordLength),
             m_m(NumRecoverableFragments),
+            m_pseq(0),
             m_encoder(m_k + ParityBytes, m_k)
         {
             if (m_k > 207) {
@@ -66,6 +68,10 @@ class PFT
             }
         }
 
+        // return a list of PFT fragments with the correct
+        // PFT headers
+        std::vector< PFTFragment > Assemble(AFPacket af_packet);
+
         // Apply Reed-Solomon FEC to the AF Packet
         RSPacket Protect(AFPacket af_packet);
 
@@ -75,6 +81,8 @@ class PFT
     private:
         unsigned int m_k; // length of RS data word
         unsigned int m_m; // number of fragments that can be recovered if lost
+
+        uint16_t m_pseq;
 
         size_t m_num_chunks;
 

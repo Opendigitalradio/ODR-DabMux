@@ -682,7 +682,7 @@ int main(int argc, char *argv[])
 
             // The AF Packet will be protected with reed-solomon and split in fragments
 #if EDI_PFT
-            PFT edi_pft(208, 3);
+            PFT edi_pft(207, 3);
 #endif
 
             edi_tagDETI.atstf = 0; // TODO add ATST support
@@ -1970,8 +1970,8 @@ int main(int argc, char *argv[])
 
 #  if EDI_PFT
             // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
-            vector< vector<uint8_t> > edi_fragments =
-                edi_pft.ProtectAndFragment(edi_afpacket);
+            vector< PFTFragment > edi_fragments =
+                edi_pft.Assemble(edi_afpacket);
 
             // Send over ethernet
             vector< vector<uint8_t> >::iterator edi_frag;
@@ -1982,13 +1982,15 @@ int main(int argc, char *argv[])
                 UdpPacket udppacket;
 
                 InetAddress& addr = udppacket.getAddress();
-                addr.setAddress("192.168.2.2");
+                addr.setAddress("127.0.0.1");
                 addr.setPort(12000);
 
                 udppacket.addData(&(edi_frag->front()), edi_frag->size());
 
                 edi_output.send(udppacket);
             }
+
+            fprintf(stderr, "EDI number of PFT fragments %zu\n", edi_fragments.size());
 #  else
             // Send over ethernet
 
@@ -2005,7 +2007,6 @@ int main(int argc, char *argv[])
 
             //std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
             //std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
-            fprintf(stderr, "EDI number of fragments %zu\n", edi_fragments.size());
 #endif
 
 #if _DEBUG
@@ -2057,7 +2058,9 @@ int main(int argc, char *argv[])
     for (subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
-        (*subchannel)->input->close();
+        if ((*subchannel)->input != NULL) {
+            (*subchannel)->input->close();
+        }
         delete (*subchannel)->input;
     }
     for (output = outputs.begin() ; output != outputs.end(); ++output) {

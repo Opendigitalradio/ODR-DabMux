@@ -468,16 +468,16 @@ int main(int argc, char *argv[])
 
                     protection = &(*subchannel)->protection;
                     switch ((*subchannel)->type) {
-                    case 0: // Audio
+                    case Audio:
                         {
                             if (protection->form != 0) {
                                 (*component)->type = 0x3f;  // DAB+
                             }
                         }
                         break;
-                    case 1:
-                    case 2:
-                    case 3:
+                    case DataDmb:
+                    case Fidc:
+                    case Packet:
                         break;
                     default:
                         etiLog.log(error,
@@ -617,7 +617,7 @@ int main(int argc, char *argv[])
                 returnCode = -1;
                 throw MuxInitException();
             }
-            if ((*subchannel)->type != 3) continue;
+            if ((*subchannel)->type != Packet) continue;
 
             (*component)->packet.id = cur++;
         }
@@ -1055,30 +1055,30 @@ int main(int argc, char *argv[])
                         }
 
                         switch ((*subchannel)->type) {
-                        case 0: // Audio
+                        case Audio:
                             audio_description =
                                 (FIGtype0_2_audio_component*)&etiFrame[index];
-                            audio_description->TMid = 0;
-                            audio_description->ASCTy = (*component)->type;
+                            audio_description->TMid    = 0;
+                            audio_description->ASCTy   = (*component)->type;
                             audio_description->SubChId = (*subchannel)->id;
-                            audio_description->PS = ((curCpnt == 0) ? 1 : 0);
+                            audio_description->PS      = ((curCpnt == 0) ? 1 : 0);
                             audio_description->CA_flag = 0;
                             break;
-                        case 1: // Data
+                        case DataDmb:
                             data_description =
                                 (FIGtype0_2_data_component*)&etiFrame[index];
-                            data_description->TMid = 1;
-                            data_description->DSCTy = (*component)->type;
+                            data_description->TMid    = 1;
+                            data_description->DSCTy   = (*component)->type;
                             data_description->SubChId = (*subchannel)->id;
-                            data_description->PS = ((curCpnt == 0) ? 1 : 0);
+                            data_description->PS      = ((curCpnt == 0) ? 1 : 0);
                             data_description->CA_flag = 0;
                             break;
-                        case 3: // Packet
+                        case Packet:
                             packet_description =
                                 (FIGtype0_2_packet_component*)&etiFrame[index];
-                            packet_description->TMid = 3;
+                            packet_description->TMid    = 3;
                             packet_description->setSCId((*component)->packet.id);
-                            packet_description->PS = ((curCpnt == 0) ? 1 : 0);
+                            packet_description->PS      = ((curCpnt == 0) ? 1 : 0);
                             packet_description->CA_flag = 0;
                             break;
                         default:
@@ -1171,7 +1171,7 @@ int main(int argc, char *argv[])
                         }
 
                         switch ((*subchannel)->type) {
-                        case 0: // Audio
+                        case Audio:
                             audio_description =
                                 (FIGtype0_2_audio_component*)&etiFrame[index];
                             audio_description->TMid = 0;
@@ -1180,7 +1180,7 @@ int main(int argc, char *argv[])
                             audio_description->PS = ((curCpnt == 0) ? 1 : 0);
                             audio_description->CA_flag = 0;
                             break;
-                        case 1: // Data
+                        case DataDmb:
                             data_description =
                                 (FIGtype0_2_data_component*)&etiFrame[index];
                             data_description->TMid = 1;
@@ -1189,7 +1189,7 @@ int main(int argc, char *argv[])
                             data_description->PS = ((curCpnt == 0) ? 1 : 0);
                             data_description->CA_flag = 0;
                             break;
-                        case 3: // Packet
+                        case Packet:
                             packet_description =
                                 (FIGtype0_2_packet_component*)&etiFrame[index];
                             packet_description->TMid = 3;
@@ -1236,7 +1236,7 @@ int main(int argc, char *argv[])
                         throw MuxInitException();
                     }
 
-                    if ((*subchannel)->type != 3) continue;
+                    if ((*subchannel)->type != Packet) continue;
 
                     if (fig0_3_header == NULL) {
                         fig0_3_header = (FIGtype0_3_header*)&etiFrame[index];
@@ -1400,7 +1400,7 @@ int main(int argc, char *argv[])
                         figSize += 2;
                     }
 
-                    if ((*subchannel)->type == 3) { // Data packet
+                    if ((*subchannel)->type == Packet) { // Data packet
                         if (figSize > 30 - 5) {
                             break;
                         }
@@ -1481,7 +1481,7 @@ int main(int argc, char *argv[])
                         figSize += 2;
                     }
 
-                    if ((*subchannel)->type == 3) { // Data packet
+                    if ((*subchannel)->type == Packet) { // Data packet
                         if (figSize > 30 - 7) {
                             break;
                         }
@@ -1575,7 +1575,7 @@ int main(int argc, char *argv[])
                     }
 
                     if (transmitFIG0_13programme &&
-                            (*subchannel)->type == 0) { // audio
+                            (*subchannel)->type == Audio) { // audio
                         if (fig0 == NULL) {
                             fig0 = (FIGtype0*)&etiFrame[index];
                             fig0->FIGtypeNumber = 0;
@@ -1621,7 +1621,7 @@ int main(int argc, char *argv[])
                         fig0->Length += 2 + app->length;
                     }
                     else if (!transmitFIG0_13programme &&
-                            (*subchannel)->type == 3 && // packet
+                            (*subchannel)->type == Packet &&
                             (*componentFIG0_13)->packet.appType != 0xffff) {
 
                         if (fig0 == NULL) {

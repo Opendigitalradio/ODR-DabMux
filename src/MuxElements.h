@@ -144,18 +144,19 @@ struct dabProtection {
     };
 };
 
+enum dab_subchannel_type_t {
+    Audio = 0,
+    DataDmb = 1,
+    Fidc = 2,
+    Packet = 3
+};
 
 struct dabSubchannel {
     const char* inputProto;
     const char* inputName;
     DabInputBase* input;
     unsigned char id;
-    /* The type is:
-     * 0 for mpeg, dabplus
-     * 1 for data, dmb
-     * 3 for packet
-     */
-    unsigned char type;
+    dab_subchannel_type_t type;
     uint16_t startAddress;
     uint16_t bitrate;
     dabProtection protection;

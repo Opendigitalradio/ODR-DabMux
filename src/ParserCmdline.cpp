@@ -217,13 +217,13 @@ bool parse_cmdline(char **argv,
 #if defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
             } else if (c == 'A') {
                 (*subchannel)->inputProto = "file";
-                (*subchannel)->type = 0;
+                (*subchannel)->type = Audio;
                 (*subchannel)->bitrate = 0;
                 operations = dabInputMpegFileOperations;
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
 #if defined(HAVE_FORMAT_DABPLUS)
             } else if (c == 'F') {
-                (*subchannel)->type = 0;
+                (*subchannel)->type = Audio;
                 (*subchannel)->bitrate = 32;
 
                 char* proto;
@@ -307,19 +307,19 @@ bool parse_cmdline(char **argv,
                     goto EXIT;
                 }
 
-                (*subchannel)->type = 1;
+                (*subchannel)->type = DataDmb;
                 (*subchannel)->bitrate = DEFAULT_DATA_BITRATE;
 #if defined(HAVE_INPUT_TEST) && defined(HAVE_FORMAT_RAW)
             } else if (c == 'T') {
                 (*subchannel)->inputProto = "test";
-                (*subchannel)->type = 1;
+                (*subchannel)->type = DataDmb;
                 (*subchannel)->bitrate = DEFAULT_DATA_BITRATE;
                 operations = dabInputTestOperations;
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
             } else if (c == 'P') {
                 (*subchannel)->inputProto = "file";
-                (*subchannel)->type = 3;
+                (*subchannel)->type = Packet;
                 (*subchannel)->bitrate = DEFAULT_PACKET_BITRATE;
 #ifdef HAVE_INPUT_FILE
                 operations = dabInputPacketFileOperations;
@@ -331,7 +331,7 @@ bool parse_cmdline(char **argv,
 #ifdef HAVE_FORMAT_EPM
             } else if (c == 'E') {
                 (*subchannel)->inputProto = "file";
-                (*subchannel)->type = 3;
+                (*subchannel)->type = Packet;
                 (*subchannel)->bitrate = DEFAULT_PACKET_BITRATE;
                 operations = dabInputEnhancedPacketFileOperations;
 #endif // defined(HAVE_FORMAT_EPM)
@@ -360,7 +360,7 @@ bool parse_cmdline(char **argv,
                     goto EXIT;
                 }
 
-                (*subchannel)->type = 1;
+                (*subchannel)->type = DataDmb;
                 (*subchannel)->bitrate = DEFAULT_DATA_BITRATE;
 #endif
             } else {
@@ -514,7 +514,7 @@ bool parse_cmdline(char **argv,
             }
             switch ((*subchannel)->type) {
 #ifdef HAVE_FORMAT_PACKET
-            case 3:
+            case Packet:
                 if ( ((DabInputCompatible*)(*subchannel)->input)->getOpts() == dabInputPacketFileOperations) {
                     operations = dabInputFifoOperations;
 #ifdef HAVE_FORMAT_EPM
@@ -532,7 +532,7 @@ bool parse_cmdline(char **argv,
                 break;
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_MPEG
-            case 0:
+            case Audio:
                 if ( ((DabInputCompatible*)(*subchannel)->input)->getOpts() == dabInputMpegFileOperations) {
                     operations = dabInputMpegFifoOperations;
                 } else if (((DabInputCompatible*)(*subchannel)->input)->getOpts() ==

@@ -393,16 +393,16 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
         etiLog.log(info, "   name:     %s",
                 (*subchannel)->inputName);
         switch ((*subchannel)->type) {
-        case 0:
+        case Audio:
             etiLog.log(info, " type:       audio");
             break;
-        case 1:
+        case DataDmb:
             etiLog.log(info, " type:       data");
             break;
-        case 2:
+        case Fidc:
             etiLog.log(info, " type:       fidc");
             break;
-        case 3:
+        case Packet:
             etiLog.log(info, " type:       packet");
             break;
         default:

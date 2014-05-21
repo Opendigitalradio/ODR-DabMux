@@ -568,7 +568,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     if (0) {
 #if defined(HAVE_FORMAT_MPEG)
     } else if (type == "audio") {
-        subchan->type = 0;
+        subchan->type = Audio;
         subchan->bitrate = 0;
 
         char* proto;
@@ -643,7 +643,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
 #if defined(HAVE_FORMAT_DABPLUS)
     } else if (type == "dabplus") {
-        subchan->type = 0;
+        subchan->type = Audio;
         subchan->bitrate = 32;
 
         char* proto;
@@ -780,19 +780,19 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
 
-        subchan->type = 1;
+        subchan->type = DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #if defined(HAVE_INPUT_TEST) && defined(HAVE_FORMAT_RAW)
     } else if (type == "test") {
         subchan->inputProto = "test";
-        subchan->type = 1;
+        subchan->type = DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
         operations = dabInputTestOperations;
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
     } else if (type == "packet") {
         subchan->inputProto = "file";
-        subchan->type = 3;
+        subchan->type = Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
 #ifdef HAVE_INPUT_FILE
         operations = dabInputPacketFileOperations;
@@ -804,7 +804,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #ifdef HAVE_FORMAT_EPM
     } else if (type == "enhancedpacked") {
         subchan->inputProto = "file";
-        subchan->type = 3;
+        subchan->type = Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
         operations = dabInputEnhancedPacketFileOperations;
 #endif // defined(HAVE_FORMAT_EPM)
@@ -833,7 +833,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
 
-        subchan->type = 1;
+        subchan->type = DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #endif
     } else {

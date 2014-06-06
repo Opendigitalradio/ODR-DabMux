@@ -657,7 +657,9 @@ int main(int argc, char *argv[])
 
 #if EDI_DEBUG
         etiLog.log(info, "Setup EDI debug");
-        //std::ofstream edi_debug_file("./edi.debug");
+#  if EDI_DUMP
+        std::ofstream edi_debug_file("./edi.debug");
+#  endif
         UdpSocket edi_output(13000);
         etiLog.log(info, "EDI debug set up");
 #endif
@@ -862,7 +864,7 @@ int main(int argc, char *argv[])
             // (depending on mode)
             index = ((fc->NST) + 2 + 1) * 4;
             edi_tagDETI.fic_data = &etiFrame[index];
-            edi_tagDETI.fic_length = FICL;
+            edi_tagDETI.fic_length = FICL * 4;
 
             // FIC Insertion
             FIGtype0* fig0;
@@ -2048,8 +2050,10 @@ int main(int argc, char *argv[])
             edi_output.send(udppacket);
 #  endif
 
-            //std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-            //std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
+#  if EDI_DUMP
+            std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+            std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
+#  endif
 #endif
 
 #if _DEBUG

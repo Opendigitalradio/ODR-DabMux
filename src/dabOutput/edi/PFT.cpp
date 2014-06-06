@@ -142,12 +142,10 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
 
         // calculate CRC over AF Header and payload
         uint16_t crc = 0xffff;
-        crc = crc16(crc, &(packet.back()), packet.size());
+        crc = crc16(crc, &(packet.front()), packet.size());
         crc ^= 0xffff;
         crc = htons(crc);
 
-        packet.push_back((crc >> 24) & 0xFF);
-        packet.push_back((crc >> 16) & 0xFF);
         packet.push_back((crc >> 8) & 0xFF);
         packet.push_back(crc & 0xFF);
 

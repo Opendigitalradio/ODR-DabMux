@@ -30,6 +30,8 @@
 #include "TagPacket.h"
 #include <vector>
 #include <string>
+#include <iostream>
+#include <cstdio>
 #include <stdint.h>
 #include <arpa/inet.h>
 
@@ -43,16 +45,19 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
 {
     std::vector<uint8_t> payload = tag_packet.Assemble();
 
+    std::cerr << "Assemble AFPacket " << seq << std::endl;
+
     std::string pack_data("AF"); // SYNC
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
 
     uint32_t taglength = payload.size();
+    std::cerr << "         AFPacket payload size " << payload.size() << std::endl;
 
     // write length into packet
-    packet[2] = (taglength >> 24) & 0xFF;
-    packet[3] = (taglength >> 16) & 0xFF;
-    packet[4] = (taglength >> 8) & 0xFF;
-    packet[5] = taglength & 0xFF;
+    packet.push_back((taglength >> 24) & 0xFF);
+    packet.push_back((taglength >> 16) & 0xFF);
+    packet.push_back((taglength >> 8) & 0xFF);
+    packet.push_back(taglength & 0xFF);
 
     // fill rest of header
     packet.push_back(seq >> 8);
@@ -65,14 +70,16 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
 
     // calculate CRC over AF Header and payload
     uint16_t crc = 0xffff;
-    crc = crc16(crc, &(packet.back()), packet.size());
+    crc = crc16(crc, &(packet.front()), packet.size());
     crc ^= 0xffff;
     crc = htons(crc);
 
-    packet.push_back((crc >> 24) & 0xFF);
-    packet.push_back((crc >> 16) & 0xFF);
+    fprintf(stderr, "         AFPacket crc %x\n", crc);
+
     packet.push_back((crc >> 8) & 0xFF);
     packet.push_back(crc & 0xFF);
+
+    std::cerr << "         AFPacket length " << packet.size() << std::endl;
 
     return packet;
 }

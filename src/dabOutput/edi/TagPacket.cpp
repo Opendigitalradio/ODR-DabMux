@@ -27,6 +27,7 @@
 #include "TagPacket.h"
 #include "TagItems.h"
 #include <vector>
+#include <iostream>
 #include <string>
 #include <list>
 #include <stdint.h>
@@ -38,12 +39,16 @@ std::vector<uint8_t> TagPacket::Assemble()
 
     std::vector<uint8_t> packet;
 
+    std::cerr << "Assemble TAGPacket" << std::endl;
+
     size_t packet_length = 0;
     for (tag = tag_items.begin(); tag != tag_items.end(); ++tag) {
         std::vector<uint8_t> tag_data = (*tag)->Assemble();
         packet.insert(packet.end(), tag_data.begin(), tag_data.end());
 
         packet_length += tag_data.size();
+
+        std::cerr << "     Add TAGItem of length " << tag_data.size() << std::endl;
     }
 
     // Add padding

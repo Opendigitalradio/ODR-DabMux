@@ -30,21 +30,45 @@
 #include "config.h"
 #include "TagItems.h"
 #include <vector>
+#include <iostream>
 #include <string>
 #include <stdint.h>
 
 std::vector<uint8_t> TagStarPTR::Assemble()
 {
-    std::string pack_data("*ptr\0\0\0\100DETI");
+    std::cerr << "TagItem *ptr" << std::endl;
+    std::string pack_data("*ptr");
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
+
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0x40);
+
+    std::string protocol("DETI");
+    packet.insert(packet.end(), protocol.begin(), protocol.end());
+
+    // Major
+    packet.push_back(0);
+    packet.push_back(0);
+
+    // Minor
+    packet.push_back(0);
+    packet.push_back(0);
     return packet;
 }
 
 std::vector<uint8_t> TagDETI::Assemble()
 {
-    std::string pack_data("deti\0\0\0\0");
+    std::string pack_data("deti");
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
     packet.reserve(256);
+
+    // Placeholder for length
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0);
 
     uint16_t detiHeader = dflc | (rfudf << 13) | (ficf << 14) | (atstf << 15);
     packet.push_back(detiHeader >> 8);
@@ -94,18 +118,27 @@ std::vector<uint8_t> TagDETI::Assemble()
 
     dflc = (dflc+1) % 5000;
 
+    std::cerr << "TagItem deti, packet.size " << packet.size() << std::endl;
+    std::cerr << "              fic length " << fic_length << std::endl;
+    std::cerr << "              length " << taglength / 8 << std::endl;
     return packet;
 }
 
 
 std::vector<uint8_t> TagESTn::Assemble()
 {
-    std::string pack_data("estN\0\0\0\0");
+    std::string pack_data("est");
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
-
-    packet[3] = id_; // replace the N in estN above
-
     packet.reserve(mst_length*8 + 16);
+
+    packet.push_back(id_);
+
+    // Placeholder for length
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0);
+
 
     uint32_t sstc = (scid << 18) | (sad << 8) | (tpl << 2) | rfa;
     packet.push_back((sstc >> 16) & 0xFF);
@@ -126,6 +159,8 @@ std::vector<uint8_t> TagESTn::Assemble()
     packet[6] = (taglength >> 8) & 0xFF;
     packet[7] = taglength & 0xFF;
 
+    std::cerr << "TagItem ESTn, length " << packet.size() << std::endl;
+    std::cerr << "              mst_length " << mst_length << std::endl;
     return packet;
 }
 #endif

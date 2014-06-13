@@ -88,6 +88,9 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
     const size_t fragment_size = m_num_chunks * (m_k + ParityBytes) / max_payload_size;
     const size_t num_fragments = m_num_chunks * (m_k + ParityBytes) / fragment_size;
 
+    fprintf(stderr, "  PnF fragment_size %zu, num frag %zu\n",
+            fragment_size, num_fragments);
+
     vector< vector<uint8_t> > fragments(num_fragments);
 
     for (size_t i = 0; i < num_fragments; i++) {
@@ -119,7 +122,6 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
 
         packet.push_back(m_pseq >> 8);
         packet.push_back(m_pseq & 0xFF);
-        m_pseq++;
 
         packet.push_back(findex >> 16);
         packet.push_back(findex >> 8);
@@ -133,9 +135,8 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
         unsigned int plen = fragment.size();
         plen |= 0x8000; // Set FEC bit
 
-        packet.push_back(plen >> 16);
-        packet.push_back(plen >> 8);
-        packet.push_back(plen & 0xFF);
+        packet.push_back(plen >> 8);   // RSk
+        packet.push_back(plen & 0xFF); // RSz
 
         packet.push_back(m_k);
         packet.push_back(zero_pad);
@@ -144,7 +145,6 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
         uint16_t crc = 0xffff;
         crc = crc16(crc, &(packet.front()), packet.size());
         crc ^= 0xffff;
-        crc = htons(crc);
 
         packet.push_back((crc >> 8) & 0xFF);
         packet.push_back(crc & 0xFF);
@@ -153,7 +153,12 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
         packet.insert(packet.end(), fragment.begin(), fragment.end());
 
         pft_fragments.push_back(packet);
+
+        fprintf(stderr, "* PFT pseq %d, findex %d, fcount %d, plen %d\n",
+                m_pseq, findex, fcount, plen & ~0x8000);
     }
+
+    m_pseq++;
 
     return pft_fragments;
 }

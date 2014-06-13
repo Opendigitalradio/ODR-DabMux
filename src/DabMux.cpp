@@ -28,7 +28,8 @@
 #endif
 
 #define EDI_DEBUG 0
-#define EDI_PFT 0
+#define EDI_DUMP 1
+#define EDI_PFT 1
 
 #include <cstdio>
 #include <stdlib.h>
@@ -664,6 +665,14 @@ int main(int argc, char *argv[])
         etiLog.log(info, "EDI debug set up");
 #endif
 
+        // The TagPacket will then be placed into an AFPacket
+        AFPacketiser edi_afPacketiser(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
+
+#if EDI_PFT
+        // The AF Packet will be protected with reed-solomon and split in fragments
+        PFT edi_pft(207, 3);
+#endif
+
         /*   Each iteration of the main loop creates one ETI frame */
         for (currentFrame = 0; running; currentFrame++) {
             if ((limit > 0) && (currentFrame >= limit)) {
@@ -679,16 +688,7 @@ int main(int argc, char *argv[])
             // The above Tag Items will be assembled into a TAG Packet
             TagPacket edi_tagpacket;
 
-            // The TagPacket will then be placed into an AFPacket
-            AFPacketiser edi_afPacketiser(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
-
-            // The AF Packet will be protected with reed-solomon and split in fragments
-#if EDI_PFT
-            PFT edi_pft(207, 3);
-#endif
-
             edi_tagDETI.atstf = 0; // TODO add ATST support
-
 
             date = getDabTime();
 
@@ -2033,6 +2033,11 @@ int main(int argc, char *argv[])
                 udppacket.addData(&(edi_frag->front()), edi_frag->size());
 
                 edi_output.send(udppacket);
+
+#    if EDI_DUMP
+                std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+                std::copy(edi_frag->begin(), edi_frag->end(), debug_iterator);
+#    endif
             }
 
             fprintf(stderr, "EDI number of PFT fragments %zu\n", edi_fragments.size());

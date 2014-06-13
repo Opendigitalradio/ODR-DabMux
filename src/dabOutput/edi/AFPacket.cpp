@@ -72,7 +72,6 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
     uint16_t crc = 0xffff;
     crc = crc16(crc, &(packet.front()), packet.size());
     crc ^= 0xffff;
-    crc = htons(crc);
 
     fprintf(stderr, "         AFPacket crc %x\n", crc);
 

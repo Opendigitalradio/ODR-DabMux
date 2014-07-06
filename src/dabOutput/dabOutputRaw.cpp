@@ -30,7 +30,6 @@
 #   include <fscfg.h>
 #   include <sdci.h>
 #else
-#   include <farsync.h>
 #   include <netinet/in.h>
 #   include <sys/types.h>
 #   include <sys/socket.h>
@@ -38,6 +37,7 @@
 #   include <linux/if_packet.h>
 #   include <linux/netdevice.h>
 #   include <net/if_arp.h>
+#   include <farsync.h>
 #endif
 
 const unsigned char revTable[] = {
@@ -173,6 +173,7 @@ int DabOutputRaw::Open(const char* filename)
         }
     } else {
         etiLog.log(debug, "Farsync card identified.\n");
+        etiLog.log(debug, "Using version %s of the FarSync driver\n", FST_USER_VERSION);
         this->isCyclades_ = false;
 
         info.lineInterface = E1;

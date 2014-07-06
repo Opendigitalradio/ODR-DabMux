@@ -1,10 +1,9 @@
 /*
- *      FarSync X21 driver for Linux
+ *      FarSync OEM driver for Linux
  *
- *      Actually sync driver for X.21, V.35 and V.24 on FarSync T-series cards
- *
- *      Copyright (C) 2001-2004 FarSite Communications Ltd.
+ *      Copyright (C) 2001-2012 FarSite Communications Ltd.
  *      www.farsite.co.uk
+ *		$Id: farsync.h 1471 2013-09-10 08:01:11Z kevinc $
  *
  *      This program is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU General Public License
@@ -33,12 +32,72 @@
  *      have individual versions (or IDs) that move much faster than the
  *      the release version as individual updates are tracked.
  */
-#define FST_USER_VERSION        "1.06"
+#define FST_USER_VERSION        "2.1.8"
 #define FST_PATCH_LEVEL         "02"
-#define FST_PLATFORM            "ia32"
-#define FST_ADDITIONAL          "-T1"
+#ifdef __x86_64__
+#define FST_PLATFORM            "64bit"
+#else
+#define FST_PLATFORM            "32bit"
+#endif
+#define FST_ADDITIONAL          FST_BUILD_NO
 
 #define FST_INCLUDES_CHAR
+
+struct fst_device_stats
+{
+	unsigned long	rx_packets;	/* total packets received	*/
+	unsigned long	tx_packets;	/* total packets transmitted	*/
+	unsigned long	rx_bytes;	/* total bytes received 	*/
+	unsigned long	tx_bytes;	/* total bytes transmitted	*/
+	unsigned long	rx_errors;	/* bad packets received		*/
+	unsigned long	tx_errors;	/* packet transmit problems	*/
+	unsigned long	rx_dropped;	/* no space in linux buffers	*/
+	unsigned long	tx_dropped;	/* no space available in linux	*/
+	unsigned long	multicast;	/* multicast packets received	*/
+	unsigned long	collisions;
+
+	/* detailed rx_errors: */
+	unsigned long	rx_length_errors;
+	unsigned long	rx_over_errors;	/* receiver ring buff overflow	*/
+	unsigned long	rx_crc_errors;	/* recved pkt with crc error	*/
+	unsigned long	rx_frame_errors;/* recv'd frame alignment error */
+	unsigned long	rx_fifo_errors;	/* recv'r fifo overrun		*/
+        unsigned long	rx_missed_errors;	/* receiver missed packet	*/
+
+	/* detailed tx_errors */
+	unsigned long	tx_aborted_errors;
+	unsigned long	tx_carrier_errors;
+	unsigned long	tx_fifo_errors;
+	unsigned long	tx_heartbeat_errors;
+	unsigned long	tx_underrun_errors;
+	
+	/* for cslip etc */
+	unsigned long	rx_compressed;
+	unsigned long	tx_compressed;
+};
+
+#define COM_STOP_BITS_1       0
+#define COM_STOP_BITS_1_5     1
+#define COM_STOP_BITS_2       2
+
+#define COM_NO_PARITY         0
+#define COM_ODD_PARITY        1
+#define COM_EVEN_PARITY       2
+#define COM_FORCE_PARITY_1    3
+#define COM_FORCE_PARITY_0    4
+
+#define COM_FLOW_CONTROL_NONE     1
+#define COM_FLOW_CONTROL_RTSCTS   2
+#define COM_FLOW_CONTROL_XONXOFF  3
+
+struct fstioc_async_conf {
+  unsigned char flow_control;
+  unsigned char stop_bits;
+  unsigned char parity;
+  unsigned char word_length;
+  unsigned char xon_char;
+  unsigned char xoff_char;
+};
 
 /*      Ioctl call command values
  *
@@ -56,7 +115,7 @@
 #define FSTGETSHELL     (SIOCDEVPRIVATE+12)
 #define FSTSETMON       (SIOCDEVPRIVATE+13)
 #define FSTSETPORT      (SIOCDEVPRIVATE+14)
-
+#define FSTCMD          (SIOCDEVPRIVATE+15)
 
 /*      FSTWRITE
  *
@@ -67,6 +126,18 @@ struct fstioc_write {
         unsigned int  offset;
         unsigned char data[0];
 };
+
+struct fstioc_control_request {
+   #define FSCONTROLREQUEST_VERSION       1
+
+   __u32  uVersion;      // Version of this structure
+   __u8   bDirection;    // 1 ==> HostToDevice, 0 ==> DeviceToHost
+   __u8   byRequest;
+   __u16 wValue;
+   __u16 wIndex;
+   __u16 wDataLength;
+   __u8   Data[256]; 
+ };
 
 
 /*      FSTCPURESET and FSTCPURELEASE
@@ -114,6 +185,7 @@ struct fstioc_info {
         unsigned char  invertClock;     /* Invert clock feature for syncing */
         unsigned char  asyncAbility ;   /* The ability to do async */
         unsigned char  synthAbility;    /* The ability to syth a clock */
+        unsigned char  extendedClocking;/* New T4e clock modes */
         unsigned char  startingSlot;    /* Time slot to use for start of tx */
         unsigned char  clockSource;     /* External or internal */
         unsigned char  framing;         /* E1, T1 or J1 */
@@ -181,7 +253,46 @@ struct fstioc_info {
         unsigned int   atmCellsDropped;
         unsigned char  transmitMSBFirst;
         unsigned char  receiveMSBFirst;
+        unsigned char  xpldVersion;
+        unsigned char  farEndCountryCode[2]; 
+        unsigned char  farEndProviderCode[4];
+        unsigned char  farEndVendorInfo[2];
+        unsigned char  utopiaAtmStatus;
+        unsigned int   termination;
+        unsigned int   txRxStart;
+        unsigned char  enableNRZIClocking;   /* Ver 1 addition */
+        unsigned char  lowLatency;           /* Ver 1 addition */
+        struct fst_device_stats stats;       /* Ver 1 addition */
+        struct fstioc_async_conf async_conf; /* Ver 2 addition */
+        unsigned char  iocinfo_version;      /* Ver 2 addition */
+        unsigned char  extSyncClockEnable;   /* Ver 3 addition */
+        unsigned char  extSyncClockOffset;   /* Ver 3 addition */
+        unsigned int   extSyncClockRate;     /* Ver 3 addition */
+        unsigned char  ppsEnable;            /* Ver 3 addition */  
+        unsigned char  ppsOffset;            /* Ver 3 addition */
+        unsigned char  cardRevMajor;         /* Ver 4 addition */
+        unsigned char  cardRevMinor;         /* Ver 4 addition */
+        unsigned char  cardRevBuild;         /* Ver 4 addition */
+        unsigned int   features;             /* Ver 4 addition */
 };
+
+#define FST_MODE_HDLC        0
+#define FST_MODE_TRANSPARENT 1
+#define FST_MODE_BISYNC      2
+#define FST_MODE_ASYNC       3
+#define lowLatencyDisable 0
+#define lowLatencyRx      1
+#define lowLatencyTx      2
+#define lowLatencyRxTx    3
+
+/*
+ *      FSTSNOTIFY
+ *
+ */
+#define FST_NOTIFY_OFF        0
+#define FST_NOTIFY_ON         1
+#define FST_NOTIFY_EXTENDED   2
+#define FST_NOTIFY_BASIC_SIZE 2*sizeof(int)
 
 /*      FSTGSTATE
  *
@@ -192,6 +303,8 @@ struct fstioc_info {
 struct fstioc_status {
   int carrier_state;
   int txq_length;
+  int rxq_length;
+  struct fst_device_stats stats;
 };
 
 /*      FSTSYSREQ
@@ -210,11 +323,13 @@ struct fstioc_req {
   unsigned char u_reserved[4];
 };
 
-
-#define MSG_FIFO_EEPROM_RD 0x769b
-#define MSG_FIFO_EEPROM_WR 0xcd4a
-#define RSP_FIFO_SUCCESS   0x0000
-#define RSP_FIFO_FAILURE   0x0001
+#define MSG_FIFO_DEF_SLAVE_1X  0x0001
+#define MSG_FIFO_DEF_SLAVE_16X 0x0002
+#define MSG_FIFO_DEF_MASTER    0x0003
+#define MSG_FIFO_EEPROM_RD     0x769b
+#define MSG_FIFO_EEPROM_WR     0xcd4a
+#define RSP_FIFO_SUCCESS       0x0000
+#define RSP_FIFO_FAILURE       0x0001
 
 
 /*      FSTSETMON
@@ -240,6 +355,90 @@ struct fstioc_mon {
 #define FST_DSL_PORT_NORMAL         0
 #define FST_DSL_PORT_ACTIVE         1
 
+/*      FSTCMD
+ *
+ *      Used to read and write card data
+ */
+#define FSTCMD_GET_SERIAL             0
+#define FSTCMD_SET_V24O               1
+#define FSTCMD_GET_VERSION            2
+#define FSTCMD_SET_VERSION            3
+#define FSTCMD_GET_INTS               4
+#define FSTCMD_RESET_INTS             5
+#define FSTCMD_RESET_STATS            6
+#define FSTCMD_SET_READV              7
+#define FSTCMD_SET_CHAR               8
+#define FSTCMD_GET_PRESERVE_SIGNALS   9
+#define FSTCMD_SET_PRESERVE_SIGNALS  10
+#define FSTCMD_SET_LATENCY           11
+#define FSTCMD_UPDATE_CLOCK          12
+#define FSTCMD_SET_CUSTOM_RATE       13
+
+#ifdef __x86_64__
+#define fstioc_info_sz_old     316
+#define fstioc_info_sz_ver1    504
+#define fstioc_info_sz_ver2    512
+#define fstioc_info_sz_ver3    528
+#define fstioc_info_sz_ver4    536
+#define fstioc_info_sz_current sizeof(struct fstioc_info)
+#else
+#define fstioc_info_sz_old     312
+#define fstioc_info_sz_ver1    408
+#define fstioc_info_sz_ver2    416
+#define fstioc_info_sz_ver3    428
+#define fstioc_info_sz_ver4    436
+#define fstioc_info_sz_current sizeof(struct fstioc_info)
+#endif
+
+#define FST_VERSION         4
+#define FST_VERSION_CURRENT FST_VERSION
+#define FST_VERSION_V3	    3
+#define FST_VERSION_V2	    2
+#define FST_VERSION_V1      1
+#define FST_VERSION_OLD     0
+
+#define FST_READV_NORMAL 0
+#define FST_READV_SYNC   1
+#define FST_READV_SYNC2  2
+
+struct fstioc_char_data {
+  unsigned char queue_len;
+  unsigned char threshold;
+  unsigned char pad[14];
+};
+
+struct fstioc_latency_data {
+  unsigned int tx_size;
+  unsigned int rx_size;
+  unsigned int rate;
+};
+
+struct fstioc_cmd {
+  unsigned int version;
+  unsigned int command;
+  unsigned int status;
+  unsigned int input_data_len;
+  unsigned int output_data_len;
+  unsigned char * data_ptr;
+};
+
+#define FST_CUSTOM_RATE_CONFIG_VERSION 1
+#define FST_CUSTOM_RATE_CONFIG_LENGTH (33+1)
+#define FST_CUSTOM_RATE_CLOCK_SLAVE 0
+#define FST_CUSTOM_RATE_CLOCK_LOW_SLAVE 1
+#define FST_CUSTOM_RATE_CLOCK_LOW_MASTER 2
+#define FST_CUSTOM_CLOCK_MULTIPLIER_1 1
+#define FST_CUSTOM_CLOCK_MULTIPLIER_16 2
+
+struct fstioc_custom_rate_config {
+  unsigned int version;
+  unsigned int rate;
+  unsigned int permanent;
+  unsigned int multiplier;  /* 1 or 16 */
+  unsigned int clock_type;  /* slave, low_slave, low_master */
+  char rate_info[FST_CUSTOM_RATE_CONFIG_LENGTH];
+};
+
 /* "valid" bitmask */
 #define FSTVAL_NONE     0x00000000      /* Nothing valid (firmware not running).
                                          * Slight misnomer. In fact nports,
@@ -264,19 +463,30 @@ struct fstioc_mon {
 #define FSTVAL_BUFFERS  0x00002000      /* Tx and Rx buffer settings */
 #define FSTVAL_DSL_S1   0x00004000      /* DSL-S1 Configuration */
 #define FSTVAL_T4E      0x00008000      /* T4E Mk II Configuration */
+#define FSTVAL_FLEX     0x00010000      /* FarSync Flex */
+#define FSTVAL_ASYNC    0x00020000      /* Async config */
 #define FSTVAL_DEBUG    0x80000000      /* debug */
-#define FSTVAL_ALL      0x0000FFFF      /* Note: does not include DEBUG flag */
+#define FSTVAL_ALL      0x000FFFFF      /* Note: does not include DEBUG flag */
 
 /* "type" */
-#define FST_TYPE_NONE   0               /* Probably should never happen */
-#define FST_TYPE_T2P    1               /* T2P X21 2 port card */
-#define FST_TYPE_T4P    2               /* T4P X21 4 port card */
-#define FST_TYPE_T1U    3               /* T1U X21 1 port card */
-#define FST_TYPE_T2U    4               /* T2U X21 2 port card */
-#define FST_TYPE_T4U    5               /* T4U X21 4 port card */
-#define FST_TYPE_TE1    6               /* T1E1 X21 1 port card */
-#define FST_TYPE_DSL_S1 7               /* DSL-S1 card */
-#define FST_TYPE_T4E    8               /* T4E Mk II */
+#define FST_TYPE_NONE     0             /* Probably should never happen */
+#define FST_TYPE_T2P      1             /* T2P X21 2 port card */
+#define FST_TYPE_T4P      2             /* T4P X21 4 port card */
+#define FST_TYPE_T1U      3             /* T1U X21 1 port card */
+#define FST_TYPE_T2U      4             /* T2U X21 2 port card */
+#define FST_TYPE_T4U      5             /* T4U X21 4 port card */
+#define FST_TYPE_TE1      6             /* T1E1 X21 1 port card */
+#define FST_TYPE_DSL_S1   7             /* DSL-S1 card */
+#define FST_TYPE_T4E      8             /* T4E Mk II */
+#define FST_TYPE_FLEX1    9             /* FarSync Flex 1 port */
+#define FST_TYPE_T4UE    10             /* T4UE 4 port PCI Express */
+#define FST_TYPE_T2UE    11             /* T2UE 2 port PCI Express */
+#define FST_TYPE_T4Ep    12             /* T4E+ 4 port card */
+#define FST_TYPE_T2U_PMC 13             /* T2U_PMC 2 port PCI card */
+#define FST_TYPE_TE1e    14             /* TE1e X21 1 port PCI Express */
+#define FST_TYPE_T2Ee    15             /* T2Ee 2 port PCI Express */
+#define FST_TYPE_T4Ee    16             /* T4Ee 4 port PCI Express */
+#define FST_TYPE_FLEX2   17             /* FarSync Flex 1 port (v2) */
 
 /* "family" */
 #define FST_FAMILY_TXP  0               /* T2P or T4P */
@@ -305,6 +515,17 @@ struct fstioc_mon {
 #define E1              8
 #define J1              9
 #define SHDSL           10
+#define RS485           11
+#define UX35C           12
+#define RS485_FDX       13
+
+#ifndef IF_IFACE_SHDSL
+#define IF_IFACE_SHDSL      0x1007      /* SHDSL (FarSite)              */
+#define IF_IFACE_RS530_449  0x1008      /* RS530_449 (FarSite)          */
+#define IF_IFACE_RS485      0x1009      /* RS485     (FarSite)          */
+#endif
+#define IF_IFACE_RS485_FDX  0x100A      /* RS485 Full Duplex (Farsite)  */
+#define IF_IFACE_UX35C      0x100B      /* UX35C (Farsite)              */
 
 /* "proto" */
 #define FST_HDLC        1               /* Cisco compatible HDLC */
@@ -316,6 +537,20 @@ struct fstioc_mon {
 /* "internalClock" */
 #define INTCLK          1
 #define EXTCLK          0
+
+/*
+ *  The bit pattern for extendedClocking is
+ *  8   4   2   1  |8    4    2    1
+ *  ec             |ttrx tttx irx  itx
+ */
+
+#define	EXT_CLOCK_NONE    0x00
+#define EXT_CLOCK_ERX_ETX 0x80
+#define EXT_CLOCK_ERX_ITX 0x81
+#define EXT_CLOCK_IRX_ETX 0x82
+#define EXT_CLOCK_IRX_ITX 0x83
+#define EXT_CLOCK_DTE_TT  0x84
+#define EXT_CLOCK_DCE_TT  0x8B
 
 /* "v24IpSts" bitmask */
 #define IPSTS_CTS       0x00000001      /* Clear To Send (Indicate for X.21) */
@@ -332,7 +567,9 @@ struct fstioc_mon {
 #define OPSTS_DSRS      0x00000004      /* Data Signalling Rate Select (Not
                                          * Supported) */
 #define OPSTS_SS        0x00000008      /* Select Standby (Not Supported) */
-#define OPSTS_LL        0x00000010      /* Maintenance Test (Not Supported) */
+#define OPSTS_LL        0x00000010      /* Local Loop */
+#define OPSTS_DCD       0x00000020      /* Only when DCD is enabled as an output */
+#define OPSTS_RL        0x00000040      /* Remote Loop */
 
 /* "cardMode" bitmask */
 #define CARD_MODE_IDENTIFY      0x0001
@@ -384,14 +621,19 @@ struct fstioc_mon {
  * Coding
  */
 
-#define CODING_HDB3          0
-#define CODING_NRZ           1
-#define CODING_CMI           2
-#define CODING_CMI_HDB3      3
-#define CODING_CMI_B8ZS      4
-#define CODING_AMI           5
-#define CODING_AMI_ZCS       6
-#define CODING_B8ZS          7
+#define CODING_HDB3               0
+#define CODING_NRZ                1
+#define CODING_CMI                2
+#define CODING_CMI_HDB3           3
+#define CODING_CMI_B8ZS           4
+#define CODING_AMI                5
+#define CODING_AMI_ZCS            6
+#define CODING_B8ZS               7
+#define CODING_NRZI               8
+#define CODING_FM0                9
+#define CODING_FM1                10
+#define CODING_MANCHESTER         11
+#define CODING_DIFF_MANCHESTER    12
 
 /*
  * Line Build Out
@@ -499,6 +741,9 @@ extern int fst_debug_mask;              /* Bit mask of actions to debug, bits
 #define DBG_CMD         0x0100          /* Port command issuing */
 #define DBG_ATM         0x0200          /* ATM processing */
 #define DBG_TTY         0x0400          /* PPPd processing */
+#define DBG_USB         0x0800          /* USB device */
+#define DBG_ASY         0x1000          /* Async functions */
+#define DBG_FIFO        0x2000          /* Fifo functions */
 #define DBG_ASS         0x0001          /* Assert like statements. Code that
                                          * should never be reached, if you see
                                          * one of these then I've been an ass

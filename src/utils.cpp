@@ -96,6 +96,9 @@ void header_message()
 #if defined(HAVE_INPUT_FILE)
     " file" <<
 #endif
+#if defined(HAVE_INPUT_ZEROMQ)
+    " zmq" <<
+#endif
     std::endl;
 
     std::cerr << "Inputs format supported:" << std::endl <<

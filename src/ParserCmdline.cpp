@@ -111,6 +111,12 @@ bool parse_cmdline(char **argv,
 
     dabInputOperations operations;
 
+    // Default ensemble parameters:
+    ensemble->lto = 0;
+    ensemble->lto_auto = true; // Transmit local time by default
+    ensemble->mode = 1; // Default TM=1
+
+    // Parse command line
     int scids_temp = 0;
 
     const char* error_at = "";

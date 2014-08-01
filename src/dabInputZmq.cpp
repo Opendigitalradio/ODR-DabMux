@@ -42,7 +42,6 @@
 #include "dabInput.h"
 #include "dabInputZmq.h"
 #include "StatsServer.h"
-#include "zmq.hpp"
 #include "PcDebug.h"
 
 #ifdef HAVE_CONFIG_H
@@ -51,6 +50,7 @@
 
 #ifdef HAVE_INPUT_ZEROMQ
 
+#include "zmq.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <list>

@@ -144,6 +144,11 @@ AS_IF([test "x$enable_input_zeromq" = "xyes"],
 AS_IF([test "x$enable_input_zeromq" = "xyes"],
        AC_DEFINE(HAVE_INPUT_ZEROMQ, [1], [Define if ZEROMQ input is enabled]))
 
+save_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -lm"
+AC_CHECK_LIB(fec, encode_rs_char, [] , AC_MSG_ERROR(libfec is required))
+LDFLAGS="$save_LDFLAGS"
+
 # Outputs
 # FILE
 AC_ARG_ENABLE([output_file],

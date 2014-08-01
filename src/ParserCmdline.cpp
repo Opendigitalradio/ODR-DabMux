@@ -109,7 +109,20 @@ bool parse_cmdline(char **argv,
     vector<DabService*>::iterator service = ensemble->services.end();
     dabProtection* protection = NULL;
 
-    dabInputOperations operations;
+    // Yes, this is ugly, but it suppresses warnings
+    dabInputOperations operations = {
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    };
 
     // Default ensemble parameters:
     ensemble->lto = 0;
@@ -566,7 +579,7 @@ bool parse_cmdline(char **argv,
             int level;
             if (optarg == NULL) {
                 etiLog.log(error,
-                        "Missing parameter for option -P\n");
+                        "Missing parameter for option -p\n");
                 printUsage(progName);
                 goto EXIT;
             }

@@ -31,6 +31,8 @@
 
 extern Logger etiLog;
 
+// TODO replace usage of dabInputOperations by a
+// class hierarchy
 struct dabInputOperations {
     int (*init)(void** args);
     int (*open)(void* args, const char* name);

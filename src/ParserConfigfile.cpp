@@ -844,14 +844,14 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     subchan->startAddress = 0;
 
     if (type == "audio") {
-        protection->form = 0;
+        protection->form = UEP;
         protection->level = 2;
-        protection->shortForm.tableSwitch = 0;
-        protection->shortForm.tableIndex = 0;
+        protection->uep.tableSwitch = 0;
+        protection->uep.tableIndex = 0;
     } else {
         protection->level = 2;
-        protection->form = 1;
-        protection->longForm.option = 0;
+        protection->form = EEP;
+        protection->eep.profile = EEP_A;
     }
 
     /* Get bitrate */
@@ -938,7 +938,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     try {
         int level = pt.get<int>("protection");
 
-        if (protection->form == 0) {
+        if (protection->form == UEP) {
             if ((level < 1) || (level > 5)) {
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<

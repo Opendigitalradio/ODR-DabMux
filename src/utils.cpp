@@ -416,23 +416,19 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
                 (*subchannel)->id);
         etiLog.log(info, " bitrate:    %i",
                 (*subchannel)->bitrate);
-        if (protection->form == 0) {
+        if (protection->form == UEP) {
             etiLog.log(info, " protection: UEP %i", protection->level + 1);
-        } else {
+            etiLog.log(info, "  switch:    %i",
+                    protection->uep.tableSwitch);
+            etiLog.log(info, "  index:     %i",
+                    protection->uep.tableIndex);
+        }
+        else {
             etiLog.log(info, " protection: EEP %i-%c",
                     protection->level + 1,
-                    protection->longForm.option == 0 ? 'A' : 'B');
-        }
-        if (protection->form == 0) {
-            etiLog.log(info, "  form:      short");
-            etiLog.log(info, "  switch:    %i",
-                    protection->shortForm.tableSwitch);
-            etiLog.log(info, "  index:     %i",
-                    protection->shortForm.tableIndex);
-        } else {
-            etiLog.log(info, "  form:      long");
+                    protection->eep.profile == EEP_A ? 'A' : 'B');
             etiLog.log(info, "  option:    %i",
-                    protection->longForm.option);
+                    protection->eep.GetOption());
             etiLog.log(info, "  level:     %i",
                     (*subchannel)->protection.level);
         }

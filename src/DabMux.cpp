@@ -157,6 +157,7 @@ static unsigned char Padding_FIB[] = {
 };
 
 
+// Protection levels and bitrates for UEP.
 const unsigned char ProtectionLevelTable[64] = {
     4, 3, 2, 1, 0, 4, 3, 2,
     1, 0, 4, 3, 2, 1, 4, 3,
@@ -167,7 +168,6 @@ const unsigned char ProtectionLevelTable[64] = {
     4, 3, 2, 1, 0, 4, 3, 2,
     1, 0, 4, 3, 1, 4, 2, 0
 };
-
 
 const unsigned short BitRateTable[64] = {
     32, 32, 32, 32, 32, 48, 48, 48,
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
                     switch ((*subchannel)->type) {
                     case Audio:
                         {
-                            if (protection->form != 0) {
+                            if (protection->form == EEP) {
                                 (*component)->type = 0x3f;  // DAB+
                             }
                         }
@@ -576,14 +576,14 @@ int main(int argc, char *argv[])
             }
             (*subchannel)->bitrate = result;
 
-            if (protection->form == 0) {
-                protection->form = 1;
+            // Use EEP unless we find a UEP configuration
+            if (protection->form == UEP) {
+                protection->form = EEP;
                 for (int i = 0; i < 64; i++) {
-                    if ((*subchannel)->bitrate == BitRateTable[i]) {
-                        if (protection->level == ProtectionLevelTable[i]) {
-                            protection->form = 0;
-                            protection->shortForm.tableIndex = i;
-                        }
+                    if ( (*subchannel)->bitrate == BitRateTable[i] &&
+                         protection->level == ProtectionLevelTable[i] ) {
+                        protection->form = UEP;
+                        protection->uep.tableIndex = i;
                     }
                 }
             }
@@ -775,16 +775,16 @@ int main(int argc, char *argv[])
                 sstc->SCID = (*subchannel)->id;
                 sstc->startAddress_high = (*subchannel)->startAddress / 256;
                 sstc->startAddress_low = (*subchannel)->startAddress % 256;
-                //devrait changer selon le mode de protection desire
-                if (protection->form == 0) {
+                // depends on the desired protection form
+                if (protection->form == UEP) {
                     sstc->TPL = 0x10 |
-                        ProtectionLevelTable[protection->shortForm.tableIndex];
-                } else {
-                    sstc->TPL = 0x20 |
-                        (protection->longForm.option << 2) |
-                        (protection->level);
+                        ProtectionLevelTable[protection->uep.tableIndex];
                 }
-                //Sub-channel Stream Length, multiple of 64 bits 
+                else if (protection->form == EEP) {
+                    sstc->TPL = 0x20 | (protection->eep.GetOption() << 2) | protection->level;
+                }
+
+                // Sub-channel Stream Length, multiple of 64 bits
                 sstc->STL_high = getSizeDWord(*subchannel) / 256;
                 sstc->STL_low = getSizeDWord(*subchannel) % 256;
 
@@ -946,12 +946,12 @@ int main(int argc, char *argv[])
                         ++subchannelFIG0_1) {
                     protection = &(*subchannelFIG0_1)->protection;
 
-                    if (    (protection->form == 0 && figSize > 27) ||
-                            (protection->form != 0 && figSize > 26)) {
+                    if ( (protection->form == UEP && figSize > 27) ||
+                         (protection->form == EEP && figSize > 26) ) {
                         break;
                     }
 
-                    if (protection->form == 0) {
+                    if (protection->form == UEP) {
                         fig0_1subchShort =
                             (FIG_01_SubChannel_ShortF*) &etiFrame[index];
                         fig0_1subchShort->SubChId = (*subchannelFIG0_1)->id;
@@ -964,13 +964,13 @@ int main(int argc, char *argv[])
                         fig0_1subchShort->Short_Long_form = 0;
                         fig0_1subchShort->TableSwitch = 0;
                         fig0_1subchShort->TableIndex =
-                            protection->shortForm.tableIndex;
+                            protection->uep.tableIndex;
 
                         index = index + 3;
                         figSize += 3;
                         figtype0_1->Length += 3;
                     }
-                    else {
+                    else if (protection->form == EEP) {
                         fig0_1subchLong1 =
                             (FIG_01_SubChannel_LongF*) &etiFrame[index];
                         fig0_1subchLong1->SubChId = (*subchannelFIG0_1)->id;
@@ -981,7 +981,7 @@ int main(int argc, char *argv[])
                             (*subchannelFIG0_1)->startAddress % 256;
 
                         fig0_1subchLong1->Short_Long_form = 1;
-                        fig0_1subchLong1->Option = protection->longForm.option;
+                        fig0_1subchLong1->Option = protection->eep.GetOption();
                         fig0_1subchLong1->ProtectionLevel =
                             protection->level;
 

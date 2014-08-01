@@ -400,14 +400,14 @@ bool parse_cmdline(char **argv,
             (*subchannel)->startAddress = 0;
 
             if (c == 'A') {
-                protection->form = 0;
+                protection->form = UEP;
                 protection->level = 2;
-                protection->shortForm.tableSwitch = 0;
-                protection->shortForm.tableIndex = 0;
+                protection->uep.tableSwitch = 0;
+                protection->uep.tableIndex = 0;
             } else {
+                protection->form = EEP;
                 protection->level = 2;
-                protection->form = 1;
-                protection->longForm.option = 0;
+                protection->eep.profile = EEP_A;
             }
             break;
         case 'L':
@@ -590,17 +590,18 @@ bool parse_cmdline(char **argv,
                 goto EXIT;
             }
             level = strtoul(optarg, NULL, 0) - 1;
-            if (protection->form == 0) {
+            if (protection->form == UEP) {
                 if ((level < 0) || (level > 4)) {
                     etiLog.log(error,
-                            "protection level must be between "
+                            "UEP protection level must be between "
                             "1 to 5 inclusively (current = %i)\n", level);
                     goto EXIT;
                 }
-            } else {
+            }
+            else if (protection->form == EEP) {
                 if ((level < 0) || (level > 3)) {
                     etiLog.log(error,
-                            "protection level must be between "
+                            "EEP protection level must be between "
                             "1 to 4 inclusively (current = %i)\n", level);
                     goto EXIT;
                 }

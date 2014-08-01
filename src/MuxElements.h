@@ -124,23 +124,39 @@ class dabEnsemble : public RemoteControllable {
 };
 
 
-struct dabProtectionShort {
+struct dabProtectionUEP {
     unsigned char tableSwitch;
     unsigned char tableIndex;
 };
 
-
-struct dabProtectionLong {
-    unsigned char option;
+enum dab_protection_eep_profile {
+    EEP_A,
+    EEP_B
 };
 
+struct dabProtectionEEP {
+    dab_protection_eep_profile profile;
+
+    // option is a 3-bit field where 000 and 001 are used to
+    // select EEP profile A and B.
+    // Other values are for future use, see
+    // EN 300 401 Clause 6.2.1 "Basic sub-channel organisation"
+    uint8_t GetOption(void) const {
+        return (this->profile == EEP_A) ? 0 : 1;
+    }
+};
+
+enum dab_protection_form_t {
+    UEP, // implies FIG0/1 Short form
+    EEP  //                Long form
+};
 
 struct dabProtection {
     unsigned char level;
-    unsigned char form;
+    dab_protection_form_t form;
     union {
-        dabProtectionShort shortForm;
-        dabProtectionLong longForm;
+        dabProtectionUEP uep;
+        dabProtectionEEP eep;
     };
 };
 

@@ -437,14 +437,15 @@ const string dabEnsemble::get_parameter(const string& parameter) const
 
 unsigned short getSizeCu(dabSubchannel* subchannel)
 {
-    if (subchannel->protection.form == 0) {
+    if (subchannel->protection.form == UEP) {
         return Sub_Channel_SizeTable[subchannel->
-            protection.shortForm.tableIndex];
-    } else {
-        dabProtectionLong* protection =
-            &subchannel->protection.longForm;
-        switch (protection->option) {
-        case 0:
+            protection.uep.tableIndex];
+    }
+    else if (subchannel->protection.form == EEP) {
+        dabProtectionEEP* protection =
+            &subchannel->protection.eep;
+        switch (protection->profile) {
+        case EEP_A:
             switch (subchannel->protection.level) {
             case 0:
                 return (subchannel->bitrate * 12) >> 3;
@@ -464,7 +465,7 @@ unsigned short getSizeCu(dabSubchannel* subchannel)
                 return 0;
             }
             break;
-        case 1:
+        case EEP_B:
             switch (subchannel->protection.level) {
             case 0:
                 return (subchannel->bitrate * 27) >> 5;

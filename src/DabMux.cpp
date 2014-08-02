@@ -576,7 +576,13 @@ int main(int argc, char *argv[])
             }
             (*subchannel)->bitrate = result;
 
-            // Use EEP unless we find a UEP configuration
+            /* Use EEP unless we find a UEP configuration
+             * UEP is only used for MPEG audio, but some bitrates don't
+             * have a UEP profile (EN 300 401 Clause 6.2.1).
+             * For these bitrates, we must switch to EEP.
+             *
+             * AAC audio and data is already EEP
+             */
             if (protection->form == UEP) {
                 protection->form = EEP;
                 for (int i = 0; i < 64; i++) {

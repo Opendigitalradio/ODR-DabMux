@@ -418,8 +418,6 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
                 (*subchannel)->bitrate);
         if (protection->form == UEP) {
             etiLog.log(info, " protection: UEP %i", protection->level + 1);
-            etiLog.log(info, "  switch:    %i",
-                    protection->uep.tableSwitch);
             etiLog.log(info, "  index:     %i",
                     protection->uep.tableIndex);
         }

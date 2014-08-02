@@ -104,7 +104,20 @@ subchannels {
         nonblock false
         bitrate 128
         id 10
-        protection 5
+
+        ; type audio subchannels automatically use
+        ; UEP, unless the bitrate is 8, 16, 24, 40 or 144kbit/s
+        ; (EN 300 401 Clause 6.2.1)
+        ; this can be overridden with the option protection-profile
+        protection-profile EEP_A
+        ; supported options: UEP (use only for type audio!)
+        ;                    EEP_A (for all bitrates)
+        ;                    EEP_B (bitrates multiple of 32kbit/s)
+
+        ; Set the protection level, possible values depend
+        ; on the protection profile:
+        ; UEP profile: 1 to 5; EEP profiles: 1 to 4
+        protection 4
     }
     sub-lu {
         type audio

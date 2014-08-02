@@ -846,7 +846,6 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     if (type == "audio") {
         protection->form = UEP;
         protection->level = 2;
-        protection->uep.tableSwitch = 0;
         protection->uep.tableIndex = 0;
     } else {
         protection->level = 2;
@@ -934,7 +933,22 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         }
     }
 
-    /* Get protection */
+    /* Get optional protection profile */
+    string profile = pt.get("protection-profile", "");
+
+    if (profile == "EEP_A") {
+        protection->form = EEP;
+        protection->eep.profile = EEP_A;
+    }
+    else if (profile == "EEP_B") {
+        protection->form = EEP;
+        protection->eep.profile = EEP_B;
+    }
+    else if (profile == "UEP") {
+        protection->form = UEP;
+    }
+
+    /* Get protection level */
     try {
         int level = pt.get<int>("protection");
 
@@ -947,7 +961,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 throw runtime_error(ss.str());
             }
         }
-        else {
+        else if (protection->form == EEP) {
             if ((level < 1) || (level > 4)) {
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<

@@ -125,7 +125,6 @@ class dabEnsemble : public RemoteControllable {
 
 
 struct dabProtectionUEP {
-    unsigned char tableSwitch;
     unsigned char tableIndex;
 };
 

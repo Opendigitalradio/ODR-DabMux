@@ -402,7 +402,6 @@ bool parse_cmdline(char **argv,
             if (c == 'A') {
                 protection->form = UEP;
                 protection->level = 2;
-                protection->uep.tableSwitch = 0;
                 protection->uep.tableIndex = 0;
             } else {
                 protection->form = EEP;

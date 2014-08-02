@@ -308,7 +308,6 @@ int main(int argc, char *argv[])
 
     unsigned long currentFrame;
     int returnCode = 0;
-    int result;
     int cur;
     unsigned char etiFrame[6144];
     unsigned short index = 0;
@@ -567,14 +566,14 @@ int main(int argc, char *argv[])
             }
 
             // TODO Check errors
-            result = (*subchannel)->input->setBitrate( (*subchannel)->bitrate);
-            if (result <= 0) {
+            int subch_bitrate = (*subchannel)->input->setBitrate( (*subchannel)->bitrate);
+            if (subch_bitrate <= 0) {
                 etiLog.log(error, "can't set bitrate for source %s\n",
                         (*subchannel)->inputName);
                 returnCode = -1;
                 throw MuxInitException();
             }
-            (*subchannel)->bitrate = result;
+            (*subchannel)->bitrate = subch_bitrate;
 
             /* Use EEP unless we find a UEP configuration
              * UEP is only used for MPEG audio, but some bitrates don't
@@ -593,10 +592,24 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+
+            /* EEP B can only be used for subchannels with bitrates
+             * multiple of 32kbit/s
+             */
+            if (    protection->form == EEP &&
+                    protection->eep.profile == EEP_B &&
+                    subch_bitrate % 32 != 0 ) {
+                etiLog.level(error) <<
+                    "Cannot use EEP_B protection for subchannel " <<
+                    (*subchannel)->inputName <<
+                    ": bitrate not multiple of 32kbit/s";
+                returnCode = -1;
+                throw MuxInitException();
+            }
         }
 
         if (ensemble->subchannels.size() == 0) {
-            etiLog.log(error, "can't multiplexed no subchannel!\n");
+            etiLog.log(error, "can't multiplex no subchannel!\n");
             returnCode = -1;
             throw MuxInitException();
         }
@@ -1920,7 +1933,7 @@ int main(int argc, char *argv[])
                 TagESTn* tag = edi_subchannelToTag[*subchannel];
 
                 int sizeSubchannel = getSizeByte(*subchannel);
-                result = (*subchannel)->input->readFrame(
+                int result = (*subchannel)->input->readFrame(
                         &etiFrame[index], sizeSubchannel);
 
                 if (result < 0) {

@@ -360,9 +360,25 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
                 m_name << ": " << err.what();
     }
 
-    char* data = (char*)msg.data();
+    /* This is the old 'one superframe per ZMQ message' format */
+    uint8_t* data  = (uint8_t*)msg.data();
+    size_t datalen = msg.size();
 
-    if (msg.size() == framesize)
+    /* Look for the new zmq_frame_header_t format */
+    zmq_frame_header_t* frame = (zmq_frame_header_t*)msg.data();
+
+    if (msg.size() == ZMQ_FRAME_SIZE(frame) &&
+            frame->version == 1 &&
+            frame->encoder == ZMQ_ENCODER_TOOLAME) {
+        datalen = frame->datasize;
+        data = ZMQ_FRAME_DATA(frame);
+
+        global_stats->notifyPeakLevels(m_name, frame->audiolevel_left,
+                frame->audiolevel_right);
+    }
+
+
+    if (datalen)
     {
         if (m_frame_buffer.size() > m_config.buffer_size) {
             etiLog.level(warn) <<

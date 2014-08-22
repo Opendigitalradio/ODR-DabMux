@@ -39,7 +39,7 @@ std::vector<uint8_t> TagPacket::Assemble()
 
     std::vector<uint8_t> packet;
 
-    std::cerr << "Assemble TAGPacket" << std::endl;
+    //std::cerr << "Assemble TAGPacket" << std::endl;
 
     size_t packet_length = 0;
     for (tag = tag_items.begin(); tag != tag_items.end(); ++tag) {
@@ -48,7 +48,7 @@ std::vector<uint8_t> TagPacket::Assemble()
 
         packet_length += tag_data.size();
 
-        std::cerr << "     Add TAGItem of length " << tag_data.size() << std::endl;
+        //std::cerr << "     Add TAGItem of length " << tag_data.size() << std::endl;
     }
 
     // Add padding

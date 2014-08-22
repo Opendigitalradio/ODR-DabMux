@@ -48,11 +48,14 @@ class PFT
     public:
         static const int ParityBytes = 48;
 
-        PFT(unsigned int RSDataWordLength, unsigned int NumRecoverableFragments) :
+        PFT(unsigned int RSDataWordLength,
+                unsigned int NumRecoverableFragments,
+                bool verbose) :
             m_k(RSDataWordLength),
             m_m(NumRecoverableFragments),
             m_pseq(0),
-            m_encoder(m_k + ParityBytes, m_k)
+            m_encoder(m_k + ParityBytes, m_k),
+            m_verbose(verbose)
         {
             if (m_k > 207) {
                 etiLog.level(warn) <<
@@ -87,6 +90,8 @@ class PFT
         size_t m_num_chunks;
 
         ReedSolomon m_encoder;
+
+        bool m_verbose;
 
 };
 

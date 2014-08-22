@@ -31,6 +31,7 @@
 #include <vector>
 #include <string>
 #include "MuxElements.h"
+#include "DabMux.h"
 #include <boost/property_tree/ptree.hpp>
 
 void parse_configfile(std::string configuration_file,
@@ -41,7 +42,8 @@ void parse_configfile(std::string configuration_file,
         bool* factumAnalyzer,
         unsigned long* limit,
         BaseRemoteController** rc,
-        int* statsServerPort);
+        int* statsServerPort,
+        edi_configuration_t* edi);
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,

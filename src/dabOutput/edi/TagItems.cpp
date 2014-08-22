@@ -36,7 +36,7 @@
 
 std::vector<uint8_t> TagStarPTR::Assemble()
 {
-    std::cerr << "TagItem *ptr" << std::endl;
+    //std::cerr << "TagItem *ptr" << std::endl;
     std::string pack_data("*ptr");
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
 
@@ -118,9 +118,11 @@ std::vector<uint8_t> TagDETI::Assemble()
 
     dflc = (dflc+1) % 5000;
 
+    /*
     std::cerr << "TagItem deti, packet.size " << packet.size() << std::endl;
     std::cerr << "              fic length " << fic_length << std::endl;
     std::cerr << "              length " << taglength / 8 << std::endl;
+    */
     return packet;
 }
 
@@ -159,8 +161,10 @@ std::vector<uint8_t> TagESTn::Assemble()
     packet[6] = (taglength >> 8) & 0xFF;
     packet[7] = taglength & 0xFF;
 
+    /*
     std::cerr << "TagItem ESTn, length " << packet.size() << std::endl;
     std::cerr << "              mst_length " << mst_length << std::endl;
+    */
     return packet;
 }
 #endif

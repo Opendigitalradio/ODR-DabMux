@@ -128,7 +128,8 @@ void parse_configfile(string configuration_file,
         bool* factumAnalyzer,
         unsigned long* limit,
         BaseRemoteController** rc,
-        int* statsServerPort
+        int* statsServerPort,
+        edi_configuration_t* edi
         )
 {
     using boost::property_tree::ptree;
@@ -479,40 +480,55 @@ void parse_configfile(string configuration_file,
 
     }
 
-
     /******************** READ OUTPUT PARAMETERS ***************/
     map<string, dabOutput*> alloutputs;
     ptree pt_outputs = pt.get_child("outputs");
     for (ptree::iterator it = pt_outputs.begin(); it != pt_outputs.end(); ++it) {
         string outputuid = it->first;
-        string uri = pt_outputs.get<string>(outputuid);
 
-        size_t proto_pos = uri.find("://");
-        if (proto_pos == std::string::npos) {
-            stringstream ss;
-            ss << "Output with uid " << outputuid << " no protocol defined!";
-            throw runtime_error(ss.str());
-        }
+        if (outputuid == "edi") {
+            ptree pt_edi = pt_outputs.get_child("edi");
 
-        char* uri_c = new char[512];
-        memset(uri_c, 0, 512);
-        uri.copy(uri_c, 511);
+            edi->enabled     = true;
 
-        uri_c[proto_pos] = '\0';
+            edi->dest_addr   = pt_edi.get<string>("destination");
+            edi->dest_port   = pt_edi.get<unsigned int>("port");
+            edi->source_port = pt_edi.get<unsigned int>("sourceport");
 
-        char* outputName = uri_c + proto_pos + 3;
-
-        dabOutput* output = new dabOutput(uri_c, outputName);
-        outputs.push_back(output);
-
-        // keep outputs in map, and check for uniqueness of the uid
-        if (alloutputs.count(outputuid) == 0) {
-            alloutputs[outputuid] = output;
+            edi->dump        = pt_edi.get<bool>("dump");
+            edi->enable_pft  = pt_edi.get<bool>("enable_pft");
+            edi->verbose     = pt_edi.get<bool>("verbose");
         }
         else {
-            stringstream ss;
-            ss << "output with uid " << outputuid << " not unique!";
-            throw runtime_error(ss.str());
+            string uri = pt_outputs.get<string>(outputuid);
+
+            size_t proto_pos = uri.find("://");
+            if (proto_pos == std::string::npos) {
+                stringstream ss;
+                ss << "Output with uid " << outputuid << " no protocol defined!";
+                throw runtime_error(ss.str());
+            }
+
+            char* uri_c = new char[512];
+            memset(uri_c, 0, 512);
+            uri.copy(uri_c, 511);
+
+            uri_c[proto_pos] = '\0';
+
+            char* outputName = uri_c + proto_pos + 3;
+
+            dabOutput* output = new dabOutput(uri_c, outputName);
+            outputs.push_back(output);
+
+            // keep outputs in map, and check for uniqueness of the uid
+            if (alloutputs.count(outputuid) == 0) {
+                alloutputs[outputuid] = output;
+            }
+            else {
+                stringstream ss;
+                ss << "output with uid " << outputuid << " not unique!";
+                throw runtime_error(ss.str());
+            }
         }
     }
 

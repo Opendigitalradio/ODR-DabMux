@@ -33,15 +33,14 @@
 #include "TagItems.h"
 #include "TagPacket.h"
 
-#define EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS ('T')
-
 typedef std::vector<uint8_t> AFPacket;
 
 // ETSI TS 102 821, 6.1 AF packet structure
 class AFPacketiser
 {
     public:
-        AFPacketiser(char protocolType) : protocol_type(protocolType) {};
+        AFPacketiser(bool verbose) :
+            m_verbose(verbose) {};
 
         AFPacket Assemble(TagPacket tag_packet);
 
@@ -50,7 +49,7 @@ class AFPacketiser
 
         uint16_t seq; //counter that overflows at 0xFFFF
 
-        char protocol_type;
+        bool m_verbose;
 };
 
 #endif

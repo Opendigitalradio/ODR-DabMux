@@ -264,6 +264,24 @@ outputs {
     ; Throttle output to real-time (one ETI frame every 24ms)
     ;throttle "simul://"
 
+    ; The edi output has a different syntax
+    edi {
+        destination "192.168.23.23"
+        port        12000
+        sourceport  13000
+
+        ; EDI uses the UDP protocol
+
+        ; Enable the PFT subsystem. If false, AFPackets are sent.
+        enable_pft  false
+
+        ; Save the packets sent over ethernet to the file ./edi.debug
+        dump        false
+
+        ; show more debugging info
+        verbose     true
+    }
+
     ; Other outputs:
     ; TCP listen on port
     ;net "tcp://host:port"

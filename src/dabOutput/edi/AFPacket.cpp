@@ -45,13 +45,16 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
 {
     std::vector<uint8_t> payload = tag_packet.Assemble();
 
-    std::cerr << "Assemble AFPacket " << seq << std::endl;
+    if (m_verbose)
+        std::cerr << "Assemble AFPacket " << seq << std::endl;
 
     std::string pack_data("AF"); // SYNC
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
 
     uint32_t taglength = payload.size();
-    std::cerr << "         AFPacket payload size " << payload.size() << std::endl;
+
+    if (m_verbose)
+        std::cerr << "         AFPacket payload size " << payload.size() << std::endl;
 
     // write length into packet
     packet.push_back((taglength >> 24) & 0xFF);
@@ -73,12 +76,14 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
     crc = crc16(crc, &(packet.front()), packet.size());
     crc ^= 0xffff;
 
-    fprintf(stderr, "         AFPacket crc %x\n", crc);
+    if (m_verbose)
+        fprintf(stderr, "         AFPacket crc %x\n", crc);
 
     packet.push_back((crc >> 8) & 0xFF);
     packet.push_back(crc & 0xFF);
 
-    std::cerr << "         AFPacket length " << packet.size() << std::endl;
+    if (m_verbose)
+        std::cerr << "         AFPacket length " << packet.size() << std::endl;
 
     return packet;
 }

@@ -88,8 +88,9 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
     const size_t fragment_size = m_num_chunks * (m_k + ParityBytes) / max_payload_size;
     const size_t num_fragments = m_num_chunks * (m_k + ParityBytes) / fragment_size;
 
-    fprintf(stderr, "  PnF fragment_size %zu, num frag %zu\n",
-            fragment_size, num_fragments);
+    if (m_verbose)
+        fprintf(stderr, "  PnF fragment_size %zu, num frag %zu\n",
+                fragment_size, num_fragments);
 
     vector< vector<uint8_t> > fragments(num_fragments);
 
@@ -154,8 +155,9 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
 
         pft_fragments.push_back(packet);
 
-        fprintf(stderr, "* PFT pseq %d, findex %d, fcount %d, plen %d\n",
-                m_pseq, findex, fcount, plen & ~0x8000);
+        if (m_verbose)
+            fprintf(stderr, "* PFT pseq %d, findex %d, fcount %d, plen %d\n",
+                    m_pseq, findex, fcount, plen & ~0x8000);
     }
 
     m_pseq++;

@@ -27,10 +27,6 @@
 #   include "config.h"
 #endif
 
-#define EDI_DEBUG 0
-#define EDI_DUMP 1
-#define EDI_PFT 1
-
 #include <cstdio>
 #include <stdlib.h>
 #include <iostream>
@@ -331,6 +327,17 @@ int main(int argc, char *argv[])
 
     int statsserverport = 0;
 
+    edi_configuration_t edi_conf;
+
+    // Defaults for edi
+    edi_conf.enabled     = false;
+    edi_conf.dest_addr   = "";
+    edi_conf.dest_port   = 0;
+    edi_conf.source_port = 0;
+    edi_conf.dump        = false;
+    edi_conf.enable_pft  = false;
+
+
     struct timeval mnsc_time;
 
     /* TODO: 
@@ -355,7 +362,7 @@ int main(int argc, char *argv[])
                 string conf_file = argv[2];
 
                 parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
-                        &factumAnalyzer, &limit, &rc, &statsserverport);
+                        &factumAnalyzer, &limit, &rc, &statsserverport, &edi_conf);
 
             }
             catch (runtime_error &e) {
@@ -658,6 +665,13 @@ int main(int argc, char *argv[])
         etiLog.log(info, "--- Output list ---");
         printOutputs(outputs);
 
+        if (edi_conf.enabled) {
+            etiLog.level(warn) << "EXPERIMENTAL EDI OUTPUT ENABLED!";
+            etiLog.level(info) << "edi to " << edi_conf.dest_addr << ":" << edi_conf.dest_port;
+            etiLog.level(info) << "source port " << edi_conf.source_port;
+            etiLog.level(info) << "verbose     " << edi_conf.verbose;
+        }
+
 
         /* These iterators are used to fill the respective FIG.
          * It is necessary to cycle through all the FIGs that have
@@ -674,23 +688,29 @@ int main(int argc, char *argv[])
         serviceFIG0_17 = ensemble->services.end();
         subchannelFIG0_1 = ensemble->subchannels.end();
 
+        if (edi_conf.verbose) {
+            etiLog.log(info, "Setup EDI debug");
+        }
+        std::ofstream edi_debug_file;
 
-#if EDI_DEBUG
-        etiLog.log(info, "Setup EDI debug");
-#  if EDI_DUMP
-        std::ofstream edi_debug_file("./edi.debug");
-#  endif
-        UdpSocket edi_output(13000);
-        etiLog.log(info, "EDI debug set up");
-#endif
+        if (edi_conf.dump) {
+            edi_debug_file.open("./edi.debug");
+        }
+        UdpSocket edi_output;
+
+        if (edi_conf.enabled) {
+            edi_output.create(edi_conf.source_port);
+        }
+
+        if (edi_conf.verbose) {
+            etiLog.log(info, "EDI debug set up");
+        }
 
         // The TagPacket will then be placed into an AFPacket
-        AFPacketiser edi_afPacketiser(EDI_AFPACKET_PROTOCOLTYPE_TAGITEMS);
+        AFPacketiser edi_afPacketiser(edi_conf.verbose);
 
-#if EDI_PFT
         // The AF Packet will be protected with reed-solomon and split in fragments
-        PFT edi_pft(207, 3);
-#endif
+        PFT edi_pft(207, 3, edi_conf.verbose);
 
         /*   Each iteration of the main loop creates one ETI frame */
         for (currentFrame = 0; running; currentFrame++) {
@@ -2019,66 +2039,70 @@ int main(int argc, char *argv[])
              ***********   Finalise and send EDI   ********************************
              **********************************************************************/
 
-#if EDI_DEBUG
-            // put tags *ptr, DETI and all subchannels into one TagPacket
-            edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
-            edi_tagpacket.tag_items.push_back(&edi_tagDETI);
+            if (edi_conf.enabled) {
+                // put tags *ptr, DETI and all subchannels into one TagPacket
+                edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
+                edi_tagpacket.tag_items.push_back(&edi_tagDETI);
 
-            list<TagESTn>::iterator tag;
-            for (tag = edi_subchannels.begin(); tag != edi_subchannels.end(); ++tag) {
-                edi_tagpacket.tag_items.push_back(&(*tag));
+                list<TagESTn>::iterator tag;
+                for (tag = edi_subchannels.begin(); tag != edi_subchannels.end(); ++tag) {
+                    edi_tagpacket.tag_items.push_back(&(*tag));
+                }
+
+                // Assemble into one AF Packet
+                AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
+
+                if (edi_conf.enable_pft) {
+                    // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
+                    vector< PFTFragment > edi_fragments =
+                        edi_pft.Assemble(edi_afpacket);
+
+                    // Send over ethernet
+                    vector< vector<uint8_t> >::iterator edi_frag;
+                    for (edi_frag = edi_fragments.begin();
+                            edi_frag != edi_fragments.end();
+                            ++edi_frag) {
+
+                        UdpPacket udppacket;
+
+                        InetAddress& addr = udppacket.getAddress();
+                        addr.setAddress(edi_conf.dest_addr.c_str());
+                        addr.setPort(edi_conf.dest_port);
+
+                        udppacket.addData(&(edi_frag->front()), edi_frag->size());
+
+                        edi_output.send(udppacket);
+
+                        if (edi_conf.dump) {
+                            std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+                            std::copy(edi_frag->begin(), edi_frag->end(), debug_iterator);
+                        }
+                    }
+
+                    if (edi_conf.verbose) {
+                        fprintf(stderr, "EDI number of PFT fragments %zu\n",
+                                edi_fragments.size());
+                    }
+                }
+                else {
+                    // Send over ethernet
+
+                    UdpPacket udppacket;
+
+                    InetAddress& addr = udppacket.getAddress();
+                    addr.setAddress(edi_conf.dest_addr.c_str());
+                    addr.setPort(edi_conf.dest_port);
+
+                    udppacket.addData(&(edi_afpacket.front()), edi_afpacket.size());
+
+                    edi_output.send(udppacket);
+                }
+
+                if (edi_conf.dump) {
+                    std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+                    std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
+                }
             }
-
-            // Assemble into one AF Packet
-            AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
-
-#  if EDI_PFT
-            // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
-            vector< PFTFragment > edi_fragments =
-                edi_pft.Assemble(edi_afpacket);
-
-            // Send over ethernet
-            vector< vector<uint8_t> >::iterator edi_frag;
-            for (edi_frag = edi_fragments.begin();
-                    edi_frag != edi_fragments.end();
-                    ++edi_frag) {
-
-                UdpPacket udppacket;
-
-                InetAddress& addr = udppacket.getAddress();
-                addr.setAddress("127.0.0.1");
-                addr.setPort(12000);
-
-                udppacket.addData(&(edi_frag->front()), edi_frag->size());
-
-                edi_output.send(udppacket);
-
-#    if EDI_DUMP
-                std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-                std::copy(edi_frag->begin(), edi_frag->end(), debug_iterator);
-#    endif
-            }
-
-            fprintf(stderr, "EDI number of PFT fragments %zu\n", edi_fragments.size());
-#  else
-            // Send over ethernet
-
-            UdpPacket udppacket;
-
-            InetAddress& addr = udppacket.getAddress();
-            addr.setAddress("192.168.3.2");
-            addr.setPort(12000);
-
-            udppacket.addData(&(edi_afpacket.front()), edi_afpacket.size());
-
-            edi_output.send(udppacket);
-#  endif
-
-#  if EDI_DUMP
-            std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-            std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
-#  endif
-#endif
 
 #if _DEBUG
             /********************************************************************** 

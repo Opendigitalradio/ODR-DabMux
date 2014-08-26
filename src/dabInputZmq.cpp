@@ -274,6 +274,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
             size_t over_max = m_frame_buffer.size() - m_config.prebuffering;
 
             while (over_max--) {
+                delete[] m_frame_buffer.front();
                 m_frame_buffer.pop_front();
             }
         }
@@ -292,11 +293,10 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
              * TODO: also, with MPEG, the above doesn't hold, so we drop five
              *       frames even though we could drop less.
              * */
-            m_frame_buffer.pop_front();
-            m_frame_buffer.pop_front();
-            m_frame_buffer.pop_front();
-            m_frame_buffer.pop_front();
-            m_frame_buffer.pop_front();
+            for (int frame_del_count = 0; frame_del_count < 5; frame_del_count++) {
+                delete[] m_frame_buffer.front();
+                m_frame_buffer.pop_front();
+            }
         }
     }
 

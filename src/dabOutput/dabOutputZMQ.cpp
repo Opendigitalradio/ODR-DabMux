@@ -70,6 +70,7 @@ int DabOutputZMQ::Write(void* buffer, int size)
 {
     int offset = 0;
 
+    // Increment the offset by the accumulated frame offsets
     for (int i = 0; i < zmq_message_ix; i++) {
         offset += zmq_message.buflen[i];
     }
@@ -77,12 +78,17 @@ int DabOutputZMQ::Write(void* buffer, int size)
     if (offset + size > NUM_FRAMES_PER_ZMQ_MESSAGE*6144) {
         throw std::runtime_error("FAULT: invalid ETI frame size!");
     }
+
+    // Append the new frame to our message
     memcpy(zmq_message.buf + offset, buffer, size);
     zmq_message.buflen[zmq_message_ix] = size;
     zmq_message_ix++;
 
+    // As soon as we have NUM_FRAMES_PER_ZMQ_MESSAGE frames, we transmit
     if (zmq_message_ix == NUM_FRAMES_PER_ZMQ_MESSAGE) {
-        int full_length = 0;
+
+        // Size of the header:
+        int full_length = ZMQ_DAB_MESSAGE_HEAD_LENGTH;
 
         for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
             full_length += zmq_message.buflen[i];
@@ -93,7 +99,6 @@ int DabOutputZMQ::Write(void* buffer, int size)
         const int flags = 0;
         zmq_send(zmq_pub_sock_,
                 (uint8_t*)&zmq_message,
-                NUM_FRAMES_PER_ZMQ_MESSAGE * sizeof(*zmq_message.buflen) +
                 full_length, flags);
 
         for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {

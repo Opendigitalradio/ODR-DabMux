@@ -278,8 +278,14 @@ struct zmq_dab_message_t
     }
     uint32_t version;
     int16_t buflen[NUM_FRAMES_PER_ZMQ_MESSAGE];
+    /* The head stops here. Use the macro below to calculate
+     * the head size.
+     */
+
     uint8_t  buf[NUM_FRAMES_PER_ZMQ_MESSAGE*6144];
 };
+
+#define ZMQ_DAB_MESSAGE_HEAD_LENGTH (4 + NUM_FRAMES_PER_ZMQ_MESSAGE*2)
 
 // -------------- ZeroMQ message queue ------------------
 class DabOutputZMQ : public DabOutput

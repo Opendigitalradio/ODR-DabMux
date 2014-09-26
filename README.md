@@ -20,6 +20,7 @@ In addition to the features of CRC-DabMux, this fork contains:
 - includes a Telnet Remote Control for setting/getting parameters
   (can change subchannel and component labels, and ZMQ input buffer
    parameters)
+- an experimental EDI output
 
 The src/ directory contains the source code of ODR-DabMux.
 

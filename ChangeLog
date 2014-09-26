@@ -1,6 +1,17 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2014-09-26: Matthias P. Braendli <matthias@mpb.li>
+	(v0.7.2):
+		Fix a memory leak with the ZMQ input.
+		Fix handling of timestamps when using ZMQ input.
+		Add the experimental EDI output.
+		Support new ZeroMQ frame format also for toolame-dab.
+		Update FarSync driver to latest version.
+		When used without configuration file, LTO defaults to auto,
+		TM defaults to 1.
+		Add protection profile option to configuration.
+
 2014-05-20: Matthias P. Braendli <matthias@mpb.li>
 	(v0.7.1):
 		This is a bugfix release, with a minor update

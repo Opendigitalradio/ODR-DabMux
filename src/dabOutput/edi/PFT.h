@@ -40,7 +40,7 @@
 #include "Log.h"
 #include "ReedSolomon.h"
 
-typedef std::vector<uint8_t> RSPacket;
+typedef std::vector<uint8_t> RSBlock;
 typedef std::vector<uint8_t> PFTFragment;
 
 class PFT
@@ -54,7 +54,6 @@ class PFT
             m_k(RSDataWordLength),
             m_m(NumRecoverableFragments),
             m_pseq(0),
-            m_encoder(m_k + ParityBytes, m_k),
             m_verbose(verbose)
         {
             if (m_k > 207) {
@@ -76,9 +75,9 @@ class PFT
         std::vector< PFTFragment > Assemble(AFPacket af_packet);
 
         // Apply Reed-Solomon FEC to the AF Packet
-        RSPacket Protect(AFPacket af_packet);
+        RSBlock Protect(AFPacket af_packet);
 
-        // Cut a RSPacket into several fragments that can be transmitted
+        // Cut a RSBlock into several fragments that can be transmitted
         std::vector< std::vector<uint8_t> > ProtectAndFragment(AFPacket af_packet);
 
     private:
@@ -88,8 +87,6 @@ class PFT
         uint16_t m_pseq;
 
         size_t m_num_chunks;
-
-        ReedSolomon m_encoder;
 
         bool m_verbose;
 

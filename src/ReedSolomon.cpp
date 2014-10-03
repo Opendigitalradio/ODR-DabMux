@@ -41,9 +41,9 @@ ReedSolomon::ReedSolomon(int N, int K, bool reverse, int gfpoly, int firstRoot, 
     myN = N;
     myK = K;
 
-    int symsize = SYMSIZE;
-    int nroots = N - K;
-    int pad = ((1 << symsize) - 1) - N;
+    const int symsize = SYMSIZE;
+    const int nroots = N - K; // For EDI PFT, this must be 48
+    const int pad = ((1 << symsize) - 1) - N; // is 255-N
 
     rsData = init_rs_char(symsize, gfpoly, firstRoot, primElem, nroots, pad);
 

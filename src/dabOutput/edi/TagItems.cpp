@@ -70,7 +70,11 @@ std::vector<uint8_t> TagDETI::Assemble()
     packet.push_back(0);
     packet.push_back(0);
 
-    uint16_t detiHeader = dflc | (rfudf << 13) | (ficf << 14) | (atstf << 15);
+    uint8_t fct  = dflc % 250;
+    uint8_t fcth = dflc / 250;
+
+
+    uint16_t detiHeader = fct | (fcth << 8) | (rfudf << 13) | (ficf << 14) | (atstf << 15);
     packet.push_back(detiHeader >> 8);
     packet.push_back(detiHeader & 0xFF);
 

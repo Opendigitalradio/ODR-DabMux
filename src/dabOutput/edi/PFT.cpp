@@ -41,52 +41,88 @@
 
 using namespace std;
 
-typedef vector<uint8_t> Chunk;
+// An integer division that rounds up, i.e. ceil(a/b)
+#define CEIL_DIV(a, b) (a % b == 0  ? a / b : a / b + 1)
 
-
-RSPacket PFT::Protect(AFPacket af_packet)
+RSBlock PFT::Protect(AFPacket af_packet)
 {
-    RSPacket rs_packet;
+    RSBlock rs_block;
 
     // number of chunks is ceil(afpacketsize / m_k)
-    if (af_packet.size() % m_k == 0) {
-        m_num_chunks = af_packet.size() / m_k;
-    }
-    else {
-        m_num_chunks = af_packet.size() / m_k + 1;
+    // TS 102 821 7.2.2: c = ceil(l / k_max)
+    m_num_chunks = CEIL_DIV(af_packet.size(), 207);
+
+    if (m_verbose) {
+        fprintf(stderr, "Protect %zu chunks of size %zu\n",
+                m_num_chunks, af_packet.size());
     }
 
-    const size_t zero_pad = m_num_chunks * m_k - af_packet.size();
+    // calculate size of chunk:
+    // TS 102 821 7.2.2: k = ceil(l / c)
+    // chunk_len does not include the 48 bytes of protection.
+    const size_t chunk_len = CEIL_DIV(af_packet.size(), m_num_chunks);
+
+    // The last RS chunk is zero padded
+    // TS 102 821 7.2.2: z = c*k - l
+    const size_t zero_pad = m_num_chunks * chunk_len - af_packet.size();
+
+    // Create the RS(k+p,k) encoder
+    ReedSolomon rs_encoder(chunk_len + ParityBytes, chunk_len);
 
     // add zero padding to last chunk
     for (size_t i = 0; i < zero_pad; i++) {
         af_packet.push_back(0);
     }
 
-    for (size_t i = 1; i < af_packet.size(); i+= m_k) {
-        Chunk c(m_k + ParityBytes);
-
-        // copy m_k bytes into new chunk
-        memcpy(&c.front(), &af_packet[i], m_k);
-
-        // calculate RS for chunk
-        m_encoder.encode(&c.front(), c.size());
-
-        // append new chunk to the RS Packet
-        rs_packet.insert(rs_packet.end(), c.begin(), c.end());
+    if (m_verbose) {
+        fprintf(stderr, "        add %zu zero padding\n", zero_pad);
     }
 
-    return rs_packet;
+    // Calculate RS for each chunk and assemble RS block
+    for (size_t i = 0; i < af_packet.size(); i+= chunk_len) {
+        vector<uint8_t> chunk(chunk_len + ParityBytes);
+
+        // copy chunk_len bytes into new chunk
+        memcpy(&chunk.front(), &af_packet[i], chunk_len);
+
+        // calculate RS for chunk
+        rs_encoder.encode(&chunk.front(), chunk.size());
+
+        // append new chunk to the RS Packet
+        rs_block.insert(rs_block.end(), chunk.begin(), chunk.end());
+    }
+
+    return rs_block;
 }
 
 vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
 {
-    RSPacket rs_packet = Protect(af_packet);
+    RSBlock rs_block = Protect(af_packet);
 
+#if 0
+    fprintf(stderr, "  af_packet (%zu):", af_packet.size());
+    for (size_t i = 0; i < af_packet.size(); i++) {
+        fprintf(stderr, "%02x ", af_packet[i]);
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "  rs_block (%zu):", rs_block.size());
+    for (size_t i = 0; i < rs_block.size(); i++) {
+        fprintf(stderr, "%02x ", rs_block[i]);
+    }
+    fprintf(stderr, "\n");
+#endif
+
+    // TS 102 821 7.2.2: s_max = MIN(floor(c*p/(m+1)), MTU - h))
     const size_t max_payload_size = ( m_num_chunks * ParityBytes ) / (m_m + 1);
 
-    const size_t fragment_size = m_num_chunks * (m_k + ParityBytes) / max_payload_size;
-    const size_t num_fragments = m_num_chunks * (m_k + ParityBytes) / fragment_size;
+    // Calculate fragment count and size
+    // TS 102 821 7.2.2: ceil((l + c*p + z) / s_max)
+    // l + c*p + z = length of RS block
+    const size_t num_fragments = CEIL_DIV(rs_block.size(), max_payload_size);
+
+    // TS 102 821 7.2.2: ceil((l + c*p + z) / f)
+    const size_t fragment_size = CEIL_DIV(rs_block.size(), num_fragments);
 
     if (m_verbose)
         fprintf(stderr, "  PnF fragment_size %zu, num frag %zu\n",
@@ -97,7 +133,12 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
     for (size_t i = 0; i < num_fragments; i++) {
         fragments[i].resize(fragment_size);
         for (size_t j = 0; j < fragment_size; j++) {
-            fragments[i][j] = rs_packet[j*num_fragments + i];
+            if (j*num_fragments + i > rs_block.size()) {
+                fragments[i][j] = 0;
+            }
+            else {
+                fragments[i][j] = rs_block[j*num_fragments + i];
+            }
         }
     }
 
@@ -107,13 +148,20 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
 std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
 {
     vector< vector<uint8_t> > fragments = ProtectAndFragment(af_packet);
-    vector< vector<uint8_t> > pft_fragments;
+    vector< vector<uint8_t> > pft_fragments; // These contain PF headers
 
     unsigned int findex = 0;
 
     unsigned fcount = fragments.size();
 
-    const size_t zero_pad = m_num_chunks * m_k - af_packet.size();
+    // calculate size of chunk:
+    // TS 102 821 7.2.2: k = ceil(l / c)
+    // chunk_len does not include the 48 bytes of protection.
+    const size_t chunk_len = CEIL_DIV(af_packet.size(), m_num_chunks);
+
+    // The last RS chunk is zero padded
+    // TS 102 821 7.2.2: z = c*k - l
+    const size_t zero_pad = m_num_chunks * chunk_len - af_packet.size();
 
     for (size_t i = 0; i < fragments.size(); i++) {
         const vector<uint8_t>& fragment = fragments[i];
@@ -136,11 +184,11 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
         unsigned int plen = fragment.size();
         plen |= 0x8000; // Set FEC bit
 
-        packet.push_back(plen >> 8);   // RSk
-        packet.push_back(plen & 0xFF); // RSz
+        packet.push_back(plen >> 8);
+        packet.push_back(plen & 0xFF);
 
-        packet.push_back(m_k);
-        packet.push_back(zero_pad);
+        packet.push_back(chunk_len);   // RSk
+        packet.push_back(zero_pad);    // RSz
 
         // calculate CRC over AF Header and payload
         uint16_t crc = 0xffff;
@@ -155,9 +203,10 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
 
         pft_fragments.push_back(packet);
 
-        if (m_verbose)
-            fprintf(stderr, "* PFT pseq %d, findex %d, fcount %d, plen %d\n",
-                    m_pseq, findex, fcount, plen & ~0x8000);
+#if 0
+        fprintf(stderr, "* PFT pseq %d, findex %d, fcount %d, plen %d\n",
+                m_pseq, findex, fcount, plen & ~0x8000);
+#endif
     }
 
     m_pseq++;

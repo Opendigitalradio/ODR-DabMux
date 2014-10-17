@@ -35,6 +35,8 @@
 #include <cstring>
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <stdexcept>
+#include <sstream>
 #include "PFT.h"
 #include "crc.h"
 #include "ReedSolomon.h"
@@ -61,13 +63,24 @@ RSBlock PFT::Protect(AFPacket af_packet)
     // TS 102 821 7.2.2: k = ceil(l / c)
     // chunk_len does not include the 48 bytes of protection.
     const size_t chunk_len = CEIL_DIV(af_packet.size(), m_num_chunks);
+    if (chunk_len > 207) {
+        std::stringstream ss;
+        ss << "Chunk length " << chunk_len << " too large (>207)";
+        throw std::runtime_error(ss.str());
+    }
 
     // The last RS chunk is zero padded
     // TS 102 821 7.2.2: z = c*k - l
     const size_t zero_pad = m_num_chunks * chunk_len - af_packet.size();
 
     // Create the RS(k+p,k) encoder
-    ReedSolomon rs_encoder(chunk_len + ParityBytes, chunk_len);
+    const int firstRoot = 1; // Discovered by analysing EDI dump
+    const int gfPoly = 0x11d;
+    const bool reverse = 0;
+    // The encoding has to be 255, 207 always, because the chunk has to
+    // be padded at the end, and not at the beginning as libfec would
+    // do
+    ReedSolomon rs_encoder(255, 207, reverse, gfPoly, firstRoot);
 
     // add zero padding to last chunk
     for (size_t i = 0; i < zero_pad; i++) {
@@ -80,16 +93,21 @@ RSBlock PFT::Protect(AFPacket af_packet)
 
     // Calculate RS for each chunk and assemble RS block
     for (size_t i = 0; i < af_packet.size(); i+= chunk_len) {
-        vector<uint8_t> chunk(chunk_len + ParityBytes);
+        vector<uint8_t> chunk(207);
+        vector<uint8_t> protection(ParityBytes);
 
         // copy chunk_len bytes into new chunk
         memcpy(&chunk.front(), &af_packet[i], chunk_len);
 
-        // calculate RS for chunk
-        rs_encoder.encode(&chunk.front(), chunk.size());
+        // calculate RS for chunk with padding
+        rs_encoder.encode(&chunk.front(), &protection.front(), 207);
 
-        // append new chunk to the RS Packet
+        // Drop the padding
+        chunk.resize(chunk_len);
+
+        // append new chunk and protection to the RS Packet
         rs_block.insert(rs_block.end(), chunk.begin(), chunk.end());
+        rs_block.insert(rs_block.end(), protection.begin(), protection.end());
     }
 
     return rs_block;

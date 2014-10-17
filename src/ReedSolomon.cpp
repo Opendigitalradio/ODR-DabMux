@@ -29,7 +29,7 @@ extern "C" {
 #include <fec.h>
 }
 #include <assert.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 
 #define SYMSIZE     8
 

@@ -167,6 +167,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
             m_bitrate(0),
             m_enable_input(true),
             m_config(config),
+            m_stats(m_name),
             m_prebuf_current(0) {
                 RC_ADD_PARAMETER(enable,
                         "If the input is enabled. Set to zero to empty the buffer.");
@@ -230,6 +231,8 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         char m_curve_encoder_key[CURVE_KEYLEN+1];
 
         std::string m_inputUri;
+
+        InputStat m_stats;
 
     private:
         int m_prebuf_current;

@@ -233,7 +233,7 @@ int DabInputZmqBase::open(const std::string inputUri)
     rebind();
 
     // We want to appear in the statistics !
-    global_stats->registerInput(m_name);
+    m_stats.registerAtServer();
 
     return 0;
 }
@@ -264,7 +264,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
 
     /* Notify of a buffer overrun, and drop some frames */
     if (m_frame_buffer.size() >= m_config.buffer_size) {
-        global_stats->notifyOverrun(m_name);
+        m_stats.notifyOverrun();
 
         /* If the buffer is really too full, we drop as many frames as needed
          * to get down to the prebuffering size. We would like to have our buffer
@@ -308,13 +308,13 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
                 m_name.c_str());
 
         /* During prebuffering, give a zeroed frame to the mux */
-        global_stats->notifyUnderrun(m_name);
+        m_stats.notifyUnderrun();
         memset(buffer, 0, size);
         return size;
     }
 
     // Save stats data in bytes, not in frames
-    global_stats->notifyBuffer(m_name, m_frame_buffer.size() * size);
+    m_stats.notifyBuffer(m_frame_buffer.size() * size);
 
     if (m_frame_buffer.empty()) {
         etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
@@ -323,7 +323,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
         m_prebuf_current = m_config.prebuffering;
 
         /* We have no data to give, we give a zeroed frame */
-        global_stats->notifyUnderrun(m_name);
+        m_stats.notifyUnderrun();
         memset(buffer, 0, size);
         return size;
     }
@@ -373,7 +373,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
 
-        global_stats->notifyPeakLevels(m_name, frame->audiolevel_left,
+        m_stats.notifyPeakLevels(frame->audiolevel_left,
                 frame->audiolevel_right);
     }
 
@@ -444,7 +444,7 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
 
-        global_stats->notifyPeakLevels(m_name, frame->audiolevel_left,
+        m_stats.notifyPeakLevels(frame->audiolevel_left,
                 frame->audiolevel_right);
     }
 

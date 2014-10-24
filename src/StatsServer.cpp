@@ -38,9 +38,11 @@
 #include "StatsServer.h"
 #include "Log.h"
 
-void StatsServer::registerInput(std::string id)
+void StatsServer::registerInput(InputStat* is)
 {
     boost::mutex::scoped_lock lock(m_mutex);
+
+    std::string id(is->get_name());
 
     if (m_inputStats.count(id) == 1) {
         etiLog.level(error) <<
@@ -49,44 +51,23 @@ void StatsServer::registerInput(std::string id)
         return;
     }
 
-    InputStat is;
     m_inputStats[id] = is;
 }
 
-void StatsServer::notifyBuffer(std::string id, long bufsize)
+void StatsServer::unregisterInput(std::string id)
 {
     boost::mutex::scoped_lock lock(m_mutex);
 
-    if (isInputRegistered(id))
-        m_inputStats[id].notifyBuffer(bufsize);
+    if (m_inputStats.count(id) == 1) {
+        m_inputStats.erase(id);
+    }
 }
 
-void StatsServer::notifyPeakLevels(std::string id, int peak_left, int peak_right)
-{
-    boost::mutex::scoped_lock lock(m_mutex);
-
-    if (isInputRegistered(id))
-        m_inputStats[id].notifyPeakLevels(peak_left, peak_right);
-}
-
-void StatsServer::notifyUnderrun(std::string id)
-{
-    boost::mutex::scoped_lock lock(m_mutex);
-
-    if (isInputRegistered(id))
-        m_inputStats[id].notifyUnderrun();
-}
-
-void StatsServer::notifyOverrun(std::string id)
-{
-    boost::mutex::scoped_lock lock(m_mutex);
-
-    if (isInputRegistered(id))
-        m_inputStats[id].notifyOverrun();
-}
 
 bool StatsServer::isInputRegistered(std::string& id)
 {
+    boost::mutex::scoped_lock lock(m_mutex);
+
     if (m_inputStats.count(id) == 0) {
         etiLog.level(error) <<
             "Stats Server id '" <<
@@ -98,10 +79,12 @@ bool StatsServer::isInputRegistered(std::string& id)
 
 std::string StatsServer::getConfigJSON()
 {
+    boost::mutex::scoped_lock lock(m_mutex);
+
     std::ostringstream ss;
     ss << "{ \"config\" : [\n";
 
-    std::map<std::string,InputStat>::iterator iter;
+    std::map<std::string,InputStat*>::iterator iter;
     int i = 0;
     for(iter = m_inputStats.begin(); iter != m_inputStats.end();
             ++iter, i++)
@@ -122,24 +105,26 @@ std::string StatsServer::getConfigJSON()
 
 std::string StatsServer::getValuesJSON()
 {
+    boost::mutex::scoped_lock lock(m_mutex);
+
     std::ostringstream ss;
     ss << "{ \"values\" : {\n";
 
-    std::map<std::string,InputStat>::iterator iter;
+    std::map<std::string,InputStat*>::iterator iter;
     int i = 0;
     for(iter = m_inputStats.begin(); iter != m_inputStats.end();
             ++iter, i++)
     {
         const std::string& id = iter->first;
-        InputStat& stats = iter->second;
+        InputStat* stats = iter->second;
 
         if (i > 0) {
             ss << " ,\n";
         }
 
         ss << " \"" << id << "\" : ";
-        ss << stats.encodeValuesJSON();
-        stats.reset();
+        ss << stats->encodeValuesJSON();
+        stats->reset();
     }
 
     ss << "}\n}\n";
@@ -149,24 +134,26 @@ std::string StatsServer::getValuesJSON()
 
 std::string StatsServer::getStateJSON()
 {
+    boost::mutex::scoped_lock lock(m_mutex);
+
     std::ostringstream ss;
     ss << "{\n";
 
-    std::map<std::string,InputStat>::iterator iter;
+    std::map<std::string,InputStat*>::iterator iter;
     int i = 0;
     for(iter = m_inputStats.begin(); iter != m_inputStats.end();
             ++iter, i++)
     {
         const std::string& id = iter->first;
-        InputStat& stats = iter->second;
+        InputStat* stats = iter->second;
 
         if (i > 0) {
             ss << " ,\n";
         }
 
         ss << " \"" << id << "\" : ";
-        ss << stats.encodeStateJSON();
-        stats.reset();
+        ss << stats->encodeStateJSON();
+        stats->reset();
     }
 
     ss << "}\n";
@@ -278,17 +265,14 @@ void StatsServer::serverThread()
             }
 
             if (strcmp(buffer, "config\n") == 0) {
-                boost::mutex::scoped_lock lock(m_mutex);
                 std::string json = getConfigJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
             else if (strcmp(buffer, "values\n") == 0) {
-                boost::mutex::scoped_lock lock(m_mutex);
                 std::string json = getValuesJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
             else if (strcmp(buffer, "state\n") == 0) {
-                boost::mutex::scoped_lock lock(m_mutex);
                 std::string json = getStateJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
@@ -315,12 +299,25 @@ end_serverthread:
     }
 }
 
+/************************************************/
+
+void InputStat::registerAtServer()
+{
+    global_stats->registerInput(this);
+}
+
+InputStat::~InputStat()
+{
+    global_stats->unregisterInput(m_name);
+}
 
 std::string InputStat::encodeValuesJSON()
 {
     std::ostringstream ss;
 
     const int16_t int16_max = std::numeric_limits<int16_t>::max();
+
+    boost::mutex::scoped_lock lock(m_mutex);
 
     /* convert to dB */
     int dB_l = peak_left  ? round(20*log10((double)peak_left / int16_max))  : -90;
@@ -369,6 +366,8 @@ std::string InputStat::encodeStateJSON()
 
 input_state_t InputStat::determineState(void)
 {
+    boost::mutex::scoped_lock lock(m_mutex);
+
     time_t now = time(NULL);
     input_state_t state;
 

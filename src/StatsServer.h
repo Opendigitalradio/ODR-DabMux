@@ -146,7 +146,8 @@ enum input_state_t
 class InputStat
 {
     public:
-        InputStat() {
+        InputStat(std::string name) : m_name(name)
+        {
             /* Statistics */
             num_underruns = 0;
             num_overruns = 0;
@@ -162,6 +163,9 @@ class InputStat
             reset();
         }
 
+        void registerAtServer(void);
+
+        ~InputStat();
 
         // Gets called each time the statistics are transmitted,
         // and resets the counters to zero
@@ -174,11 +178,15 @@ class InputStat
             peak_right = 0;
         }
 
+        std::string& get_name(void) { return m_name; }
+
         /* This function is called for every frame read by
          * the multiplexer
          */
         void notifyBuffer(long bufsize)
         {
+            boost::mutex::scoped_lock lock(m_mutex);
+
             // Statistics
             if (bufsize > max_fill_buffer) {
                 max_fill_buffer = bufsize;
@@ -198,6 +206,8 @@ class InputStat
 
         void notifyPeakLevels(int peak_left, int peak_right)
         {
+            boost::mutex::scoped_lock lock(m_mutex);
+
             // Statistics
             if (peak_left > this->peak_left) {
                 this->peak_left = peak_left;
@@ -233,6 +243,8 @@ class InputStat
 
         void notifyUnderrun(void)
         {
+            boost::mutex::scoped_lock lock(m_mutex);
+
             // Statistics
             num_underruns++;
 
@@ -245,6 +257,8 @@ class InputStat
 
         void notifyOverrun(void)
         {
+            boost::mutex::scoped_lock lock(m_mutex);
+
             // Statistics
             num_overruns++;
 
@@ -262,6 +276,8 @@ class InputStat
         input_state_t determineState(void);
 
     private:
+        std::string m_name;
+
         /************ STATISTICS ***********/
         // minimum and maximum buffer fill since last reset
         long min_fill_buffer;
@@ -282,6 +298,9 @@ class InputStat
         time_t m_time_last_event;
         time_t m_time_last_buffer_nonempty;
         bool m_buffer_empty;
+
+        // The mutex that has to be held during all notify and readout
+        mutable boost::mutex m_mutex;
 
 };
 
@@ -313,18 +332,11 @@ class StatsServer
             m_thread.join();
         }
 
-        void registerInput(std::string id);
+        void registerInput(InputStat* is);
+        void unregisterInput(std::string id);
 
         bool fault_detected() { return m_fault; }
         void restart(void);
-
-        /* The following notify functions are used by the input to
-         * inform the StatsServer about new values
-         */
-        void notifyBuffer(std::string id, long bufsize);
-        void notifyPeakLevels(std::string id, int peak_left, int peak_right);
-        void notifyUnderrun(std::string id);
-        void notifyOverrun(std::string id);
 
     private:
         void restart_thread(long);
@@ -348,7 +360,7 @@ class StatsServer
         int m_sock;
 
         /******* Statistics Data ********/
-        std::map<std::string, InputStat> m_inputStats;
+        std::map<std::string, InputStat*> m_inputStats;
 
         /* Return a description of the configuration that will
          * allow to define what graphs to be created

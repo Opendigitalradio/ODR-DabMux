@@ -212,8 +212,8 @@ components {
         ; data: unspecified=0, TMC=1, EWS=2, ITTS=3, paging=4, TDC=5, IP=59, MOT=60, proprietary=61
         type 0
 
-        label funk
-        shortlabel fu
+        label "funk"
+        shortlabel "fu"
         service srv-fu
         subchannel sub-fu
 
@@ -227,11 +227,11 @@ components {
 
     comp-lu {
         ; labels are maximum 16 characters in length
-        label luschtig
+        label "luschtig"
 
         ; a shortlabel is created by dropping some letters from the
         ; label, max length 8
-        shortlabel lu
+        shortlabel "lu"
         service srv-lu
         subchannel sub-lu
     }

@@ -104,13 +104,13 @@ struct dab_input_zmq_config_t
      * Each element corresponds to five frames,
      * or one AAC superframe.
      */
-    int buffer_size;
+    size_t buffer_size;
 
     /* The amount of prebuffering to do before we start streaming
      *
      * Same units as buffer_size
      */
-    int prebuffering;
+    size_t prebuffering;
 
     /* Whether to enforce encryption or not
      */
@@ -235,7 +235,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         InputStat m_stats;
 
     private:
-        int m_prebuf_current;
+        size_t m_prebuf_current;
 };
 
 class DabInputZmqMPEG : public DabInputZmqBase {

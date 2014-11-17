@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
     bool MNSC_increment_time = false;
 
     try {
-        if (argc == 1) { // Assume the only argument is a config file
+        if (argc == 2) { // Assume the only argument is a config file
             string conf_file = argv[1];
 
             try {

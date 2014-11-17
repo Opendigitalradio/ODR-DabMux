@@ -152,7 +152,7 @@ void printUsage(char *name, FILE* out)
     fprintf(out, "\nSYNOPSYS\n");
     fprintf(out, "    You can use either a configuration file, or the command line arguments\n");
     fprintf(out, "    With external configuration file:\n");
-    fprintf(out, "  %s -e configuration.mux\n", name);
+    fprintf(out, "  %s [-e] configuration.mux\n", name);
     fprintf(out, "    See doc/example.config for an example format for the configuration file\n");
     fprintf(out, "    With command line arguments:\n");
     fprintf(out, "  %s"

@@ -351,7 +351,20 @@ int main(int argc, char *argv[])
     bool MNSC_increment_time = false;
 
     try {
-        if (argc > 1 && strncmp(argv[1], "-e", 2) == 0) { // use external config file
+        if (argc == 1) { // Assume the only argument is a config file
+            string conf_file = argv[1];
+
+            try {
+                parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
+                        &factumAnalyzer, &limit, &rc, &statsserverport, &edi_conf);
+            }
+            catch (runtime_error &e) {
+                etiLog.log(error, "Configuration file parsing error: %s\n",
+                        e.what());
+                throw MuxInitException();
+            }
+        }
+        else if (argc > 1 && strncmp(argv[1], "-e", 2) == 0) { // use external config file
             try {
 
                 if (argc != 3) {

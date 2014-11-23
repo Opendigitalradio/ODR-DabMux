@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 
     struct timeval mnsc_time;
 
-    /* TODO: 
+    /* TODO:
      * In a SFN, when reconfiguring the ensemble, the multiplexer
      * has to be restarted (odr-dabmux doesn't support reconfiguration).
      * Ideally, we must be able to restart transmission s.t. the receiver
@@ -353,6 +353,11 @@ int main(int argc, char *argv[])
     try {
         if (argc == 2) { // Assume the only argument is a config file
             string conf_file = argv[1];
+
+            if (conf_file == "-h") {
+                printUsage(argv[0], stdout);
+                throw MuxInitException();
+            }
 
             try {
                 parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,

@@ -125,7 +125,7 @@ subchannels {
         nonblock false
         bitrate 128
         id 3
-        ;protection 5
+        protection 3
     }
     sub-ri {
         type dabplus

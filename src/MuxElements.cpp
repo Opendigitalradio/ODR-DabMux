@@ -98,25 +98,30 @@ int DabLabel::setLabel(const std::string& text, const std::string& short_label)
  */
 int DabLabel::setShortLabel(const std::string& slabel)
 {
-    char* end;
-    const char* lab;
-    uint16_t flag;
-    flag = strtoul(slabel.c_str(), &end, 0);
-    if (*end != 0) {
-        lab = slabel.c_str();
-        flag = 0;
-        for (int i = 0; i < 32; ++i) {
-            if (*lab == this->m_text[i]) {
-                flag |= 0x8000 >> i;
-                if (*(++lab) == 0) {
-                    break;
-                }
+    const char* slab = slabel.c_str();
+    uint16_t flag = 0x0;
+
+    /* Iterate over the label and set the bits in the flag
+     * according to the characters in the slabel
+     */
+    for (int i = 0; i < 32; ++i) {
+        if (*slab == this->m_text[i]) {
+            flag |= 0x8000 >> i;
+            if (*(++slab) == 0) {
+                break;
             }
         }
-        if (*lab != 0) {
-            return -1;
-        }
     }
+
+    /* If we have remaining characters in the slabel after
+     * we went through the whole label, the short label
+     * cannot be represented
+     */
+    if (*slab != 0) {
+        return -1;
+    }
+
+    /* Count the number of bits in the flag */
     int count = 0;
     for (int i = 0; i < 16; ++i) {
         if (flag & (1 << i)) {

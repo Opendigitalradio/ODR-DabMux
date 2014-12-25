@@ -400,6 +400,7 @@ void parse_configfile(string configuration_file,
 
         int figType = hexparse(pt_comp.get("figtype", "-1"));
         int packet_address = hexparse(pt_comp.get("address", "-1"));
+        int packet_datagroup = pt_comp.get("datagroup", false);
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
         DabComponent* component = new DabComponent(componentuid);
@@ -474,6 +475,16 @@ void parse_configfile(string configuration_file,
             }
 
             component->packet.address = packet_address;
+        }
+        if (packet_datagroup) {
+            if (! component->isPacketComponent(ensemble->subchannels)) {
+                stringstream ss;
+                ss << "Component with uid " << componentuid <<
+                    " is not packet, cannot have datagroup enabled !";
+                throw runtime_error(ss.str());
+            }
+
+            component->packet.datagroup = packet_datagroup;
         }
 
         ensemble->components.push_back(component);

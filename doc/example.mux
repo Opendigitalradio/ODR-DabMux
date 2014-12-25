@@ -220,9 +220,12 @@ components {
         ; for packet components, the fields
         ; "user application type in FIG 0/13 for packet mode"
         ;figtype
-        ; and "packet address (default: 0x200 + <n> (512))"
+        ; "packet address (default: 0x200 + <n> (512))"
         ;address
-        ; are supported, with the same syntax as in the manpage
+        ; are supported, with the same syntax as in the manpage.
+        ; The -d option on the command line is:
+        ;datagroup (true|false)
+        ; and defaults to false.
     }
 
     comp-lu {

@@ -370,15 +370,55 @@ void printComponent(DabComponent* component)
     etiLog.log(info, " service component type: 0x%x (%u)", component->type,
             component->type);
 
-    etiLog.log(info, " (packet) id:            %u", component->packet.id);
-    etiLog.log(info, " (packet) address:       %u",
-            component->packet.address);
+    if (component->packet.appType != 0xFFFF) {
+        etiLog.log(info, " (packet) id:            %u", component->packet.id);
+        etiLog.log(info, " (packet) address:       %u",
+                component->packet.address);
 
-    etiLog.log(info, " (packet) app type:      %u",
-            component->packet.appType);
+        etiLog.log(info, " (packet) app type:      %u",
+                component->packet.appType);
 
-    etiLog.log(info, " (packet) datagroup:     %u",
-            component->packet.datagroup);
+        etiLog.log(info, " (packet) datagroup:     %u",
+                component->packet.datagroup);
+    }
+    else if (component->audio.uaType != 0xFFFF) {
+        stringstream ss;
+        ss <<            " (audio) app type:       ";
+        switch (component->audio.uaType) {
+            case FIG0_13_APPTYPE_SLIDESHOW:
+                ss << "MOT Slideshow";
+                break;
+            case FIG0_13_APPTYPE_WEBSITE:
+                ss << "MOT Broadcast Website";
+                break;
+            case FIG0_13_APPTYPE_TPEG:
+                ss << "TPEG";
+                break;
+            case FIG0_13_APPTYPE_DGPS:
+                ss << "DGPS";
+                break;
+            case FIG0_13_APPTYPE_TMC:
+                ss << "TMC";
+                break;
+            case FIG0_13_APPTYPE_EPG:
+                ss << "EPG";
+                break;
+            case FIG0_13_APPTYPE_DABJAVA:
+                ss << "DAB Java";
+                break;
+            case FIG0_13_APPTYPE_JOURNALINE:
+                ss << "Journaline";
+                break;
+            default:
+                ss << "Unknown: " << component->audio.uaType;
+                break;
+        }
+
+        etiLog.level(info) << ss.str();
+    }
+    else {
+        etiLog.level(info) << " No app type defined";
+    }
 }
 
 void printSubchannels(vector<dabSubchannel*>& subchannels)

@@ -1672,7 +1672,8 @@ int main(int argc, char *argv[])
                     }
 
                     if (    transmitFIG0_13programme &&
-                            (*subchannel)->type == Audio) { // audio
+                            (*subchannel)->type == Audio &&
+                            (*componentFIG0_13)->audio.uaType != 0xffff) {
                         if (fig0 == NULL) {
                             fig0 = (FIGtype0*)&etiFrame[index];
                             fig0->FIGtypeNumber = 0;
@@ -1699,7 +1700,7 @@ int main(int argc, char *argv[])
                         fig0->Length += 3;
 
                         FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
-                        app->setType(FIG0_13_APPTYPE_SLIDESHOW);
+                        app->setType((*componentFIG0_13)->audio.uaType);
                         app->length = 4;
                         app->xpad = htonl(0x0cbc0000);
                         /* xpad meaning

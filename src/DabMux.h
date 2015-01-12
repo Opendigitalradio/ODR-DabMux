@@ -351,7 +351,7 @@ struct FIG0_13_app {
 #define FIG0_13_APPTYPE_TMC        0x6
 #define FIG0_13_APPTYPE_EPG        0x7
 #define FIG0_13_APPTYPE_DABJAVA    0x8
-// 0x441 is Frauenhofer IIS Journaline
+#define FIG0_13_APPTYPE_JOURNALINE 0x441
 
 
 struct FIGtype1_0 {

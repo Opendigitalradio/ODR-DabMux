@@ -449,13 +449,6 @@ void parse_configfile(string configuration_file,
         }
 
         if (figType != -1) {
-            if (! component->isPacketComponent(ensemble->subchannels)) {
-                stringstream ss;
-                ss << "Component with uid " << componentuid <<
-                    " is not packet, cannot have figtype defined !";
-                throw runtime_error(ss.str());
-            }
-
             if (figType >= (1<<12)) {
                 stringstream ss;
                 ss << "Component with uid " << componentuid <<
@@ -463,28 +456,35 @@ void parse_configfile(string configuration_file,
                 throw runtime_error(ss.str());
             }
 
-            component->packet.appType = figType;
-        }
+            if (component->isPacketComponent(ensemble->subchannels)) {
+                component->packet.appType = figType;
 
-        if (packet_address != -1) {
-            if (! component->isPacketComponent(ensemble->subchannels)) {
-                stringstream ss;
-                ss << "Component with uid " << componentuid <<
-                    " is not packet, cannot have address defined !";
-                throw runtime_error(ss.str());
+            }
+            else {
+                component->audio.uaType = figType;
             }
 
-            component->packet.address = packet_address;
-        }
-        if (packet_datagroup) {
-            if (! component->isPacketComponent(ensemble->subchannels)) {
-                stringstream ss;
-                ss << "Component with uid " << componentuid <<
-                    " is not packet, cannot have datagroup enabled !";
-                throw runtime_error(ss.str());
+            if (packet_address != -1) {
+                if (! component->isPacketComponent(ensemble->subchannels)) {
+                    stringstream ss;
+                    ss << "Component with uid " << componentuid <<
+                        " is not packet, cannot have address defined !";
+                    throw runtime_error(ss.str());
+                }
+
+                component->packet.address = packet_address;
+            }
+            if (packet_datagroup) {
+                if (! component->isPacketComponent(ensemble->subchannels)) {
+                    stringstream ss;
+                    ss << "Component with uid " << componentuid <<
+                        " is not packet, cannot have datagroup enabled !";
+                    throw runtime_error(ss.str());
+                }
+
+                component->packet.datagroup = packet_datagroup;
             }
 
-            component->packet.datagroup = packet_datagroup;
         }
 
         ensemble->components.push_back(component);

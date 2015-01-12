@@ -217,12 +217,26 @@ components {
         service srv-fu
         subchannel sub-fu
 
+        ; for audio components, the field
+        figtype 0x2
+        ; defines the User Application Type according to TS 101 756 Table 16:
+        ; 0x2   : MOT Slideshow
+        ; 0x3   : MOT Broadcast Web Site
+        ; 0x4   : TPEG
+        ; 0x5   : DGPS
+        ; 0x6   : TMC
+        ; 0x7   : EPG
+        ; 0x8   : DAB Java
+        ; 0x44a : Journaline
+        ; If not defined, the FIG 0/13 is not transmitted for this component
+
         ; for packet components, the fields
         ; "user application type in FIG 0/13 for packet mode"
         ;figtype
-        ; "packet address (default: 0x200 + <n> (512))"
+        ; and the packet address (mandatory)
         ;address
         ; are supported, with the same syntax as in the manpage.
+        ; FIG 0/13 is only transmitted when figtype is defined.
         ; The -d option on the command line is:
         ;datagroup (true|false)
         ; and defaults to false.
@@ -237,6 +251,8 @@ components {
         shortlabel "lu"
         service srv-lu
         subchannel sub-lu
+
+        figtype 0x2
     }
 
     comp-ri {
@@ -244,6 +260,8 @@ components {
         shortlabel "rick"
         service srv-ri
         subchannel sub-ri
+
+        figtype 0x2
     }
 }
 

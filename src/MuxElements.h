@@ -189,6 +189,10 @@ public:
 
 
 struct dabAudioComponent {
+    dabAudioComponent() :
+        uaType(0xFFFF) {}
+
+    uint16_t uaType; // User Application Type
 };
 
 
@@ -201,6 +205,12 @@ struct dabFidcComponent {
 
 
 struct dabPacketComponent {
+    dabPacketComponent() :
+        id(0),
+        address(0),
+        appType(0xFFFF),
+        datagroup(false) { }
+
     uint16_t id;
     uint16_t address;
     uint16_t appType;
@@ -222,12 +232,11 @@ class DabComponent : public RemoteControllable
         uint8_t subchId;
         uint8_t type;
         uint8_t SCIdS;
-        union {
-            dabAudioComponent audio;
-            dabDataComponent data;
-            dabFidcComponent fidc;
-            dabPacketComponent packet;
-        };
+
+        dabAudioComponent audio;
+        dabDataComponent data;
+        dabFidcComponent fidc;
+        dabPacketComponent packet;
 
         bool isPacketComponent(std::vector<dabSubchannel*>& subchannels);
 

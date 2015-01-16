@@ -958,6 +958,8 @@ int main(int argc, char *argv[])
 
             case 0:
             case 4:
+            case 8:
+            case 12:
                 // FIG type 0/0, Multiplex Configuration Info (MCI),
                 //  Ensemble information
                 fig0_0 = (FIGtype0_0 *) & etiFrame[index];
@@ -980,6 +982,9 @@ int main(int argc, char *argv[])
                 break;
 
             case 1:
+            case 6:
+            case 10:
+            case 13:
                 // FIG type 0/1, MIC, Sub-Channel Organization,
                 // one instance of the part for each subchannel
                 figtype0_1 = (FIGtype0_1 *) & etiFrame[index];
@@ -1055,6 +1060,9 @@ int main(int argc, char *argv[])
                 break;
 
             case 2:
+            case 9:
+            case 11:
+            case 14:
                 // FIG type 0/2, MCI, Service Organization, one instance of
                 // FIGtype0_2_Service for each subchannel
                 fig0_2 = NULL;
@@ -1643,6 +1651,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 5:
+            case 6:
                 // FIG 0 / 13
                 fig0 = NULL;
 
@@ -1956,7 +1965,7 @@ int main(int argc, char *argv[])
             }
 
             // counter for FIG 0/0
-            insertFIG = (insertFIG + 1) % 8;
+            insertFIG = (insertFIG + 1) % 16;
 
             // We rotate through the FIBs every 30 frames
             rotateFIB = (rotateFIB + 1) % 30;

@@ -489,7 +489,16 @@ void printEnsemble(dabEnsemble* ensemble)
 
     etiLog.log(info, " (0x%x)", ensemble->label.flag());
     etiLog.log(info, " mode:        %u", ensemble->mode);
-    etiLog.log(info, " lto:         %f", 2.0 * ensemble->lto);
+
+    if (ensemble->lto_auto) {
+        time_t now = time(NULL);
+        struct tm* ltime = localtime(&now);
+        time_t now2 = timegm(ltime);
+        etiLog.log(info, " lto:         %2.1f hours", 0.5 * (now2 - now) / 1800);
+    }
+    else {
+        etiLog.log(info, " lto:         %2.1f hours", 0.5 * ensemble->lto);
+    }
     etiLog.log(info, " intl. table. %d", ensemble->international_table);
 
 }

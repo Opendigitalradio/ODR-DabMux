@@ -67,7 +67,8 @@ void RemoteControllerTelnet::process(long)
 
     try {
         boost::asio::io_service io_service;
-        tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), m_port));
+        tcp::acceptor acceptor(io_service, tcp::endpoint(
+                    boost::asio::ip::address::from_string("127.0.0.1"), m_port) );
 
         while (m_running) {
             in_message = "";
@@ -225,8 +226,7 @@ void RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string comman
                 reply(socket, "Error: Invalid parameter value. ");
             }
         }
-        else
-        {
+        else {
             reply(socket, "Incorrect parameters for command 'set'");
         }
     }

@@ -46,7 +46,7 @@ general {
 remotecontrol {
     ; enable the telnet remote control server on the given port
     ; This server allows you to read and define parameters that
-    ; some features export
+    ; some features export. It is only accessible from localhost.
     ; Set the port to 0 to disable the server
     telnetport 12721
 

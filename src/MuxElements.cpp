@@ -216,8 +216,6 @@ bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
         return false;
     }
     if ((*getSubchannel(subchannels, subchId))->type != Packet) {
-        etiLog.log(error,
-                "Invalid component type for defining packet ");
         return false;
     }
     return true;

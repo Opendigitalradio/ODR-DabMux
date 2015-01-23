@@ -244,7 +244,7 @@ class DabOutputSimul : public DabOutput
 #ifdef _WIN32
         DWORD startTime_;
 #else
-        timeval startTime_;
+        struct timespec startTime_;
 #endif
 };
 

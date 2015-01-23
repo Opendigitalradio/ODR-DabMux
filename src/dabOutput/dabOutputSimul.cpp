@@ -49,7 +49,7 @@ int DabOutputSimul::Open(const char* name)
 #ifdef _WIN32
     startTime_ = GetTickCount();
 #else
-    gettimeofday(&startTime_, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &startTime_);
 #endif
 
     return 0;
@@ -75,18 +75,18 @@ int DabOutputSimul::Write(void* buffer, int size)
     }
     this->startTime_ += 24;
 #else
-    timeval curTime;
-    gettimeofday(&curTime, NULL);
-    current = (1000000ul * curTime.tv_sec) + curTime.tv_usec;
-    start = (1000000ul * this->startTime_.tv_sec) + this->startTime_.tv_usec;
-    waiting = 24000ul - (current - start);
-    if ((current - start) < 24000ul) {
-        usleep(waiting);
+    struct timespec curTime;
+    clock_gettime(CLOCK_MONOTONIC, &curTime);
+    current = (1000000000ul * curTime.tv_sec) + curTime.tv_nsec;
+    start = (1000000000ul * this->startTime_.tv_sec) + this->startTime_.tv_nsec;
+    waiting = 24000000ul - (current - start);
+    if ((current - start) < 24000000ul) {
+        usleep(waiting / 1000);
     }
 
-    this->startTime_.tv_usec += 24000;
-    if (this->startTime_.tv_usec >= 1000000) {
-        this->startTime_.tv_usec -= 1000000;
+    this->startTime_.tv_nsec += 24000000;
+    if (this->startTime_.tv_nsec >= 1000000000) {
+        this->startTime_.tv_nsec -= 1000000000;
         ++this->startTime_.tv_sec;
     }
 #endif

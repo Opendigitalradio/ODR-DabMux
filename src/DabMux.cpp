@@ -177,7 +177,7 @@ const unsigned short BitRateTable[64] = {
 };
 
 
-bool running = true;
+volatile sig_atomic_t running = 1;
 
 void signalHandler(int signum)
 {
@@ -214,25 +214,25 @@ void signalHandler(int signum)
 #ifndef _WIN32
     killpg(0, SIGPIPE);
 #endif
-    running = false;
+    running = 0;
 }
 
 
 int main(int argc, char *argv[])
 {
-
     header_message();
 
-    /*    for (int signum = 1; signum < 16; ++signum) {
-          signal(signum, signalHandler);
-          }*/
-#ifndef _WIN32
-    signal(SIGHUP, signalHandler);
-    signal(SIGQUIT, signalHandler);
-#endif
-    signal(SIGINT, signalHandler);
-    signal(SIGTERM, signalHandler);
-    //signal(SIGPIPE, signalHandler);
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(struct sigaction));
+    sa.sa_handler = &signalHandler;
+
+    const int sigs[] = {SIGHUP, SIGQUIT, SIGINT, SIGTERM};
+    for (int i = 0; i < 4; i++) {
+        if (sigaction(sigs[i], &sa, NULL) == -1) {
+            perror("sigaction");
+            return EXIT_FAILURE;
+        }
+    }
 
 #ifdef _WIN32
     if (SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST) == 0) {

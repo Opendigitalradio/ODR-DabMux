@@ -39,6 +39,7 @@
 #include "AFPacket.h"
 #include "Log.h"
 #include "ReedSolomon.h"
+#include "dabOutput/dabOutput.h"
 
 typedef std::vector<uint8_t> RSBlock;
 typedef std::vector<uint8_t> PFTFragment;
@@ -49,12 +50,13 @@ class PFT
         static const int ParityBytes = 48;
 
         PFT(unsigned int RSDataWordLength,
-                unsigned int NumRecoverableFragments,
-                bool verbose) :
+            unsigned int NumRecoverableFragments,
+            const edi_configuration_t &conf) :
             m_k(RSDataWordLength),
             m_m(NumRecoverableFragments),
+            m_dest_port(conf.dest_port),
             m_pseq(0),
-            m_verbose(verbose)
+            m_verbose(conf.verbose)
         {
             if (m_k > 207) {
                 etiLog.level(warn) <<
@@ -83,6 +85,8 @@ class PFT
     private:
         unsigned int m_k; // length of RS data word
         unsigned int m_m; // number of fragments that can be recovered if lost
+
+        unsigned int m_dest_port; // Destination port for transport header
 
         uint16_t m_pseq;
 

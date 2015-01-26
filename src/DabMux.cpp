@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
         AFPacketiser edi_afPacketiser(edi_conf.verbose);
 
         // The AF Packet will be protected with reed-solomon and split in fragments
-        PFT edi_pft(207, 3, edi_conf.verbose);
+        PFT edi_pft(207, 3, edi_conf);
 
         /*   Each iteration of the main loop creates one ETI frame */
         for (currentFrame = 0; running; currentFrame++) {

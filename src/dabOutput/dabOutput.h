@@ -53,6 +53,18 @@
 #  include "zmq.hpp"
 #endif
 
+// Configuration for EDI output
+struct edi_configuration_t {
+    bool enabled;
+    unsigned int source_port;
+    bool dump;
+    bool verbose;
+    bool enable_pft;
+    std::string dest_addr;
+    unsigned int dest_port;
+};
+
+
 // Abstract base class for all outputs
 class DabOutput
 {

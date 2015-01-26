@@ -66,16 +66,6 @@
 #define DEFAULT_SERVICE_ID      50
 #define DEFAULT_PACKET_ADDRESS  0
 
-struct edi_configuration_t {
-    bool enabled;
-    unsigned int source_port;
-    bool dump;
-    bool verbose;
-    bool enable_pft;
-    std::string dest_addr;
-    unsigned int dest_port;
-};
-
 /*****************************************************************************
  *****************   Definition of FIG structures ****************************
  *****************************************************************************/

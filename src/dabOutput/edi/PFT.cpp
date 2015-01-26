@@ -168,6 +168,9 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     vector< vector<uint8_t> > fragments = ProtectAndFragment(af_packet);
     vector< vector<uint8_t> > pft_fragments; // These contain PF headers
 
+    const bool enable_RS = true;
+    const bool enable_transport = true;
+
     unsigned int findex = 0;
 
     unsigned fcount = fragments.size();
@@ -184,29 +187,53 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     for (size_t i = 0; i < fragments.size(); i++) {
         const vector<uint8_t>& fragment = fragments[i];
 
-        std::string psync("PF"); // SYNC
+        // Psync
+        std::string psync("PF");
         std::vector<uint8_t> packet(psync.begin(), psync.end());
 
+        // Pseq
         packet.push_back(m_pseq >> 8);
         packet.push_back(m_pseq & 0xFF);
 
+        // Findex
         packet.push_back(findex >> 16);
         packet.push_back(findex >> 8);
         packet.push_back(findex & 0xFF);
         findex++;
 
+        // Fcount
         packet.push_back(fcount >> 16);
         packet.push_back(fcount >> 8);
         packet.push_back(fcount & 0xFF);
 
+        // RS (1 bit), transport (1 bit) and Plen (14 bits)
         unsigned int plen = fragment.size();
-        plen |= 0x8000; // Set FEC bit
+        if (enable_RS) {
+            plen |= 0x8000; // Set FEC bit
+        }
+
+        if (enable_transport) {
+            plen |= 0x4000; // Set ADDR bit
+        }
 
         packet.push_back(plen >> 8);
         packet.push_back(plen & 0xFF);
 
-        packet.push_back(chunk_len);   // RSk
-        packet.push_back(zero_pad);    // RSz
+        if (enable_RS) {
+            packet.push_back(chunk_len);   // RSk
+            packet.push_back(zero_pad);    // RSz
+        }
+
+        if (enable_transport) {
+            // Source (16 bits)
+            uint16_t addr_source = 0;
+            packet.push_back(addr_source >> 8);
+            packet.push_back(addr_source & 0xFF);
+
+            // Dest (16 bits)
+            packet.push_back(m_dest_port >> 8);
+            packet.push_back(m_dest_port & 0xFF);
+        }
 
         // calculate CRC over AF Header and payload
         uint16_t crc = 0xffff;

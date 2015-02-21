@@ -3,8 +3,10 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2014, 2015
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    The command-line parser reads settings from a configuration file
    whose definition is given in doc/example.config
@@ -616,7 +618,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         if (0) {
 #if defined(HAVE_INPUT_FILE)
         } else if (strcmp(subchan->inputProto, "file") == 0) {
-            operations = dabInputDabplusFileOperations;
+            operations = dabInputMpegFileOperations;
 #endif // defined(HAVE_INPUT_FILE)
 #if defined(HAVE_INPUT_ZEROMQ)
         }
@@ -922,8 +924,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             case 0:
                 if (operations == dabInputMpegFileOperations) {
                     operations = dabInputMpegFifoOperations;
-                } else if (operations ==
-                        dabInputDabplusFileOperations) {
+                } else if (operations == dabInputDabplusFileOperations) {
                     operations = dabInputDabplusFifoOperations;
                 } else {
                     stringstream ss;

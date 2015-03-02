@@ -27,9 +27,7 @@
 */
 #include "ParserCmdline.h"
 
-#ifdef HAVE_CONFIG_H
-#   include "config.h"
-#endif
+#if ENABLE_CMDLINE_OPTIONS
 
 #include <vector>
 #include <stdint.h>
@@ -772,4 +770,6 @@ bool parse_cmdline(char **argv,
 EXIT:
     return false;
 }
+
+#endif // ENABLE_CMDLINE_OPTIONS
 

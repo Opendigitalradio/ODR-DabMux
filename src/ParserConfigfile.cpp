@@ -567,24 +567,33 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         throw runtime_error(ss.str());
     }
 
-    string inputfile = "";
-    // fail if no inputfile given unless type is test
+    string inputUri = "";
+    // fail if no inputUri given unless type is test
     if (type != "test") {
-        try {
-            inputfile = pt.get<string>("inputfile");
-        }
-        catch (ptree_error &e) {
-            stringstream ss;
-            ss << "Subchannel with uid " << subchanuid << " has no type defined!";
-            throw runtime_error(ss.str());
+        inputUri = pt.get<string>("inputuri", "");
+
+        if (inputUri == "") {
+            try {
+                inputUri = pt.get<string>("inputfile");
+            }
+            catch (ptree_error &e) {
+                stringstream ss;
+                ss << "Subchannel with uid " << subchanuid << " has no inputUri defined!";
+                throw runtime_error(ss.str());
+            }
         }
     }
 
-    char* inputName = new char[512];
-    memset(inputName, 0, 512);
-    inputfile.copy(inputName, 511);
+    string proto;
+    size_t protopos = inputUri.find("://");
+    if (protopos == string::npos) {
+        proto = "file";
+    }
+    else {
+        proto = inputUri.substr(0, protopos);
+    }
 
-    subchan->inputName = inputName;
+    subchan->inputUri = inputUri;
 
     /* The input is of the old_style type,
      * with the struct of function pointers,
@@ -594,37 +603,23 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     dabInputOperations operations;
     dabProtection* protection = &subchan->protection;
 
+
     if (0) {
 #if defined(HAVE_FORMAT_MPEG)
     } else if (type == "audio") {
         subchan->type = Audio;
         subchan->bitrate = 0;
 
-        char* proto;
-
-        char* full_inputName = new char[256];
-        full_inputName[255] = '\0';
-        memcpy(full_inputName, inputName, 255);
-
-        proto = strstr(inputName, "://");
-        if (proto == NULL) {
-            subchan->inputProto = "file";
-        } else {
-            subchan->inputProto = inputName;
-            subchan->inputName = proto + 3;
-            *proto = 0;
-        }
-
         if (0) {
 #if defined(HAVE_INPUT_FILE)
-        } else if (strcmp(subchan->inputProto, "file") == 0) {
+        } else if (proto == "file") {
             operations = dabInputMpegFileOperations;
 #endif // defined(HAVE_INPUT_FILE)
 #if defined(HAVE_INPUT_ZEROMQ)
         }
-        else if ((strcmp(subchan->inputProto, "tcp") == 0) ||
-                (strcmp(subchan->inputProto, "epmg") == 0) ||
-                (strcmp(subchan->inputProto, "ipc") == 0) ) {
+        else if (proto == "tcp"  ||
+                 proto == "epmg" ||
+                 proto == "ipc") {
             input_is_old_style = false;
 
             dab_input_zmq_config_t zmqconfig;
@@ -653,12 +648,11 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 new DabInputZmqMPEG(subchanuid, zmqconfig);
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
-            subchan->inputName = full_inputName;
 
-            if (strcmp(subchan->inputProto, "epmg") == 0) {
+            if (proto == "epmg") {
                 etiLog.level(warn) << "Using untested epmg:// zeromq input";
             }
-            else if (strcmp(subchan->inputProto, "ipc") == 0) {
+            else if (proto == "ipc") {
                 etiLog.level(warn) << "Using untested ipc:// zeromq input";
             }
 #endif // defined(HAVE_INPUT_ZEROMQ)
@@ -666,7 +660,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid <<
                 ": Invalid protocol for MPEG input (" <<
-                subchan->inputProto << ")" << endl;
+                proto << ")" << endl;
             throw runtime_error(ss.str());
         }
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
@@ -675,31 +669,16 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->type = Audio;
         subchan->bitrate = 32;
 
-        char* proto;
-
-        char* full_inputName = new char[256];
-        full_inputName[255] = '\0';
-        memcpy(full_inputName, inputName, 255);
-
-        proto = strstr(inputName, "://");
-        if (proto == NULL) {
-            subchan->inputProto = "file";
-        } else {
-            subchan->inputProto = inputName;
-            subchan->inputName = proto + 3;
-            *proto = 0;
-        }
-
         if (0) {
 #if defined(HAVE_INPUT_FILE)
-        } else if (strcmp(subchan->inputProto, "file") == 0) {
+        } else if (proto == "file") {
             operations = dabInputDabplusFileOperations;
 #endif // defined(HAVE_INPUT_FILE)
 #if defined(HAVE_INPUT_ZEROMQ)
         }
-        else if ((strcmp(subchan->inputProto, "tcp") == 0) ||
-                (strcmp(subchan->inputProto, "epmg") == 0) ||
-                (strcmp(subchan->inputProto, "ipc") == 0) ) {
+        else if (proto == "tcp"  ||
+                 proto == "epmg" ||
+                 proto == "ipc") {
             input_is_old_style = false;
 
             dab_input_zmq_config_t zmqconfig;
@@ -735,12 +714,11 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 
             inzmq->enrol_at(*rc);
             subchan->input     = inzmq;
-            subchan->inputName = full_inputName;
 
-            if (strcmp(subchan->inputProto, "epmg") == 0) {
+            if (proto == "epmg") {
                 etiLog.level(warn) << "Using untested epmg:// zeromq input";
             }
-            else if (strcmp(subchan->inputProto, "ipc") == 0) {
+            else if (proto == "ipc") {
                 etiLog.level(warn) << "Using untested ipc:// zeromq input";
             }
 #endif // defined(HAVE_INPUT_ZEROMQ)
@@ -748,64 +726,46 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid <<
                 ": Invalid protocol for DAB+ input (" <<
-                subchan->inputProto << ")" << endl;
+                proto << ")" << endl;
             throw runtime_error(ss.str());
         }
 #endif // defined(HAVE_FORMAT_DABPLUS)
     } else if (type == "bridge") {
-        char* proto;
-
-        proto = strstr(inputName, "://");
-        if (proto == NULL) {
-            subchan->inputProto = "udp";
-        } else {
-            subchan->inputProto = inputName;
-            subchan->inputName = proto + 3;
-            *proto = 0;
-        }
+        // TODO default proto should be udp://
         if (0) {
 #if defined(HAVE_FORMAT_BRIDGE)
 #if defined(HAVE_INPUT_UDP)
-        } else if (strcmp(subchan->inputProto, "udp") == 0) {
+        } else if (proto == "udp") {
             operations = dabInputBridgeUdpOperations;
 #endif // defined(HAVE_INPUT_UDP)
 #if defined(HAVE_INPUT_SLIP)
-        } else if (strcmp(subchan->inputProto, "slip") == 0) {
+        } else if (proto == "slip") {
             operations = dabInputSlipOperations;
 #endif // defined(HAVE_INPUT_SLIP)
 #endif // defined(HAVE_FORMAT_BRIDGE)
         }
     } else if (type == "data") {
-        char* proto;
-
-        proto = strstr(inputName, "://");
-        if (proto == NULL) {
-            subchan->inputProto = "udp";
-        } else {
-            subchan->inputProto = inputName;
-            subchan->inputName = proto + 3;
-            *proto = 0;
-        }
+        // TODO default proto should be udp://
         if (0) {
 #if defined(HAVE_INPUT_UDP)
-        } else if (strcmp(subchan->inputProto, "udp") == 0) {
+        } else if (proto == "udp") {
             operations = dabInputUdpOperations;
 #endif
 #if defined(HAVE_INPUT_PRBS) && defined(HAVE_FORMAT_RAW)
-        } else if (strcmp(subchan->inputProto, "prbs") == 0) {
+        } else if (proto == "prbs") {
             operations = dabInputPrbsOperations;
 #endif
 #if defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_RAW)
-        } else if (strcmp(subchan->inputProto, "file") == 0) {
+        } else if (proto == "file") {
             operations = dabInputRawFileOperations;
 #endif
-        } else if (strcmp(subchan->inputProto, "fifo") == 0) {
+        } else if (proto == "fifo") {
             operations = dabInputRawFifoOperations;
         } else {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid << 
                 ": Invalid protocol for data input (" <<
-                subchan->inputProto << ")" << endl;
+                proto << ")" << endl;
             throw runtime_error(ss.str());
         }
 
@@ -813,14 +773,12 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #if defined(HAVE_INPUT_TEST) && defined(HAVE_FORMAT_RAW)
     } else if (type == "test") {
-        subchan->inputProto = "test";
         subchan->type = DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
         operations = dabInputTestOperations;
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
     } else if (type == "packet") {
-        subchan->inputProto = "file";
         subchan->type = Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
 #ifdef HAVE_INPUT_FILE
@@ -828,11 +786,10 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #elif defined(HAVE_INPUT_FIFO)
         operations = dabInputFifoOperations;
 #else
-#   pragma error("Must defined at least one packet input")
+#   pragma error("Must define at least one packet input")
 #endif // defined(HAVE_INPUT_FILE)
 #ifdef HAVE_FORMAT_EPM
     } else if (type == "enhancedpacked") {
-        subchan->inputProto = "file";
         subchan->type = Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
         operations = dabInputEnhancedPacketFileOperations;
@@ -840,25 +797,19 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_DMB
     } else if (type == "dmb") {
-        char* proto;
-
-        proto = strstr(inputName, "://");
-        if (proto == NULL) {
-            subchan->inputProto = "udp";
-        } else {
-            subchan->inputProto = inputName;
-            subchan->inputName = proto + 3;
-            *proto = 0;
-        }
-        if (strcmp(subchan->inputProto, "udp") == 0) {
+        // TODO default proto should be UDP
+        if (0) {
+#if defined(HAVE_INPUT_UDP)
+        } else if (proto == "udp") {
             operations = dabInputDmbUdpOperations;
-        } else if (strcmp(subchan->inputProto, "file") == 0) {
+#endif
+        } else if (proto == "file") {
             operations = dabInputDmbFileOperations;
         } else {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid << 
                 ": Invalid protocol for DMB input (" <<
-                subchan->inputProto << ")" << endl;
+                proto << ")" << endl;
             throw runtime_error(ss.str());
         }
 
@@ -917,7 +868,6 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                         subchanuid;
                     throw runtime_error(ss.str());
                 }
-                subchan->inputProto = "fifo";
                 break;
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_MPEG
@@ -932,7 +882,6 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                         subchanuid;
                     throw runtime_error(ss.str());
                 }
-                subchan->inputProto = "fifo";
                 break;
 #endif // defined(HAVE_FORMAT_MPEG)
             default:

@@ -369,6 +369,7 @@ int main(int argc, char *argv[])
                 throw MuxInitException();
             }
         }
+#if ENABLE_CMDLINE_OPTIONS
         else if (argc > 1 && strncmp(argv[1], "-e", 2) == 0) { // use external config file
             try {
 
@@ -395,6 +396,12 @@ int main(int argc, char *argv[])
                 throw MuxInitException();
             }
         }
+#else
+        else {
+            etiLog.level(error) << "You must specify the configuration file";
+            throw MuxInitException();
+        }
+#endif
 
         if (statsserverport != 0) {
             global_stats = new StatsServer(statsserverport);
@@ -555,7 +562,7 @@ int main(int argc, char *argv[])
                 (*output)->output = new DabOutputZMQ("epgm");
 #endif // defined(HAVE_OUTPUT_ZEROMQ)
             } else {
-                etiLog.log(error, "Output protcol unknown: %s\n",
+                etiLog.log(error, "Output protocol unknown: %s\n",
                         (*output)->outputProto.c_str());
                 throw MuxInitException();
             }
@@ -584,8 +591,8 @@ int main(int argc, char *argv[])
                 (*subchannel)->startAddress = (*(subchannel - 1))->startAddress +
                     getSizeCu(*(subchannel - 1));
             }
-            if ((*subchannel)->input->open((*subchannel)->inputName) == -1) {
-                perror((*subchannel)->inputName);
+            if ((*subchannel)->input->open((*subchannel)->inputUri) == -1) {
+                perror((*subchannel)->inputUri.c_str());
                 returnCode = -1;
                 throw MuxInitException();
             }
@@ -593,8 +600,8 @@ int main(int argc, char *argv[])
             // TODO Check errors
             int subch_bitrate = (*subchannel)->input->setBitrate( (*subchannel)->bitrate);
             if (subch_bitrate <= 0) {
-                etiLog.log(error, "can't set bitrate for source %s\n",
-                        (*subchannel)->inputName);
+                etiLog.level(error) << "can't set bitrate for source " <<
+                        (*subchannel)->inputUri;
                 returnCode = -1;
                 throw MuxInitException();
             }
@@ -626,7 +633,7 @@ int main(int argc, char *argv[])
                     subch_bitrate % 32 != 0 ) {
                 etiLog.level(error) <<
                     "Cannot use EEP_B protection for subchannel " <<
-                    (*subchannel)->inputName <<
+                    (*subchannel)->inputUri <<
                     ": bitrate not multiple of 32kbit/s";
                 returnCode = -1;
                 throw MuxInitException();

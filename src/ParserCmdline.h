@@ -28,8 +28,16 @@
 #ifndef _PARSER_CMDLINE
 #define _PARSER_CMDLINE
 
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
 #include <vector>
 #include "MuxElements.h"
+
+#define ENABLE_CMDLINE_OPTIONS 0
+
+#if ENABLE_CMDLINE_OPTIONS
 
 bool parse_cmdline(char **argv,
         int argc,
@@ -40,5 +48,7 @@ bool parse_cmdline(char **argv,
         bool* factumAnalyzer,
         unsigned long* limit
         );
+
+#endif
 
 #endif

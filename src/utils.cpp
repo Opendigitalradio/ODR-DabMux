@@ -145,6 +145,7 @@ void header_message()
 
 }
 
+#if ENABLE_CMDLINE_OPTIONS
 void printUsage(char *name, FILE* out)
 {
     fprintf(out, "NAME\n");
@@ -300,6 +301,56 @@ void printUsage(char *name, FILE* out)
             "                         where scheme is (raw|udp|tcp|file|fifo|simul)\n"
            );
 }
+#else // no command line options
+void printUsage(char *name, FILE* out)
+{
+    fprintf(out, "NAME\n");
+    fprintf(out, "  %s - A software DAB multiplexer\n", name);
+    fprintf(out, "\nSYNOPSYS\n");
+    fprintf(out, "    This software requires a configuration file:\n");
+    fprintf(out, "  %s configuration.mux\n", name);
+    fprintf(out, "    See doc/example.config for an example format for the configuration file\n");
+    fprintf(out, "\nDESCRIPTION\n");
+    fprintf(out,
+            "  %s  is a software multiplexer that generates an ETI stream from\n"
+            "  audio and data streams. Because of  its  software  based  architecture,\n"
+            "  many  typical DAB services can be generated and multiplexed on a single\n"
+            "  PC platform with live or pre-recorded sources.\n"
+            "\n"
+            "  A DAB multiplex configuration is composed of one ensemble. An  ensemble\n"
+            "  is  the entity that receivers tune to and process. An ensemble contains\n"
+            "  several services. A service is  the  listener-selectable  output.  Each\n"
+            "  service  contains  one mandatory service component which is called pri-\n"
+            "  mary component. An audio primary component  define  a  program  service\n"
+            "  while  a data primary component define a data service. Service can con-\n"
+            "  tain additional components which are called secondary components. Maxi-\n"
+            "  mum  total  number  of components is 12 for program services and 11 for\n"
+            "  data services. A service component is a link to one subchannel (of Fast\n"
+            "  Information  Data  Channel).  A  subchannel  is the physical space used\n"
+            "  within the common interleaved frame.\n"
+            "\n"
+            "   __________________________________________________\n"
+            "  |                   CRC-Ensemble                   |  ENSEMBLE\n"
+            "  |__________________________________________________|\n"
+            "          |                 |                 |\n"
+            "          |                 |                 |\n"
+            "   _______V______    _______V______    _______V______\n"
+            "  | CRC-Service1 |  | CRC-Service2 |  | CRC-Service3 |  SERVICES\n"
+            "  |______________|  |______________|  |______________|\n"
+            "     |        |        |        | |______         |\n"
+            "     |        |        |        |        |        |\n"
+            "   __V__    __V__    __V__    __V__    __V__    __V__\n"
+            "  | SC1 |  | SC2 |  | SC3 |  | SC4 |  | SC5 |  | SC6 |  SERVICE\n"
+            "  |_____|  |_____|  |_____|  |_____|  |_____|  |_____|  COMPONENTS\n"
+            "     |        |   _____|        |        |    ____|\n"
+            "     |        |  |              |        |   |\n"
+            "   __V________V__V______________V________V___V_______   COMMON\n"
+            "  | SubCh1 | SubCh9 |  ...  | SubCh3 | SubCh60 | ... |  INTERLEAVED\n"
+            "  |________|________|_______|________|_________|_____|  FRAME\n"
+            "  Figure 1: An example of a DAB multiplex configuration\n",
+        name);
+}
+#endif
 
 void printOutputs(vector<dabOutput*>& outputs)
 {
@@ -431,10 +482,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
         dabProtection* protection = &(*subchannel)->protection;
         etiLog.log(info, "Subchannel   %i", index);
         etiLog.log(info, " input");
-        etiLog.log(info, "   protocol: %s",
-                (*subchannel)->inputProto);
-        etiLog.log(info, "   name:     %s",
-                (*subchannel)->inputName);
+        etiLog.level(info) << "   URI:     " << (*subchannel)->inputUri;
         switch ((*subchannel)->type) {
         case Audio:
             etiLog.log(info, " type:       audio");

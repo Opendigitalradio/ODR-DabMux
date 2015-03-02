@@ -167,8 +167,7 @@ enum dab_subchannel_type_t {
 };
 
 struct dabSubchannel {
-    const char* inputProto;
-    const char* inputName;
+    std::string inputUri;
     DabInputBase* input;
     unsigned char id;
     dab_subchannel_type_t type;

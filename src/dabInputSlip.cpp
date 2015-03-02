@@ -29,6 +29,8 @@
 #include <string.h>
 #include <limits.h>
 
+#ifdef HAVE_FORMAT_BRIDGE
+#   ifdef HAVE_INPUT_SLIP
 
 #ifdef _WIN32
 #   include <io.h>
@@ -405,4 +407,6 @@ int dabInputSlipClean(void** args)
     return 0;
 }
 
+#   endif // HAVE_INPUT_SLIP
+#endif // HAVE_FORMAT_BRIDGE
 

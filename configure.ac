@@ -98,30 +98,6 @@ AC_CHECK_FUNCS([bzero gethostbyname gettimeofday inet_ntoa memchr memmove memset
 
 # Options
 # Inputs
-# PRBS
-AC_ARG_ENABLE([input_prbs],
-        [AS_HELP_STRING([--disable-input-prbs], [Disable PRBS input])],
-        [], [enable_input_prbs=yes])
-AS_IF([test "x$enable_input_prbs" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_PRBS, [1], [Define if PRBS input is enabled])])
-# TEST
-AC_ARG_ENABLE([input_test],
-        [AS_HELP_STRING([--disable-input-test], [Disable TEST input])],
-        [], [enable_input_test=yes])
-AS_IF([test "x$enable_input_test" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_TEST, [1], [Define if TEST input is enabled])])
-# SLIP
-AC_ARG_ENABLE([input_slip],
-        [AS_HELP_STRING([--disable-input-slip], [Disable SLIP input])],
-        [], [enable_input_slip=yes])
-AS_IF([test "x$enable_input_slip" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_SLIP, [1], [Define if SLIP input is enabled])])
-# UDP
-AC_ARG_ENABLE([input_udp],
-        [AS_HELP_STRING([--disable-input-udp], [Disable UDP input])],
-        [], [enable_input_udp=yes])
-AS_IF([test "x$enable_input_udp" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_UDP, [1], [Define if UDP input is enabled])])
 # FIFO
 AC_ARG_ENABLE([input_fifo],
         [AS_HELP_STRING([--disable-input-fifo], [Disable FIFO input])],
@@ -134,15 +110,39 @@ AC_ARG_ENABLE([input_file],
         [], [enable_input_file=yes])
 AS_IF([test "x$enable_input_file" = "xyes"],
         [AC_DEFINE(HAVE_INPUT_FILE, [1], [Define if FILE input is enabled])])
-
 # ZeroMQ
 AC_ARG_ENABLE([input_zeromq],
-        [AS_HELP_STRING([--enable-input-zeromq], [Enable ZeroMQ input for dabplus])],
-        [], [enable_input_zeromq=no])
+        [AS_HELP_STRING([--disable-input-zeromq], [Disable ZeroMQ input])],
+        [], [enable_input_zeromq=yes])
 AS_IF([test "x$enable_input_zeromq" = "xyes"],
         [AC_CHECK_LIB(zmq, zmq_init, [] , AC_MSG_ERROR(ZeroMQ libzmq is required))])
 AS_IF([test "x$enable_input_zeromq" = "xyes"],
        AC_DEFINE(HAVE_INPUT_ZEROMQ, [1], [Define if ZEROMQ input is enabled]))
+
+# PRBS
+AC_ARG_ENABLE([input_prbs],
+        [AS_HELP_STRING([--enable-input-prbs], [Enable PRBS input])],
+        [], [enable_input_prbs=no])
+AS_IF([test "x$enable_input_prbs" = "xyes"],
+        [AC_DEFINE(HAVE_INPUT_PRBS, [1], [Define if PRBS input is enabled])])
+# TEST
+AC_ARG_ENABLE([input_test],
+        [AS_HELP_STRING([--enable-input-test], [Enable TEST input])],
+        [], [enable_input_test=no])
+AS_IF([test "x$enable_input_test" = "xyes"],
+        [AC_DEFINE(HAVE_INPUT_TEST, [1], [Define if TEST input is enabled])])
+# SLIP
+AC_ARG_ENABLE([input_slip],
+        [AS_HELP_STRING([--enable-input-slip], [Enable SLIP input])],
+        [], [enable_input_slip=no])
+AS_IF([test "x$enable_input_slip" = "xyes"],
+        [AC_DEFINE(HAVE_INPUT_SLIP, [1], [Define if SLIP input is enabled])])
+# UDP
+AC_ARG_ENABLE([input_udp],
+        [AS_HELP_STRING([--enable-input-udp], [Enable UDP input])],
+        [], [enable_input_udp=no])
+AS_IF([test "x$enable_input_udp" = "xyes"],
+        [AC_DEFINE(HAVE_INPUT_UDP, [1], [Define if UDP input is enabled])])
 
 # Outputs
 # FILE
@@ -182,7 +182,8 @@ AS_IF([test "x$enable_output_simul" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_SIMUL, [1], [Define if SIMUL output is enabled])])
 # ZeroMQ message queue output
 AC_ARG_ENABLE([output_zeromq],
-        AS_HELP_STRING([--enable-output-zeromq], [Enable ZeroMQ output]))
+        [AS_HELP_STRING([--disable-output-zeromq], [Disable ZeroMQ output])],
+        [], [enable_output_zeromq=yes])
 AS_IF([test "x$enable_output_zeromq" = "xyes"],
        AC_CHECK_LIB(zmq, zmq_init, [true], [AC_MSG_ERROR([ZeroMQ libzmq is required])]))
 AS_IF([test "x$enable_output_zeromq" = "xyes"],
@@ -202,9 +203,9 @@ AS_IF([test "x$enable_format_raw" = "xyes"],
         [AC_DEFINE(HAVE_FORMAT_RAW, [1], [Define if RAW format is enabled])])
 # BRIDGE
 AC_ARG_ENABLE([format_bridge],
-        [AS_HELP_STRING([--disable-format-bridge], [Disable BRIDGE format])],
-        [], [enable_format_bridge=yes])
-AS_IF([test "x$enable_format_bridge" = "xyes"],
+        [AS_HELP_STRING([--enable-format-bridge], [Enable BRIDGE format])],
+        [], [enable_format_bridge=no])
+AS_IF([test "x$enable_format_bridge" = "xno"],
         [AC_DEFINE(HAVE_FORMAT_BRIDGE, [1], [Define if BRIDGE format is enabled])])
 # MPEG
 AC_ARG_ENABLE([format_mpeg],

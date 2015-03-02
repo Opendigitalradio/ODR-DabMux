@@ -23,6 +23,8 @@
 #include "dabInputUdp.h"
 #include "bridge.h"
 
+#ifdef HAVE_FORMAT_BRIDGE
+#   ifdef HAVE_INPUT_UDP
 
 struct dabInputBridgeUdpData {
     dabInputUdpData* udpData;
@@ -121,4 +123,7 @@ int dabInputBridgeUdpClean(void** args)
     return 0;
 }
 
+
+#   endif // HAVE_INPUT_UDP
+#endif // HAVE_FORMAT_BRIDGE
 

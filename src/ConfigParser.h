@@ -6,8 +6,11 @@
    Copyright (C) 2014
    Matthias P. Braendli, matthias.braendli@mpb.li
 
-   The command-line parser reads settings from a configuration file
-   whose definition is given in doc/example.config
+    The Configuration parser sets up the ensemble according
+     to the configuration given in a boost property tree, which
+     is directly derived from a config file.
+
+     The format of the configuration is given in doc/example.mux
    */
 /*
    This file is part of ODR-DabMux.
@@ -25,8 +28,8 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef _PARSER_CONFIGFILE
-#define _PARSER_CONFIGFILE
+#ifndef __CONFIG_PARSER_H_
+#define __CONFIG_PARSER_H_
 
 #include <vector>
 #include <string>
@@ -34,7 +37,7 @@
 #include "DabMux.h"
 #include <boost/property_tree/ptree.hpp>
 
-void parse_configfile(std::string configuration_file,
+void parse_ptree(boost::property_tree::ptree& pt,
         std::vector<dabOutput*> &outputs,
         dabEnsemble* ensemble,
         bool* enableTist,

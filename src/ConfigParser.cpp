@@ -8,8 +8,11 @@
 
     http://www.opendigitalradio.org
 
-   The command-line parser reads settings from a configuration file
-   whose definition is given in doc/example.config
+    The Configuration parser sets up the ensemble according
+     to the configuration given in a boost property tree, which
+     is directly derived from a config file.
+
+     The format of the configuration is given in doc/example.mux
    */
 /*
    This file is part of ODR-DabMux.
@@ -27,14 +30,13 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "ParserConfigfile.h"
+#include "ConfigParser.h"
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
 
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/info_parser.hpp>
 #include <exception>
 #include <iostream>
 #include <vector>
@@ -122,7 +124,7 @@ int hexparse(std::string input)
 }
 
 
-void parse_configfile(string configuration_file,
+void parse_ptree(boost::property_tree::ptree& pt,
         vector<dabOutput*> &outputs,
         dabEnsemble* ensemble,
         bool* enableTist,
@@ -136,9 +138,6 @@ void parse_configfile(string configuration_file,
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
-    ptree pt;
-
-    read_info(configuration_file, pt);
     /******************** READ GENERAL OPTIONS *****************/
     ptree pt_general = pt.get_child("general");
 

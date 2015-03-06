@@ -79,7 +79,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      MuxElements.cpp MuxElements.h \
                      RemoteControl.cpp RemoteControl.h \
                      ParserCmdline.cpp ParserCmdline.h \
-                     ParserConfigfile.cpp ParserConfigfile.h \
+                     ParserConfig.cpp ParserConfig.h \
                      Eti.h Eti.cpp \
                      Log.h Log.cpp \
                      UdpSocket.h UdpSocket.cpp \
@@ -93,6 +93,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      ReedSolomon.h ReedSolomon.cpp \
                      mpeg.h mpeg.c \
                      StatsServer.h StatsServer.cpp \
+                     ConfigServer.h ConfigServer.cpp \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp \
                      zmq.hpp

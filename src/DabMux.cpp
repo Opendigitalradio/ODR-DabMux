@@ -27,6 +27,8 @@
 #   include "config.h"
 #endif
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/info_parser.hpp>
 #include <cstdio>
 #include <stdlib.h>
 #include <iostream>
@@ -124,15 +126,21 @@ typedef DWORD32 uint32_t;
 #include "MuxElements.h"
 #include "utils.h"
 #include "ParserCmdline.h"
-#include "ParserConfigfile.h"
+#include "ConfigParser.h"
 #include "StatsServer.h"
+#include "ConfigServer.h"
 #include "Log.h"
 #include "RemoteControl.h"
 
 using namespace std;
+using boost::property_tree::ptree;
+using boost::property_tree::ptree_error;
+
 
 /* Global stats server */
 StatsServer* global_stats;
+
+ConfigServer config_server(8001);
 
 class MuxInitException : public exception
 {
@@ -337,6 +345,8 @@ int main(int argc, char *argv[])
     edi_conf.dump        = false;
     edi_conf.enable_pft  = false;
 
+    ptree pt;
+
 
     struct timeval mnsc_time;
 
@@ -360,7 +370,9 @@ int main(int argc, char *argv[])
             }
 
             try {
-                parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
+                read_info(conf_file, pt);
+
+                parse_ptree(pt, outputs, ensemble, &enableTist, &FICL,
                         &factumAnalyzer, &limit, &rc, &statsserverport, &edi_conf);
             }
             catch (runtime_error &e) {
@@ -525,11 +537,10 @@ int main(int argc, char *argv[])
 
 
         for (output = outputs.begin(); output != outputs.end() ; ++output) {
-#if defined(HAVE_OUTPUT_FILE)
-            if ((*output)->outputProto == "file") {
-                (*output)->output = new DabOutputFile();
-#else // !defined(HAVE_OUTPUT_FILE)
             if (0) {
+#if defined(HAVE_OUTPUT_FILE)
+            } else if ((*output)->outputProto == "file") {
+                (*output)->output = new DabOutputFile();
 #endif // defined(HAVE_OUTPUT_FILE)
 #if defined(HAVE_OUTPUT_FIFO)
             } else if ((*output)->outputProto == "fifo") {
@@ -2167,6 +2178,17 @@ int main(int argc, char *argv[])
                     etiLog.level(warn) <<
                         "Detected Statistics Server fault, restarting it";
                     global_stats->restart();
+            }
+
+            if (fc->FCT % 10 == 0) {
+                if (config_server.fault_detected()) {
+                    config_server.restart();
+                }
+
+                if (config_server.request_pending()) {
+                    config_server.update_ptree(pt);
+                }
+
             }
         }
 

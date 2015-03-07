@@ -45,7 +45,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
         bool* factumAnalyzer,
         unsigned long* limit,
         BaseRemoteController** rc,
-        int* statsServerPort,
+        int* mgmtserverport,
         edi_configuration_t* edi);
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,

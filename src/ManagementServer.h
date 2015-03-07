@@ -2,23 +2,30 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2014, 2015
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    A TCP Socket server that serves state information and statistics for
-   monitoring purposes.
+   monitoring purposes, and also serves the internal configuration
+   property tree.
 
-   This server is very easy to integrate with munin
+   This statistics server is very easy to integrate with munin
         http://munin-monitoring.org/
    but is not specific to it.
 
-   The TCP Server responds in JSON, and accepts two commands:
+   The TCP Server responds in JSON, and accepts the commands:
     - config
     - values
       Inspired by the munin equivalent
 
     - state
       Returns the state of each input
+
+    - getptree
+      Returns the internal boost property_tree that contains the 
+      multiplexer configuration DB.
 
    */
 /*
@@ -38,8 +45,8 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef __STATS_SERVER_H
-#define __STATS_SERVER_H
+#ifndef __MANAGEMENT_SERVER_H
+#define __MANAGEMENT_SERVER_H
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
@@ -54,6 +61,8 @@
 #include <string>
 #include <map>
 #include <boost/thread.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <ctime>
 #include <math.h>
 
@@ -304,36 +313,56 @@ class InputStat
 
 };
 
-class StatsServer
+class ManagementServer
 {
     public:
-        StatsServer() :
+        ManagementServer() :
             m_listenport(0),
             m_running(false),
-            m_fault(false)
+            m_fault(false),
+            m_pending(false)
             { }
 
-        StatsServer(int listen_port) :
+        ManagementServer(int listen_port) :
             m_listenport(listen_port),
             m_running(false),
             m_fault(false),
-            m_thread(&StatsServer::serverThread, this)
+            m_thread(&ManagementServer::serverThread, this),
+            m_pending(false)
             {
                 m_sock = 0;
             }
 
-        ~StatsServer()
+        ~ManagementServer()
         {
             m_running = false;
             m_fault = false;
+            m_pending = false;
             if (m_sock) {
                 close(m_sock);
             }
             m_thread.join();
         }
 
+        /* Un-/Register a statistics data source */
         void registerInput(InputStat* is);
         void unregisterInput(std::string id);
+
+        /* Ask if there is a configuration request pending */
+        bool request_pending() { return m_pending; }
+
+        /* Update the copy of the configuration property tree and notify the
+         * update to the internal server thread.
+         */
+        void update_ptree(const boost::property_tree::ptree& pt) {
+            if (m_running) {
+                boost::unique_lock<boost::mutex> lock(m_configmutex);
+                m_pt = pt;
+                m_pending = false;
+
+                m_condition.notify_one();
+            }
+        }
 
         bool fault_detected() { return m_fault; }
         void restart(void);
@@ -343,7 +372,7 @@ class StatsServer
 
         /******* TCP Socket Server ******/
         // no copying (because of the thread)
-        StatsServer(const StatsServer& other);
+        ManagementServer(const ManagementServer& other);
 
         void serverThread(void);
 
@@ -367,7 +396,7 @@ class StatsServer
          *
          * returns: a JSON encoded configuration
          */
-        std::string getConfigJSON();
+        std::string getStatConfigJSON();
 
         /* Return the values for the statistics as defined in the configuration
          *
@@ -382,11 +411,17 @@ class StatsServer
         std::string getStateJSON();
 
         // mutex for accessing the map
-        mutable boost::mutex m_mutex;
+        mutable boost::mutex m_statsmutex;
+
+        /******** Configuration Data *******/
+        bool m_pending;
+        boost::condition_variable m_condition;
+        mutable boost::mutex m_configmutex;
+
+        boost::property_tree::ptree m_pt;
 };
 
-
-extern StatsServer* global_stats;
+extern ManagementServer* mgmt_server;
 
 #endif
 

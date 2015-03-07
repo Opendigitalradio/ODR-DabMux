@@ -3,8 +3,10 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2014, 2015
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -127,8 +129,7 @@ typedef DWORD32 uint32_t;
 #include "utils.h"
 #include "ParserCmdline.h"
 #include "ConfigParser.h"
-#include "StatsServer.h"
-#include "ConfigServer.h"
+#include "ManagementServer.h"
 #include "Log.h"
 #include "RemoteControl.h"
 
@@ -137,10 +138,8 @@ using boost::property_tree::ptree;
 using boost::property_tree::ptree_error;
 
 
-/* Global stats server */
-StatsServer* global_stats;
-
-ConfigServer config_server(8001);
+/* Global stats and config server */
+ManagementServer* mgmt_server;
 
 class MuxInitException : public exception
 {
@@ -333,7 +332,7 @@ int main(int argc, char *argv[])
     bool enableTist = false;
     unsigned timestamp = 0;
 
-    int statsserverport = 0;
+    int mgmtserverport = 0;
 
     edi_configuration_t edi_conf;
 
@@ -373,7 +372,7 @@ int main(int argc, char *argv[])
                 read_info(conf_file, pt);
 
                 parse_ptree(pt, outputs, ensemble, &enableTist, &FICL,
-                        &factumAnalyzer, &limit, &rc, &statsserverport, &edi_conf);
+                        &factumAnalyzer, &limit, &rc, &mgmtserverport, &edi_conf);
             }
             catch (runtime_error &e) {
                 etiLog.log(error, "Configuration file parsing error: %s\n",
@@ -393,7 +392,7 @@ int main(int argc, char *argv[])
                 string conf_file = argv[2];
 
                 parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
-                        &factumAnalyzer, &limit, &rc, &statsserverport, &edi_conf);
+                        &factumAnalyzer, &limit, &rc, &mgmtserverport, &edi_conf);
 
             }
             catch (runtime_error &e) {
@@ -415,11 +414,11 @@ int main(int argc, char *argv[])
         }
 #endif
 
-        if (statsserverport != 0) {
-            global_stats = new StatsServer(statsserverport);
+        if (mgmtserverport != 0) {
+            mgmt_server = new ManagementServer(mgmtserverport);
         }
         else {
-            global_stats = new StatsServer();
+            mgmt_server = new ManagementServer();
         }
 
         if (rc) {
@@ -2174,21 +2173,15 @@ int main(int argc, char *argv[])
             }
 
             /* Same for statistics server */
-            if (global_stats && fc->FCT == 249 && global_stats->fault_detected()) {
+            if (mgmt_server && fc->FCT % 10 == 0) {
+                if (mgmt_server->fault_detected()) {
                     etiLog.level(warn) <<
                         "Detected Statistics Server fault, restarting it";
-                    global_stats->restart();
-            }
-
-            if (fc->FCT % 10 == 0) {
-                if (config_server.fault_detected()) {
-                    config_server.restart();
+                    mgmt_server->restart();
                 }
-
-                if (config_server.request_pending()) {
-                    config_server.update_ptree(pt);
+                else if (mgmt_server->request_pending()) {
+                    mgmt_server->update_ptree(pt);
                 }
-
             }
         }
 

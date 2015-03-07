@@ -2,13 +2,14 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2014, 2015
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    A TCP Socket server that serves state information and statistics for
-   monitoring purposes.
-
-   This server is very easy to integrate with munin http://munin-monitoring.org/
+   monitoring purposes, and also serves the internal configuration
+   property tree.
    */
 /*
    This file is part of ODR-DabMux.
@@ -35,12 +36,12 @@
 #include <sstream>
 #include <ctime>
 #include <boost/thread.hpp>
-#include "StatsServer.h"
+#include "ManagementServer.h"
 #include "Log.h"
 
-void StatsServer::registerInput(InputStat* is)
+void ManagementServer::registerInput(InputStat* is)
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    boost::mutex::scoped_lock lock(m_statsmutex);
 
     std::string id(is->get_name());
 
@@ -54,9 +55,9 @@ void StatsServer::registerInput(InputStat* is)
     m_inputStats[id] = is;
 }
 
-void StatsServer::unregisterInput(std::string id)
+void ManagementServer::unregisterInput(std::string id)
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    boost::mutex::scoped_lock lock(m_statsmutex);
 
     if (m_inputStats.count(id) == 1) {
         m_inputStats.erase(id);
@@ -64,9 +65,9 @@ void StatsServer::unregisterInput(std::string id)
 }
 
 
-bool StatsServer::isInputRegistered(std::string& id)
+bool ManagementServer::isInputRegistered(std::string& id)
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    boost::mutex::scoped_lock lock(m_statsmutex);
 
     if (m_inputStats.count(id) == 0) {
         etiLog.level(error) <<
@@ -77,9 +78,9 @@ bool StatsServer::isInputRegistered(std::string& id)
     return true;
 }
 
-std::string StatsServer::getConfigJSON()
+std::string ManagementServer::getStatConfigJSON()
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    boost::mutex::scoped_lock lock(m_statsmutex);
 
     std::ostringstream ss;
     ss << "{ \"config\" : [\n";
@@ -103,9 +104,9 @@ std::string StatsServer::getConfigJSON()
     return ss.str();
 }
 
-std::string StatsServer::getValuesJSON()
+std::string ManagementServer::getValuesJSON()
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    boost::mutex::scoped_lock lock(m_statsmutex);
 
     std::ostringstream ss;
     ss << "{ \"values\" : {\n";
@@ -132,9 +133,9 @@ std::string StatsServer::getValuesJSON()
     return ss.str();
 }
 
-std::string StatsServer::getStateJSON()
+std::string ManagementServer::getStateJSON()
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    boost::mutex::scoped_lock lock(m_statsmutex);
 
     std::ostringstream ss;
     ss << "{\n";
@@ -161,16 +162,16 @@ std::string StatsServer::getStateJSON()
     return ss.str();
 }
 
-void StatsServer::restart()
+void ManagementServer::restart()
 {
-    m_restarter_thread = boost::thread(&StatsServer::restart_thread,
+    m_restarter_thread = boost::thread(&ManagementServer::restart_thread,
             this, 0);
 }
 
 // This runs in a separate thread, because
 // it would take too long to be done in the main loop
 // thread.
-void StatsServer::restart_thread(long)
+void ManagementServer::restart_thread(long)
 {
     m_running = false;
 
@@ -179,10 +180,10 @@ void StatsServer::restart_thread(long)
         m_thread.join();
     }
 
-    m_thread = boost::thread(&StatsServer::serverThread, this);
+    m_thread = boost::thread(&ManagementServer::serverThread, this);
 }
 
-void StatsServer::serverThread()
+void ManagementServer::serverThread()
 {
     m_fault = false;
 
@@ -265,7 +266,7 @@ void StatsServer::serverThread()
             }
 
             if (strcmp(buffer, "config\n") == 0) {
-                std::string json = getConfigJSON();
+                std::string json = getStatConfigJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
             else if (strcmp(buffer, "values\n") == 0) {
@@ -275,6 +276,20 @@ void StatsServer::serverThread()
             else if (strcmp(buffer, "state\n") == 0) {
                 std::string json = getStateJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
+            }
+            if (strcmp(buffer, "getptree\n") == 0) {
+                boost::unique_lock<boost::mutex> lock(m_configmutex);
+                m_pending = true;
+
+                while (m_pending) {
+                    m_condition.wait(lock);
+                }
+                std::stringstream ss;
+                boost::property_tree::json_parser::write_json(ss, m_pt);
+
+                std::string response = ss.str();
+
+                n = write(accepted_sock, response.c_str(), response.size());
             }
             else {
                 int len = snprintf(buffer, 256, "Invalid command\n");
@@ -303,12 +318,12 @@ end_serverthread:
 
 void InputStat::registerAtServer()
 {
-    global_stats->registerInput(this);
+    mgmt_server->registerInput(this);
 }
 
 InputStat::~InputStat()
 {
-    global_stats->unregisterInput(m_name);
+    mgmt_server->unregisterInput(m_name);
 }
 
 std::string InputStat::encodeValuesJSON()

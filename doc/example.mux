@@ -33,14 +33,14 @@ general {
     ; This also enables time encoding using the MNSC.
     tist false
 
-    ; The statsserver is a simple TCP server that can present
+    ; The management server is a simple TCP server that can present
     ; statistics data (buffers, overruns, underruns, etc)
     ; which can then be graphed a tool like Munin
     ; The doc/stats_dabmux_multi.py tool is a suitable
     ; plugin for that.
     ; If the port is zero, or the line commented, the server
     ; is not started.
-    statsserverport 12720
+    managementport 12720
 }
 
 remotecontrol {

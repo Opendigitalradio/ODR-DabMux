@@ -67,7 +67,7 @@
 #include "dabInputDmbUdp.h"
 #include "dabInputZmq.h"
 #include "DabMux.h"
-#include "StatsServer.h"
+#include "ManagementServer.h"
 
 
 #ifdef _WIN32
@@ -132,7 +132,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
         bool* factumAnalyzer,
         unsigned long* limit,
         BaseRemoteController** rc,
-        int* statsServerPort,
+        int* mgmtserverport,
         edi_configuration_t* edi
         )
 {
@@ -169,7 +169,8 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
     *enableTist = pt_general.get("tist", false);
 
-    *statsServerPort = pt_general.get<int>("statsserverport", 0);
+    *mgmtserverport = pt_general.get<int>("managementport",
+                      pt_general.get<int>("statsserverport", 0) );
 
     /************** READ REMOTE CONTROL PARAMETERS *************/
     ptree pt_rc = pt.get_child("remotecontrol");

@@ -41,7 +41,6 @@
 
 #include "dabInput.h"
 #include "dabInputZmq.h"
-#include "StatsServer.h"
 #include "PcDebug.h"
 
 #ifdef HAVE_CONFIG_H
@@ -65,8 +64,6 @@
 #endif
 
 using namespace std;
-
-extern StatsServer* global_stats;
 
 int readkey(string& keyfile, char* key)
 {

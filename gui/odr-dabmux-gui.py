@@ -26,88 +26,39 @@
 #   You should have received a copy of the GNU General Public License
 #   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
+from muxconfig import *
 from bottle import route, run, template, static_file
-import socket
 import json
-import collections
 
-class Service(object):
-    def __init__(self, name, ptree):
-        self.name = name
-        self.label = ptree['label']
-        if 'shortlabel' in ptree:
-            self.shortlabel = ptree['shortlabel']
-        else:
-            self.shortlabel = ""
-        self.srvid = ptree['id']
-
-
-class Subchannel(object):
-    def __init__(self, name, ptree):
-        self.name = name
-        for fieldname in ['type',
-                "inputfile",
-                "zmq-buffer",
-                "zmq-prebuffering",
-                "bitrate",
-                "id",
-                "protection",
-                "encryption",
-                "secret-key",
-                "public-key",
-                "encoder-key"]:
-            if fieldname in ptree:
-                setattr(self, fieldname.replace("-", "_"), ptree[fieldname])
-            else:
-                setattr(self, fieldname.replace("-", "_"), "")
-
-class Component(object):
-    def __init__(self, name, ptree):
-        self.name = name
-        for fieldname in ['label', 'shortlabel', 'service',
-                'subchannel', 'figtype']:
-            if fieldname in ptree:
-                setattr(self, fieldname.replace("-", "_"), ptree[fieldname])
-            else:
-                setattr(self, fieldname.replace("-", "_"), "")
-
-def get_mgmt_ptree():
-    HOST = 'localhost'
-    PORT = 12720
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, PORT))
-    s.sendall(b'getptree\n')
-    server_info = s.recv(32768)
-    config_info = s.recv(32768)
-    s.close()
-
-    server_version = json.loads(server_info.decode())['service']
-    config = json.loads(config_info.decode())
-
-    return {'version': server_version, 'config': config}
+conf = ConfigurationHandler('localhost')
 
 @route('/config')
 def config():
-    return get_mgmt_ptree()
+    """Return a application/json containing the full
+    ptree of the mux"""
+
+    conf.load()
+
+    return {'version': conf.get_mux_version(),
+            'config':  conf.get_full_configuration()}
 
 @route('/')
 def index():
-    ptree = get_mgmt_ptree()
-    version = ptree['version']
-    srv_pt = ptree['config']['services']
-    services = [Service(name, srv_pt[name]) for name in srv_pt]
-
-    sub_pt = ptree['config']['subchannels']
-    subchannels = [Subchannel(name, sub_pt[name]) for name in sub_pt]
-
-    comp_pt = ptree['config']['components']
-    components = [Component(name, comp_pt[name]) for name in comp_pt]
+    conf.load()
 
     return template('index',
-            version=version,
-            services=services,
-            components=components,
-            subchannels=subchannels)
+            version     = conf.get_mux_version(),
+            services    = conf.get_services(),
+            subchannels = conf.get_subchannels(),
+            components  = conf.get_components())
+
+@route('/services')
+def index():
+    conf.load()
+
+    return template('services',
+            version     = conf.get_mux_version(),
+            services    = conf.get_services())
 
 
 @route('/static/<filename:path>')

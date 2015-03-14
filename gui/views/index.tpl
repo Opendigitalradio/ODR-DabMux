@@ -12,7 +12,7 @@ body {
     <h2>Services</h2>
     <ul>
         % for s in services:
-            <li>{{s.name}}: <i>{{s.label}} ({{s.shortlabel}})</i> &mdash; id = {{s.srvid}}</li>
+            <li>{{s.name}}: <i>{{s.label}} ({{s.shortlabel}})</i> &mdash; id = {{s.id}}</li>
         % end
     </ul>
     <h2>Subchannels</h2>

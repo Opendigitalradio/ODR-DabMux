@@ -62,6 +62,17 @@ def index():
             version     = conf.get_mux_version(),
             services    = conf.get_services())
 
+@route('/stats')
+def index():
+    conf.load()
+
+    return template('stats',
+            version     = conf.get_mux_version())
+
+@route('/stats.json')
+def stats_json():
+    return conf.get_stats_dict()
+
 
 @route('/static/<filename:path>')
 def send_static(filename):

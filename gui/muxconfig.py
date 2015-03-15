@@ -95,6 +95,7 @@ class ConfigurationHandler(object):
         # local copy of the configuration
         self._server_version = None
         self._config = None
+        self._statistics = None
 
     def load(self):
         """Load the configuration from the multiplexer and
@@ -102,13 +103,29 @@ class ConfigurationHandler(object):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         s.connect((self._host, self._port))
-        s.sendall(b'getptree\n')
         server_info = s.recv(32768)
+        s.sendall(b'getptree\n')
         config_info = s.recv(32768)
         s.close()
 
         self._server_version = json.loads(server_info.decode())['service']
         self._config = json.loads(config_info.decode())
+
+    def update_stats(self):
+        """Load the statistics from the multiplexer and
+        save them locally"""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        s.connect((self._host, self._port))
+        server_info = s.recv(32768)
+
+        s.sendall(b'values\n')
+
+        stats_info = s.recv(32768)
+        s.close()
+
+        print("STATS: {}".format(stats_info.decode()))
+        self._statistics = json.loads(stats_info.decode())['values']
 
     def get_full_configuration(self):
         return self._config
@@ -130,3 +147,8 @@ class ConfigurationHandler(object):
 
     def get_general_options(self):
         return General(self._config)
+
+    def get_stats_dict(self):
+        """Return a dictionary with all stats"""
+        self.update_stats()
+        return self._statistics

@@ -1,11 +1,7 @@
 <!DOCTYPE html>
 <html><head>
 <title>ODR-DabMux Services</title>
-<style>
-body {
-    font-family: sans;
-}
-</style>
+<link rel="stylesheet" href="static/style.css" />
 </head>
 <body>
     <h1>Services for {{version}}</h1>

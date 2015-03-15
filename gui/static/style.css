@@ -1,0 +1,68 @@
+body {
+    font-family: "Lucida Sans Unicode","Lucida Grande",Sans-Serif;
+    color: #3E3E3E;
+    font-size: 12px;
+}
+
+p {
+    padding: 5px;
+}
+
+#info{
+    width: 600px;
+    border: 1px solid #999;
+    padding: 0 10px;
+}
+#info p {
+    width: inherit;
+    background-color: inherit;
+}
+#info-nav{
+    margin: 0;
+    padding: 3px 0;
+    width: 100%;
+    list-style: none;
+}
+#info-nav li{
+    display: inline;
+    background: #ccc;
+    border: 1px solid #888;
+    border-bottom: 0;
+    margin-right:2px;
+    padding: 3px;
+}
+#info-nav li a:hover{
+    color:#d15600;
+}
+#info-nav li.current{ 
+    background: #fff;
+    padding-bottom: 4px;
+  
+}
+
+#celebs {
+    clear: both;
+}
+
+table {
+    border-collapse:collapse;
+    font-size:12px;
+    margin:0 20px 20px 20px;
+    border-top:2px solid #015287;
+    width:480px;
+}
+
+th {
+    border-bottom: 2px solid #015287;
+    color: #D15600;
+    font-size: 14px;
+    font-weight: normal;
+    text-align: left;
+    padding: 3px 8px;
+}
+
+td {
+    padding: 6px;
+}
+
+

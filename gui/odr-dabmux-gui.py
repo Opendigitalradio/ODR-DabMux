@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 #   Copyright (C) 2015
 #   Matthias P. Braendli, matthias.braendli@mpb.li
@@ -48,6 +49,7 @@ def index():
 
     return template('index',
             version     = conf.get_mux_version(),
+            g           = conf.get_general_options(),
             services    = conf.get_services(),
             subchannels = conf.get_subchannels(),
             components  = conf.get_components())

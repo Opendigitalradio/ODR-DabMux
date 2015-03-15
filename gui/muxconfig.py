@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 #   Copyright (C) 2015
 #   Matthias P. Braendli, matthias.braendli@mpb.li
@@ -21,6 +22,22 @@
 #   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 import socket
 import json
+
+class General(object):
+    """Container object for general options"""
+    def __init__(self, pt):
+        ptree = pt['general']
+        for fieldname in ["nbframes",
+                "statsserverport",
+                "writescca",
+                "tist",
+                "dabmode",
+                "syslog"]:
+            if fieldname in ptree:
+                setattr(self, fieldname.replace("-", "_"), ptree[fieldname])
+            else:
+                setattr(self, fieldname.replace("-", "_"), "")
+        self.telnetport = pt['remotecontrol']['telnetport']
 
 class Service(object):
     """Container object for a service"""
@@ -110,3 +127,6 @@ class ConfigurationHandler(object):
     def get_components(self):
         comp_pt = self._config['components']
         return [Component(name, comp_pt[name]) for name in comp_pt]
+
+    def get_general_options(self):
+        return General(self._config)

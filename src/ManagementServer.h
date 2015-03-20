@@ -351,18 +351,16 @@ class ManagementServer
         /* Ask if there is a configuration request pending */
         bool request_pending() { return m_pending; }
 
+        /* Load a ptree given by the management server.
+         *
+         * Returns true if the ptree was updated
+         */
+        bool retrieve_new_ptree(boost::property_tree::ptree& pt);
+
         /* Update the copy of the configuration property tree and notify the
          * update to the internal server thread.
          */
-        void update_ptree(const boost::property_tree::ptree& pt) {
-            if (m_running) {
-                boost::unique_lock<boost::mutex> lock(m_configmutex);
-                m_pt = pt;
-                m_pending = false;
-
-                m_condition.notify_one();
-            }
-        }
+        void update_ptree(const boost::property_tree::ptree& pt);
 
         bool fault_detected() { return m_fault; }
         void restart(void);
@@ -415,6 +413,7 @@ class ManagementServer
 
         /******** Configuration Data *******/
         bool m_pending;
+        bool m_retrieve_pending;
         boost::condition_variable m_condition;
         mutable boost::mutex m_configmutex;
 

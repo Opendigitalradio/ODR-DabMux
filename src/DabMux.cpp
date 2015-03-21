@@ -380,7 +380,6 @@ int main(int argc, char *argv[])
                 throw MuxInitException();
             }
         }
-#if ENABLE_CMDLINE_OPTIONS
         else if (argc > 1 && strncmp(argv[1], "-e", 2) == 0) { // use external config file
             try {
 
@@ -391,9 +390,10 @@ int main(int argc, char *argv[])
 
                 string conf_file = argv[2];
 
-                parse_configfile(conf_file, outputs, ensemble, &enableTist, &FICL,
-                        &factumAnalyzer, &limit, &rc, &mgmtserverport, &edi_conf);
+                read_info(conf_file, pt);
 
+                parse_ptree(pt, outputs, ensemble, &enableTist, &FICL,
+                        &factumAnalyzer, &limit, &rc, &mgmtserverport, &edi_conf);
             }
             catch (runtime_error &e) {
                 etiLog.log(error, "Configuration file parsing error: %s\n",
@@ -401,6 +401,7 @@ int main(int argc, char *argv[])
                 throw MuxInitException();
             }
         }
+#if ENABLE_CMDLINE_OPTIONS
         else {
             if (!parse_cmdline(argv, argc, outputs, ensemble, &enableTist, &FICL,
                         &factumAnalyzer, &limit)) {

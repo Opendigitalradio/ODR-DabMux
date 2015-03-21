@@ -288,7 +288,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 }
 
 
-unsigned char DabService::getType(dabEnsemble* ensemble)
+unsigned char DabService::getType(boost::shared_ptr<dabEnsemble> ensemble)
 {
     vector<dabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =

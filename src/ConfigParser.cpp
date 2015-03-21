@@ -125,14 +125,8 @@ int hexparse(std::string input)
 
 
 void parse_ptree(boost::property_tree::ptree& pt,
-        vector<dabOutput*> &outputs,
-        dabEnsemble* ensemble,
-        bool* enableTist,
-        unsigned* FICL,
-        bool* factumAnalyzer,
-        unsigned long* limit,
-        BaseRemoteController** rc,
-        int* mgmtserverport,
+        boost::shared_ptr<dabEnsemble> ensemble,
+        boost::shared_ptr<BaseRemoteController> rc,
         edi_configuration_t* edi
         )
 {
@@ -150,38 +144,11 @@ void parse_ptree(boost::property_tree::ptree& pt,
         ensemble->mode = 0;
     }
 
-    if (ensemble->mode == 3) {
-        *FICL = 32;
-    }
-    else {
-        *FICL = 24;
-    }
-
-    /* Number of frames to generate */
-    *limit = pt_general.get("nbframes", 0);
-
     /* Enable Logging to syslog conditionally */
     if (pt_general.get<bool>("syslog", false)) {
         etiLog.register_backend(new LogToSyslog()); // TODO don't leak the LogToSyslog backend
     }
 
-    *factumAnalyzer = pt_general.get("writescca", false);
-
-    *enableTist = pt_general.get("tist", false);
-
-    *mgmtserverport = pt_general.get<int>("managementport",
-                      pt_general.get<int>("statsserverport", 0) );
-
-    /************** READ REMOTE CONTROL PARAMETERS *************/
-    ptree pt_rc = pt.get_child("remotecontrol");
-    int telnetport = pt_rc.get<int>("telnetport", 0);
-
-    if (telnetport != 0) {
-        *rc = new RemoteControllerTelnet(telnetport);
-    }
-    else {
-        *rc = new RemoteControllerDummy();
-    }
 
     /******************** READ ENSEMBLE PARAMETERS *************/
     ptree pt_ensemble = pt.get_child("ensemble");
@@ -266,7 +233,6 @@ void parse_ptree(boost::property_tree::ptree& pt,
         ptree pt_service = it->second;
         DabService* service = new DabService(serviceuid);
         ensemble->services.push_back(service);
-        service->enrol_at(**rc);
 
         int success = -5;
 
@@ -338,7 +304,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
         try {
             setup_subchannel_from_ptree(subchan, it->second, ensemble,
-                    subchanuid, *rc);
+                    subchanuid, rc);
         }
         catch (runtime_error &e) {
             etiLog.log(error,
@@ -406,8 +372,6 @@ void parse_ptree(boost::property_tree::ptree& pt,
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
         DabComponent* component = new DabComponent(componentuid);
-
-        component->enrol_at(**rc);
 
         component->serviceId = service->id;
         component->subchId = subchannel->id;
@@ -493,65 +457,13 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
     }
 
-    /******************** READ OUTPUT PARAMETERS ***************/
-    map<string, dabOutput*> alloutputs;
-    ptree pt_outputs = pt.get_child("outputs");
-    for (ptree::iterator it = pt_outputs.begin(); it != pt_outputs.end(); ++it) {
-        string outputuid = it->first;
-
-        if (outputuid == "edi") {
-            ptree pt_edi = pt_outputs.get_child("edi");
-
-            edi->enabled     = true;
-
-            edi->dest_addr   = pt_edi.get<string>("destination");
-            edi->dest_port   = pt_edi.get<unsigned int>("port");
-            edi->source_port = pt_edi.get<unsigned int>("sourceport");
-
-            edi->dump        = pt_edi.get<bool>("dump");
-            edi->enable_pft  = pt_edi.get<bool>("enable_pft");
-            edi->verbose     = pt_edi.get<bool>("verbose");
-        }
-        else {
-            string uri = pt_outputs.get<string>(outputuid);
-
-            size_t proto_pos = uri.find("://");
-            if (proto_pos == std::string::npos) {
-                stringstream ss;
-                ss << "Output with uid " << outputuid << " no protocol defined!";
-                throw runtime_error(ss.str());
-            }
-
-            char* uri_c = new char[512];
-            memset(uri_c, 0, 512);
-            uri.copy(uri_c, 511);
-
-            uri_c[proto_pos] = '\0';
-
-            char* outputName = uri_c + proto_pos + 3;
-
-            dabOutput* output = new dabOutput(uri_c, outputName);
-            outputs.push_back(output);
-
-            // keep outputs in map, and check for uniqueness of the uid
-            if (alloutputs.count(outputuid) == 0) {
-                alloutputs[outputuid] = output;
-            }
-            else {
-                stringstream ss;
-                ss << "output with uid " << outputuid << " not unique!";
-                throw runtime_error(ss.str());
-            }
-        }
-    }
-
 }
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,
-        dabEnsemble* ensemble,
+        boost::shared_ptr<dabEnsemble> ensemble,
         string subchanuid,
-        BaseRemoteController* rc)
+        boost::shared_ptr<BaseRemoteController> rc)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;

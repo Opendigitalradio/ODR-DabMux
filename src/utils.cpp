@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013, 2014 Matthias P. Braendli
+   Copyright (C) 2013, 2014, 2015 Matthias P. Braendli
    http://mpb.li
 */
 /*
@@ -24,6 +24,7 @@
 */
 #include <cstring>
 #include <iostream>
+#include <boost/shared_ptr.hpp>
 #include "DabMux.h"
 #include "utils.h"
 
@@ -73,7 +74,7 @@ void header_message()
     fprintf(stderr,
             "(Communications Research Centre Canada) All rights reserved.\n\n");
     fprintf(stderr,
-            "Copyright (C) 2013, 2014 Matthias P. Braendli\n");
+            "Copyright (C) 2013, 2014, 2015 Matthias P. Braendli\n");
     fprintf(stderr,
             "http://opendigitalradio.org\n\n");
 
@@ -352,21 +353,14 @@ void printUsage(char *name, FILE* out)
 }
 #endif
 
-void printOutputs(vector<dabOutput*>& outputs)
+void printOutputs(vector<boost::shared_ptr<DabOutput> >& outputs)
 {
-    vector<dabOutput*>::const_iterator output;
     int index = 0;
 
-    for (output = outputs.begin(); output != outputs.end(); ++output) {
+    for (auto output : outputs) {
         etiLog.log(info, "Output      %i", index);
-        etiLog.level(info) << "  protocol: " <<
-                (*output)->outputProto;
-
-        etiLog.level(info) << "  name:     " <<
-                (*output)->outputName.c_str();
-        // Daboutputfile mangles with outputName, inserting \0 to
-        // cut the string in several parts. That doesn't work
-        // with stl strings. Thats why the .c_str()
+        etiLog.level(info) << "  URI: " <<
+            output->get_info();
 
         ++index;
     }
@@ -528,7 +522,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     }
 }
 
-void printEnsemble(dabEnsemble* ensemble)
+void printEnsemble(const boost::shared_ptr<dabEnsemble> ensemble)
 {
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);

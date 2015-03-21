@@ -39,6 +39,18 @@
 #include "ManagementServer.h"
 #include "Log.h"
 
+ManagementServer& get_mgmt_server()
+{
+    static ManagementServer mgmt_server;
+
+    return mgmt_server;
+
+    /* Warning, do not use the mgmt_server in the destructor
+     * of another global object: you don't know which one
+     * gets destroyed first
+     */
+}
+
 void ManagementServer::registerInput(InputStat* is)
 {
     boost::mutex::scoped_lock lock(m_statsmutex);
@@ -71,7 +83,7 @@ bool ManagementServer::isInputRegistered(std::string& id)
 
     if (m_inputStats.count(id) == 0) {
         etiLog.level(error) <<
-            "Stats Server id '" <<
+            "Management Server: id '" <<
             id << "' does was not registered";
         return false;
     }
@@ -253,7 +265,7 @@ void ManagementServer::serverThread()
             n = write(accepted_sock, welcome_msg, welcome_msg_len);
             if (n < 0) {
                 etiLog.level(warn) <<
-                    "MGMT: Error writing to Stats Server socket " <<
+                    "MGMT: Error writing to Server socket " <<
                     strerror(errno);
                 close(accepted_sock);
                 continue;
@@ -264,7 +276,7 @@ void ManagementServer::serverThread()
             int n = read(accepted_sock, buffer, 255);
             if (n < 0) {
                 etiLog.level(warn) <<
-                    "MGMT: Error reading from Stats Server socket " <<
+                    "MGMT: Error reading from Server socket " <<
                     strerror(errno);
                 close(accepted_sock);
                 continue;
@@ -383,12 +395,12 @@ void ManagementServer::update_ptree(const boost::property_tree::ptree& pt)
 
 void InputStat::registerAtServer()
 {
-    mgmt_server->registerInput(this);
+    get_mgmt_server().registerInput(this);
 }
 
 InputStat::~InputStat()
 {
-    mgmt_server->unregisterInput(m_name);
+    get_mgmt_server().unregisterInput(m_name);
 }
 
 std::string InputStat::encodeValuesJSON()

@@ -32,6 +32,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <atomic>
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
@@ -104,6 +105,10 @@ class RemoteControllable {
             controller.enrol(this);
         }
 
+        virtual void enrol_at(boost::shared_ptr<BaseRemoteController> controller) {
+            controller->enrol(this);
+        }
+
         /* Return a list of possible parameters that can be set */
         virtual std::list<std::string> get_supported_parameters() const {
             std::list<std::string> parameterlist;
@@ -137,24 +142,22 @@ class RemoteControllable {
  */
 class RemoteControllerTelnet : public BaseRemoteController {
     public:
-        RemoteControllerTelnet()
-            : m_running(false), m_fault(false),
+        RemoteControllerTelnet() :
+            m_running(false),
+            m_io_service(),
+            m_fault(false),
             m_port(0) { }
 
-        RemoteControllerTelnet(int port)
-            : m_running(true), m_fault(false),
-            m_child_thread(&RemoteControllerTelnet::process, this, 0),
+        RemoteControllerTelnet(int port) :
+            m_running(false),
+            m_io_service(),
+            m_fault(false),
             m_port(port)
-        { }
-
-        ~RemoteControllerTelnet() {
-            m_running = false;
-            m_fault = false;
-            if (m_port) {
-                m_child_thread.interrupt();
-                m_child_thread.join();
-            }
+        {
+            restart();
         }
+
+        ~RemoteControllerTelnet();
 
         void enrol(RemoteControllable* controllable) {
             m_cohort.push_back(controllable);
@@ -173,6 +176,11 @@ class RemoteControllerTelnet : public BaseRemoteController {
                 std::string command);
 
         void reply(boost::asio::ip::tcp::socket& socket, std::string message);
+
+        void handle_accept(
+                const boost::system::error_code& boost_error,
+                boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
+                boost::asio::ip::tcp::acceptor& acceptor);
 
         RemoteControllerTelnet& operator=(const RemoteControllerTelnet& other);
         RemoteControllerTelnet(const RemoteControllerTelnet& other);
@@ -237,19 +245,18 @@ class RemoteControllerTelnet : public BaseRemoteController {
             return controllable->set_parameter(param, value);
         }
 
-        bool m_running;
+        std::atomic<bool> m_running;
+
+        boost::asio::io_service m_io_service;
 
         /* This is set to true if a fault occurred */
-        bool m_fault;
+        std::atomic<bool> m_fault;
         boost::thread m_restarter_thread;
 
         boost::thread m_child_thread;
 
         /* This controller commands the controllables in the cohort */
         std::list<RemoteControllable*> m_cohort;
-
-        std::string m_welcome;
-        std::string m_prompt;
 
         int m_port;
 };

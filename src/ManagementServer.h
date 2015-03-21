@@ -317,21 +317,9 @@ class ManagementServer
 {
     public:
         ManagementServer() :
-            m_listenport(0),
             m_running(false),
             m_fault(false),
-            m_pending(false)
-            { }
-
-        ManagementServer(int listen_port) :
-            m_listenport(listen_port),
-            m_running(false),
-            m_fault(false),
-            m_thread(&ManagementServer::serverThread, this),
-            m_pending(false)
-            {
-                m_sock = 0;
-            }
+            m_pending(false) { }
 
         ~ManagementServer()
         {
@@ -340,8 +328,18 @@ class ManagementServer
             m_pending = false;
             if (m_sock) {
                 close(m_sock);
+                m_thread.interrupt();
             }
             m_thread.join();
+        }
+
+        void open(int listenport)
+        {
+            m_listenport = listenport;
+            if (m_listenport > 0) {
+                m_sock = 0;
+                m_thread = boost::thread(&ManagementServer::serverThread, this);
+            }
         }
 
         /* Un-/Register a statistics data source */
@@ -420,7 +418,9 @@ class ManagementServer
         boost::property_tree::ptree m_pt;
 };
 
-extern ManagementServer* mgmt_server;
+// If necessary construct the management server singleton and return 
+// a reference to it
+ManagementServer& get_mgmt_server();
 
 #endif
 

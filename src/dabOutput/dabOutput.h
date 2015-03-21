@@ -78,6 +78,8 @@ class DabOutput
         virtual int Close() = 0;
 
         virtual ~DabOutput() {}
+
+        virtual std::string get_info() = 0;
 };
 
 // ----- used in File and Fifo outputs
@@ -111,7 +113,12 @@ class DabOutputFile : public DabOutput
         int Write(void* buffer, int size);
         int Close();
 
+        std::string get_info() {
+            return "file://" + filename_;
+        }
+
     protected:
+        std::string filename_;
         int file_;
         EtiFileType type_;
         unsigned long nbFrames_;
@@ -126,6 +133,11 @@ class DabOutputFifo : public DabOutputFile
         ~DabOutputFifo() {}
 
         int Write(void* buffer, int size);
+
+        std::string get_info() {
+            return "fifo://" + filename_;
+        }
+
 };
 
 // -------------- RAW socket -----------
@@ -162,7 +174,12 @@ class DabOutputRaw : public DabOutput
         int Open(const char* name);
         int Write(void* buffer, int size);
         int Close();
+
+        std::string get_info() {
+            return "raw://" + filename_;
+        }
     private:
+        std::string filename_;
 #ifdef _WIN32
         HANDLE socket_;
 #else
@@ -197,7 +214,11 @@ class DabOutputUdp : public DabOutput
         int Write(void* buffer, int size);
         int Close() { return 0; }
 
+        std::string get_info() {
+            return "udp://" + uri_;
+        }
     private:
+        std::string uri_;
         UdpSocket* socket_;
         UdpPacket* packet_;
 };
@@ -230,9 +251,14 @@ class DabOutputTcp : public DabOutput
         int Write(void* buffer, int size);
         int Close();
 
+        std::string get_info() {
+            return "tcp://" + uri_;
+        }
+
         TcpServer* server;
         TcpSocket* client;
     private:
+        std::string uri_;
         pthread_t thread_;
 };
 
@@ -252,7 +278,12 @@ class DabOutputSimul : public DabOutput
         int Open(const char* name);
         int Write(void* buffer, int size);
         int Close() { return 0; }
+
+        std::string get_info() {
+            return "simul://" + name_;
+        }
     private:
+        std::string name_;
 #ifdef _WIN32
         DWORD startTime_;
 #else
@@ -304,6 +335,7 @@ class DabOutputZMQ : public DabOutput
 {
     public:
         DabOutputZMQ() :
+            endpoint_(""),
             zmq_proto_(""), zmq_context_(1),
             zmq_pub_sock_(zmq_context_, ZMQ_PUB),
             zmq_message_ix(0)
@@ -312,6 +344,7 @@ class DabOutputZMQ : public DabOutput
         }
 
         DabOutputZMQ(std::string zmq_proto) :
+            endpoint_(""),
             zmq_proto_(zmq_proto), zmq_context_(1),
             zmq_pub_sock_(zmq_context_, ZMQ_PUB),
             zmq_message_ix(0)
@@ -323,7 +356,11 @@ class DabOutputZMQ : public DabOutput
             zmq_pub_sock_.close();
         }
 
-        int Open(const char* name);
+        std::string get_info() {
+            return "zmq: " + zmq_proto_ + "://" + endpoint_;
+        }
+
+        int Open(const char* endpoint);
         int Write(void* buffer, int size);
         int Close();
     private:
@@ -334,6 +371,7 @@ class DabOutputZMQ : public DabOutput
             /* Forbid copy constructor */
         }
 
+        std::string endpoint_;
         std::string zmq_proto_;
         zmq::context_t zmq_context_; // handle for the zmq context
         zmq::socket_t zmq_pub_sock_; // handle for the zmq publisher socket

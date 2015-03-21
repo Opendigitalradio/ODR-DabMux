@@ -39,17 +39,11 @@ bin_PROGRAMS=odr-dabmux odr-bridgetest
 ZMQ_LIBS    =
 endif
 
-
-odr_dabmux_CPPFLAGS =-I$(FARSYNC_DIR) $(GITVERSION_FLAGS) \
-					 -Wall -Wextra -Wno-unused-parameter \
-					 -Wswitch-enum \
-					 -Wdisabled-optimization -Wvla \
-					 -Wuninitialized \
-					 -Wc++11-compat \
-					 -Wcast-align -Wcast-qual
-
+odr_dabmux_CFLAGS   =-Wall -std=c11 -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
+odr_dabmux_CXXFLAGS =-Wall -std=c++11 -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
+					 DabMultiplexer.cpp DabMultiplexer.h \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
                      dabInputDabplusFifo.h dabInputDabplusFifo.cpp \

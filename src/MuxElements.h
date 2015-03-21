@@ -281,7 +281,7 @@ class DabService : public RemoteControllable
         unsigned char language;
         bool program;
 
-        unsigned char getType(dabEnsemble* ensemble);
+        unsigned char getType(boost::shared_ptr<dabEnsemble> ensemble);
         unsigned char nbComponent(std::vector<DabComponent*>& components);
 
         DabLabel label;

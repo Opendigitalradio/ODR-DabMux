@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
         PFT edi_pft(207, 3, edi_conf);
 #endif
 
-        ssize_t limit = pt.get("general.nbframes", 0);
+        size_t limit = pt.get("general.nbframes", 0);
 
         etiLog.level(info) << "Start loop";
         /*   Each iteration of the main loop creates one ETI frame */

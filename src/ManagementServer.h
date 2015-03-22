@@ -52,15 +52,12 @@
 #   include "config.h"
 #endif
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <pthread.h>
 #include <string>
 #include <map>
+#include <atomic>
 #include <boost/thread.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <ctime>
@@ -317,6 +314,7 @@ class ManagementServer
 {
     public:
         ManagementServer() :
+            m_io_service(),
             m_running(false),
             m_fault(false),
             m_pending(false) { }
@@ -326,10 +324,8 @@ class ManagementServer
             m_running = false;
             m_fault = false;
             m_pending = false;
-            if (m_sock) {
-                close(m_sock);
-                m_thread.interrupt();
-            }
+
+            m_io_service.stop();
             m_thread.join();
         }
 
@@ -337,7 +333,6 @@ class ManagementServer
         {
             m_listenport = listenport;
             if (m_listenport > 0) {
-                m_sock = 0;
                 m_thread = boost::thread(&ManagementServer::serverThread, this);
             }
         }
@@ -364,6 +359,8 @@ class ManagementServer
         void restart(void);
 
     private:
+        boost::asio::io_service m_io_service;
+
         void restart_thread(long);
 
         /******* TCP Socket Server ******/
@@ -374,15 +371,18 @@ class ManagementServer
 
         bool isInputRegistered(std::string& id);
 
+        void handle_accept(
+                const boost::system::error_code& boost_error,
+                boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
+                boost::asio::ip::tcp::acceptor& acceptor);
+
         int m_listenport;
 
         // serverThread runs in a separate thread
-        bool m_running;
-        bool m_fault;
+        std::atomic<bool> m_running;
+        std::atomic<bool> m_fault;
         boost::thread m_thread;
         boost::thread m_restarter_thread;
-
-        int m_sock;
 
         /******* Statistics Data ********/
         std::map<std::string, InputStat*> m_inputStats;

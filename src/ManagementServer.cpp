@@ -197,170 +197,144 @@ void ManagementServer::restart_thread(long)
 
 void ManagementServer::serverThread()
 {
+    using boost::asio::ip::tcp;
+
+    m_running = true;
     m_fault = false;
 
-    try {
-        int accepted_sock;
-        char buffer[256];
-        char welcome_msg[256];
-        struct sockaddr_in serv_addr, cli_addr;
-        int n;
+    while (m_running) {
+        m_io_service.reset();
 
-        int welcome_msg_len = snprintf(welcome_msg, 256,
-                "{ \"service\": \""
-                "%s %s MGMT Server\" }\n",
-                PACKAGE_NAME,
+        tcp::acceptor acceptor(m_io_service, tcp::endpoint(
+                    boost::asio::ip::address::from_string("127.0.0.1"),
+                    m_listenport) );
+
+
+        // Add a job to start accepting connections.
+        boost::shared_ptr<tcp::socket> socket(
+                new tcp::socket(acceptor.get_io_service()));
+
+        // Add an accept call to the service.  This will prevent io_service::run()
+        // from returning.
+        etiLog.level(warn) << "MGMT: Waiting on connection";
+        acceptor.async_accept(*socket,
+                boost::bind(&ManagementServer::handle_accept,
+                    this,
+                    boost::asio::placeholders::error,
+                    socket,
+                    boost::ref(acceptor)));
+
+        // Process event loop.
+        m_io_service.run();
+    }
+
+    m_fault = true;
+}
+
+void ManagementServer::handle_accept(
+                const boost::system::error_code& boost_error,
+                boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
+                boost::asio::ip::tcp::acceptor& acceptor)
+{
+    if (boost_error)
+    {
+        etiLog.level(error) << "MGMT: Error accepting connection";
+        return;
+    }
+
+    std::stringstream welcome_msg;
+
+    welcome_msg <<
+        "{ \"service\": \"" <<
+        PACKAGE_NAME << " " <<
 #if defined(GITVERSION)
-                GITVERSION
+        GITVERSION <<
 #else
-                PACKAGE_VERSION
+        PACKAGE_VERSION <<
 #endif
-                );
+        " MGMT Server\" }\n";
 
+    try {
+        etiLog.level(info) << "RC: Accepted";
 
-        m_sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (m_sock < 0) {
-            etiLog.level(error) <<
-                "Error opening MGMT Server socket: " <<
-                strerror(errno);
-            m_fault = true;
-            return;
+        boost::system::error_code ignored_error;
+
+        boost::asio::write(*socket, boost::asio::buffer(welcome_msg.str()),
+                boost::asio::transfer_all(),
+                ignored_error);
+
+        boost::asio::streambuf buffer;
+        size_t length =
+            boost::asio::read_until(*socket, buffer, "\n", ignored_error);
+
+        std::string in_message;
+        std::istream str(&buffer);
+        std::getline(str, in_message);
+
+        if (in_message == "config") {
+            std::string json = getStatConfigJSON();
+            boost::asio::write(*socket, boost::asio::buffer(json),
+                    boost::asio::transfer_all(),
+                    ignored_error);
         }
-
-        memset(&serv_addr, 0, sizeof(serv_addr));
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_addr.s_addr = INADDR_ANY; // TODO listen only on 127.0.0.1
-        serv_addr.sin_port = htons(m_listenport);
-
-        if (bind(m_sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-            etiLog.level(error) <<
-                "Error binding MGMT Server socket: " <<
-                strerror(errno);
-            goto end_serverthread;
+        else if (in_message == "values") {
+            std::string json = getValuesJSON();
+            boost::asio::write(*socket, boost::asio::buffer(json),
+                    boost::asio::transfer_all(),
+                    ignored_error);
         }
+        else if (in_message == "state") {
+            std::string json = getStateJSON();
 
-        if (listen(m_sock, 5) < 0) {
-            etiLog.level(error) <<
-                "Error listening on MGMT Server socket: " <<
-                strerror(errno);
-            goto end_serverthread;
+            boost::asio::write(*socket, boost::asio::buffer(json),
+                    boost::asio::transfer_all(),
+                    ignored_error);
         }
+        else if (in_message == "setptree") {
+            boost::asio::streambuf jsonbuffer;
+            length = boost::asio::read_until(
+                    *socket, jsonbuffer, "\n", ignored_error);
 
-        m_running = true;
-
-        while (m_running) {
-            socklen_t cli_addr_len = sizeof(cli_addr);
-
-            /* Accept actual connection from the client */
-            accepted_sock = accept(m_sock,
-                    (struct sockaddr *)&cli_addr,
-                    &cli_addr_len);
-
-            if (accepted_sock < 0) {
-                etiLog.level(warn) << "MGMT Server cound not accept connection: " <<
-                    strerror(errno);
-                continue;
-            }
-            /* Send welcome message with version */
-            n = write(accepted_sock, welcome_msg, welcome_msg_len);
-            if (n < 0) {
-                etiLog.level(warn) <<
-                    "MGMT: Error writing to Server socket " <<
-                    strerror(errno);
-                close(accepted_sock);
-                continue;
-            }
-
-            /* receive command */
-            memset(buffer, 0, 256);
-            int n = read(accepted_sock, buffer, 255);
-            if (n < 0) {
-                etiLog.level(warn) <<
-                    "MGMT: Error reading from Server socket " <<
-                    strerror(errno);
-                close(accepted_sock);
-                continue;
-            }
-
-            if (strcmp(buffer, "config\n") == 0) {
-                std::string json = getStatConfigJSON();
-                n = write(accepted_sock, json.c_str(), json.size());
-            }
-            else if (strcmp(buffer, "values\n") == 0) {
-                std::string json = getValuesJSON();
-                n = write(accepted_sock, json.c_str(), json.size());
-            }
-            else if (strcmp(buffer, "state\n") == 0) {
-                std::string json = getStateJSON();
-                n = write(accepted_sock, json.c_str(), json.size());
-            }
-            else if (strcmp(buffer, "setptree\n") == 0) {
-                const ssize_t max_json_len = 32768;
-                char json[max_json_len] = {'\0'};
-
-                ssize_t json_len = read(accepted_sock, json, max_json_len);
-
-                if (json_len < max_json_len) {
-                    boost::unique_lock<boost::mutex> lock(m_configmutex);
-
-                    std::stringstream ss;
-                    ss << json;
-
-                    m_pt.clear();
-                    boost::property_tree::json_parser::read_json(ss, m_pt);
-                }
-                else if (json_len == 0) {
-                    etiLog.level(warn) <<
-                        "MGMT: No JSON data received";
-                }
-                else if (json_len < 0) {
-                    etiLog.level(warn) <<
-                        "MGMT: JSON data receive error: " <<
-                        strerror(errno);
-                }
-                else {
-                    etiLog.level(warn) <<
-                        "MGMT: Received JSON too large";
-                }
-
-            }
-            else if (strcmp(buffer, "getptree\n") == 0) {
+            if (length > 0) {
                 boost::unique_lock<boost::mutex> lock(m_configmutex);
-                m_pending = true;
-
-                while (m_pending && !m_retrieve_pending) {
-                    m_condition.wait(lock);
-                }
-                std::stringstream ss;
-                boost::property_tree::json_parser::write_json(ss, m_pt);
-
-                std::string response = ss.str();
-
-                n = write(accepted_sock, response.c_str(), response.size());
+                m_pt.clear();
+                boost::property_tree::json_parser::read_json(jsonbuffer, m_pt);
+            }
+            else if (length == 0) {
+                etiLog.level(warn) <<
+                    "MGMT: No JSON data received";
             }
             else {
-                int len = snprintf(buffer, 256, "Invalid command\n");
-                n = write(accepted_sock, buffer, len);
+                etiLog.level(error) <<
+                    "MGMT: Error JSON reception";
             }
-
-            if (n < 0) {
-                etiLog.level(warn) <<
-                    "Error writing to MGMT Server socket " <<
-                    strerror(errno);
-            }
-            close(accepted_sock);
         }
+        else if (in_message == "getptree") {
+            boost::unique_lock<boost::mutex> lock(m_configmutex);
+            m_pending = true;
 
-end_serverthread:
-        m_fault = true;
-        close(m_sock);
+            while (m_pending && !m_retrieve_pending) {
+                m_condition.wait(lock);
+            }
+            std::stringstream ss;
+            boost::property_tree::json_parser::write_json(ss, m_pt);
 
+            boost::asio::write(*socket, ss,
+                    boost::asio::transfer_all(),
+                    ignored_error);
+        }
+        else {
+            std::stringstream ss;
+            ss << "Invalid command\n";
+            boost::asio::write(*socket, ss,
+                    boost::asio::transfer_all(),
+                    ignored_error);
+        }
     }
     catch (std::exception& e) {
         etiLog.level(error) <<
             "MGMT server caught exception: " <<
             e.what();
-        m_fault = true;
     }
 }
 

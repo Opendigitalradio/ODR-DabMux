@@ -298,7 +298,9 @@ void ManagementServer::handle_accept(
             if (length > 0) {
                 boost::unique_lock<boost::mutex> lock(m_configmutex);
                 m_pt.clear();
-                boost::property_tree::json_parser::read_json(jsonbuffer, m_pt);
+
+                std::istream json_stream(&jsonbuffer);
+                boost::property_tree::json_parser::read_json(json_stream, m_pt);
             }
             else if (length == 0) {
                 etiLog.level(warn) <<
@@ -319,14 +321,13 @@ void ManagementServer::handle_accept(
             std::stringstream ss;
             boost::property_tree::json_parser::write_json(ss, m_pt);
 
-            boost::asio::write(*socket, ss,
+            boost::asio::write(*socket, boost::asio::buffer(ss.str()),
                     boost::asio::transfer_all(),
                     ignored_error);
         }
         else {
-            std::stringstream ss;
-            ss << "Invalid command\n";
-            boost::asio::write(*socket, ss,
+            std::string invcmd("Invalid command\n");
+            boost::asio::write(*socket, boost::asio::buffer(invcmd),
                     boost::asio::transfer_all(),
                     ignored_error);
         }

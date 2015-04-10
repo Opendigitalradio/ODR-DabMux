@@ -1,6 +1,15 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2015-04-10: Matthias P. Braendli <matthias@mpb.li>
+	(v0.7.3):
+		Security: RC only listens on localhost.
+		Change FIG signalisation handling for User Application Type,
+		which has an impact on Slideshow.
+		-e parameter becomes optional.
+		Improve error messages and documentation.
+		Start some activities for a web-based GUI.
+
 2014-09-26: Matthias P. Braendli <matthias@mpb.li>
 	(v0.7.2):
 		Fix a memory leak with the ZMQ input.

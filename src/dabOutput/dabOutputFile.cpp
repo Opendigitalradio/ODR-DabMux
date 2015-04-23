@@ -112,6 +112,7 @@ int DabOutputFile::Write(void* buffer, int size)
         memset(padding, 0x55, 6144 - size);
         if (write(this->file_, padding, 6144 - size) == -1) goto FILE_WRITE_ERROR;
         break;
+    case ETI_FILE_TYPE_NONE:
     default:
         etiLog.log(error, "File type is not supported.\n");
         return -1;

@@ -855,7 +855,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     if (nonblock) {
         switch (subchan->type) {
 #ifdef HAVE_FORMAT_PACKET
-            case 3:
+            case Packet:
                 if (operations == dabInputPacketFileOperations) {
                     operations = dabInputFifoOperations;
 #ifdef HAVE_FORMAT_EPM
@@ -871,7 +871,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 break;
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_MPEG
-            case 0:
+            case Audio:
                 if (operations == dabInputMpegFileOperations) {
                     operations = dabInputMpegFifoOperations;
                 } else if (operations == dabInputDabplusFileOperations) {
@@ -884,6 +884,8 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 }
                 break;
 #endif // defined(HAVE_FORMAT_MPEG)
+            case DataDmb:
+            case Fidc:
             default:
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<

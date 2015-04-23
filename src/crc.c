@@ -236,7 +236,7 @@ void init_crc32tab(uint32_t l_code, uint32_t l_init)
 
 uint8_t crc8(uint8_t l_crc, const void *lp_data, unsigned l_nb)
 {
-    uint8_t* data = (uint8_t*)lp_data;
+    const uint8_t* data = (const uint8_t*)lp_data;
     while (l_nb--) {
         l_crc = crc8tab[l_crc ^ *(data++)];
     }
@@ -246,7 +246,7 @@ uint8_t crc8(uint8_t l_crc, const void *lp_data, unsigned l_nb)
 
 uint16_t crc16(uint16_t l_crc, const void *lp_data, unsigned l_nb)
 {
-    uint8_t* data = (uint8_t*)lp_data;
+    const uint8_t* data = (const uint8_t*)lp_data;
     while (l_nb--) {
         l_crc =
             (l_crc << 8) ^ crc16tab[(l_crc >> 8) ^ *(data++)];
@@ -257,7 +257,7 @@ uint16_t crc16(uint16_t l_crc, const void *lp_data, unsigned l_nb)
 
 uint32_t crc32(uint32_t l_crc, const void *lp_data, unsigned l_nb)
 {
-    uint8_t* data = (uint8_t*)lp_data;
+    const uint8_t* data = (const uint8_t*)lp_data;
     while (l_nb--) {
         l_crc =
             (l_crc << 8) ^ crc32tab[((l_crc >> 24) ^ *(data++)) & 0xff];

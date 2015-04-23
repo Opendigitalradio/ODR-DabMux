@@ -1179,6 +1179,7 @@ int main(int argc, char *argv[])
                             packet_description->PS      = ((curCpnt == 0) ? 1 : 0);
                             packet_description->CA_flag = 0;
                             break;
+                        case Fidc:
                         default:
                             etiLog.log(error,
                                     "Component type not supported\n");
@@ -1296,6 +1297,7 @@ int main(int argc, char *argv[])
                             packet_description->PS = ((curCpnt == 0) ? 1 : 0);
                             packet_description->CA_flag = 0;
                             break;
+                        case Fidc:
                         default:
                             etiLog.log(error,
                                     "Component type not supported\n");

@@ -224,9 +224,6 @@ bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
 void DabComponent::set_parameter(const string& parameter,
         const string& value)
 {
-    stringstream ss(value);
-    ss.exceptions ( stringstream::failbit | stringstream::badbit );
-
     if (parameter == "label") {
         vector<string> fields;
         boost::split(fields, value, boost::is_any_of(","));
@@ -322,9 +319,6 @@ unsigned char DabService::nbComponent(vector<DabComponent*>& components)
 void DabService::set_parameter(const string& parameter,
         const string& value)
 {
-    stringstream ss(value);
-    ss.exceptions ( stringstream::failbit | stringstream::badbit );
-
     if (parameter == "label") {
         vector<string> fields;
         boost::split(fields, value, boost::is_any_of(","));
@@ -388,9 +382,6 @@ const string DabService::get_parameter(const string& parameter) const
 
 void dabEnsemble::set_parameter(const string& parameter, const string& value)
 {
-    stringstream ss(value);
-    ss.exceptions ( stringstream::failbit | stringstream::badbit );
-
     if (parameter == "localtimeoffset") {
         if (value == "auto") {
             lto_auto = true;

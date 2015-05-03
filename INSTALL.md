@@ -4,7 +4,9 @@ Required dependencies:
 * libfec from Phil Karn, with compatibility patch:
 [ka9q-fec](https://github.com/Opendigitalradio/ka9q-fec)
 * Boost 1.48 or later
-* Optional ZeroMQ 4 from [http://www.zeromq.org](http://www.zeromq.org)
+* Optional ZeroMQ 4 from [http://www.zeromq.org](http://www.zeromq.org).
+  Please prefer the zeromq from your distribution, but mind that some distributions
+  ship ZeroMQ 2, which is not enough.
 
 Use the --disable-output-zeromq ./configure option if you don't have ZeroMQ.
 
@@ -20,17 +22,6 @@ Install libfec
     % make                                  # Build the library
     [as root]
     % make install                          # Install the library
-
-Install zeromq 4.0.3
---------------------
-
-    % wget http://download.zeromq.org/zeromq-4.0.3.tar.gz
-    % tar -f zeromq-4.0.3.tar.gz -x
-    % cd zeromq-4.0.3
-    % ./configure
-    % make
-    [as root]
-    % make install
 
 Install odr-dabmux
 ------------------

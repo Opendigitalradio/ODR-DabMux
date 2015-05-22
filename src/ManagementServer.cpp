@@ -277,7 +277,7 @@ void ManagementServer::serverThread()
                 std::string json = getStateJSON();
                 n = write(accepted_sock, json.c_str(), json.size());
             }
-            if (strcmp(buffer, "getptree\n") == 0) {
+            else if (strcmp(buffer, "getptree\n") == 0) {
                 boost::unique_lock<boost::mutex> lock(m_configmutex);
                 m_pending = true;
 

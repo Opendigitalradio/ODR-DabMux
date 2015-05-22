@@ -58,6 +58,7 @@ int main(int argc, char** argv)
     int rc = zmq_curve_keypair(public_key, secret_key);
     if (rc != 0) {
         fprintf(stderr, "key generation failed\n");
+        return 1;
     }
 
     int fdpub = creat(pubkeyfile, S_IRUSR | S_IWUSR);

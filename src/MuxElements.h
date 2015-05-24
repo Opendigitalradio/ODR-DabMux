@@ -61,7 +61,7 @@ class DabLabel
          *          -2 if the short_label is too long
          *          -3 if the text is too long
          */
-        int setLabel(const std::string& text, const std::string& short_label);
+        int setLabel(const std::string& label, const std::string& short_label);
 
         /* Same as above, but sets the flag to 0xff00, truncating at 8
          * characters.
@@ -69,17 +69,20 @@ class DabLabel
          * returns:  0 on success
          *          -3 if the text is too long
          */
-        int setLabel(const std::string& text);
+        int setLabel(const std::string& label);
 
         const char* text() const { return m_text; }
         uint16_t flag() const { return m_flag; }
+        const std::string long_label() const { return m_label; }
         const std::string short_label() const;
 
     private:
-        // In the DAB standard, the label is 16 chars.
-        // We keep it here zero-terminated
-        char m_text[17];
+        // In the DAB standard, the label is 16 bytes long.
+        // We use spaces for padding at the end if needed.
+        char m_text[16];
         uint16_t m_flag;
+        std::string m_label;
+
         int setShortLabel(const std::string& slabel);
 };
 

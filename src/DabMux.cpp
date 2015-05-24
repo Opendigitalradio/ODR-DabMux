@@ -1909,7 +1909,7 @@ int main(int argc, char *argv[])
                 subchannel =
                     getSubchannel(ensemble->subchannels, (*component)->subchId);
 
-                if ((*component)->label.text()[0] != 0) {
+                if (!((*component)->label.long_label().empty())) {
                     if ((*service)->getType(ensemble) == 0) {   // Programme
                         FIGtype1_4_programme *fig1_4;
                         fig1_4 = (FIGtype1_4_programme*)&etiFrame[index];

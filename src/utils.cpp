@@ -380,7 +380,8 @@ void printServices(vector<DabService*>& services)
     for (current = services.begin(); current != services.end(); ++current) {
 
         etiLog.level(info) << "Service       " << (*current)->get_rc_name();
-        etiLog.level(info) << " label:       " << (*current)->label.text();
+        etiLog.level(info) << " label:       " <<
+                (*current)->label.long_label();
         etiLog.level(info) << " short label: " <<
                 (*current)->label.short_label();
 
@@ -413,7 +414,8 @@ void printComponent(DabComponent* component)
 {
     etiLog.log(info, " service id:             %i", component->serviceId);
     etiLog.log(info, " subchannel id:          %i", component->subchId);
-    etiLog.log(info, " label:                  %s", component->label.text());
+    etiLog.level(info) << " label:                  " <<
+            component->label.long_label();
     etiLog.level(info) << " short label:            " <<
             component->label.short_label();
 
@@ -531,7 +533,8 @@ void printEnsemble(dabEnsemble* ensemble)
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);
     etiLog.log(info, " ecc:         0x%x (%u)", ensemble->ecc, ensemble->ecc);
-    etiLog.log(info, " label:       %s", ensemble->label.text());
+    etiLog.level(info) << " label:       " <<
+            ensemble->label.long_label();
     etiLog.level(info) << " short label: " <<
             ensemble->label.short_label();
 

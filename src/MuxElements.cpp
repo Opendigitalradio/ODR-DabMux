@@ -43,29 +43,29 @@ const unsigned short Sub_Channel_SizeTable[64] = {
 
 using namespace std;
 
-int DabLabel::setLabel(const std::string& text)
+int DabLabel::setLabel(const std::string& label)
 {
-    int len = text.length();
-    if (len > 16)
+    size_t len = label.length();
+    if (len > sizeof(m_text))
         return -3;
 
-    memset(m_text, 0, 17);
-    memcpy(m_text, text.c_str(), len);
+    memcpy(m_text, label.c_str(), len);
+    memset(m_text + len, 0x20, sizeof(m_text) - len);
 
     m_flag = 0xFF00; // truncate the label to the eight first characters
+
+    m_label = label;
 
     return 0;
 }
 
-int DabLabel::setLabel(const std::string& text, const std::string& short_label)
+int DabLabel::setLabel(const std::string& label, const std::string& short_label)
 {
     DabLabel newlabel;
 
-    memset(newlabel.m_text, 0, 17);
-    int len = text.length();
-    if (len > 16)
-        return -3;
-    memcpy(newlabel.m_text, text.c_str(), len);
+    int result = newlabel.setLabel(label);
+    if (result < 0)
+        return result;
 
     /* First check if we can actually create the short label */
     int flag = newlabel.setShortLabel(short_label);
@@ -73,8 +73,9 @@ int DabLabel::setLabel(const std::string& text, const std::string& short_label)
         return flag;
 
     // short label is valid.
-    memcpy(this->m_text, newlabel.m_text, 17);
-    this->m_flag = flag & 0xFFFF;
+    memcpy(m_text, newlabel.m_text, sizeof(m_text));
+    m_flag = flag & 0xFFFF;
+    m_label = newlabel.m_label;
 
     return 0;
 }
@@ -105,7 +106,7 @@ int DabLabel::setShortLabel(const std::string& slabel)
      * according to the characters in the slabel
      */
     for (int i = 0; i < 32; ++i) {
-        if (*slab == this->m_text[i]) {
+        if (*slab == m_text[i]) {
             flag |= 0x8000 >> i;
             if (*(++slab) == 0) {
                 break;
@@ -271,10 +272,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "label") {
-        char l[17];
-        l[16] = '\0';
-        memcpy(l, label.text(), 16);
-        ss << l << "," << label.short_label();
+        ss << label.long_label() << "," << label.short_label();
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -366,10 +364,7 @@ const string DabService::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "label") {
-        char l[17];
-        l[16] = '\0';
-        memcpy(l, label.text(), 16);
-        ss << l << "," << label.short_label();
+        ss << label.long_label() << "," << label.short_label();
     }
     else {
         ss << "Parameter '" << parameter <<

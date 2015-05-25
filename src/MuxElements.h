@@ -51,6 +51,7 @@ struct dabOutput {
     DabOutput* output;
 };
 
+#define DABLABEL_LENGTH 16
 
 class DabLabel
 {
@@ -71,18 +72,26 @@ class DabLabel
          */
         int setLabel(const std::string& label);
 
-        const char* text() const { return m_text; }
+        /* Write the label to the 16-byte buffer given in buf
+         * In the DAB standard, the label is 16 bytes long, and is
+         * padded using spaces.
+         */
+        void writeLabel(uint8_t* buf) const;
+
         uint16_t flag() const { return m_flag; }
         const std::string long_label() const { return m_label; }
         const std::string short_label() const;
 
     private:
-        // In the DAB standard, the label is 16 bytes long.
-        // We use spaces for padding at the end if needed.
-        char m_text[16];
+        /* The flag field selects which label characters make
+         * up the short label
+         */
         uint16_t m_flag;
+
+        /* The m_label is not padded in any way */
         std::string m_label;
 
+        /* Checks and calculates the flag */
         int setShortLabel(const std::string& slabel);
 };
 

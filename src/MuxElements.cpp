@@ -24,6 +24,7 @@
 */
 
 #include <vector>
+#include <algorithm>
 
 #include "MuxElements.h"
 #include <boost/algorithm/string.hpp>
@@ -46,11 +47,8 @@ using namespace std;
 int DabLabel::setLabel(const std::string& label)
 {
     size_t len = label.length();
-    if (len > sizeof(m_text))
+    if (len > DABLABEL_LENGTH)
         return -3;
-
-    memcpy(m_text, label.c_str(), len);
-    memset(m_text + len, 0x20, sizeof(m_text) - len);
 
     m_flag = 0xFF00; // truncate the label to the eight first characters
 
@@ -73,7 +71,6 @@ int DabLabel::setLabel(const std::string& label, const std::string& short_label)
         return flag;
 
     // short label is valid.
-    memcpy(m_text, newlabel.m_text, sizeof(m_text));
     m_flag = flag & 0xFFFF;
     m_label = newlabel.m_label;
 
@@ -105,8 +102,8 @@ int DabLabel::setShortLabel(const std::string& slabel)
     /* Iterate over the label and set the bits in the flag
      * according to the characters in the slabel
      */
-    for (int i = 0; i < 32; ++i) {
-        if (*slab == m_text[i]) {
+    for (size_t i = 0; i < m_label.size(); ++i) {
+        if (*slab == m_label[i]) {
             flag |= 0x8000 >> i;
             if (*(++slab) == 0) {
                 break;
@@ -118,7 +115,7 @@ int DabLabel::setShortLabel(const std::string& slabel)
      * we went through the whole label, the short label
      * cannot be represented
      */
-    if (*slab != 0) {
+    if (*slab != '\0') {
         return -1;
     }
 
@@ -139,15 +136,22 @@ int DabLabel::setShortLabel(const std::string& slabel)
 const string DabLabel::short_label() const
 {
     stringstream shortlabel;
-    for (int i = 0; i < 32; ++i) {
+    for (size_t i = 0; i < m_label.size(); ++i) {
         if (m_flag & 0x8000 >> i) {
-            shortlabel << m_text[i];
+            shortlabel << m_label[i];
         }
     }
 
     return shortlabel.str();
 }
 
+void DabLabel::writeLabel(uint8_t* buf) const
+{
+    memset(buf, ' ', DABLABEL_LENGTH);
+    if (m_label.size() <= DABLABEL_LENGTH) {
+        std::copy(m_label.begin(), m_label.end(), (char*)buf);
+    }
+}
 
 vector<dabSubchannel*>::iterator getSubchannel(
         vector<dabSubchannel*>& subchannels, int id)

@@ -1661,7 +1661,7 @@ int main(int argc, char *argv[])
                 fig1_0->EId = htons(ensemble->id);
                 index = index + 4;
 
-                memcpy(&etiFrame[index], ensemble->label.text(), 16);
+                ensemble->label.writeLabel(&etiFrame[index]);
                 index = index + 16;
 
                 etiFrame[index++] = ensemble->label.flag() >> 8;
@@ -1892,7 +1892,7 @@ int main(int argc, char *argv[])
                     index += 6;
                     figSize += 6;
                 }
-                memcpy(&etiFrame[index], (*service)->label.text(), 16);
+                (*service)->label.writeLabel(&etiFrame[index]);
                 index += 16;
                 figSize += 16;
                 etiFrame[index++] = (*service)->label.flag() >> 8;
@@ -1943,7 +1943,7 @@ int main(int argc, char *argv[])
                         index += 7;
                         figSize += 7;
                     }
-                    memcpy(&etiFrame[index], (*component)->label.text(), 16);
+                    (*component)->label.writeLabel(&etiFrame[index]);
                     index += 16;
                     figSize += 16;
 

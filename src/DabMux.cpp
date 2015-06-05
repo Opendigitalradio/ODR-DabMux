@@ -247,17 +247,15 @@ int main(int argc, char *argv[])
                 strerror(errno));
     }
 #else
-    if (setpriority(PRIO_PROCESS, 0, -20) == -1) {
-        etiLog.log(warn, "Can't increase priority: %s\n",
-                strerror(errno));
+    // Use the lowest real-time priority for this thread, and switch to real-time scheduling
+    const int policy = SCHED_RR;
+    sched_param sp;
+    sp.sched_priority = sched_get_priority_min(policy);
+    int thread_prio_ret = pthread_setschedparam(pthread_self(), policy, &sp);
+    if (thread_prio_ret != 0) {
+        etiLog.level(error) << "Could not set real-time priority for thread:" << thread_prio_ret;
     }
 #endif
-    /*sched_param scheduler;
-      scheduler.sched_priority = 99;        // sched_get_priority_max(SCHED_RR)
-      if (sched_setscheduler(0, SCHED_RR, &scheduler) == -1) {
-      etiLog.log(warn, "Can't increased priority: %s\n",
-      strerror(errno));
-      }*/
 
     uint8_t watermarkData[128];
     size_t watermarkSize = 0;

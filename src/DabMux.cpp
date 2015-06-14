@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
 
             if (conf_file == "-h") {
                 printUsage(argv[0], stdout);
-                throw MuxInitException();
+                throw MuxInitException("Nothing to do");
             }
 
             try {
@@ -373,9 +373,7 @@ int main(int argc, char *argv[])
                         &factumAnalyzer, &limit, &rc, &mgmtserverport, &edi_conf);
             }
             catch (runtime_error &e) {
-                etiLog.log(error, "Configuration file parsing error: %s\n",
-                        e.what());
-                throw MuxInitException();
+                throw MuxInitException(e.what());
             }
         }
         else if (argc > 1 && strncmp(argv[1], "-e", 2) == 0) { // use external config file
@@ -394,9 +392,7 @@ int main(int argc, char *argv[])
                         &factumAnalyzer, &limit, &rc, &mgmtserverport, &edi_conf);
             }
             catch (runtime_error &e) {
-                etiLog.log(error, "Configuration file parsing error: %s\n",
-                        e.what());
-                throw MuxInitException();
+                throw MuxInitException(e.what());
             }
         }
 #if ENABLE_CMDLINE_OPTIONS
@@ -408,8 +404,7 @@ int main(int argc, char *argv[])
         }
 #else
         else {
-            etiLog.level(error) << "You must specify the configuration file";
-            throw MuxInitException();
+            throw MuxInitException("No configuration file specified");
         }
 #endif
 
@@ -2185,10 +2180,9 @@ int main(int argc, char *argv[])
                 }
             }
         }
-
     }
     catch (const MuxInitException& except) {
-        etiLog.level(error) << "Caught multiplex initialisation error: " <<
+        etiLog.level(error) << "Multiplex initialisation aborted: " <<
             except.what();
     }
     catch (const std::invalid_argument& except) {

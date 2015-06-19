@@ -455,7 +455,7 @@ int main(int argc, char *argv[])
 
         etiLog.level(info) << "Start loop";
         /*   Each iteration of the main loop creates one ETI frame */
-        ssize_t currentFrame;
+        size_t currentFrame;
         for (currentFrame = 0; running; currentFrame++) {
             mux.mux_frame(outputs);
 

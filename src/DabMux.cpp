@@ -481,9 +481,11 @@ int main(int argc, char *argv[])
                 else if (mgmt_server.request_pending()) {
                     mgmt_server.update_ptree(pt);
                 }
-                /* else if (mgmt_server.retrieve_new_ptree(pt)) {
-                   }
-                   */
+                else if (mgmt_server.retrieve_new_ptree(pt)) {
+                    etiLog.level(warn) <<
+                        "Detected configuration change";
+                    mux.update_config(pt);
+                }
             }
         }
         etiLog.level(info) << "Goodbye";

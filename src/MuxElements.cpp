@@ -191,19 +191,19 @@ vector<DabComponent*>::iterator getComponent(
     return getComponent(components, serviceId, components.end());
 }
 
-vector<DabService*>::iterator getService(
+std::vector<std::shared_ptr<DabService> >::iterator getService(
         DabComponent* component,
-        vector<DabService*>& services)
+        std::vector<std::shared_ptr<DabService> >& services)
 {
-    vector<DabService*>::iterator service;
-
-    for (service = services.begin(); service != services.end(); ++service) {
-        if ((*service)->id == component->serviceId) {
-            break;
+    size_t i = 0;
+    for (auto service : services) {
+        if (service->id == component->serviceId) {
+            return services.begin() + i;
         }
+        i++;
     }
 
-    return service;
+    throw std::runtime_error("Service not included in any component");
 }
 
 bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)

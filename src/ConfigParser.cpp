@@ -221,18 +221,35 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
     /******************** READ SERVICES PARAMETERS *************/
 
-    map<string, DabService*> allservices;
+    map<string, shared_ptr<DabService> > allservices;
 
     /* For each service, we keep a separate SCIdS counter */
-    map<DabService*, int> SCIdS_per_service;
+    map<shared_ptr<DabService>, int> SCIdS_per_service;
 
     ptree pt_services = pt.get_child("services");
     for (ptree::iterator it = pt_services.begin();
             it != pt_services.end(); ++it) {
         string serviceuid = it->first;
         ptree pt_service = it->second;
-        DabService* service = new DabService(serviceuid);
-        ensemble->services.push_back(service);
+
+        shared_ptr<DabService> service;
+
+        bool service_already_existing = false;
+
+        for (auto srv : ensemble->services)
+        {
+            if (srv->uid == serviceuid) {
+                service = srv;
+                service_already_existing = true;
+                break;
+            }
+        }
+
+        if (not service_already_existing) {
+            auto new_srv = make_shared<DabService>(serviceuid);
+            ensemble->services.push_back(new_srv);
+            service = new_srv;
+        }
 
         int success = -5;
 
@@ -298,7 +315,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
     ptree pt_subchans = pt.get_child("subchannels");
     for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
-        dabSubchannel* subchan = new dabSubchannel();
+        dabSubchannel* subchan = new dabSubchannel(subchanuid);
 
         ensemble->subchannels.push_back(subchan);
 
@@ -331,7 +348,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
         string componentuid = it->first;
         ptree pt_comp = it->second;
 
-        DabService* service;
+        shared_ptr<DabService> service;
         try {
             // Those two uids serve as foreign keys to select the service+subchannel
             string service_uid = pt_comp.get<string>("service");

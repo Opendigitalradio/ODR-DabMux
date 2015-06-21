@@ -20,7 +20,7 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
-import socket
+import zmq
 import json
 
 class General(object):
@@ -97,38 +97,43 @@ class ConfigurationHandler(object):
         self._config = None
         self._statistics = None
 
+        self._ctx = zmq.Context()
+        self.sock = zmq.Socket(self._ctx, zmq.REQ)
+        self.sock.connect("tcp://{}:{}".format(self._host, self._port))
+
     def load(self):
         """Load the configuration from the multiplexer and
         save it locally"""
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.send(b'info')
+        server_info = self.sock.recv()
 
-        s.connect((self._host, self._port))
-        server_info = s.recv(32768)
-        s.sendall(b'getptree\n')
-        config_info = s.recv(32768)
-        s.close()
+        self.sock.send(b'getptree')
+        config_info = self.sock.recv()
 
-        self._server_version = json.loads(server_info.decode())['service']
-        self._config = json.loads(config_info.decode())
+        print("Config '%r'" % config_info)
+
+        self._server_version = json.loads(server_info)['service']
+        self._config = json.loads(config_info)
 
     def update_stats(self):
         """Load the statistics from the multiplexer and
         save them locally"""
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        s.connect((self._host, self._port))
-        server_info = s.recv(32768)
+        self.sock.send(b'info')
+        server_info = self.sock.recv()
 
-        s.sendall(b'values\n')
+        self.sock.send(b'values')
+        stats_info = self.sock.recv()
 
-        stats_info = s.recv(32768)
-        s.close()
-
-        print("STATS: {}".format(stats_info.decode()))
-        self._statistics = json.loads(stats_info.decode())['values']
+        self._statistics = json.loads(stats_info)['values']
 
     def get_full_configuration(self):
-        return self._config
+        return json.dumps(self._config, indent=4)
+
+    def set_full_configuration(self, config_json):
+        self.sock.send(b'setptree', flags=zmq.SNDMORE)
+        self.sock.send(config_json)
+        return self.sock.recv() == "OK"
 
     def get_mux_version(self):
         return self._server_version

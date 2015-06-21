@@ -7,7 +7,7 @@
 
     http://www.opendigitalradio.org
 
-   A TCP Socket server that serves state information and statistics for
+   A server that serves state information and statistics for
    monitoring purposes, and also serves the internal configuration
    property tree.
 
@@ -15,7 +15,7 @@
         http://munin-monitoring.org/
    but is not specific to it.
 
-   The TCP Server responds in JSON, and accepts the commands:
+   The responds in JSON, and accepts the commands:
     - config
     - values
       Inspired by the munin equivalent
@@ -27,6 +27,7 @@
       Returns the internal boost property_tree that contains the 
       multiplexer configuration DB.
 
+   The server is using REQ/REP ZeroMQ sockets.
    */
 /*
    This file is part of ODR-DabMux.
@@ -52,11 +53,11 @@
 #   include "config.h"
 #endif
 
+#include "zmq.hpp"
 #include <string>
 #include <map>
 #include <atomic>
 #include <boost/thread.hpp>
-#include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -314,7 +315,8 @@ class ManagementServer
 {
     public:
         ManagementServer() :
-            m_io_service(),
+            m_zmq_context(),
+            m_zmq_sock(m_zmq_context, ZMQ_REP),
             m_running(false),
             m_fault(false),
             m_pending(false) { }
@@ -325,7 +327,7 @@ class ManagementServer
             m_fault = false;
             m_pending = false;
 
-            m_io_service.stop();
+            // TODO notify
             m_thread.join();
         }
 
@@ -359,22 +361,20 @@ class ManagementServer
         void restart(void);
 
     private:
-        boost::asio::io_service m_io_service;
-
         void restart_thread(long);
 
-        /******* TCP Socket Server ******/
+        /******* Server ******/
+        zmq::context_t m_zmq_context;
+        zmq::socket_t  m_zmq_sock;
+
         // no copying (because of the thread)
         ManagementServer(const ManagementServer& other);
 
         void serverThread(void);
+        void handle_message(zmq::message_t& zmq_message);
+        bool handle_setptree(zmq::message_t& zmq_message, std::stringstream& answer);
 
         bool isInputRegistered(std::string& id);
-
-        void handle_accept(
-                const boost::system::error_code& boost_error,
-                boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
-                boost::asio::ip::tcp::acceptor& acceptor);
 
         int m_listenport;
 
@@ -418,7 +418,7 @@ class ManagementServer
         boost::property_tree::ptree m_pt;
 };
 
-// If necessary construct the management server singleton and return 
+// If necessary construct the management server singleton and return
 // a reference to it
 ManagementServer& get_mgmt_server();
 

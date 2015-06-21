@@ -5,10 +5,8 @@
 
 import sys
 import json
-import socket
+import zmq
 import os
-
-SOCK_RECV_SIZE = 10240
 
 config_top = """
 """
@@ -72,6 +70,8 @@ right.warning -40:0
 right.critical -80:0
 """
 
+ctx = zmq.Context()
+
 if not os.environ.get("MUNIN_CAP_MULTIGRAPH"):
     print("This needs munin version 1.4 at least")
     sys.exit(1)
@@ -81,10 +81,11 @@ def connect():
 
     returns: the socket"""
 
-    sock = socket.socket()
-    sock.connect(("localhost", 12720))
+    sock = zmq.Socket(ctx, zmq.REQ)
+    sock.connect("tcp://localhost:12720")
 
-    version = json.loads(sock.recv(SOCK_RECV_SIZE))
+    sock.send("info")
+    version = json.loads(sock.recv())
 
     if not version['service'].startswith("ODR-DabMux"):
         sys.stderr.write("Wrong version\n")
@@ -94,8 +95,8 @@ def connect():
 
 if len(sys.argv) == 1:
     sock = connect()
-    sock.send("values\n")
-    values = json.loads(sock.recv(SOCK_RECV_SIZE))['values']
+    sock.send("values")
+    values = json.loads(sock.recv())['values']
 
     munin_values = ""
     for ident in values:
@@ -115,9 +116,9 @@ if len(sys.argv) == 1:
 elif len(sys.argv) == 2 and sys.argv[1] == "config":
     sock = connect()
 
-    sock.send("config\n")
+    sock.send("config")
 
-    config = json.loads(sock.recv(SOCK_RECV_SIZE))
+    config = json.loads(sock.recv())
 
     munin_config = config_top
 
@@ -125,4 +126,6 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         munin_config += config_template.format(ident=conf)
 
     print(munin_config)
+else:
+    sys.exit(1)
 

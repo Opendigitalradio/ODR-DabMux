@@ -28,13 +28,46 @@
 #   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 from muxconfig import *
-from bottle import route, run, template, static_file
+from bottle import route, run, template, static_file, request
 import json
 
 conf = ConfigurationHandler('localhost')
 
 @route('/config')
 def config():
+    """Show the JSON ptree in a textbox for editing"""
+
+    conf.load()
+
+    return template('configeditor',
+            version = conf.get_mux_version(),
+            config  = conf.get_full_configuration(),
+            message = "")
+
+@route('/config', method="POST")
+def config_json_post():
+    """Update the ODR-DabMux configuration with the JSON ptree
+    given as POST data"""
+
+    new_config = request.forms.get('config')
+    print("New config %s" % new_config)
+
+    success = conf.set_full_configuration(new_config)
+
+    if success:
+        successmessage = "Success"
+    else:
+        successmessage = "Failure"
+
+    conf.load()
+
+    return template('configeditor',
+            version = conf.get_mux_version(),
+            config  = conf.get_full_configuration(),
+            message = successmessage)
+
+@route('/config.json', method="GET")
+def config_json_get():
     """Return a application/json containing the full
     ptree of the mux"""
 
@@ -42,6 +75,7 @@ def config():
 
     return {'version': conf.get_mux_version(),
             'config':  conf.get_full_configuration()}
+
 
 @route('/')
 def index():

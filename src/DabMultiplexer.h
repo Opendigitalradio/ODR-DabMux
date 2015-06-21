@@ -46,6 +46,7 @@
 #include "Eti.h"
 #include <exception>
 #include <vector>
+#include <memory>
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -74,6 +75,8 @@ class DabMultiplexer {
 
         void print_info(void);
 
+        void update_config(boost::property_tree::ptree pt);
+
     private:
         void prepare_watermark(void);
         void prepare_subchannels(void);
@@ -101,9 +104,9 @@ class DabMultiplexer {
         unsigned int insertFIG;
         unsigned int rotateFIB;
 
-        std::vector<DabService*>::iterator serviceProgFIG0_2;
-        std::vector<DabService*>::iterator serviceDataFIG0_2;
-        std::vector<DabService*>::iterator serviceFIG0_17;
+        std::vector<std::shared_ptr<DabService> >::iterator serviceProgFIG0_2;
+        std::vector<std::shared_ptr<DabService> >::iterator serviceDataFIG0_2;
+        std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_17;
 
         std::vector<DabComponent*>::iterator componentProgFIG0_8;
         std::vector<DabComponent*>::iterator componentDataFIG0_8;

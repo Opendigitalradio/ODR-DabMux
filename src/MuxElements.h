@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2014, 2015
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    This file defines all data structures used in DabMux to represent
@@ -29,6 +29,7 @@
 #define _MUX_ELEMENTS
 
 #include <vector>
+#include <memory>
 #include <string>
 #include <functional>
 #include <algorithm>
@@ -130,7 +131,7 @@ class dabEnsemble : public RemoteControllable {
 
         int international_table;
 
-        std::vector<DabService*> services;
+        std::vector<std::shared_ptr<DabService> > services;
         std::vector<DabComponent*> components;
         std::vector<dabSubchannel*> subchannels;
 };
@@ -178,7 +179,16 @@ enum dab_subchannel_type_t {
     Packet = 3
 };
 
-struct dabSubchannel {
+class dabSubchannel
+{
+public:
+    dabSubchannel(std::string& uid) :
+            uid(uid)
+    {
+    }
+
+    std::string uid;
+
     std::string inputUri;
     DabInputBase* input;
     unsigned char id;
@@ -232,11 +242,14 @@ struct dabPacketComponent {
 class DabComponent : public RemoteControllable
 {
     public:
-        DabComponent(std::string uid) :
-            RemoteControllable(uid)
+        DabComponent(std::string& uid) :
+            RemoteControllable(uid),
+            uid(uid)
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
         }
+
+        std::string uid;
 
         DabLabel label;
         uint32_t serviceId;
@@ -270,11 +283,14 @@ class DabComponent : public RemoteControllable
 class DabService : public RemoteControllable
 {
     public:
-        DabService(std::string uid) :
-            RemoteControllable(uid)
+        DabService(std::string& uid) :
+            RemoteControllable(uid),
+            uid(uid)
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
         }
+
+        std::string uid;
 
         uint32_t id;
         unsigned char pty;
@@ -312,9 +328,9 @@ std::vector<DabComponent*>::iterator getComponent(
         std::vector<DabComponent*>& components,
         uint32_t serviceId);
 
-std::vector<DabService*>::iterator getService(
+std::vector<std::shared_ptr<DabService> >::iterator getService(
         DabComponent* component,
-        std::vector<DabService*>& services);
+        std::vector<std::shared_ptr<DabService> >& services);
 
 unsigned short getSizeCu(dabSubchannel* subchannel);
 
@@ -324,5 +340,5 @@ unsigned short getSizeByte(dabSubchannel* subchannel);
 
 unsigned short getSizeWord(dabSubchannel* subchannel);
 
-
 #endif
+

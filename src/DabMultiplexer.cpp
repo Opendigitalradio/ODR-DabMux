@@ -116,6 +116,17 @@ void DabMultiplexer::prepare_watermark()
     m_watermarkPos = 0;
 }
 
+void DabMultiplexer::update_config(boost::property_tree::ptree pt)
+{
+    ensemble->services.clear();
+    ensemble->components.clear();
+    ensemble->subchannels.clear();
+
+    m_pt = pt;
+
+    prepare();
+}
+
 // Run a set of checks on the configuration
 void DabMultiplexer::prepare()
 {
@@ -369,7 +380,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     unsigned char etiFrame[6144];
     unsigned short index = 0;
 
-    vector<DabService*>::iterator service;
+    vector<std::shared_ptr<DabService> >::iterator service;
     vector<DabComponent*>::iterator component;
     vector<dabSubchannel*>::iterator subchannel;
 

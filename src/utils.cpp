@@ -366,28 +366,27 @@ void printOutputs(vector<boost::shared_ptr<DabOutput> >& outputs)
     }
 }
 
-void printServices(vector<DabService*>& services)
+void printServices(const vector<shared_ptr<DabService> >& services)
 {
-    vector<DabService*>::const_iterator current;
     int index = 0;
 
-    for (current = services.begin(); current != services.end(); ++current) {
+    for (auto service : services) {
 
-        etiLog.level(info) << "Service       " << (*current)->get_rc_name();
+        etiLog.level(info) << "Service       " << service->get_rc_name();
         etiLog.level(info) << " label:       " <<
-                (*current)->label.long_label();
+                service->label.long_label();
         etiLog.level(info) << " short label: " <<
-                (*current)->label.short_label();
+                service->label.short_label();
 
-        etiLog.log(info, " (0x%x)", (*current)->label.flag());
-        etiLog.log(info, " id:          0x%lx (%lu)", (*current)->id,
-                (*current)->id);
+        etiLog.log(info, " (0x%x)", service->label.flag());
+        etiLog.log(info, " id:          0x%lx (%lu)", service->id,
+                service->id);
 
-        etiLog.log(info, " pty:         0x%x (%u)", (*current)->pty,
-                (*current)->pty);
+        etiLog.log(info, " pty:         0x%x (%u)", service->pty,
+                service->pty);
 
         etiLog.log(info, " language:    0x%x (%u)",
-                (*current)->language, (*current)->language);
+                service->language, service->language);
         ++index;
     }
 }

@@ -395,15 +395,17 @@ void parse_ptree(boost::property_tree::ptree& pt,
         component->type = component_type;
 
         int success = -5;
-        string componentlabel = pt_comp.get<string>("label");
+        string componentlabel = pt_comp.get("label", "");
         string componentshortlabel(componentlabel);
         try {
             componentshortlabel = pt_comp.get<string>("shortlabel");
             success = component->label.setLabel(componentlabel, componentshortlabel);
         }
         catch (ptree_error &e) {
-            etiLog.level(warn) << "Component short label undefined, "
-                "truncating label " << componentlabel;
+            if (not componentlabel.empty()) {
+                etiLog.level(warn) << "Component short label undefined, "
+                    "truncating label " << componentlabel;
+            }
 
             success = component->label.setLabel(componentlabel);
         }

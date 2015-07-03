@@ -181,7 +181,7 @@ void DabMultiplexer::prepare()
      */
     gettimeofday(&mnsc_time, NULL);
 
-#if ENABLE_EDI
+#if HAVE_OUTPUT_EDI
     // Defaults for edi
     edi_conf.enabled     = db.get_numeric("output.edi.enabled", 0) == 1;
     if (edi_conf.enabled) {
@@ -191,7 +191,7 @@ void DabMultiplexer::prepare()
         edi_conf.dump        = db.get_numeric("output.edi.dump") == 1;
         edi_conf.enable_pft  = db.get_numeric("output.edi.enable_pft") == 1;
     }
-#endif // ENABLE_EDI
+#endif // HAVE_OUTPUT_EDI
 }
 
 
@@ -1708,7 +1708,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     dumpBytes(dumpData, sizeSubChannel, stderr);
 #endif // DUMP_BRIDGE
 
-#if ENABLE_EDI
+#if HAVE_OUTPUT_EDI
     /********************************************************************** 
      ***********   Finalise and send EDI   ********************************
      **********************************************************************/
@@ -1777,7 +1777,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
             std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
         }
     }
-#endif // ENABLE_EDI
+#endif // HAVE_OUTPUT_EDI
 
     if (currentFrame % 100 == 0) {
         etiLog.log(info, "ETI frame number %i Time: %d, no TIST\n",

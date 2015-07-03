@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
             }
 
             if (outputuid == "edi") {
-#if ENABLE_EDI
+#if HAVE_OUTPUT_EDI
                 ptree pt_edi = pt_outputs.get_child("edi");
 
                 edi->enabled     = true;
@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
         etiLog.log(info, "--- Output list ---");
         printOutputs(outputs);
 
-#if ENABLE_EDI
+#if HAVE_OUTPUT_EDI
         if (edi_conf.enabled) {
             etiLog.level(warn) << "EXPERIMENTAL EDI OUTPUT ENABLED!";
             etiLog.level(info) << "edi to " << edi_conf.dest_addr << ":" << edi_conf.dest_port;

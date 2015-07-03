@@ -196,6 +196,11 @@ AS_IF([test "x$enable_output_zeromq" = "xyes"],
        AC_CHECK_LIB(zmq, zmq_init, [true], [AC_MSG_ERROR([ZeroMQ libzmq is required])]))
 AS_IF([test "x$enable_output_zeromq" = "xyes"],
        AC_DEFINE(HAVE_OUTPUT_ZEROMQ, [1], [Define if ZeroMQ output is enabled]))
+# EDI
+AC_ARG_ENABLE([output_edi],
+        AS_HELP_STRING([--enable-output-edi], [Enable EDI output]))
+AS_IF([test "x$enable_output_edi" = "xyes"],
+        [AC_DEFINE(HAVE_OUTPUT_EDI, [1], [Define if EDI output is enabled])])
 
 # Link against lzmq
 AM_CONDITIONAL([HAVE_ZEROMQ_TEST],
@@ -289,7 +294,7 @@ echo
 echo "Outputs:"
 enabled=""
 disabled=""
-for output in file fifo udp tcp raw simul zeromq
+for output in file fifo udp tcp raw simul zeromq edi
 do
     eval var=\$enable_output_$output
     AS_IF([test "x$var" = "xyes"],

@@ -82,6 +82,7 @@ class DabMultiplexer {
         void prepare_subchannels(void);
         void prepare_services_components(void);
         void prepare_data_inputs(void);
+        void reconfigure(void);
 
         boost::property_tree::ptree m_pt;
         boost::shared_ptr<BaseRemoteController> m_rc;
@@ -118,6 +119,10 @@ class DabMultiplexer {
         std::vector<dabSubchannel*>::iterator subchannelFIG0_1;
 
         boost::shared_ptr<dabEnsemble> ensemble;
+
+        // Multiplex reconfiguration requires two sets of configurations
+        boost::property_tree::ptree m_pt_next;
+        boost::shared_ptr<dabEnsemble> ensemble_next;
 };
 
 // DAB Mode

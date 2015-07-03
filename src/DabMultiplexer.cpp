@@ -25,6 +25,7 @@
 
 #include "DabMultiplexer.h"
 #include "ConfigParser.h"
+#include <boost/make_shared.hpp>
 
 using namespace std;
 using namespace boost;
@@ -88,7 +89,7 @@ DabMultiplexer::DabMultiplexer(
 {
     prepare_watermark();
 
-    ensemble = boost::shared_ptr<dabEnsemble>(new dabEnsemble);
+    ensemble = boost::make_shared<dabEnsemble>();
 }
 
 void DabMultiplexer::prepare_watermark()
@@ -118,13 +119,16 @@ void DabMultiplexer::prepare_watermark()
 
 void DabMultiplexer::update_config(boost::property_tree::ptree pt)
 {
-    ensemble->services.clear();
-    ensemble->components.clear();
-    ensemble->subchannels.clear();
+    ensemble_next = boost::make_shared<dabEnsemble>();
 
-    m_pt = pt;
+    m_pt_next = pt;
 
-    prepare();
+    reconfigure();
+}
+
+void DabMultiplexer::reconfigure()
+{
+    parse_ptree(m_pt_next, ensemble_next, m_rc, &edi_conf);
 }
 
 // Run a set of checks on the configuration
@@ -195,16 +199,15 @@ void DabMultiplexer::prepare()
 void DabMultiplexer::prepare_subchannels()
 {
     set<unsigned char> ids;
-    vector<dabSubchannel*>::iterator subchannel;
-    for (subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
-        if (ids.find((*subchannel)->id) != ids.end()) {
+
+    for (auto subchannel : ensemble->subchannels) {
+        if (ids.find(subchannel->id) != ids.end()) {
             etiLog.log(error,
                     "Subchannel %u is set more than once!\n",
-                    (*subchannel)->id);
+                    subchannel->id);
             throw MuxInitException();
         }
+        ids.insert(subchannel->id);
     }
 }
 

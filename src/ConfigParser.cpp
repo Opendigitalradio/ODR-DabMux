@@ -126,8 +126,7 @@ int hexparse(std::string input)
 
 void parse_ptree(boost::property_tree::ptree& pt,
         boost::shared_ptr<dabEnsemble> ensemble,
-        boost::shared_ptr<BaseRemoteController> rc,
-        edi_configuration_t* edi
+        boost::shared_ptr<BaseRemoteController> rc
         )
 {
     using boost::property_tree::ptree;

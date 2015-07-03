@@ -299,6 +299,8 @@ int main(int argc, char *argv[])
                 " starting up";
 
 
+        edi_configuration_t edi_conf;
+
         /******************** READ OUTPUT PARAMETERS ***************/
         set<string> all_output_names;
         ptree pt_outputs = pt.get_child("outputs");
@@ -319,15 +321,19 @@ int main(int argc, char *argv[])
 #if HAVE_OUTPUT_EDI
                 ptree pt_edi = pt_outputs.get_child("edi");
 
-                edi->enabled     = true;
+                edi_conf.enabled     = true;
 
-                edi->dest_addr   = pt_edi.get<string>("destination");
-                edi->dest_port   = pt_edi.get<unsigned int>("port");
-                edi->source_port = pt_edi.get<unsigned int>("sourceport");
+                edi_conf.dest_addr   = pt_edi.get<string>("destination");
+                edi_conf.dest_port   = pt_edi.get<unsigned int>("port");
+                edi_conf.source_port = pt_edi.get<unsigned int>("sourceport");
 
-                edi->dump        = pt_edi.get<bool>("dump");
-                edi->enable_pft  = pt_edi.get<bool>("enable_pft");
-                edi->verbose     = pt_edi.get<bool>("verbose");
+                edi_conf.dump        = pt_edi.get<bool>("dump");
+                edi_conf.enable_pft  = pt_edi.get<bool>("enable_pft");
+                edi_conf.verbose     = pt_edi.get<bool>("verbose");
+
+                mux.set_edi_config(edi_conf);
+#else
+                throw runtime_error("EDI output not compiled in");
 #endif
             }
             else {
@@ -424,31 +430,6 @@ int main(int argc, char *argv[])
             etiLog.level(info) << "source port " << edi_conf.source_port;
             etiLog.level(info) << "verbose     " << edi_conf.verbose;
         }
-
-
-        if (edi_conf.verbose) {
-            etiLog.log(info, "Setup EDI debug");
-        }
-        std::ofstream edi_debug_file;
-
-        if (edi_conf.dump) {
-            edi_debug_file.open("./edi.debug");
-        }
-        UdpSocket edi_output;
-
-        if (edi_conf.enabled) {
-            edi_output.create(edi_conf.source_port);
-        }
-
-        if (edi_conf.verbose) {
-            etiLog.log(info, "EDI debug set up");
-        }
-
-        // The TagPacket will then be placed into an AFPacket
-        AFPacketiser edi_afPacketiser(edi_conf.verbose);
-
-        // The AF Packet will be protected with reed-solomon and split in fragments
-        PFT edi_pft(207, 3, edi_conf);
 #endif
 
         size_t limit = pt.get("general.nbframes", 0);

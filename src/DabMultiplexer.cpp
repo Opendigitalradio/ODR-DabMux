@@ -128,13 +128,45 @@ void DabMultiplexer::update_config(boost::property_tree::ptree pt)
 
 void DabMultiplexer::reconfigure()
 {
-    parse_ptree(m_pt_next, ensemble_next, m_rc, &edi_conf);
+    parse_ptree(m_pt_next, ensemble_next, m_rc);
 }
+
+void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
+{
+    edi_conf = new_edi_conf;
+
+#if HAVE_OUTPUT_EDI
+    if (edi_conf.verbose) {
+        etiLog.log(info, "Setup EDI");
+    }
+
+    if (edi_conf.dump) {
+        edi_debug_file.open("./edi.debug");
+    }
+
+    if (edi_conf.enabled) {
+        edi_output.create(edi_conf.source_port);
+    }
+
+    if (edi_conf.verbose) {
+        etiLog.log(info, "EDI set up");
+    }
+
+    // The TagPacket will then be placed into an AFPacket
+    AFPacketiser afPacketiser;
+    edi_afPacketiser = afPacketiser;
+
+    // The AF Packet will be protected with reed-solomon and split in fragments
+    PFT pft(207, 3, edi_conf);
+    edi_pft = pft;
+#endif
+}
+
 
 // Run a set of checks on the configuration
 void DabMultiplexer::prepare()
 {
-    parse_ptree(m_pt, ensemble, m_rc, &edi_conf);
+    parse_ptree(m_pt, ensemble, m_rc);
 
     ensemble->enrol_at(m_rc);
 
@@ -180,18 +212,6 @@ void DabMultiplexer::prepare()
      * synchronisation is preserved.
      */
     gettimeofday(&mnsc_time, NULL);
-
-#if HAVE_OUTPUT_EDI
-    // Defaults for edi
-    edi_conf.enabled     = db.get_numeric("output.edi.enabled", 0) == 1;
-    if (edi_conf.enabled) {
-        edi_conf.dest_addr   = db.get("output.edi.dest_addr");
-        edi_conf.dest_port   = db.get_numeric("output.edi.dest_port");
-        edi_conf.source_port = db.get_numeric("output.edi.source_port");
-        edi_conf.dump        = db.get_numeric("output.edi.dump") == 1;
-        edi_conf.enable_pft  = db.get_numeric("output.edi.enable_pft") == 1;
-    }
-#endif // HAVE_OUTPUT_EDI
 }
 
 

@@ -77,6 +77,8 @@ class DabMultiplexer {
 
         void update_config(boost::property_tree::ptree pt);
 
+        void set_edi_config(const edi_configuration_t& new_edi_conf);
+
     private:
         void prepare_watermark(void);
         void prepare_subchannels(void);
@@ -123,6 +125,17 @@ class DabMultiplexer {
         // Multiplex reconfiguration requires two sets of configurations
         boost::property_tree::ptree m_pt_next;
         boost::shared_ptr<dabEnsemble> ensemble_next;
+
+#if HAVE_OUTPUT_EDI
+        std::ofstream edi_debug_file;
+        UdpSocket edi_output;
+
+        // The TagPacket will then be placed into an AFPacket
+        AFPacketiser edi_afPacketiser;
+
+        // The AF Packet will be protected with reed-solomon and split in fragments
+        PFT edi_pft;
+#endif // HAVE_OUTPUT_EDI
 };
 
 // DAB Mode

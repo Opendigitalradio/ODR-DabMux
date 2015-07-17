@@ -26,6 +26,7 @@
 #include "DabMultiplexer.h"
 #include "ConfigParser.h"
 #include <boost/make_shared.hpp>
+#include "fic/FIG.h"
 
 using namespace std;
 using namespace boost;

@@ -97,7 +97,10 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      ManagementServer.h ManagementServer.cpp \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp \
-                     zmq.hpp
+                     zmq.hpp \
+                     fig/FIG0.cpp fig/FIG0.h \
+                     fig/FIGCarousel.cpp fig/FIGCarousel.h \
+                     fig/FIG.h
 
 odr_bridgetest_CFLAGS   =-DBRIDGE_TEST
 odr_bridgetest_SOURCES  =bridge.c \

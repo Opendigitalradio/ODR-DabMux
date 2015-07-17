@@ -157,7 +157,7 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
     edi_afPacketiser = afPacketiser;
 
     // The AF Packet will be protected with reed-solomon and split in fragments
-    PFT pft(207, 3, edi_conf);
+    PFT pft(edi_conf);
     edi_pft = pft;
 #endif
 }
@@ -419,7 +419,9 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     // The above Tag Items will be assembled into a TAG Packet
     TagPacket edi_tagpacket;
 
-    edi_tagDETI.atstf = 0; // TODO add ATST support
+    edi_tagDETI.atstf = 1;
+    edi_tagDETI.utco = 0;
+    edi_tagDETI.seconds = 0;
 
     date = getDabTime();
 
@@ -1698,6 +1700,8 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         tist->TIST = htonl(0xffffff) | 0xff;
     }
 
+    edi_tagDETI.tsta = tist->TIST;
+
     timestamp += 3 << 17;
     if (timestamp > 0xf9ffff)
     {
@@ -1738,9 +1742,8 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
         edi_tagpacket.tag_items.push_back(&edi_tagDETI);
 
-        list<TagESTn>::iterator tag;
-        for (tag = edi_subchannels.begin(); tag != edi_subchannels.end(); ++tag) {
-            edi_tagpacket.tag_items.push_back(&(*tag));
+        for (auto& tag : edi_subchannels) {
+            edi_tagpacket.tag_items.push_back(&tag);
         }
 
         // Assemble into one AF Packet
@@ -1752,24 +1755,20 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                 edi_pft.Assemble(edi_afpacket);
 
             // Send over ethernet
-            vector< vector<uint8_t> >::iterator edi_frag;
-            for (edi_frag = edi_fragments.begin();
-                    edi_frag != edi_fragments.end();
-                    ++edi_frag) {
-
+            for (const auto& edi_frag : edi_fragments) {
                 UdpPacket udppacket;
 
                 InetAddress& addr = udppacket.getAddress();
                 addr.setAddress(edi_conf.dest_addr.c_str());
                 addr.setPort(edi_conf.dest_port);
 
-                udppacket.addData(&(edi_frag->front()), edi_frag->size());
+                udppacket.addData(&(edi_frag.front()), edi_frag.size());
 
                 edi_output.send(udppacket);
 
                 if (edi_conf.dump) {
                     std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-                    std::copy(edi_frag->begin(), edi_frag->end(), debug_iterator);
+                    std::copy(edi_frag.begin(), edi_frag.end(), debug_iterator);
                 }
             }
 
@@ -1790,11 +1789,11 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
             udppacket.addData(&(edi_afpacket.front()), edi_afpacket.size());
 
             edi_output.send(udppacket);
-        }
 
-        if (edi_conf.dump) {
-            std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-            std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
+            if (edi_conf.dump) {
+                std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+                std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
+            }
         }
     }
 #endif // HAVE_OUTPUT_EDI

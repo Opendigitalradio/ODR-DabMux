@@ -55,6 +55,8 @@
 
 // Configuration for EDI output
 struct edi_configuration_t {
+    unsigned chunk_len; // RSk, data length of each chunk
+    unsigned fec;       // number of fragments that can be recovered
     bool enabled;
     unsigned int source_port;
     bool dump;

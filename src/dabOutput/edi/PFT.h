@@ -57,11 +57,9 @@ class PFT
             m_verbose(false)
         { }
 
-        PFT(unsigned int RSDataWordLength,
-            unsigned int NumRecoverableFragments,
-            const edi_configuration_t &conf) :
-            m_k(RSDataWordLength),
-            m_m(NumRecoverableFragments),
+        PFT(const edi_configuration_t &conf) :
+            m_k(conf.chunk_len),
+            m_m(conf.fec),
             m_dest_port(conf.dest_port),
             m_pseq(0),
             m_verbose(conf.verbose)

@@ -106,7 +106,7 @@ class UdpPacket {
   ~UdpPacket();
 
   char *getData();
-  void addData(void *data, unsigned size);
+  void addData(const void *data, unsigned size);
   unsigned long getLength();
   unsigned long getSize();
   unsigned long getOffset();

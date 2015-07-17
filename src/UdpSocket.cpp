@@ -333,7 +333,7 @@ char *UdpPacket::getData()
  *  @param data Pointer to the data to add
  *  @param size Size in bytes of new data
  */
-void UdpPacket::addData(void *data, unsigned size)
+void UdpPacket::addData(const void *data, unsigned size)
 {
   if (length + size > this->size) {
     setSize(this->size << 1);

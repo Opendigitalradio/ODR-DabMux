@@ -331,6 +331,9 @@ int main(int argc, char *argv[])
                 edi_conf.enable_pft  = pt_edi.get<bool>("enable_pft");
                 edi_conf.verbose     = pt_edi.get<bool>("verbose");
 
+                edi_conf.fec         = pt_edi.get<unsigned int>("fec");
+                edi_conf.chunk_len   = pt_edi.get<unsigned int>("chunk_len", 207);
+
                 mux.set_edi_config(edi_conf);
 #else
                 throw runtime_error("EDI output not compiled in");

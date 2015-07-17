@@ -39,7 +39,7 @@
 #define AFHEADER_PT_TAG 'T'
 
 // AF Packet Major (3 bits) and Minor (4 bits) version
-#define AFHEADER_VERSION 0x8 // MAJ=1, MIN=0
+#define AFHEADER_VERSION 0x10 // MAJ=1, MIN=0
 
 AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
 {
@@ -65,6 +65,7 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
     // fill rest of header
     packet.push_back(seq >> 8);
     packet.push_back(seq & 0xFF);
+    seq++;
     packet.push_back((have_crc ? 0x80 : 0) | AFHEADER_VERSION); // ar_cf: CRC=1
     packet.push_back(AFHEADER_PT_TAG);
 

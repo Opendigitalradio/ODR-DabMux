@@ -296,6 +296,13 @@ outputs {
         ; Enable the PFT subsystem. If false, AFPackets are sent.
         enable_pft  false
 
+        ; How many lost fragments can be recovered by Reed-Solomon
+        fec         3
+
+        ; Length of a RS chunk, can be overriden
+        ;default=207
+        ;chunk_len   207
+
         ; Save the packets sent over ethernet to the file ./edi.debug
         dump        false
 

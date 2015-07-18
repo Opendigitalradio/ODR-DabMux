@@ -98,5 +98,21 @@ class FIG0_3 : public IFIG
         FIGRuntimeInformation *m_rti;
 };
 
+// FIG type 0/17
+class FIG0_17 : public IFIG
+{
+    public:
+        FIG0_17(FIGRuntimeInformation* rti);
+        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 17; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_17;
+};
+
 #endif // __FIG0_H_
 

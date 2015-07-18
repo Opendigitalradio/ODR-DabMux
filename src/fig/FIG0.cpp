@@ -384,3 +384,78 @@ size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
     return max_size - remaining;
 }
 
+//=========== FIG 0/17 ===========
+
+FIG0_17::FIG0_17(FIGRuntimeInformation *rti) :
+    m_rti(rti)
+{
+    serviceFIG0_17 = m_rti->ensemble->services.end();
+}
+
+size_t FIG0_17::fill(uint8_t *buf, size_t max_size)
+{
+    ssize_t remaining = max_size;
+    auto ensemble = m_rti->ensemble;
+
+    FIGtype0* fig0 = NULL;
+
+    if (serviceFIG0_17 == ensemble->services.end()) {
+        serviceFIG0_17 = ensemble->services.begin();
+    }
+    for (; serviceFIG0_17 != ensemble->services.end();
+            ++serviceFIG0_17) {
+
+        if (    (*serviceFIG0_17)->pty == 0 &&
+                (*serviceFIG0_17)->language == 0) {
+            continue;
+        }
+
+        if (fig0 == NULL) {
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 0;
+            fig0->OE = 0;
+            fig0->PD = 0;
+            fig0->Extension = 17;
+            buf += 2;
+            remaining -= 2;
+        }
+
+        if ((*serviceFIG0_17)->language == 0) {
+            if (remaining < 4) {
+                break;
+            }
+        }
+        else {
+            if (remaining < 5) {
+                break;
+            }
+        }
+
+        auto programme = (FIGtype0_17_programme*)buf;
+        programme->SId = htons((*serviceFIG0_17)->id);
+        programme->SD = 1;
+        programme->PS = 0;
+        programme->L = (*serviceFIG0_17)->language != 0;
+        programme->CC = 0;
+        programme->Rfa = 0;
+        programme->NFC = 0;
+        if ((*serviceFIG0_17)->language == 0) {
+            buf[3] = (*serviceFIG0_17)->pty;
+            fig0->Length += 4;
+            buf += 4;
+            remaining -= 4;
+        }
+        else {
+            buf[3] = (*serviceFIG0_17)->language;
+            buf[4] = (*serviceFIG0_17)->pty;
+            fig0->Length += 5;
+            buf += 5;
+            remaining -= 5;
+        }
+    }
+
+    return max_size - remaining;
+}
+

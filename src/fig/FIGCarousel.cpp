@@ -47,7 +47,8 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_0(&m_rti),
     m_fig0_1(&m_rti),
     m_fig0_2(&m_rti),
-    m_fig0_3(&m_rti)
+    m_fig0_3(&m_rti),
+    m_fig0_17(&m_rti)
 {
     m_rti.ensemble = ensemble;
     m_rti.currentFrame = 0;
@@ -57,12 +58,14 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     m_figs_available[std::make_pair(0, 1)] = &m_fig0_1;
     m_figs_available[std::make_pair(0, 2)] = &m_fig0_2;
     m_figs_available[std::make_pair(0, 3)] = &m_fig0_3;
+    m_figs_available[std::make_pair(0, 17)] = &m_fig0_17;
 
     const int fib0 = 0;
     allocate_fig_to_fib(0, 0, fib0);
     allocate_fig_to_fib(0, 1, fib0);
     allocate_fig_to_fib(0, 2, fib0);
     allocate_fig_to_fib(0, 3, fib0);
+    allocate_fig_to_fib(0, 17, fib0);
 }
 
 void FIGCarousel::set_currentFrame(unsigned long currentFrame)
@@ -151,99 +154,4 @@ void FIGCarousel::fib0(int framephase) {
         sorted_figs.erase(fig_el);
     }
 }
-
-#if 0
-void fib0 {
-    switch (insertFIG) {
-
-        case 0: case 4: case 8: case 12:
-            // FIG type 0/0, Multiplex Configuration Info (MCI),
-            //  Ensemble information
-            //  ERASED
-            break;
-
-        case 1: case 6: case 10: case 13:
-            // FIG type 0/1, MIC, Sub-Channel Organization,
-            // one instance of the part for each subchannel
-            //  ERASED
-            break;
-
-        case 2: case 9: case 11: case 14:
-            // FIG type 0/2, MCI, Service Organization, one instance of
-            // FIGtype0_2_Service for each subchannel
-            //  ERASED
-            break;
-
-        case 3:
-            // FIG type 0/2 for Data
-            //  ERASED
-            break;
-
-        case 5:
-            // ERASED
-            break;
-
-        case 7:
-            fig0 = NULL;
-            if (serviceFIG0_17 == ensemble->services.end()) {
-                serviceFIG0_17 = ensemble->services.begin();
-            }
-            for (; serviceFIG0_17 != ensemble->services.end();
-                    ++serviceFIG0_17) {
-
-                if (    (*serviceFIG0_17)->pty == 0 &&
-                        (*serviceFIG0_17)->language == 0) {
-                    continue;
-                }
-
-                if (fig0 == NULL) {
-                    fig0 = (FIGtype0*)&etiFrame[index];
-                    fig0->FIGtypeNumber = 0;
-                    fig0->Length = 1;
-                    fig0->CN = 0;
-                    fig0->OE = 0;
-                    fig0->PD = 0;
-                    fig0->Extension = 17;
-                    index += 2;
-                    figSize += 2;
-                }
-
-                if ((*serviceFIG0_17)->language == 0) {
-                    if (figSize + 4 > 30) {
-                        break;
-                    }
-                }
-                else {
-                    if (figSize + 5 > 30) {
-                        break;
-                    }
-                }
-
-                programme =
-                    (FIGtype0_17_programme*)&etiFrame[index];
-                programme->SId = htons((*serviceFIG0_17)->id);
-                programme->SD = 1;
-                programme->PS = 0;
-                programme->L = (*serviceFIG0_17)->language != 0;
-                programme->CC = 0;
-                programme->Rfa = 0;
-                programme->NFC = 0;
-                if ((*serviceFIG0_17)->language == 0) {
-                    etiFrame[index + 3] = (*serviceFIG0_17)->pty;
-                    fig0->Length += 4;
-                    index += 4;
-                    figSize += 4;
-                }
-                else {
-                    etiFrame[index + 3] = (*serviceFIG0_17)->language;
-                    etiFrame[index + 4] = (*serviceFIG0_17)->pty;
-                    fig0->Length += 5;
-                    index += 5;
-                    figSize += 5;
-                }
-            }
-            break;
-    }
-}
-#endif
 

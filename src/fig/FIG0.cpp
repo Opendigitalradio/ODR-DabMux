@@ -152,7 +152,7 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
 FIG0_2::FIG0_2(FIGRuntimeInformation *rti) :
     m_rti(rti)
 {
-    serviceProgFIG0_2 = m_rti->ensemble->services.end();
+    serviceFIG0_2 = m_rti->ensemble->services.end();
 }
 
 size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
@@ -163,17 +163,21 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more
     // space
-    if (serviceProgFIG0_2 == m_rti->ensemble->services.end()) {
-        serviceProgFIG0_2 = m_rti->ensemble->services.begin();
+    if (serviceFIG0_2 == m_rti->ensemble->services.end()) {
+        serviceFIG0_2 = m_rti->ensemble->services.begin();
     }
 
-    for (; serviceProgFIG0_2 != m_rti->ensemble->services.end();
-            ++serviceProgFIG0_2) {
-        if ((*serviceProgFIG0_2)->nbComponent(m_rti->ensemble->components) == 0) {
+    for (; serviceFIG0_2 != m_rti->ensemble->services.end();
+            ++serviceFIG0_2) {
+
+        // filter out services which have no components
+        if ((*serviceFIG0_2)->nbComponent(m_rti->ensemble->components) == 0) {
             continue;
         }
 
-        if ((*serviceProgFIG0_2)->getType(m_rti->ensemble) != Audio) {
+        // Exclude Fidc type services, TODO why ?
+        auto type = (*serviceFIG0_2)->getType(m_rti->ensemble);
+        if (type == Fidc) {
             continue;
         }
 
@@ -186,35 +190,56 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
             fig0_2->Length = 1;
             fig0_2->CN = 0;
             fig0_2->OE = 0;
-            fig0_2->PD = 0;
+            fig0_2->PD = (type == Audio) ? 0 : 1;
             fig0_2->Extension = 2;
             buf += 2;
             remaining -= 2;
         }
 
-        if (remaining < 3 + 2 *
-                (*serviceProgFIG0_2)->nbComponent(m_rti->ensemble->components)) {
+        if (type == Audio and
+                remaining < 3 + 2 *
+                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components)) {
             break;
         }
 
-        FIGtype0_2_Service *fig0_2serviceAudio = (FIGtype0_2_Service*)buf;
+        if (type != Audio and
+                remaining < 5 + 2 *
+                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components)) {
+            break;
+        }
 
-        fig0_2serviceAudio->SId = htons((*serviceProgFIG0_2)->id);
-        fig0_2serviceAudio->Local_flag = 0;
-        fig0_2serviceAudio->CAId = 0;
-        fig0_2serviceAudio->NbServiceComp =
-            (*serviceProgFIG0_2)->nbComponent(m_rti->ensemble->components);
-        buf += 3;
-        fig0_2->Length += 3;
-        remaining -= 3;
+        if (type == Audio) {
+            auto fig0_2serviceAudio = (FIGtype0_2_Service*)buf;
+
+            fig0_2serviceAudio->SId = htons((*serviceFIG0_2)->id);
+            fig0_2serviceAudio->Local_flag = 0;
+            fig0_2serviceAudio->CAId = 0;
+            fig0_2serviceAudio->NbServiceComp =
+                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components);
+            buf += 3;
+            fig0_2->Length += 3;
+            remaining -= 3;
+        }
+        else {
+            auto fig0_2serviceData = (FIGtype0_2_Service_data*)buf;
+
+            fig0_2serviceData->SId = htonl((*serviceFIG0_2)->id);
+            fig0_2serviceData->Local_flag = 0;
+            fig0_2serviceData->CAId = 0;
+            fig0_2serviceData->NbServiceComp =
+                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components);
+            buf += 5;
+            fig0_2->Length += 5;
+            remaining -= 5;
+        }
 
         int curCpnt = 0;
         for (auto component = getComponent(
-                    m_rti->ensemble->components, (*serviceProgFIG0_2)->id );
+                    m_rti->ensemble->components, (*serviceFIG0_2)->id );
                 component != m_rti->ensemble->components.end();
                 component = getComponent(
                     m_rti->ensemble->components,
-                    (*serviceProgFIG0_2)->id,
+                    (*serviceFIG0_2)->id,
                     component )
             ) {
             auto subchannel = getSubchannel(

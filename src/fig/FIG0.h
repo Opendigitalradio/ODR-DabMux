@@ -78,7 +78,7 @@ class FIG0_2 : public IFIG
 
     private:
         FIGRuntimeInformation *m_rti;
-        std::vector<std::shared_ptr<DabService> >::iterator serviceProgFIG0_2;
+        std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_2;
 };
 
 #endif // __FIG0_H_

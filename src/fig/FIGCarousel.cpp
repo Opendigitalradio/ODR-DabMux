@@ -32,11 +32,15 @@
 /**************** FIGCarouselElement ****************/
 void FIGCarouselElement::reduce_deadline()
 {
+#error "Wrong: deadline should decrement identically for all FIGs"
     deadline -= rate_increment_ms(fig->repetition_rate());
+
+    std::cerr << "FIG " << fig->name() <<
+        " deadline: " << deadline << std::endl;
 
     if (deadline < 0) {
         std::cerr << "FIG " << fig->name() <<
-            "has negative scheduling deadline" << std::endl;
+            " has negative scheduling deadline" << std::endl;
     }
 }
 
@@ -44,16 +48,13 @@ void FIGCarouselElement::reduce_deadline()
 /**************** FIGCarousel *****************/
 
 FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
+    m_rti(ensemble),
     m_fig0_0(&m_rti),
     m_fig0_1(&m_rti),
     m_fig0_2(&m_rti),
     m_fig0_3(&m_rti),
     m_fig0_17(&m_rti)
 {
-    m_rti.ensemble = ensemble;
-    m_rti.currentFrame = 0;
-    m_rti.factumAnalyzer = false;
-
     m_figs_available[std::make_pair(0, 0)] = &m_fig0_0;
     m_figs_available[std::make_pair(0, 1)] = &m_fig0_1;
     m_figs_available[std::make_pair(0, 2)] = &m_fig0_2;
@@ -94,8 +95,10 @@ void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, int fib)
     }
 }
 
-void FIGCarousel::fib0(int framephase) {
+size_t FIGCarousel::fib0(uint8_t *buf, size_t bufsize, int framephase) {
     std::list<FIGCarouselElement> figs = m_fibs[0];
+
+    std::cerr << "fib0(framephase=" << framephase << ")" << std::endl;
 
     std::vector<FIGCarouselElement> sorted_figs;
 
@@ -114,10 +117,7 @@ void FIGCarousel::fib0(int framephase) {
             });
 
     /* Data structure to carry FIB */
-    const size_t fib_size = 30;
-    uint8_t fib_data[fib_size];
-    uint8_t *fib_data_current = fib_data;
-    size_t available_size = fib_size;
+    size_t available_size = bufsize;
 
     /* Take special care for FIG0/0 */
     auto fig0_0 = find_if(sorted_figs.begin(), sorted_figs.end(),
@@ -126,14 +126,15 @@ void FIGCarousel::fib0(int framephase) {
             });
 
     if (fig0_0 != sorted_figs.end()) {
+        std::cerr << "Special FIG 0/0" << std::endl;
         sorted_figs.erase(fig0_0);
 
         if (framephase == 0) { // TODO check for all TM
-            size_t written = fig0_0->fig->fill(fib_data_current, available_size);
+            size_t written = fig0_0->fig->fill(buf, available_size);
 
             if (written > 0) {
                 available_size -= written;
-                fib_data_current += written;
+                buf += written;
             }
             else {
                 throw std::runtime_error("Failed to write FIG0/0");
@@ -141,17 +142,23 @@ void FIGCarousel::fib0(int framephase) {
         }
     }
 
+    for (auto& fig : sorted_figs) {
+        std::cerr << "   FIG:" << fig.fig->name() << std::endl;
+    }
+
     /* Fill the FIB with the FIGs, taking the earliest deadline first */
     while (available_size > 0 and not sorted_figs.empty()) {
         auto fig_el = sorted_figs.begin();
-        size_t written = fig_el->fig->fill(fib_data_current, available_size);
+        size_t written = fig_el->fig->fill(buf, available_size);
 
         if (written > 0) {
             available_size -= written;
-            fib_data_current += written;
+            buf += written;
         }
 
         sorted_figs.erase(fig_el);
     }
+
+    return bufsize - available_size;
 }
 

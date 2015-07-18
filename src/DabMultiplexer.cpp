@@ -86,11 +86,11 @@ DabMultiplexer::DabMultiplexer(
     sync(0x49C5F8),
     currentFrame(0),
     insertFIG(0),
-    rotateFIB(0)
+    rotateFIB(0),
+    ensemble(boost::make_shared<dabEnsemble>()),
+    fig_carousel(ensemble)
 {
     prepare_watermark();
-
-    ensemble = boost::make_shared<dabEnsemble>();
 }
 
 void DabMultiplexer::prepare_watermark()
@@ -631,7 +631,13 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     unsigned char figSize = 0;
 
     // FIB 0 Insertion
-    switch (insertFIG) {
+    bool new_fib0_carousel = m_pt.get("general.new_fib0_carousel", false);
+    if (new_fib0_carousel) {
+        fig_carousel.fib0(&etiFrame[index], 30, currentFrame % 4);
+    }
+    // Skip creating a block for the else because
+    // I don't want to reindent the whole switch block
+    else switch (insertFIG) {
 
         case 0:
         case 4:

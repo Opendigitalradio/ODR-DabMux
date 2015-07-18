@@ -30,11 +30,16 @@
 #include <boost/shared_ptr.hpp>
 #include "MuxElements.h"
 
-struct FIGRuntimeInformation {
-    unsigned long currentFrame;
-    boost::shared_ptr<dabEnsemble> ensemble;
-    bool factumAnalyzer;
+class FIGRuntimeInformation {
+    public:
+        FIGRuntimeInformation(boost::shared_ptr<dabEnsemble> e) :
+            currentFrame(0),
+            ensemble(e),
+            factumAnalyzer(false) {}
 
+        unsigned long currentFrame;
+        boost::shared_ptr<dabEnsemble> ensemble;
+        bool factumAnalyzer;
 };
 
 // Recommended FIG rates according to ETSI TR 101 496-2 Table 3.6.1

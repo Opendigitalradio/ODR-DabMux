@@ -51,7 +51,7 @@ class FIGCarousel {
 
         void allocate_fig_to_fib(int figtype, int extension, int fib);
 
-        void fib0(int framephase);
+        size_t fib0(uint8_t *buf, size_t bufsize, int framephase);
 
     private:
         FIGRuntimeInformation m_rti;

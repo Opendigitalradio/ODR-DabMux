@@ -35,6 +35,7 @@
 #include "dabOutput/edi/TagPacket.h"
 #include "dabOutput/edi/AFPacket.h"
 #include "dabOutput/edi/PFT.h"
+#include "fig/FIGCarousel.h"
 #include "crc.h"
 #include "utils.h"
 #include "UdpSocket.h"
@@ -136,6 +137,9 @@ class DabMultiplexer {
         // The AF Packet will be protected with reed-solomon and split in fragments
         PFT edi_pft;
 #endif // HAVE_OUTPUT_EDI
+
+        /* New FIG Carousel */
+        FIGCarousel fig_carousel;
 };
 
 // DAB Mode

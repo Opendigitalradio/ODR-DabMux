@@ -33,6 +33,8 @@
 struct FIGRuntimeInformation {
     unsigned long currentFrame;
     boost::shared_ptr<dabEnsemble> ensemble;
+    bool factumAnalyzer;
+
 };
 
 // Recommended FIG rates according to ETSI TR 101 496-2 Table 3.6.1

@@ -29,6 +29,7 @@
 #include "fig/FIGCarousel.h"
 #include <iostream>
 
+/**************** FIGCarouselElement ****************/
 void FIGCarouselElement::reduce_deadline()
 {
     deadline -= rate_increment_ms(fig->repetition_rate());
@@ -39,20 +40,29 @@ void FIGCarouselElement::reduce_deadline()
     }
 }
 
+
+/**************** FIGCarousel *****************/
+
 FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_0(&m_rti),
     m_fig0_1(&m_rti),
-    m_fig0_2(&m_rti)
+    m_fig0_2(&m_rti),
+    m_fig0_3(&m_rti)
 {
     m_rti.ensemble = ensemble;
     m_rti.currentFrame = 0;
+    m_rti.factumAnalyzer = false;
+
     m_figs_available[std::make_pair(0, 0)] = &m_fig0_0;
     m_figs_available[std::make_pair(0, 1)] = &m_fig0_1;
     m_figs_available[std::make_pair(0, 2)] = &m_fig0_2;
+    m_figs_available[std::make_pair(0, 3)] = &m_fig0_3;
 
-    allocate_fig_to_fib(0, 0, 0);
-    allocate_fig_to_fib(0, 1, 0);
-    allocate_fig_to_fib(0, 2, 0);
+    const int fib0 = 0;
+    allocate_fig_to_fib(0, 0, fib0);
+    allocate_fig_to_fib(0, 1, fib0);
+    allocate_fig_to_fib(0, 2, fib0);
+    allocate_fig_to_fib(0, 3, fib0);
 }
 
 void FIGCarousel::set_currentFrame(unsigned long currentFrame)
@@ -170,74 +180,7 @@ void fib0 {
             break;
 
         case 5:
-            fig0_3_header = NULL;
-
-            for (component = ensemble->components.begin();
-                    component != ensemble->components.end();
-                    ++component) {
-                subchannel = getSubchannel(ensemble->subchannels,
-                        (*component)->subchId);
-
-                if (subchannel == ensemble->subchannels.end()) {
-                    etiLog.log(error,
-                            "Subchannel %i does not exist for component "
-                            "of service %i\n",
-                            (*component)->subchId, (*component)->serviceId);
-                    throw MuxInitException();
-                }
-
-                if ((*subchannel)->type != Packet)
-                    continue;
-
-                if (fig0_3_header == NULL) {
-                    fig0_3_header = (FIGtype0_3_header*)&etiFrame[index];
-                    fig0_3_header->FIGtypeNumber = 0;
-                    fig0_3_header->Length = 1;
-                    fig0_3_header->CN = 0;
-                    fig0_3_header->OE = 0;
-                    fig0_3_header->PD = 0;
-                    fig0_3_header->Extension = 3;
-
-                    index += 2;
-                    figSize += 2;
-                }
-
-                bool factumAnalyzer = m_pt.get("general.writescca", false);
-
-                /*  Warning: When bit SCCA_flag is unset(0), the multiplexer
-                 *  R&S does not send the SCCA field. But, in the Factum ETI
-                 *  analyzer, if this field is not there, it is an error.
-                 */
-                fig0_3_data = (FIGtype0_3_data*)&etiFrame[index];
-                fig0_3_data->setSCId((*component)->packet.id);
-                fig0_3_data->rfa = 0;
-                fig0_3_data->SCCA_flag = 0;
-                // if 0, datagroups are used
-                fig0_3_data->DG_flag = !(*component)->packet.datagroup;
-                fig0_3_data->rfu = 0;
-                fig0_3_data->DSCTy = (*component)->type;
-                fig0_3_data->SubChId = (*subchannel)->id;
-                fig0_3_data->setPacketAddress((*component)->packet.address);
-                if (factumAnalyzer) {
-                    fig0_3_data->SCCA = 0;
-                }
-
-                fig0_3_header->Length += 5;
-                index += 5;
-                figSize += 5;
-                if (factumAnalyzer) {
-                    fig0_3_header->Length += 2;
-                    index += 2;
-                    figSize += 2;
-                }
-
-                if (figSize > 30) {
-                    etiLog.log(error,
-                            "can't add to Fic Fig 0/3, "
-                            "too much packet service\n");
-                    throw MuxInitException();
-                }
-            }
+            // ERASED
             break;
 
         case 7:

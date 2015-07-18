@@ -63,6 +63,7 @@ class FIGCarousel {
         FIG0_0 m_fig0_0;
         FIG0_1 m_fig0_1;
         FIG0_2 m_fig0_2;
+        FIG0_3 m_fig0_3;
 };
 
 #endif // __FIG_CAROUSEL_H_

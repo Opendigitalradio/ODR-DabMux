@@ -304,3 +304,83 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
     return max_size - remaining;
 }
 
+//=========== FIG 0/3 ===========
+
+FIG0_3::FIG0_3(FIGRuntimeInformation *rti) :
+    m_rti(rti)
+{
+}
+
+size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
+{
+    ssize_t remaining = max_size;
+
+    FIGtype0_3_header *fig0_3_header = NULL;
+    FIGtype0_3_data *fig0_3_data = NULL;
+
+    for (auto& component : m_rti->ensemble->components) {
+        auto subchannel = getSubchannel(m_rti->ensemble->subchannels,
+                component->subchId);
+
+        if (subchannel == m_rti->ensemble->subchannels.end()) {
+            etiLog.log(error,
+                    "Subchannel %i does not exist for component "
+                    "of service %i\n",
+                    component->subchId, component->serviceId);
+            throw MuxInitException();
+        }
+
+        if ((*subchannel)->type != Packet)
+            continue;
+
+        if (fig0_3_header == NULL) {
+            fig0_3_header = (FIGtype0_3_header*)buf;
+            fig0_3_header->FIGtypeNumber = 0;
+            fig0_3_header->Length = 1;
+            fig0_3_header->CN = 0;
+            fig0_3_header->OE = 0;
+            fig0_3_header->PD = 0;
+            fig0_3_header->Extension = 3;
+
+            buf += 2;
+            remaining -= 2;
+        }
+
+        /*  Warning: When bit SCCA_flag is unset(0), the multiplexer
+         *  R&S does not send the SCCA field. But, in the Factum ETI
+         *  analyzer, if this field is not there, it is an error.
+         */
+        fig0_3_data = (FIGtype0_3_data*)buf;
+        fig0_3_data->setSCId(component->packet.id);
+        fig0_3_data->rfa = 0;
+        fig0_3_data->SCCA_flag = 0;
+        // if 0, datagroups are used
+        fig0_3_data->DG_flag = !component->packet.datagroup;
+        fig0_3_data->rfu = 0;
+        fig0_3_data->DSCTy = component->type;
+        fig0_3_data->SubChId = (*subchannel)->id;
+        fig0_3_data->setPacketAddress(component->packet.address);
+        if (m_rti->factumAnalyzer) {
+            fig0_3_data->SCCA = 0;
+        }
+
+        fig0_3_header->Length += 5;
+        buf += 5;
+        remaining -= 5;
+        if (m_rti->factumAnalyzer) {
+            fig0_3_header->Length += 2;
+            buf += 2;
+            remaining -= 2;
+        }
+
+        if (remaining < 0) {
+            etiLog.level(error) <<
+                    "can't add FIG 0/3 to FIB, "
+                    "too many packet services";
+            throw MuxInitException();
+        }
+    }
+
+    return max_size - remaining;
+}
+

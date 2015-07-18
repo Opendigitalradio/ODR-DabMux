@@ -74,11 +74,28 @@ class FIG0_2 : public IFIG
         virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
 
         virtual const int figtype(void) const { return 0; }
-        virtual const int figextension(void) const { return 1; }
+        virtual const int figextension(void) const { return 2; }
 
     private:
         FIGRuntimeInformation *m_rti;
         std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_2;
+};
+
+// FIG type 0/3
+// The Extension 3 of FIG type 0 (FIG 0/3) gives additional information about
+// the service component description in packet mode.
+class FIG0_3 : public IFIG
+{
+    public:
+        FIG0_3(FIGRuntimeInformation* rti);
+        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 3; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
 };
 
 #endif // __FIG0_H_

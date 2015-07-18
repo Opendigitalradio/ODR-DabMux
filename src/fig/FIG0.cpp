@@ -32,7 +32,6 @@
 
 //=========== FIG 0/0 ===========
 
-
 size_t FIG0_0::fill(uint8_t *buf, size_t max_size)
 {
     if (max_size < 6) {
@@ -58,6 +57,7 @@ size_t FIG0_0::fill(uint8_t *buf, size_t max_size)
     return 6;
 }
 
+
 //=========== FIG 0/1 ===========
 
 FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
@@ -69,9 +69,13 @@ FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
 size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
 {
     size_t remaining = max_size;
+
     if (max_size < 6) {
         return 0;
     }
+
+    auto ensemble = m_rti->ensemble;
+
     FIGtype0_1 *figtype0_1;
     figtype0_1 = (FIGtype0_1*)buf;
 
@@ -86,11 +90,11 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more
     // space in the FIG0/1
-    if (subchannelFIG0_1 == m_rti->ensemble->subchannels.end()) {
-        subchannelFIG0_1 = m_rti->ensemble->subchannels.begin();
+    if (subchannelFIG0_1 == ensemble->subchannels.end()) {
+        subchannelFIG0_1 = ensemble->subchannels.begin();
     }
 
-    for (; subchannelFIG0_1 != m_rti->ensemble->subchannels.end();
+    for (; subchannelFIG0_1 != ensemble->subchannels.end();
             ++subchannelFIG0_1) {
         dabProtection* protection = &(*subchannelFIG0_1)->protection;
 
@@ -147,6 +151,7 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
     return max_size - remaining;
 }
 
+
 //=========== FIG 0/2 ===========
 
 FIG0_2::FIG0_2(FIGRuntimeInformation *rti) :
@@ -161,22 +166,24 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
     int cur = 0;
     ssize_t remaining = max_size;
 
+    auto ensemble = m_rti->ensemble;
+
     // Rotate through the subchannels until there is no more
     // space
-    if (serviceFIG0_2 == m_rti->ensemble->services.end()) {
-        serviceFIG0_2 = m_rti->ensemble->services.begin();
+    if (serviceFIG0_2 == ensemble->services.end()) {
+        serviceFIG0_2 = ensemble->services.begin();
     }
 
-    for (; serviceFIG0_2 != m_rti->ensemble->services.end();
+    for (; serviceFIG0_2 != ensemble->services.end();
             ++serviceFIG0_2) {
 
         // filter out services which have no components
-        if ((*serviceFIG0_2)->nbComponent(m_rti->ensemble->components) == 0) {
+        if ((*serviceFIG0_2)->nbComponent(ensemble->components) == 0) {
             continue;
         }
 
         // Exclude Fidc type services, TODO why ?
-        auto type = (*serviceFIG0_2)->getType(m_rti->ensemble);
+        auto type = (*serviceFIG0_2)->getType(ensemble);
         if (type == Fidc) {
             continue;
         }
@@ -198,13 +205,13 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
 
         if (type == Audio and
                 remaining < 3 + 2 *
-                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components)) {
+                (*serviceFIG0_2)->nbComponent(ensemble->components)) {
             break;
         }
 
         if (type != Audio and
                 remaining < 5 + 2 *
-                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components)) {
+                (*serviceFIG0_2)->nbComponent(ensemble->components)) {
             break;
         }
 
@@ -215,7 +222,7 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
             fig0_2serviceAudio->Local_flag = 0;
             fig0_2serviceAudio->CAId = 0;
             fig0_2serviceAudio->NbServiceComp =
-                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components);
+                (*serviceFIG0_2)->nbComponent(ensemble->components);
             buf += 3;
             fig0_2->Length += 3;
             remaining -= 3;
@@ -227,7 +234,7 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
             fig0_2serviceData->Local_flag = 0;
             fig0_2serviceData->CAId = 0;
             fig0_2serviceData->NbServiceComp =
-                (*serviceFIG0_2)->nbComponent(m_rti->ensemble->components);
+                (*serviceFIG0_2)->nbComponent(ensemble->components);
             buf += 5;
             fig0_2->Length += 5;
             remaining -= 5;
@@ -235,17 +242,17 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
 
         int curCpnt = 0;
         for (auto component = getComponent(
-                    m_rti->ensemble->components, (*serviceFIG0_2)->id );
-                component != m_rti->ensemble->components.end();
+                    ensemble->components, (*serviceFIG0_2)->id );
+                component != ensemble->components.end();
                 component = getComponent(
-                    m_rti->ensemble->components,
+                    ensemble->components,
                     (*serviceFIG0_2)->id,
                     component )
             ) {
             auto subchannel = getSubchannel(
-                    m_rti->ensemble->subchannels, (*component)->subchId);
+                    ensemble->subchannels, (*component)->subchId);
 
-            if (subchannel == m_rti->ensemble->subchannels.end()) {
+            if (subchannel == ensemble->subchannels.end()) {
                 etiLog.log(error,
                         "Subchannel %i does not exist for component "
                         "of service %i\n",
@@ -304,6 +311,7 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
     return max_size - remaining;
 }
 
+
 //=========== FIG 0/3 ===========
 
 FIG0_3::FIG0_3(FIGRuntimeInformation *rti) :
@@ -314,15 +322,16 @@ FIG0_3::FIG0_3(FIGRuntimeInformation *rti) :
 size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
 {
     ssize_t remaining = max_size;
+    auto ensemble = m_rti->ensemble;
 
     FIGtype0_3_header *fig0_3_header = NULL;
     FIGtype0_3_data *fig0_3_data = NULL;
 
-    for (auto& component : m_rti->ensemble->components) {
-        auto subchannel = getSubchannel(m_rti->ensemble->subchannels,
+    for (auto& component : ensemble->components) {
+        auto subchannel = getSubchannel(ensemble->subchannels,
                 component->subchId);
 
-        if (subchannel == m_rti->ensemble->subchannels.end()) {
+        if (subchannel == ensemble->subchannels.end()) {
             etiLog.log(error,
                     "Subchannel %i does not exist for component "
                     "of service %i\n",
@@ -383,6 +392,7 @@ size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
 
     return max_size - remaining;
 }
+
 
 //=========== FIG 0/17 ===========
 

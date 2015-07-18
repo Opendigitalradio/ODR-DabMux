@@ -35,9 +35,13 @@
 class FIG0_0 : public IFIG
 {
     public:
-        FIG0_0(FIGRuntimeInformation* rti) : m_rti(rti) {}
+        FIG0_0(FIGRuntimeInformation* rti) :
+            m_rti(rti) {}
         virtual size_t fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 0; }
 
     private:
         FIGRuntimeInformation *m_rti;
@@ -52,9 +56,29 @@ class FIG0_1 : public IFIG
         virtual size_t fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
 
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 1; }
+
     private:
         FIGRuntimeInformation *m_rti;
         std::vector<dabSubchannel*>::iterator subchannelFIG0_1;
+};
+
+// FIG type 0/2, MCI, Service Organization, one instance of
+// FIGtype0_2_Service for each subchannel
+class FIG0_2 : public IFIG
+{
+    public:
+        FIG0_2(FIGRuntimeInformation* rti);
+        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 1; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        std::vector<std::shared_ptr<DabService> >::iterator serviceProgFIG0_2;
 };
 
 #endif // __FIG0_H_

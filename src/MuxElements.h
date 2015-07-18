@@ -100,7 +100,7 @@ class DabLabel
 class DabService;
 class DabComponent;
 
-struct dabSubchannel;
+class dabSubchannel;
 class dabEnsemble : public RemoteControllable {
     public:
         dabEnsemble()

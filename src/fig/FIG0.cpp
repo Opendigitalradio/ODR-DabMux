@@ -59,9 +59,9 @@ size_t FIG0_0::fill(uint8_t *buf, size_t max_size)
 }
 
 //=========== FIG 0/1 ===========
-//
 
-FIG0_1::FIG0_1(FIGRuntimeInformation *rti) : m_rti(rti)
+FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
+    m_rti(rti)
 {
     subchannelFIG0_1 = m_rti->ensemble->subchannels.end();
 }
@@ -72,8 +72,8 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
     if (max_size < 6) {
         return 0;
     }
-    FIGtype0_1 *fig0_1;
-    figtype0_1 = (FIGtype0_1 *)buf;
+    FIGtype0_1 *figtype0_1;
+    figtype0_1 = (FIGtype0_1*)buf;
 
     figtype0_1->FIGtypeNumber = 0;
     figtype0_1->Length = 1;
@@ -100,7 +100,7 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
         }
 
         if (protection->form == UEP) {
-            fig0_1subchShort =
+            FIG_01_SubChannel_ShortF *fig0_1subchShort =
                 (FIG_01_SubChannel_ShortF*)buf;
             fig0_1subchShort->SubChId = (*subchannelFIG0_1)->id;
 
@@ -119,7 +119,7 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
             figtype0_1->Length += 3;
         }
         else if (protection->form == EEP) {
-            fig0_1subchLong1 =
+            FIG_01_SubChannel_LongF *fig0_1subchLong1 =
                 (FIG_01_SubChannel_LongF*)buf;
             fig0_1subchLong1->SubChId = (*subchannelFIG0_1)->id;
 
@@ -146,3 +146,136 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
 
     return max_size - remaining;
 }
+
+//=========== FIG 0/2 ===========
+
+FIG0_2::FIG0_2(FIGRuntimeInformation *rti) :
+    m_rti(rti)
+{
+    serviceProgFIG0_2 = m_rti->ensemble->services.end();
+}
+
+size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
+{
+    FIGtype0_2 *fig0_2 = NULL;
+    int cur = 0;
+    ssize_t remaining = max_size;
+
+    // Rotate through the subchannels until there is no more
+    // space
+    if (serviceProgFIG0_2 == m_rti->ensemble->services.end()) {
+        serviceProgFIG0_2 = m_rti->ensemble->services.begin();
+    }
+
+    for (; serviceProgFIG0_2 != m_rti->ensemble->services.end();
+            ++serviceProgFIG0_2) {
+        if ((*serviceProgFIG0_2)->nbComponent(m_rti->ensemble->components) == 0) {
+            continue;
+        }
+
+        if ((*serviceProgFIG0_2)->getType(m_rti->ensemble) != Audio) {
+            continue;
+        }
+
+        ++cur;
+
+        if (fig0_2 == NULL) {
+            fig0_2 = (FIGtype0_2 *)buf;
+
+            fig0_2->FIGtypeNumber = 0;
+            fig0_2->Length = 1;
+            fig0_2->CN = 0;
+            fig0_2->OE = 0;
+            fig0_2->PD = 0;
+            fig0_2->Extension = 2;
+            buf += 2;
+            remaining -= 2;
+        }
+
+        if (remaining < 3 + 2 *
+                (*serviceProgFIG0_2)->nbComponent(m_rti->ensemble->components)) {
+            break;
+        }
+
+        FIGtype0_2_Service *fig0_2serviceAudio = (FIGtype0_2_Service*)buf;
+
+        fig0_2serviceAudio->SId = htons((*serviceProgFIG0_2)->id);
+        fig0_2serviceAudio->Local_flag = 0;
+        fig0_2serviceAudio->CAId = 0;
+        fig0_2serviceAudio->NbServiceComp =
+            (*serviceProgFIG0_2)->nbComponent(m_rti->ensemble->components);
+        buf += 3;
+        fig0_2->Length += 3;
+        remaining -= 3;
+
+        int curCpnt = 0;
+        for (auto component = getComponent(
+                    m_rti->ensemble->components, (*serviceProgFIG0_2)->id );
+                component != m_rti->ensemble->components.end();
+                component = getComponent(
+                    m_rti->ensemble->components,
+                    (*serviceProgFIG0_2)->id,
+                    component )
+            ) {
+            auto subchannel = getSubchannel(
+                    m_rti->ensemble->subchannels, (*component)->subchId);
+
+            if (subchannel == m_rti->ensemble->subchannels.end()) {
+                etiLog.log(error,
+                        "Subchannel %i does not exist for component "
+                        "of service %i\n",
+                        (*component)->subchId, (*component)->serviceId);
+                throw MuxInitException();
+            }
+
+            switch ((*subchannel)->type) {
+                case Audio:
+                    {
+                        auto audio_description = (FIGtype0_2_audio_component*)buf;
+                        audio_description->TMid    = 0;
+                        audio_description->ASCTy   = (*component)->type;
+                        audio_description->SubChId = (*subchannel)->id;
+                        audio_description->PS      = ((curCpnt == 0) ? 1 : 0);
+                        audio_description->CA_flag = 0;
+                    }
+                    break;
+                case DataDmb:
+                    {
+                        auto data_description = (FIGtype0_2_data_component*)buf;
+                        data_description->TMid    = 1;
+                        data_description->DSCTy   = (*component)->type;
+                        data_description->SubChId = (*subchannel)->id;
+                        data_description->PS      = ((curCpnt == 0) ? 1 : 0);
+                        data_description->CA_flag = 0;
+                    }
+                    break;
+                case Packet:
+                    {
+                        auto packet_description = (FIGtype0_2_packet_component*)buf;
+                        packet_description->TMid    = 3;
+                        packet_description->setSCId((*component)->packet.id);
+                        packet_description->PS      = ((curCpnt == 0) ? 1 : 0);
+                        packet_description->CA_flag = 0;
+                    }
+                    break;
+                default:
+                    etiLog.log(error,
+                            "Component type not supported\n");
+                    throw MuxInitException();
+            }
+            buf += 2;
+            fig0_2->Length += 2;
+            remaining -= 2;
+            if (remaining < 0) {
+                etiLog.log(error,
+                        "Sorry, no space left in FIG 0/2 to insert "
+                        "component %i of program service %i.\n",
+                        curCpnt, cur);
+                throw MuxInitException();
+            }
+            ++curCpnt;
+        }
+    }
+    return max_size - remaining;
+}
+

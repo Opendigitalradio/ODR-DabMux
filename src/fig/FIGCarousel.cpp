@@ -27,14 +27,32 @@
 */
 
 #include "fig/FIGCarousel.h"
-#include "fig/FIG0.h"
+#include <iostream>
 
-FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble)
+void FIGCarouselElement::reduce_deadline()
+{
+    deadline -= rate_increment_ms(fig->repetition_rate());
+
+    if (deadline < 0) {
+        std::cerr << "FIG " << fig->name() <<
+            "has negative scheduling deadline" << std::endl;
+    }
+}
+
+FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
+    m_fig0_0(&m_rti),
+    m_fig0_1(&m_rti),
+    m_fig0_2(&m_rti)
 {
     m_rti.ensemble = ensemble;
     m_rti.currentFrame = 0;
-    m_figs.emplace_back<FIG0_0>(&m_rti);
-    m_figs.emplace_back<FIG0_1>(&m_rti);
+    m_figs_available[std::make_pair(0, 0)] = &m_fig0_0;
+    m_figs_available[std::make_pair(0, 1)] = &m_fig0_1;
+    m_figs_available[std::make_pair(0, 2)] = &m_fig0_2;
+
+    allocate_fig_to_fib(0, 0, 0);
+    allocate_fig_to_fib(0, 1, 0);
+    allocate_fig_to_fib(0, 2, 0);
 }
 
 void FIGCarousel::set_currentFrame(unsigned long currentFrame)
@@ -42,232 +60,108 @@ void FIGCarousel::set_currentFrame(unsigned long currentFrame)
     m_rti.currentFrame = currentFrame;
 }
 
+void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, int fib)
+{
+    if (fib < 0 or fib >= 3) {
+        throw std::out_of_range("Invalid FIB");
+    }
+
+    auto fig = m_figs_available.find(std::make_pair(figtype, extension));
+
+    if (fig != m_figs_available.end()) {
+        FIGCarouselElement el;
+        el.fig = fig->second;
+        el.deadline = 0;
+        m_fibs[fib].push_back(el);
+    }
+    else {
+        std::stringstream ss;
+        ss << "No FIG " << figtype << "/" << extension << " available";
+        throw std::runtime_error(ss.str());
+    }
+}
+
+void FIGCarousel::fib0(int framephase) {
+    std::list<FIGCarouselElement> figs = m_fibs[0];
+
+    std::vector<FIGCarouselElement> sorted_figs;
+
+    /* Decrement all deadlines according to the desired repetition rate */
+    for (auto& fig_el : figs) {
+        fig_el.reduce_deadline();
+
+        sorted_figs.push_back(fig_el);
+    }
+
+    /* Sort the FIGs in the FIB according to their deadline */
+    std::sort(sorted_figs.begin(), sorted_figs.end(),
+            []( const FIGCarouselElement& left,
+                const FIGCarouselElement& right) {
+            return left.deadline < right.deadline;
+            });
+
+    /* Data structure to carry FIB */
+    const size_t fib_size = 30;
+    uint8_t fib_data[fib_size];
+    uint8_t *fib_data_current = fib_data;
+    size_t available_size = fib_size;
+
+    /* Take special care for FIG0/0 */
+    auto fig0_0 = find_if(sorted_figs.begin(), sorted_figs.end(),
+            [](const FIGCarouselElement& f) {
+            return f.fig->repetition_rate() == FIG_rate::FIG0_0;
+            });
+
+    if (fig0_0 != sorted_figs.end()) {
+        sorted_figs.erase(fig0_0);
+
+        if (framephase == 0) { // TODO check for all TM
+            size_t written = fig0_0->fig->fill(fib_data_current, available_size);
+
+            if (written > 0) {
+                available_size -= written;
+                fib_data_current += written;
+            }
+            else {
+                throw std::runtime_error("Failed to write FIG0/0");
+            }
+        }
+    }
+
+    /* Fill the FIB with the FIGs, taking the earliest deadline first */
+    while (available_size > 0 and not sorted_figs.empty()) {
+        auto fig_el = sorted_figs.begin();
+        size_t written = fig_el->fig->fill(fib_data_current, available_size);
+
+        if (written > 0) {
+            available_size -= written;
+            fib_data_current += written;
+        }
+
+        sorted_figs.erase(fig_el);
+    }
+}
+
 #if 0
 void fib0 {
     switch (insertFIG) {
 
-        case 0:
-        case 4:
-        case 8:
-        case 12:
+        case 0: case 4: case 8: case 12:
             // FIG type 0/0, Multiplex Configuration Info (MCI),
             //  Ensemble information
-            fig0_0 = (FIGtype0_0 *) & etiFrame[index];
-
-            fig0_0->FIGtypeNumber = 0;
-            fig0_0->Length = 5;
-            fig0_0->CN = 0;
-            fig0_0->OE = 0;
-            fig0_0->PD = 0;
-            fig0_0->Extension = 0;
-
-            fig0_0->EId = htons(ensemble->id);
-            fig0_0->Change = 0;
-            fig0_0->Al = 0;
-            fig0_0->CIFcnt_hight = (currentFrame / 250) % 20;
-            fig0_0->CIFcnt_low = (currentFrame % 250);
-            index = index + 6;
-            figSize += 6;
-
+            //  ERASED
             break;
 
-        case 1:
-        case 6:
-        case 10:
-        case 13:
+        case 1: case 6: case 10: case 13:
             // FIG type 0/1, MIC, Sub-Channel Organization,
             // one instance of the part for each subchannel
-            figtype0_1 = (FIGtype0_1 *) & etiFrame[index];
-
-            figtype0_1->FIGtypeNumber = 0;
-            figtype0_1->Length = 1;
-            figtype0_1->CN = 0;
-            figtype0_1->OE = 0;
-            figtype0_1->PD = 0;
-            figtype0_1->Extension = 1;
-            index = index + 2;
-            figSize += 2;
-
-            // Rotate through the subchannels until there is no more
-            // space in the FIG0/1
-            if (subchannelFIG0_1 == ensemble->subchannels.end()) {
-                subchannelFIG0_1 = ensemble->subchannels.begin();
-            }
-
-            for (; subchannelFIG0_1 != ensemble->subchannels.end();
-                    ++subchannelFIG0_1) {
-                dabProtection* protection = &(*subchannelFIG0_1)->protection;
-
-                if ( (protection->form == UEP && figSize > 27) ||
-                        (protection->form == EEP && figSize > 26) ) {
-                    break;
-                }
-
-                if (protection->form == UEP) {
-                    fig0_1subchShort =
-                        (FIG_01_SubChannel_ShortF*) &etiFrame[index];
-                    fig0_1subchShort->SubChId = (*subchannelFIG0_1)->id;
-
-                    fig0_1subchShort->StartAdress_high =
-                        (*subchannelFIG0_1)->startAddress / 256;
-                    fig0_1subchShort->StartAdress_low =
-                        (*subchannelFIG0_1)->startAddress % 256;
-
-                    fig0_1subchShort->Short_Long_form = 0;
-                    fig0_1subchShort->TableSwitch = 0;
-                    fig0_1subchShort->TableIndex =
-                        protection->uep.tableIndex;
-
-                    index = index + 3;
-                    figSize += 3;
-                    figtype0_1->Length += 3;
-                }
-                else if (protection->form == EEP) {
-                    fig0_1subchLong1 =
-                        (FIG_01_SubChannel_LongF*) &etiFrame[index];
-                    fig0_1subchLong1->SubChId = (*subchannelFIG0_1)->id;
-
-                    fig0_1subchLong1->StartAdress_high =
-                        (*subchannelFIG0_1)->startAddress / 256;
-                    fig0_1subchLong1->StartAdress_low =
-                        (*subchannelFIG0_1)->startAddress % 256;
-
-                    fig0_1subchLong1->Short_Long_form = 1;
-                    fig0_1subchLong1->Option = protection->eep.GetOption();
-                    fig0_1subchLong1->ProtectionLevel =
-                        protection->level;
-
-                    fig0_1subchLong1->Sub_ChannelSize_high =
-                        getSizeCu(*subchannelFIG0_1) / 256;
-                    fig0_1subchLong1->Sub_ChannelSize_low =
-                        getSizeCu(*subchannelFIG0_1) % 256;
-
-                    index = index + 4;
-                    figSize += 4;
-                    figtype0_1->Length += 4;
-                }
-            }
+            //  ERASED
             break;
 
-        case 2:
-        case 9:
-        case 11:
-        case 14:
+        case 2: case 9: case 11: case 14:
             // FIG type 0/2, MCI, Service Organization, one instance of
             // FIGtype0_2_Service for each subchannel
-            fig0_2 = NULL;
-            cur = 0;
-
-            // Rotate through the subchannels until there is no more
-            // space in the FIG0/1
-            if (serviceProgFIG0_2 == ensemble->services.end()) {
-                serviceProgFIG0_2 = ensemble->services.begin();
-            }
-
-            for (; serviceProgFIG0_2 != ensemble->services.end();
-                    ++serviceProgFIG0_2) {
-                if (!(*serviceProgFIG0_2)->nbComponent(ensemble->components)) {
-                    continue;
-                }
-
-                if ((*serviceProgFIG0_2)->getType(ensemble) != 0) {
-                    continue;
-                }
-
-                ++cur;
-
-                if (fig0_2 == NULL) {
-                    fig0_2 = (FIGtype0_2 *) & etiFrame[index];
-
-                    fig0_2->FIGtypeNumber = 0;
-                    fig0_2->Length = 1;
-                    fig0_2->CN = 0;
-                    fig0_2->OE = 0;
-                    fig0_2->PD = 0;
-                    fig0_2->Extension = 2;
-                    index = index + 2;
-                    figSize += 2;
-                }
-
-                if (figSize + 3
-                        + (*serviceProgFIG0_2)->nbComponent(ensemble->components)
-                        * 2 > 30) {
-                    break;
-                }
-
-                fig0_2serviceAudio = (FIGtype0_2_Service*) &etiFrame[index];
-
-                fig0_2serviceAudio->SId = htons((*serviceProgFIG0_2)->id);
-                fig0_2serviceAudio->Local_flag = 0;
-                fig0_2serviceAudio->CAId = 0;
-                fig0_2serviceAudio->NbServiceComp =
-                    (*serviceProgFIG0_2)->nbComponent(ensemble->components);
-                index += 3;
-                fig0_2->Length += 3;
-                figSize += 3;
-
-                int curCpnt = 0;
-                for (component = getComponent(ensemble->components,
-                            (*serviceProgFIG0_2)->id);
-                        component != ensemble->components.end();
-                        component = getComponent(ensemble->components,
-                            (*serviceProgFIG0_2)->id, component)) {
-                    subchannel = getSubchannel(ensemble->subchannels,
-                            (*component)->subchId);
-
-                    if (subchannel == ensemble->subchannels.end()) {
-                        etiLog.log(error,
-                                "Subchannel %i does not exist for component "
-                                "of service %i\n",
-                                (*component)->subchId, (*component)->serviceId);
-                        throw MuxInitException();
-                    }
-
-                    switch ((*subchannel)->type) {
-                        case Audio:
-                            audio_description =
-                                (FIGtype0_2_audio_component*)&etiFrame[index];
-                            audio_description->TMid    = 0;
-                            audio_description->ASCTy   = (*component)->type;
-                            audio_description->SubChId = (*subchannel)->id;
-                            audio_description->PS      = ((curCpnt == 0) ? 1 : 0);
-                            audio_description->CA_flag = 0;
-                            break;
-                        case DataDmb:
-                            data_description =
-                                (FIGtype0_2_data_component*)&etiFrame[index];
-                            data_description->TMid    = 1;
-                            data_description->DSCTy   = (*component)->type;
-                            data_description->SubChId = (*subchannel)->id;
-                            data_description->PS      = ((curCpnt == 0) ? 1 : 0);
-                            data_description->CA_flag = 0;
-                            break;
-                        case Packet:
-                            packet_description =
-                                (FIGtype0_2_packet_component*)&etiFrame[index];
-                            packet_description->TMid    = 3;
-                            packet_description->setSCId((*component)->packet.id);
-                            packet_description->PS      = ((curCpnt == 0) ? 1 : 0);
-                            packet_description->CA_flag = 0;
-                            break;
-                        default:
-                            etiLog.log(error,
-                                    "Component type not supported\n");
-                            throw MuxInitException();
-                    }
-                    index += 2;
-                    fig0_2->Length += 2;
-                    figSize += 2;
-                    if (figSize > 30) {
-                        etiLog.log(error,
-                                "Sorry, no space left in FIG 0/2 to insert "
-                                "component %i of program service %i.\n",
-                                curCpnt, cur);
-                        throw MuxInitException();
-                    }
-                    ++curCpnt;
-                }
-            }
+            //  ERASED
             break;
 
         case 3:
@@ -518,3 +412,4 @@ void fib0 {
     }
 }
 #endif
+

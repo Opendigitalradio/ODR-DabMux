@@ -30,9 +30,18 @@
 #define __FIG_CAROUSEL_H_
 
 #include "fig/FIG.h"
+#include "fig/FIG0.h"
 #include <list>
+#include <map>
 #include <boost/shared_ptr.hpp>
 #include "MuxElements.h"
+
+struct FIGCarouselElement {
+    IFIG* fig;
+    int   deadline;
+
+    void reduce_deadline(void);
+};
 
 class FIGCarousel {
     public:
@@ -40,10 +49,20 @@ class FIGCarousel {
 
         void set_currentFrame(unsigned long currentFrame);
 
+        void allocate_fig_to_fib(int figtype, int extension, int fib);
+
+        void fib0(int framephase);
+
     private:
         FIGRuntimeInformation m_rti;
-        std::list<IFIG> m_figs;
+        std::map<std::pair<int, int>, IFIG*> m_figs_available;
 
+        // Each FIB contains a list of carousel elements
+        std::map<int, std::list<FIGCarouselElement> > m_fibs;
+
+        FIG0_0 m_fig0_0;
+        FIG0_1 m_fig0_1;
+        FIG0_2 m_fig0_2;
 };
 
 #endif // __FIG_CAROUSEL_H_

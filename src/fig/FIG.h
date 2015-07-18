@@ -52,12 +52,36 @@ enum class FIG_rate {
     E, // all in two minutes
 };
 
+/* Helper function to calculate the deadline for the next transmission, in milliseconds */
+inline int rate_increment_ms(FIG_rate rate)
+{
+    switch (rate) {
+        case FIG_rate::FIG0_0:    return 0;        // Is a special case
+        case FIG_rate::A:         return 100;
+        case FIG_rate::B:         return 1000;
+        case FIG_rate::C:         return 10000;
+        case FIG_rate::D:         return 30000;
+        case FIG_rate::E:         return 120000;
+    }
+}
+
 class IFIG
 {
     public:
         virtual size_t fill(uint8_t *buf, size_t max_size) = 0;
 
         virtual FIG_rate repetition_rate(void) = 0;
+
+        virtual const int figtype(void) const = 0;
+        virtual const int figextension(void) const = 0;
+
+        virtual const std::string name(void) const
+        {
+            std::stringstream ss;
+            ss << figtype() << "/" << figextension();
+            return ss.str();
+        }
+
 };
 
 #endif // __FIG_H_

@@ -32,8 +32,12 @@
 /**************** FIGCarouselElement ****************/
 void FIGCarouselElement::reduce_deadline()
 {
-#error "Wrong: deadline should decrement identically for all FIGs"
-    deadline -= rate_increment_ms(fig->repetition_rate());
+    deadline -= 24; //ms
+}
+
+void FIGCarouselElement::increase_deadline()
+{
+    deadline += rate_increment_ms(fig->repetition_rate());
 
     std::cerr << "FIG " << fig->name() <<
         " deadline: " << deadline << std::endl;
@@ -102,7 +106,7 @@ size_t FIGCarousel::fib0(uint8_t *buf, size_t bufsize, int framephase) {
 
     std::vector<FIGCarouselElement> sorted_figs;
 
-    /* Decrement all deadlines according to the desired repetition rate */
+    /* Decrement all deadlines */
     for (auto& fig_el : figs) {
         fig_el.reduce_deadline();
 
@@ -154,6 +158,8 @@ size_t FIGCarousel::fib0(uint8_t *buf, size_t bufsize, int framephase) {
         if (written > 0) {
             available_size -= written;
             buf += written;
+
+            fig_el->increase_deadline();
         }
 
         sorted_figs.erase(fig_el);

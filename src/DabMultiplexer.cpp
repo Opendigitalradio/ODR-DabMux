@@ -633,6 +633,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     // FIB 0 Insertion
     bool new_fib0_carousel = m_pt.get("general.new_fib0_carousel", false);
     if (new_fib0_carousel) {
+        // TODO update currentframe in rti
         fig_carousel.fib0(&etiFrame[index], 30, currentFrame % 4);
     }
     // Skip creating a block for the else because

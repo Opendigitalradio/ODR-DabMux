@@ -38,9 +38,11 @@
 
 struct FIGCarouselElement {
     IFIG* fig;
-    int   deadline;
+    int   deadline; // unit: ms
 
     void reduce_deadline(void);
+
+    void increase_deadline(void);
 };
 
 class FIGCarousel {

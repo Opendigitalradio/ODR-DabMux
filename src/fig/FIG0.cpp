@@ -393,7 +393,6 @@ size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
     return max_size - remaining;
 }
 
-
 //=========== FIG 0/17 ===========
 
 FIG0_17::FIG0_17(FIGRuntimeInformation *rti) :

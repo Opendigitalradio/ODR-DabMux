@@ -38,7 +38,7 @@ class FIG0_0 : public IFIG
         FIG0_0(FIGRuntimeInformation* rti) :
             m_rti(rti) {}
         virtual size_t fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::FIG0_0; }
 
         virtual const int figtype(void) const { return 0; }
         virtual const int figextension(void) const { return 0; }
@@ -61,6 +61,7 @@ class FIG0_1 : public IFIG
 
     private:
         FIGRuntimeInformation *m_rti;
+        bool m_initialised;
         std::vector<dabSubchannel*>::iterator subchannelFIG0_1;
 };
 
@@ -78,6 +79,7 @@ class FIG0_2 : public IFIG
 
     private:
         FIGRuntimeInformation *m_rti;
+        bool m_initialised;
         std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_2;
 };
 
@@ -111,6 +113,7 @@ class FIG0_17 : public IFIG
 
     private:
         FIGRuntimeInformation *m_rti;
+        bool m_initialised;
         std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_17;
 };
 

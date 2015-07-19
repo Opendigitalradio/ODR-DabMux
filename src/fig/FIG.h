@@ -63,7 +63,7 @@ enum class FIG_rate {
 inline int rate_increment_ms(FIG_rate rate)
 {
     switch (rate) {
-        case FIG_rate::FIG0_0:    return 0;        // Is a special case
+        case FIG_rate::FIG0_0:    return 96;        // Is a special case
         case FIG_rate::A:         return 100;
         case FIG_rate::B:         return 1000;
         case FIG_rate::C:         return 10000;

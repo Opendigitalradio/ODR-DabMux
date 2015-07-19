@@ -61,14 +61,18 @@ size_t FIG0_0::fill(uint8_t *buf, size_t max_size)
 //=========== FIG 0/1 ===========
 
 FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
-    m_rti(rti)
+    m_rti(rti),
+    m_initialised(false)
 {
-    subchannelFIG0_1 = m_rti->ensemble->subchannels.end();
 }
 
 size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
 {
     size_t remaining = max_size;
+
+    if (not m_initialised) {
+        subchannelFIG0_1 = m_rti->ensemble->subchannels.end();
+    }
 
     if (max_size < 6) {
         return 0;
@@ -155,9 +159,9 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
 //=========== FIG 0/2 ===========
 
 FIG0_2::FIG0_2(FIGRuntimeInformation *rti) :
-    m_rti(rti)
+    m_rti(rti),
+    m_initialised(false)
 {
-    serviceFIG0_2 = m_rti->ensemble->services.end();
 }
 
 size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
@@ -165,6 +169,10 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
     FIGtype0_2 *fig0_2 = NULL;
     int cur = 0;
     ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        serviceFIG0_2 = m_rti->ensemble->services.end();
+    }
 
     auto ensemble = m_rti->ensemble;
 
@@ -396,14 +404,19 @@ size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
 //=========== FIG 0/17 ===========
 
 FIG0_17::FIG0_17(FIGRuntimeInformation *rti) :
-    m_rti(rti)
+    m_rti(rti),
+    m_initialised(false)
 {
-    serviceFIG0_17 = m_rti->ensemble->services.end();
 }
 
 size_t FIG0_17::fill(uint8_t *buf, size_t max_size)
 {
     ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        serviceFIG0_17 = m_rti->ensemble->services.end();
+    }
+
     auto ensemble = m_rti->ensemble;
 
     FIGtype0* fig0 = NULL;

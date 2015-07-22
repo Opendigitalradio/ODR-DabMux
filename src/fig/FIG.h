@@ -70,6 +70,7 @@ inline int rate_increment_ms(FIG_rate rate)
         case FIG_rate::D:         return 30000;
         case FIG_rate::E:         return 120000;
     }
+    return 1000; //some default value, shouldn't be used
 }
 
 class IFIG

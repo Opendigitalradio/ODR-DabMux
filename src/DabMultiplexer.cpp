@@ -1385,8 +1385,8 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
                     FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
                     app->setType((*componentFIG0_13)->audio.uaType);
-                    app->length = 4;
-                    app->xpad = htonl(0x0cbc0000);
+                    app->length = 2;
+                    app->xpad = htons(0x0c3c);
                     /* xpad meaning
                        CA        = 0
                        CAOrg     = 0
@@ -1395,7 +1395,6 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                        DG        = 0 (MSC data groups used)
                        Rfu       = 0
                        DSCTy(6)  = 60 (MOT)
-                       CAOrg(16) = 0
                        */
 
                     index += 2 + app->length;

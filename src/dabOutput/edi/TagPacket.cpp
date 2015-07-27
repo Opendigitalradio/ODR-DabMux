@@ -31,6 +31,7 @@
 #include <string>
 #include <list>
 #include <stdint.h>
+#include <cassert>
 
 
 std::vector<uint8_t> TagPacket::Assemble()
@@ -41,21 +42,17 @@ std::vector<uint8_t> TagPacket::Assemble()
 
     //std::cerr << "Assemble TAGPacket" << std::endl;
 
-    size_t packet_length = 0;
     for (tag = tag_items.begin(); tag != tag_items.end(); ++tag) {
         std::vector<uint8_t> tag_data = (*tag)->Assemble();
         packet.insert(packet.end(), tag_data.begin(), tag_data.end());
-
-        packet_length += tag_data.size();
 
         //std::cerr << "     Add TAGItem of length " << tag_data.size() << std::endl;
     }
 
     // Add padding
-    while (packet_length % 8 > 0)
+    while (packet.size() % 8 > 0)
     {
         packet.push_back(0); // TS 102 821, 5.1, "padding shall be undefined"
-        packet_length++;
     }
 
     return packet;

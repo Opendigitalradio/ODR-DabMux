@@ -104,10 +104,10 @@ int DabLabel::setShortLabel(const std::string& slabel)
     /* Iterate over the label and set the bits in the flag
      * according to the characters in the slabel
      */
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0; i < 16; ++i) {
         if (*slab == this->m_text[i]) {
             flag |= 0x8000 >> i;
-            if (*(++slab) == 0) {
+            if (*(++slab) == '\0') {
                 break;
             }
         }

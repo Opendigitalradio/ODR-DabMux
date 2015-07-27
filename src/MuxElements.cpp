@@ -105,7 +105,7 @@ int DabLabel::setShortLabel(const std::string& slabel)
     for (size_t i = 0; i < m_label.size(); ++i) {
         if (*slab == m_label[i]) {
             flag |= 0x8000 >> i;
-            if (*(++slab) == 0) {
+            if (*(++slab) == '\0') {
                 break;
             }
         }

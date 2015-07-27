@@ -1,6 +1,10 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2015-07-27: Matthias P. Braendli <matthias@mpb.li>
+	(v0.7.5):
+		Fix segmentation fault in short label check logic.
+
 2015-07-03: Matthias P. Braendli <matthias@mpb.li>
 	(v0.7.4):
 		Allow empty component labels

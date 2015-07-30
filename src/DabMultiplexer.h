@@ -435,7 +435,7 @@ struct FIG0_13_app {
         typeHigh = type >> 3;
         typeLow = type & 0x1f;
     }
-    uint32_t xpad;
+    uint16_t xpad;
 } PACKED;
 
 #define FIG0_13_APPTYPE_SLIDESHOW  0x2

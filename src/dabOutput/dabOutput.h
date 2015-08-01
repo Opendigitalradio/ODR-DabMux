@@ -64,6 +64,7 @@ struct edi_configuration_t {
     bool enable_pft;
     std::string dest_addr;
     unsigned int dest_port;
+    unsigned int tagpacket_alignment;
 };
 
 

@@ -418,7 +418,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     map<dabSubchannel*, TagESTn*> edi_subchannelToTag;
 
     // The above Tag Items will be assembled into a TAG Packet
-    TagPacket edi_tagpacket;
+    TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
 
     edi_tagDETI.atstf = 1;
     edi_tagDETI.utco = 0;

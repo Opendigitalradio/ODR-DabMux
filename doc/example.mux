@@ -308,6 +308,12 @@ outputs {
 
         ; show more debugging info
         verbose     true
+
+        ; (optional) set the kind of alignment to use in TAG Packets
+        ; 0: no padding
+        ; 8: pad to eight bytes (default)
+        ; above 8: insert *dmy TAG Item to pad to given size in bytes
+        ;tagpacket_alignment 8
     }
 
     ; Other outputs:

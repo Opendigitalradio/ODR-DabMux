@@ -111,5 +111,18 @@ class TagESTn : public TagItem
     private:
         uint8_t id_;
 };
+
+// ETSI TS 102 821, 5.2.2.2 Dummy padding
+class TagStarDMY : public TagItem
+{
+    public:
+        /* length is the TAG value length in bytes */
+        TagStarDMY(uint32_t length) : length_(length) {}
+        std::vector<uint8_t> Assemble();
+
+    private:
+        uint32_t length_;
+};
+
 #endif
 

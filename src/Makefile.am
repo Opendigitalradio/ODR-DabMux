@@ -30,7 +30,7 @@ FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
 if HAVE_ZEROMQ_TEST
-bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen
+bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen odr-zmq2farsync
 
 ZMQ_LIBS    =-lzmq
 else
@@ -109,4 +109,13 @@ odr_bridgetest_SOURCES  =bridge.c \
 zmqinput_keygen_SOURCES  = zmqinput-keygen.c
 zmqinput_keygen_LDADD    = $(ZMQ_LIBS)
 zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS)
+
+odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
+                           dabOutput/dabOutput.h \
+                           dabOutput/dabOutputRaw.cpp \
+                           Log.h Log.cpp \
+                           zmq.hpp
+odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
+odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
+odr_zmq2farsync_CXXFLAGS = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 

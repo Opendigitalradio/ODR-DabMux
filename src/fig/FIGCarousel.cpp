@@ -26,6 +26,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "Log.h"
 #include "fig/FIGCarousel.h"
 #include <boost/format.hpp>
 #include <iostream>
@@ -38,21 +39,15 @@ void FIGCarouselElement::reduce_deadline()
 {
     deadline -= 24; //ms
 
-    std::cerr << "FIG " << fig->name() <<
-        " deadline decreased to: " << deadline << std::endl;
-
     if (deadline < 0) {
-        std::cerr << "FIG " << fig->name() <<
-            " has negative scheduling deadline" << std::endl;
+        etiLog.level(warn) << "FIG " << fig->name() <<
+            " has negative scheduling deadline";
     }
 }
 
 void FIGCarouselElement::increase_deadline()
 {
     deadline = rate_increment_ms(fig->repetition_rate());
-
-    std::cerr << "FIG " << fig->name() <<
-        " deadline increased to: " << deadline << std::endl;
 }
 
 
@@ -139,8 +134,6 @@ size_t FIGCarousel::carousel(
 
     std::list<FIGCarouselElement>& figs = m_fibs[fib];
 
-    std::cerr << "fib" << fib << "(framephase=" << framephase << ")" << std::endl;
-
     std::deque<FIGCarouselElement*> sorted_figs;
 
     /* Decrement all deadlines */
@@ -157,11 +150,13 @@ size_t FIGCarousel::carousel(
             return left->deadline < right->deadline;
             });
 
+    /* Carousel debugging help
     std::cerr << "  Sorted figs:" << std::endl;
     for (auto& fig_el : sorted_figs) {
         std::cerr << "    " << fig_el->fig->name() <<
             " d:" << fig_el->deadline << std::endl;
     }
+    */
 
     /* Data structure to carry FIB */
     size_t available_size = bufsize;
@@ -169,8 +164,6 @@ size_t FIGCarousel::carousel(
     /* Take special care for FIG0/0 */
     auto fig0_0 = find_if(sorted_figs.begin(), sorted_figs.end(),
             [](const FIGCarouselElement* f) {
-            std::cerr << "Check fig " << f->fig->name() << " " <<
-                rate_increment_ms(f->fig->repetition_rate()) << std::endl;
             return f->fig->repetition_rate() == FIG_rate::FIG0_0;
             });
 
@@ -180,8 +173,6 @@ size_t FIGCarousel::carousel(
         if (framephase == 0) { // TODO check for all TM
             FillStatus status = (*fig0_0)->fig->fill(pbuf, available_size);
             size_t written = status.num_bytes_written;
-            std::cerr << "Special FIG 0/0 wrote " <<
-                written << " bytes" << std::endl;
 
             if (written > 0) {
                 available_size -= written;
@@ -204,9 +195,6 @@ size_t FIGCarousel::carousel(
         FillStatus status = fig_el->fig->fill(pbuf, available_size);
         size_t written = status.num_bytes_written;
 
-        std::cerr << "   FIG " << fig_el->fig->name() <<
-           " wrote " << written << " bytes" << std::endl;
-
         if (written > 0) {
             available_size -= written;
             pbuf += written;
@@ -219,7 +207,7 @@ size_t FIGCarousel::carousel(
         sorted_figs.pop_front();
     }
 
-    dumpfib(buf, bufsize);
+    //dumpfib(buf, bufsize);
 
     return bufsize - available_size;
 }

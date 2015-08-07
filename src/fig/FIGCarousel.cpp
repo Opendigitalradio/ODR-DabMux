@@ -49,7 +49,7 @@ void FIGCarouselElement::reduce_deadline()
 
 void FIGCarouselElement::increase_deadline()
 {
-    deadline += rate_increment_ms(fig->repetition_rate());
+    deadline = rate_increment_ms(fig->repetition_rate());
 
     std::cerr << "FIG " << fig->name() <<
         " deadline increased to: " << deadline << std::endl;
@@ -176,12 +176,13 @@ size_t FIGCarousel::carousel(
             if (written > 0) {
                 available_size -= written;
                 pbuf += written;
-                if (status.complete_fig_transmitted) {
-                    (*fig0_0)->increase_deadline();
-                }
             }
             else {
                 throw std::runtime_error("Failed to write FIG0/0");
+            }
+
+            if (status.complete_fig_transmitted) {
+                (*fig0_0)->increase_deadline();
             }
         }
     }
@@ -199,10 +200,10 @@ size_t FIGCarousel::carousel(
         if (written > 0) {
             available_size -= written;
             pbuf += written;
+        }
 
-            if (status.complete_fig_transmitted) {
-                fig_el->increase_deadline();
-            }
+        if (status.complete_fig_transmitted) {
+            fig_el->increase_deadline();
         }
 
         sorted_figs.pop_front();

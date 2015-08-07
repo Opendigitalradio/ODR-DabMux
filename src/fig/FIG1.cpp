@@ -67,5 +67,50 @@ FillStatus FIG1_0::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+
+    ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        service = m_rti->ensemble->services.end();
+    }
+
+    auto ensemble = m_rti->ensemble;
+
+    // Rotate through the subchannels until there is no more
+    // space
+    if (service == ensemble->services.end()) {
+        service = ensemble->services.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
+    for (; service != ensemble->services.end();
+            ++service) {
+
+        if (remaining < 4) {
+            break;
+        }
+
+        if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
+            auto fig1_1 = (FIGtype1_1 *)buf;
+
+            fig1_1->FIGtypeNumber = 1;
+            fig1_1->Length = 21;
+            fig1_1->Charset = 0;
+            fig1_1->OE = 0;
+            fig1_1->Extension = 1;
+
+            fig1_1->Sld = htons((*service)->id);
+            buf += 4;
+            remaining -= 4;
+        }
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
 } // namespace FIC
 

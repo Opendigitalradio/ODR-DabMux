@@ -617,12 +617,20 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
 //=========== FIG 0/10 ===========
 
 FIG0_10::FIG0_10(FIGRuntimeInformation *rti) :
-    m_rti(rti)
+    m_rti(rti),
+    m_watermarkSize(0),
+    m_watermarkPos(0)
 {
     uint8_t buffer[sizeof(m_watermarkData) / 2];
     snprintf((char*)buffer, sizeof(buffer),
             "%s %s, compiled at %s, %s",
-            PACKAGE_NAME, PACKAGE_VERSION, __DATE__, __TIME__);
+            PACKAGE_NAME,
+#if defined(GITVERSION)
+            GITVERSION,
+#else
+            PACKAGE_VERSION,
+#endif
+            __DATE__, __TIME__);
 
     memset(m_watermarkData, 0, sizeof(m_watermarkData));
     m_watermarkData[0] = 0x55; // Sync

@@ -59,7 +59,7 @@ class FIG1_1 : public IFIG
         virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
 
         virtual const int figtype(void) const { return 1; }
-        virtual const int figextension(void) const { return 0; }
+        virtual const int figextension(void) const { return 1; }
 
     private:
         FIGRuntimeInformation *m_rti;
@@ -77,7 +77,7 @@ class FIG1_5 : public IFIG
         virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
 
         virtual const int figtype(void) const { return 1; }
-        virtual const int figextension(void) const { return 0; }
+        virtual const int figextension(void) const { return 5; }
 
     private:
         FIGRuntimeInformation *m_rti;

@@ -54,11 +54,12 @@ enum class FIG_rate {
         every fourth transmission frame. In transmission mode IV, this should be the
         first FIB (of the three) associated with the first CIF (of the two) in every
         alternate transmission frame (see clause 5.1). */
-    A, // at least 10 times per second
-    B, // once per second
-    C, // once every 10 seconds
-    D, // less than once every 10 seconds
-    E, // all in two minutes
+    A,   // at least 10 times per second
+    A_B, // between 10 times and once per second
+    B,   // once per second
+    C,   // once every 10 seconds
+    D,   // less than once every 10 seconds
+    E,   // all in two minutes
 };
 
 /* Helper function to calculate the deadline for the next transmission, in milliseconds */
@@ -67,6 +68,7 @@ inline int rate_increment_ms(FIG_rate rate)
     switch (rate) {
         case FIG_rate::FIG0_0:    return 96;        // Is a special case
         case FIG_rate::A:         return 100;
+        case FIG_rate::A_B:       return 200;
         case FIG_rate::B:         return 1000;
         case FIG_rate::C:         return 10000;
         case FIG_rate::D:         return 30000;

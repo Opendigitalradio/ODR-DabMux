@@ -31,6 +31,7 @@
 
 #include "fig/FIG.h"
 #include "fig/FIG0.h"
+#include "fig/FIG1.h"
 #include <list>
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -58,17 +59,27 @@ class FIGCarousel {
         size_t carousel(size_t fib, uint8_t *buf, size_t bufsize, int framephase);
     private:
 
+        void load_and_allocate(IFIG& fig, int fib);
+
         FIGRuntimeInformation m_rti;
         std::map<std::pair<int, int>, IFIG*> m_figs_available;
 
         // Each FIB contains a list of carousel elements
         std::map<int, std::list<FIGCarouselElement> > m_fibs;
 
+        // FIB 0 figs
         FIG0_0 m_fig0_0;
         FIG0_1 m_fig0_1;
         FIG0_2 m_fig0_2;
         FIG0_3 m_fig0_3;
         FIG0_17 m_fig0_17;
+
+        // FIG 1 figs
+        FIG0_8 m_fig0_8;
+        FIG1_0 m_fig1_0;
+        FIG0_13 m_fig0_13;
+        FIG0_10 m_fig0_10;
+        FIG0_9 m_fig0_9;
 };
 
 } // namespace FIC

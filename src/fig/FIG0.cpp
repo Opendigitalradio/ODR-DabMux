@@ -610,6 +610,7 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
     remaining -= 5;
 
     fs.num_bytes_written = max_size - remaining;
+    fs.complete_fig_transmitted = true;
     return fs;
 }
 

@@ -64,20 +64,33 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_1(&m_rti),
     m_fig0_2(&m_rti),
     m_fig0_3(&m_rti),
-    m_fig0_17(&m_rti)
+    m_fig0_17(&m_rti),
+    m_fig0_8(&m_rti),
+    m_fig1_0(&m_rti),
+    m_fig0_13(&m_rti),
+    m_fig0_10(&m_rti),
+    m_fig0_9(&m_rti)
 {
-    m_figs_available[std::make_pair(0, 0)] = &m_fig0_0;
-    m_figs_available[std::make_pair(0, 1)] = &m_fig0_1;
-    m_figs_available[std::make_pair(0, 2)] = &m_fig0_2;
-    m_figs_available[std::make_pair(0, 3)] = &m_fig0_3;
-    m_figs_available[std::make_pair(0, 17)] = &m_fig0_17;
+    load_and_allocate(m_fig0_0, 0);
+    load_and_allocate(m_fig0_1, 0);
+    load_and_allocate(m_fig0_2, 0);
+    load_and_allocate(m_fig0_3, 0);
+    load_and_allocate(m_fig0_17, 0);
 
-    const int fib0 = 0;
-    allocate_fig_to_fib(0, 0, fib0);
-    allocate_fig_to_fib(0, 1, fib0);
-    allocate_fig_to_fib(0, 2, fib0);
-    allocate_fig_to_fib(0, 3, fib0);
-    allocate_fig_to_fib(0, 17, fib0);
+    load_and_allocate(m_fig0_8, 1);
+    load_and_allocate(m_fig1_0, 1);
+    load_and_allocate(m_fig0_13, 1);
+    load_and_allocate(m_fig0_10, 1);
+    load_and_allocate(m_fig0_9, 1);
+}
+
+void FIGCarousel::load_and_allocate(IFIG& fig, int fib)
+{
+    int type = fig.figtype();
+    int extension = fig.figextension();
+
+    m_figs_available[std::make_pair(type, extension)] = &fig;
+    allocate_fig_to_fib(type, extension, fib);
 }
 
 void FIGCarousel::update(unsigned long currentFrame, time_t dabTime)

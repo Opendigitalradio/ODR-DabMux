@@ -83,6 +83,7 @@ class FIGCarousel {
 
         // FIB 2 figs
         FIG1_1 m_fig1_1;
+        FIG1_5 m_fig1_5;
 };
 
 } // namespace FIC

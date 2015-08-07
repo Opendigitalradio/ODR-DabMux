@@ -67,6 +67,8 @@ FillStatus FIG1_0::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 1/1 ===========
+
 FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
 {
     FillStatus fs;
@@ -89,7 +91,7 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
     for (; service != ensemble->services.end();
             ++service) {
 
-        if (remaining < 4) {
+        if (remaining < 4 + 16 + 2) {
             break;
         }
 
@@ -105,6 +107,70 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
             fig1_1->Sld = htons((*service)->id);
             buf += 4;
             remaining -= 4;
+
+            (*service)->label.writeLabel(buf);
+            buf += 16;
+            remaining -= 16;
+
+            buf[0] = (*service)->label.flag() >> 8;
+            buf[1] = (*service)->label.flag() & 0xFF;
+            buf += 2;
+            remaining -= 2;
+        }
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
+//=========== FIG 1/5 ===========
+
+FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+
+    ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        service = m_rti->ensemble->services.end();
+    }
+
+    auto ensemble = m_rti->ensemble;
+
+    // Rotate through the subchannels until there is no more
+    // space
+    if (service == ensemble->services.end()) {
+        service = ensemble->services.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
+    for (; service != ensemble->services.end();
+            ++service) {
+
+        if (remaining < 6 + 16 + 2) {
+            break;
+        }
+
+        if ((*service)->getType(ensemble) != subchannel_type_t::Audio) {
+            auto fig1_5 = (FIGtype1_5 *)buf;
+            fig1_5->FIGtypeNumber = 1;
+            fig1_5->Length = 23;
+            fig1_5->Charset = 0;
+            fig1_5->OE = 0;
+            fig1_5->Extension = 5;
+
+            fig1_5->SId = htonl((*service)->id);
+            buf += 6;
+            remaining -= 6;
+
+            (*service)->label.writeLabel(buf);
+            buf += 16;
+            remaining -= 16;
+
+            buf[0] = (*service)->label.flag() >> 8;
+            buf[1] = (*service)->label.flag() & 0xFF;
+            buf += 2;
+            remaining -= 2;
         }
     }
 

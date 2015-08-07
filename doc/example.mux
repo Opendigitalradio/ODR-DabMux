@@ -41,6 +41,11 @@ general {
     ; If the port is zero, or the line commented, the server
     ; is not started.
     managementport 12720
+
+    ; FIG Carousel
+    ; Set this to true to use the new FIG carousel implementation,
+    ; which makes better usage of the FIB space.
+    new_fig_carousel true
 }
 
 remotecontrol {

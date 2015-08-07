@@ -73,10 +73,23 @@ inline int rate_increment_ms(FIG_rate rate)
     return 1000; //some default value, shouldn't be used
 }
 
+/* The fill function of each FIG shall return a status telling
+ * the carousel how many bytes have been written, and if the complete
+ * set of information from that FIG was transmitted.
+ */
+struct FillStatus
+{
+    FillStatus() :
+        num_bytes_written(0),
+        complete_fig_transmitted(false) {}
+    size_t num_bytes_written;
+    bool   complete_fig_transmitted;
+};
+
 class IFIG
 {
     public:
-        virtual size_t fill(uint8_t *buf, size_t max_size) = 0;
+        virtual FillStatus fill(uint8_t *buf, size_t max_size) = 0;
 
         virtual FIG_rate repetition_rate(void) = 0;
 

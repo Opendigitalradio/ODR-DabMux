@@ -32,10 +32,13 @@
 
 //=========== FIG 0/0 ===========
 
-size_t FIG0_0::fill(uint8_t *buf, size_t max_size)
+FillStatus FIG0_0::fill(uint8_t *buf, size_t max_size)
 {
+    FillStatus fs;
+
     if (max_size < 6) {
-        return 0;
+        fs.num_bytes_written = 0;
+        return fs;
     }
 
     FIGtype0_0 *fig0_0;
@@ -54,7 +57,9 @@ size_t FIG0_0::fill(uint8_t *buf, size_t max_size)
     fig0_0->CIFcnt_hight = (m_rti->currentFrame / 250) % 20;
     fig0_0->CIFcnt_low = (m_rti->currentFrame % 250);
 
-    return 6;
+    fs.complete_fig_transmitted = true;
+    fs.num_bytes_written = 6;
+    return fs;
 }
 
 
@@ -66,8 +71,9 @@ FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
 {
 }
 
-size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
+FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
 {
+    FillStatus fs;
     size_t remaining = max_size;
 
     if (not m_initialised) {
@@ -75,7 +81,7 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
     }
 
     if (max_size < 6) {
-        return 0;
+        return fs;
     }
 
     auto ensemble = m_rti->ensemble;
@@ -96,6 +102,7 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
     // space in the FIG0/1
     if (subchannelFIG0_1 == ensemble->subchannels.end()) {
         subchannelFIG0_1 = ensemble->subchannels.begin();
+        fs.complete_fig_transmitted = true;
     }
 
     for (; subchannelFIG0_1 != ensemble->subchannels.end();
@@ -152,7 +159,8 @@ size_t FIG0_1::fill(uint8_t *buf, size_t max_size)
         }
     }
 
-    return max_size - remaining;
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
 }
 
 
@@ -164,8 +172,9 @@ FIG0_2::FIG0_2(FIGRuntimeInformation *rti) :
 {
 }
 
-size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
+FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 {
+    FillStatus fs;
     FIGtype0_2 *fig0_2 = NULL;
     int cur = 0;
     ssize_t remaining = max_size;
@@ -180,6 +189,7 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
     // space
     if (serviceFIG0_2 == ensemble->services.end()) {
         serviceFIG0_2 = ensemble->services.begin();
+        fs.complete_fig_transmitted = true;
     }
 
     for (; serviceFIG0_2 != ensemble->services.end();
@@ -316,7 +326,8 @@ size_t FIG0_2::fill(uint8_t *buf, size_t max_size)
             ++curCpnt;
         }
     }
-    return max_size - remaining;
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
 }
 
 
@@ -327,8 +338,9 @@ FIG0_3::FIG0_3(FIGRuntimeInformation *rti) :
 {
 }
 
-size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
+FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
 {
+    FillStatus fs;
     ssize_t remaining = max_size;
     auto ensemble = m_rti->ensemble;
 
@@ -398,7 +410,9 @@ size_t FIG0_3::fill(uint8_t *buf, size_t max_size)
         }
     }
 
-    return max_size - remaining;
+    fs.num_bytes_written = max_size - remaining;
+    fs.complete_fig_transmitted = true;
+    return fs;
 }
 
 //=========== FIG 0/17 ===========
@@ -409,8 +423,9 @@ FIG0_17::FIG0_17(FIGRuntimeInformation *rti) :
 {
 }
 
-size_t FIG0_17::fill(uint8_t *buf, size_t max_size)
+FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
 {
+    FillStatus fs;
     ssize_t remaining = max_size;
 
     if (not m_initialised) {
@@ -423,7 +438,9 @@ size_t FIG0_17::fill(uint8_t *buf, size_t max_size)
 
     if (serviceFIG0_17 == ensemble->services.end()) {
         serviceFIG0_17 = ensemble->services.begin();
+        fs.complete_fig_transmitted = true;
     }
+
     for (; serviceFIG0_17 != ensemble->services.end();
             ++serviceFIG0_17) {
 
@@ -478,6 +495,7 @@ size_t FIG0_17::fill(uint8_t *buf, size_t max_size)
         }
     }
 
-    return max_size - remaining;
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
 }
 

@@ -105,7 +105,7 @@ void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, int fib)
     }
 }
 
-void dumpfib(uint8_t *buf, size_t bufsize) {
+void dumpfib(const uint8_t *buf, size_t bufsize) {
     std::cerr << "FIB ";
     for (size_t i = 0; i < bufsize; i++) {
         std::cerr << boost::format("%02x ") % (unsigned int)buf[i];
@@ -113,13 +113,21 @@ void dumpfib(uint8_t *buf, size_t bufsize) {
     std::cerr << std::endl;
 }
 
-size_t FIGCarousel::fib0(uint8_t *fib, const size_t bufsize, int framephase) {
+size_t FIGCarousel::fib0(uint8_t *buf, const size_t bufsize, int framephase) {
+    return carousel(0, buf, bufsize, framephase);
+}
 
-    uint8_t *buf = fib;
+size_t FIGCarousel::carousel(
+        size_t fib,
+        uint8_t *buf,
+        const size_t bufsize,
+        int framephase)
+{
+    uint8_t *pbuf = buf;
 
-    std::list<FIGCarouselElement>& figs = m_fibs[0];
+    std::list<FIGCarouselElement>& figs = m_fibs[fib];
 
-    std::cerr << "fib0(framephase=" << framephase << ")" << std::endl;
+    std::cerr << "fib" << fib << "(framephase=" << framephase << ")" << std::endl;
 
     std::deque<FIGCarouselElement*> sorted_figs;
 
@@ -158,14 +166,17 @@ size_t FIGCarousel::fib0(uint8_t *fib, const size_t bufsize, int framephase) {
         sorted_figs.erase(fig0_0);
 
         if (framephase == 0) { // TODO check for all TM
-            size_t written = (*fig0_0)->fig->fill(buf, available_size);
+            FillStatus status = (*fig0_0)->fig->fill(pbuf, available_size);
+            size_t written = status.num_bytes_written;
             std::cerr << "Special FIG 0/0 wrote " <<
                 written << " bytes" << std::endl;
 
             if (written > 0) {
                 available_size -= written;
-                buf += written;
-                (*fig0_0)->increase_deadline();
+                pbuf += written;
+                if (status.complete_fig_transmitted) {
+                    (*fig0_0)->increase_deadline();
+                }
             }
             else {
                 throw std::runtime_error("Failed to write FIG0/0");
@@ -177,22 +188,25 @@ size_t FIGCarousel::fib0(uint8_t *fib, const size_t bufsize, int framephase) {
     /* Fill the FIB with the FIGs, taking the earliest deadline first */
     while (available_size > 0 and not sorted_figs.empty()) {
         auto fig_el = sorted_figs[0];
-        size_t written = fig_el->fig->fill(buf, available_size);
+        FillStatus status = fig_el->fig->fill(pbuf, available_size);
+        size_t written = status.num_bytes_written;
 
         std::cerr << "   FIG " << fig_el->fig->name() <<
            " wrote " << written << " bytes" << std::endl;
 
         if (written > 0) {
             available_size -= written;
-            buf += written;
+            pbuf += written;
 
-            fig_el->increase_deadline();
+            if (status.complete_fig_transmitted) {
+                fig_el->increase_deadline();
+            }
         }
 
         sorted_figs.pop_front();
     }
 
-    dumpfib(fib, bufsize);
+    dumpfib(buf, bufsize);
 
     return bufsize - available_size;
 }

@@ -56,6 +56,8 @@ class FIGCarousel {
         size_t fib0(uint8_t *buf, size_t bufsize, int framephase);
 
     private:
+        size_t carousel(size_t fib, uint8_t *buf, size_t bufsize, int framephase);
+
         FIGRuntimeInformation m_rti;
         std::map<std::pair<int, int>, IFIG*> m_figs_available;
 

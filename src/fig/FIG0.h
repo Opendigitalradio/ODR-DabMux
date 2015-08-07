@@ -37,7 +37,7 @@ class FIG0_0 : public IFIG
     public:
         FIG0_0(FIGRuntimeInformation* rti) :
             m_rti(rti) {}
-        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::FIG0_0; }
 
         virtual const int figtype(void) const { return 0; }
@@ -53,7 +53,7 @@ class FIG0_1 : public IFIG
 {
     public:
         FIG0_1(FIGRuntimeInformation* rti);
-        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
 
         virtual const int figtype(void) const { return 0; }
@@ -71,7 +71,7 @@ class FIG0_2 : public IFIG
 {
     public:
         FIG0_2(FIGRuntimeInformation* rti);
-        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
 
         virtual const int figtype(void) const { return 0; }
@@ -90,7 +90,7 @@ class FIG0_3 : public IFIG
 {
     public:
         FIG0_3(FIGRuntimeInformation* rti);
-        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
 
         virtual const int figtype(void) const { return 0; }
@@ -105,7 +105,7 @@ class FIG0_17 : public IFIG
 {
     public:
         FIG0_17(FIGRuntimeInformation* rti);
-        virtual size_t fill(uint8_t *buf, size_t max_size);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
 
         virtual const int figtype(void) const { return 0; }

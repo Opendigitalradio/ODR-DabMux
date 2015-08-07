@@ -102,8 +102,10 @@ class FIG0_3 : public IFIG
         FIGRuntimeInformation *m_rti;
 };
 
-// FIG type 0/8, MCI, Service Organization, one instance of
-// FIGtype0_8_Service for each subchannel
+// FIG type 0/8
+// The Extension 8 of FIG type 0 (FIG 0/8) provides information to link
+// together the service component description that is valid within the ensemble
+// to a service component description that is valid in other ensembles
 class FIG0_8 : public IFIG
 {
     public:
@@ -119,6 +121,26 @@ class FIG0_8 : public IFIG
         bool m_initialised;
         std::vector<DabComponent*>::iterator componentFIG0_8;
 };
+
+// FIG type 0/13
+// User Application Information
+class FIG0_13 : public IFIG
+{
+    public:
+        FIG0_13(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 13; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        bool m_transmit_programme;
+        std::vector<DabComponent*>::iterator componentFIG0_13;
+};
+
 
 // FIG type 0/17
 class FIG0_17 : public IFIG

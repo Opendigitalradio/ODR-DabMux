@@ -563,6 +563,139 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 0/13 ===========
+
+FIG0_13::FIG0_13(FIGRuntimeInformation *rti) :
+    m_rti(rti),
+    m_initialised(false),
+    m_transmit_programme(false)
+{
+}
+
+FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+    auto ensemble = m_rti->ensemble;
+    ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        componentFIG0_13 = m_rti->ensemble->components.end();
+    }
+
+    FIGtype0* fig0 = NULL;
+
+    if (componentFIG0_13 == ensemble->components.end()) {
+        componentFIG0_13 = ensemble->components.begin();
+
+        // The full database is sent every second full loop
+        fs.complete_fig_transmitted = m_transmit_programme;
+
+        m_transmit_programme = not m_transmit_programme;
+        // Alternate between data and and programme FIG0/13,
+        // do not mix fig0 with PD=0 with extension 13 stuff
+        // that actually needs PD=1, and vice versa
+    }
+
+    for (; componentFIG0_13 != ensemble->components.end();
+            ++componentFIG0_13) {
+
+        auto subchannel = getSubchannel(ensemble->subchannels,
+                (*componentFIG0_13)->subchId);
+
+        if (subchannel == ensemble->subchannels.end()) {
+            etiLog.log(error,
+                    "Subchannel %i does not exist for component "
+                    "of service %i\n",
+                    (*componentFIG0_13)->subchId,
+                    (*componentFIG0_13)->serviceId);
+            throw MuxInitException();
+        }
+
+        if (    m_transmit_programme &&
+                (*subchannel)->type == Audio &&
+                (*componentFIG0_13)->audio.uaType != 0xffff) {
+            if (fig0 == NULL) {
+                fig0 = (FIGtype0*)buf;
+                fig0->FIGtypeNumber = 0;
+                fig0->Length = 1;
+                fig0->CN = 0;
+                fig0->OE = 0;
+                fig0->PD = 0;
+                fig0->Extension = 13;
+                buf += 2;
+                remaining -= 2;
+            }
+
+            if (remaining < 3+4+11) {
+                break;
+            }
+
+            FIG0_13_shortAppInfo* info = (FIG0_13_shortAppInfo*)buf;
+            info->SId = htonl((*componentFIG0_13)->serviceId) >> 16;
+            info->SCIdS = (*componentFIG0_13)->SCIdS;
+            info->No = 1;
+            buf += 3;
+            remaining -= 3;
+            fig0->Length += 3;
+
+            FIG0_13_app* app = (FIG0_13_app*)buf;
+            app->setType((*componentFIG0_13)->audio.uaType);
+            app->length = 2;
+            app->xpad = htons(0x0c3c);
+            /* xpad meaning
+               CA        = 0
+               CAOrg     = 0
+               Rfu       = 0
+               AppTy(5)  = 12 (MOT, start of X-PAD data group)
+               DG        = 0 (MSC data groups used)
+               Rfu       = 0
+               DSCTy(6)  = 60 (MOT)
+               */
+
+            buf += 2 + app->length;
+            remaining -= 2 + app->length;
+            fig0->Length += 2 + app->length;
+        }
+        else if (!m_transmit_programme &&
+                (*subchannel)->type == Packet &&
+                (*componentFIG0_13)->packet.appType != 0xffff) {
+
+            if (fig0 == NULL) {
+                fig0 = (FIGtype0*)buf;
+                fig0->FIGtypeNumber = 0;
+                fig0->Length = 1;
+                fig0->CN = 0;
+                fig0->OE = 0;
+                fig0->PD = 1;
+                fig0->Extension = 13;
+                buf += 2;
+                remaining -= 2;
+            }
+
+            if (remaining < 5+2) {
+                break;
+            }
+
+            FIG0_13_longAppInfo* info = (FIG0_13_longAppInfo*)buf;
+            info->SId = htonl((*componentFIG0_13)->serviceId);
+            info->SCIdS = (*componentFIG0_13)->SCIdS;
+            info->No = 1;
+            buf += 5;
+            remaining -= 5;
+            fig0->Length += 5;
+
+            FIG0_13_app* app = (FIG0_13_app*)buf;
+            app->setType((*componentFIG0_13)->packet.appType);
+            app->length = 0;
+            buf += 2;
+            remaining -= 2;
+            fig0->Length += 2;
+        }
+    }
+
+    return fs;
+}
+
 //=========== FIG 0/17 ===========
 
 FIG0_17::FIG0_17(FIGRuntimeInformation *rti) :

@@ -99,6 +99,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      TcpSocket.h TcpSocket.cpp \
                      zmq.hpp \
                      fig/FIG0.cpp fig/FIG0.h \
+                     fig/FIG1.cpp fig/FIG1.h \
                      fig/FIGCarousel.cpp fig/FIGCarousel.h \
                      fig/FIG.h
 

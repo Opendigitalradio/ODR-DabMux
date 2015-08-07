@@ -30,8 +30,6 @@
 
 namespace FIC {
 
-#define PACKED __attribute__ ((packed))
-
 //=========== FIG 0/0 ===========
 
 FillStatus FIG0_0::fill(uint8_t *buf, size_t max_size)

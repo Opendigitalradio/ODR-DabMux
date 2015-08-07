@@ -32,6 +32,8 @@
 
 namespace FIC {
 
+#define PACKED __attribute__ ((packed))
+
 class FIGRuntimeInformation {
     public:
         FIGRuntimeInformation(boost::shared_ptr<dabEnsemble> e) :

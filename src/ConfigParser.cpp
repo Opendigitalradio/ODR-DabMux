@@ -537,7 +537,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     if (0) {
 #if defined(HAVE_FORMAT_MPEG)
     } else if (type == "audio") {
-        subchan->type = Audio;
+        subchan->type = subchannel_type_t::Audio;
         subchan->bitrate = 0;
 
         if (0) {
@@ -596,7 +596,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
 #if defined(HAVE_FORMAT_DABPLUS)
     } else if (type == "dabplus") {
-        subchan->type = Audio;
+        subchan->type = subchannel_type_t::Audio;
         subchan->bitrate = 32;
 
         if (0) {
@@ -699,7 +699,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
 
-        subchan->type = DataDmb;
+        subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #if defined(HAVE_INPUT_TEST) && defined(HAVE_FORMAT_RAW)
     } else if (type == "test") {
@@ -709,7 +709,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
     } else if (type == "packet") {
-        subchan->type = Packet;
+        subchan->type = subchannel_type_t::Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
 #ifdef HAVE_INPUT_FILE
         operations = dabInputPacketFileOperations;
@@ -720,7 +720,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_FILE)
 #ifdef HAVE_FORMAT_EPM
     } else if (type == "enhancedpacked") {
-        subchan->type = Packet;
+        subchan->type = subchannel_type_t::Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
         operations = dabInputEnhancedPacketFileOperations;
 #endif // defined(HAVE_FORMAT_EPM)
@@ -743,7 +743,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
 
-        subchan->type = DataDmb;
+        subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #endif
     } else {
@@ -785,7 +785,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     if (nonblock) {
         switch (subchan->type) {
 #ifdef HAVE_FORMAT_PACKET
-            case Packet:
+            case subchannel_type_t::Packet:
                 if (operations == dabInputPacketFileOperations) {
                     operations = dabInputFifoOperations;
 #ifdef HAVE_FORMAT_EPM
@@ -801,7 +801,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 break;
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_MPEG
-            case Audio:
+            case subchannel_type_t::Audio:
                 if (operations == dabInputMpegFileOperations) {
                     operations = dabInputMpegFifoOperations;
                 } else if (operations == dabInputDabplusFileOperations) {
@@ -814,8 +814,8 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 }
                 break;
 #endif // defined(HAVE_FORMAT_MPEG)
-            case DataDmb:
-            case Fidc:
+            case subchannel_type_t::DataDmb:
+            case subchannel_type_t::Fidc:
             default:
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<

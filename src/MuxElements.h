@@ -39,6 +39,14 @@
 #include "RemoteControl.h"
 #include "Eti.h"
 
+enum class subchannel_type_t {
+    Audio = 0,
+    DataDmb = 1,
+    Fidc = 2,
+    Packet = 3
+};
+
+
 struct dabOutput {
     dabOutput(const char* proto, const char* name) :
         outputProto(proto), outputName(name), output(NULL) { }
@@ -172,13 +180,6 @@ struct dabProtection {
     };
 };
 
-enum dab_subchannel_type_t {
-    Audio = 0,
-    DataDmb = 1,
-    Fidc = 2,
-    Packet = 3
-};
-
 class dabSubchannel
 {
 public:
@@ -192,7 +193,7 @@ public:
     std::string inputUri;
     DabInputBase* input;
     unsigned char id;
-    dab_subchannel_type_t type;
+    subchannel_type_t type;
     uint16_t startAddress;
     uint16_t bitrate;
     dabProtection protection;
@@ -297,7 +298,7 @@ class DabService : public RemoteControllable
         unsigned char language;
         bool program;
 
-        unsigned char getType(boost::shared_ptr<dabEnsemble> ensemble);
+        subchannel_type_t getType(boost::shared_ptr<dabEnsemble> ensemble);
         unsigned char nbComponent(std::vector<DabComponent*>& components);
 
         DabLabel label;

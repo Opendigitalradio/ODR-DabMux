@@ -260,12 +260,12 @@ void DabMultiplexer::prepare_services_components()
 
         // Adjust service type from this first component
         switch (service->getType(ensemble)) {
-            case 0: // Audio
+            case subchannel_type_t::Audio: // Audio
                 service->program = true;
                 break;
-            case 1:
-            case 2:
-            case 3:
+            case subchannel_type_t::DataDmb:
+            case subchannel_type_t::Fidc:
+            case subchannel_type_t::Packet:
                 service->program = false;
                 break;
             default:
@@ -290,16 +290,16 @@ void DabMultiplexer::prepare_services_components()
 
             protection = &(*subchannel)->protection;
             switch ((*subchannel)->type) {
-                case Audio:
+                case subchannel_type_t::Audio:
                     {
                         if (protection->form == EEP) {
                             (*component)->type = 0x3f;  // DAB+
                         }
                     }
                     break;
-                case DataDmb:
-                case Fidc:
-                case Packet:
+                case subchannel_type_t::DataDmb:
+                case subchannel_type_t::Fidc:
+                case subchannel_type_t::Packet:
                     break;
                 default:
                     etiLog.log(error,
@@ -323,7 +323,7 @@ void DabMultiplexer::prepare_services_components()
                     component->subchId, component->serviceId);
             throw MuxInitException();
         }
-        if ((*subchannel)->type != Packet) continue;
+        if ((*subchannel)->type != subchannel_type_t::Packet) continue;
 
         component->packet.id = cur_packetid++;
 
@@ -765,7 +765,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     continue;
                 }
 
-                if ((*serviceProgFIG0_2)->getType(ensemble) != 0) {
+                if ((*serviceProgFIG0_2)->getType(ensemble) != subchannel_type_t::Audio) {
                     continue;
                 }
 
@@ -819,7 +819,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     }
 
                     switch ((*subchannel)->type) {
-                        case Audio:
+                        case subchannel_type_t::Audio:
                             audio_description =
                                 (FIGtype0_2_audio_component*)&etiFrame[index];
                             audio_description->TMid    = 0;
@@ -828,7 +828,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                             audio_description->PS      = ((curCpnt == 0) ? 1 : 0);
                             audio_description->CA_flag = 0;
                             break;
-                        case DataDmb:
+                        case subchannel_type_t::DataDmb:
                             data_description =
                                 (FIGtype0_2_data_component*)&etiFrame[index];
                             data_description->TMid    = 1;
@@ -837,7 +837,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                             data_description->PS      = ((curCpnt == 0) ? 1 : 0);
                             data_description->CA_flag = 0;
                             break;
-                        case Packet:
+                        case subchannel_type_t::Packet:
                             packet_description =
                                 (FIGtype0_2_packet_component*)&etiFrame[index];
                             packet_description->TMid    = 3;
@@ -878,8 +878,9 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     continue;
                 }
 
-                unsigned char type = (*serviceDataFIG0_2)->getType(ensemble);
-                if ((type == 0) || (type == 2)) {
+                auto type = (*serviceDataFIG0_2)->getType(ensemble);
+                if (    type == subchannel_type_t::Audio ||
+                        type == subchannel_type_t::Fidc  ) {
                     continue;
                 }
 
@@ -933,7 +934,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     }
 
                     switch ((*subchannel)->type) {
-                        case Audio:
+                        case subchannel_type_t::Audio:
                             audio_description =
                                 (FIGtype0_2_audio_component*)&etiFrame[index];
                             audio_description->TMid = 0;
@@ -942,7 +943,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                             audio_description->PS = ((curCpnt == 0) ? 1 : 0);
                             audio_description->CA_flag = 0;
                             break;
-                        case DataDmb:
+                        case subchannel_type_t::DataDmb:
                             data_description =
                                 (FIGtype0_2_data_component*)&etiFrame[index];
                             data_description->TMid = 1;
@@ -951,7 +952,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                             data_description->PS = ((curCpnt == 0) ? 1 : 0);
                             data_description->CA_flag = 0;
                             break;
-                        case Packet:
+                        case subchannel_type_t::Packet:
                             packet_description =
                                 (FIGtype0_2_packet_component*)&etiFrame[index];
                             packet_description->TMid = 3;
@@ -996,7 +997,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     throw MuxInitException();
                 }
 
-                if ((*subchannel)->type != Packet)
+                if ((*subchannel)->type != subchannel_type_t::Packet)
                     continue;
 
                 if (fig0_3_header == NULL) {
@@ -1169,7 +1170,9 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     figSize += 2;
                 }
 
-                if ((*subchannel)->type == Packet) { // Data packet
+                if ((*subchannel)->type == subchannel_type_t::Packet) {
+                    // Data packet
+
                     if (figSize > 30 - 5) {
                         break;
                     }
@@ -1258,7 +1261,9 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     figSize += 2;
                 }
 
-                if ((*subchannel)->type == Packet) { // Data packet
+                if ((*subchannel)->type == subchannel_type_t::Packet) {
+                    // Data packet
+
                     if (figSize > 30 - 7) {
                         break;
                     }
@@ -1359,7 +1364,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                 }
 
                 if (    transmitFIG0_13programme &&
-                        (*subchannel)->type == Audio &&
+                        (*subchannel)->type == subchannel_type_t::Audio &&
                         (*componentFIG0_13)->audio.uaType != 0xffff) {
                     if (fig0 == NULL) {
                         fig0 = (FIGtype0*)&etiFrame[index];
@@ -1405,7 +1410,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                     fig0->Length += 2 + app->length;
                 }
                 else if (!transmitFIG0_13programme &&
-                        (*subchannel)->type == Packet &&
+                        (*subchannel)->type == subchannel_type_t::Packet &&
                         (*componentFIG0_13)->packet.appType != 0xffff) {
 
                     if (fig0 == NULL) {
@@ -1524,7 +1529,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         service = ensemble->services.begin() + rotateFIB;
 
         // FIG type 1/1, SI, Service label, one instance per subchannel
-        if ((*service)->getType(ensemble) == 0) {
+        if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
             fig1_1 = (FIGtype1_1 *) & etiFrame[index];
 
             fig1_1->FIGtypeNumber = 1;
@@ -1567,7 +1572,8 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
             getSubchannel(ensemble->subchannels, (*component)->subchId);
 
         if (not (*component)->label.long_label().empty() ) {
-            if ((*service)->getType(ensemble) == 0) {   // Programme
+            if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
+                // Programme
                 FIGtype1_4_programme *fig1_4;
                 fig1_4 = (FIGtype1_4_programme*)&etiFrame[index];
 

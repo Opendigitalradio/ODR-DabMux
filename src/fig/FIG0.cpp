@@ -202,7 +202,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 
         // Exclude Fidc type services, TODO why ?
         auto type = (*serviceFIG0_2)->getType(ensemble);
-        if (type == Fidc) {
+        if (type == subchannel_type_t::Fidc) {
             continue;
         }
 
@@ -215,25 +215,25 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             fig0_2->Length = 1;
             fig0_2->CN = 0;
             fig0_2->OE = 0;
-            fig0_2->PD = (type == Audio) ? 0 : 1;
+            fig0_2->PD = (type == subchannel_type_t::Audio) ? 0 : 1;
             fig0_2->Extension = 2;
             buf += 2;
             remaining -= 2;
         }
 
-        if (type == Audio and
+        if (type == subchannel_type_t::Audio and
                 remaining < 3 + 2 *
                 (*serviceFIG0_2)->nbComponent(ensemble->components)) {
             break;
         }
 
-        if (type != Audio and
+        if (type != subchannel_type_t::Audio and
                 remaining < 5 + 2 *
                 (*serviceFIG0_2)->nbComponent(ensemble->components)) {
             break;
         }
 
-        if (type == Audio) {
+        if (type == subchannel_type_t::Audio) {
             auto fig0_2serviceAudio = (FIGtype0_2_Service*)buf;
 
             fig0_2serviceAudio->SId = htons((*serviceFIG0_2)->id);
@@ -279,7 +279,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             }
 
             switch ((*subchannel)->type) {
-                case Audio:
+                case subchannel_type_t::Audio:
                     {
                         auto audio_description = (FIGtype0_2_audio_component*)buf;
                         audio_description->TMid    = 0;
@@ -289,7 +289,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
                         audio_description->CA_flag = 0;
                     }
                     break;
-                case DataDmb:
+                case subchannel_type_t::DataDmb:
                     {
                         auto data_description = (FIGtype0_2_data_component*)buf;
                         data_description->TMid    = 1;
@@ -299,7 +299,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
                         data_description->CA_flag = 0;
                     }
                     break;
-                case Packet:
+                case subchannel_type_t::Packet:
                     {
                         auto packet_description = (FIGtype0_2_packet_component*)buf;
                         packet_description->TMid    = 3;
@@ -359,7 +359,7 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
             throw MuxInitException();
         }
 
-        if ((*subchannel)->type != Packet)
+        if ((*subchannel)->type != subchannel_type_t::Packet)
             continue;
 
         if (fig0_3_header == NULL) {
@@ -471,7 +471,7 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
         }
 
         if ((*service)->program) {
-            if ((*subchannel)->type == Packet) { // Data packet
+            if ((*subchannel)->type == subchannel_type_t::Packet) { // Data packet
                 if (remaining < 5) {
                     break;
                 }
@@ -515,7 +515,7 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
             }
         }
         else { // Data
-            if ((*subchannel)->type == Packet) { // Data packet
+            if ((*subchannel)->type == subchannel_type_t::Packet) { // Data packet
                 if (remaining < 7) {
                     break;
                 }
@@ -737,7 +737,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
         }
 
         if (    m_transmit_programme &&
-                (*subchannel)->type == Audio &&
+                (*subchannel)->type == subchannel_type_t::Audio &&
                 (*componentFIG0_13)->audio.uaType != 0xffff) {
             if (fig0 == NULL) {
                 fig0 = (FIGtype0*)buf;
@@ -782,7 +782,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
             fig0->Length += 2 + app->length;
         }
         else if (!m_transmit_programme &&
-                (*subchannel)->type == Packet &&
+                (*subchannel)->type == subchannel_type_t::Packet &&
                 (*componentFIG0_13)->packet.appType != 0xffff) {
 
             if (fig0 == NULL) {

@@ -220,7 +220,7 @@ bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
                 "for defining packet ");
         return false;
     }
-    if ((*getSubchannel(subchannels, subchId))->type != Packet) {
+    if ((*getSubchannel(subchannels, subchId))->type != subchannel_type_t::Packet) {
         return false;
     }
     return true;
@@ -288,17 +288,18 @@ const string DabComponent::get_parameter(const string& parameter) const
 }
 
 
-unsigned char DabService::getType(boost::shared_ptr<dabEnsemble> ensemble)
+subchannel_type_t DabService::getType(boost::shared_ptr<dabEnsemble> ensemble)
 {
     vector<dabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
-        return 4;
+        throw std::runtime_error("No component found for service");
     }
+
     subchannel = getSubchannel(ensemble->subchannels, (*component)->subchId);
     if (subchannel == ensemble->subchannels.end()) {
-        return 8;
+        throw std::runtime_error("Could not find subchannel associated with service");
     }
 
     return (*subchannel)->type;

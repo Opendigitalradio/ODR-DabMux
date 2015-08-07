@@ -479,21 +479,21 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
         etiLog.log(info, " input");
         etiLog.level(info) << "   URI:     " << (*subchannel)->inputUri;
         switch ((*subchannel)->type) {
-        case Audio:
-            etiLog.log(info, " type:       audio");
-            break;
-        case DataDmb:
-            etiLog.log(info, " type:       data");
-            break;
-        case Fidc:
-            etiLog.log(info, " type:       fidc");
-            break;
-        case Packet:
-            etiLog.log(info, " type:       packet");
-            break;
-        default:
-            etiLog.log(info, " type:       unknown");
-            break;
+            case subchannel_type_t::Audio:
+                etiLog.log(info, " type:       audio");
+                break;
+            case subchannel_type_t::DataDmb:
+                etiLog.log(info, " type:       data");
+                break;
+            case subchannel_type_t::Fidc:
+                etiLog.log(info, " type:       fidc");
+                break;
+            case subchannel_type_t::Packet:
+                etiLog.log(info, " type:       packet");
+                break;
+            default:
+                etiLog.log(info, " type:       unknown");
+                break;
         }
         etiLog.log(info, " id:         %i",
                 (*subchannel)->id);

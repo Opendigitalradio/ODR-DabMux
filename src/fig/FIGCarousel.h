@@ -51,7 +51,7 @@ class FIGCarousel {
     public:
         FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble);
 
-        void set_currentFrame(unsigned long currentFrame);
+        void update(unsigned long currentFrame, time_t dabTime);
 
         void allocate_fig_to_fib(int figtype, int extension, int fib);
 

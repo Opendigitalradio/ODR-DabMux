@@ -563,6 +563,130 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 0/9 ===========
+FIG0_9::FIG0_9(FIGRuntimeInformation *rti) :
+    m_rti(rti) {}
+
+FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+    auto ensemble = m_rti->ensemble;
+    size_t remaining = max_size;
+
+    if (remaining < 5) {
+        fs.num_bytes_written = 0;
+        return fs;
+    }
+
+    auto fig0_9 = (FIGtype0_9*)buf;
+    fig0_9->FIGtypeNumber = 0;
+    fig0_9->Length = 4;
+    fig0_9->CN = 0;
+    fig0_9->OE = 0;
+    fig0_9->PD = 0;
+    fig0_9->Extension = 9;
+
+    fig0_9->ext = 0;
+    fig0_9->lto = 0; // Unique LTO for ensemble
+
+    if (ensemble->lto_auto) {
+        time_t now = time(NULL);
+        struct tm* ltime = localtime(&now);
+        time_t now2 = timegm(ltime);
+        ensemble->lto = (now2 - now) / 1800;
+    }
+
+    if (ensemble->lto >= 0) {
+        fig0_9->ensembleLto = ensemble->lto;
+    }
+    else {
+        /* Convert to 1-complement representation */
+        fig0_9->ensembleLto = (-ensemble->lto) | (1<<5);
+    }
+
+    fig0_9->ensembleEcc = ensemble->ecc;
+    fig0_9->tableId = ensemble->international_table;
+    buf += 5;
+    remaining -= 5;
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
+//=========== FIG 0/10 ===========
+
+FIG0_10::FIG0_10(FIGRuntimeInformation *rti) :
+    m_rti(rti)
+{
+    uint8_t buffer[sizeof(m_watermarkData) / 2];
+    snprintf((char*)buffer, sizeof(buffer),
+            "%s %s, compiled at %s, %s",
+            PACKAGE_NAME, PACKAGE_VERSION, __DATE__, __TIME__);
+
+    memset(m_watermarkData, 0, sizeof(m_watermarkData));
+    m_watermarkData[0] = 0x55; // Sync
+    m_watermarkData[1] = 0x55;
+    m_watermarkSize = 16;
+    for (unsigned i = 0; i < strlen((char*)buffer); ++i) {
+        for (int j = 0; j < 8; ++j) {
+            uint8_t bit = (buffer[m_watermarkPos >> 3] >> (7 - (m_watermarkPos & 0x07))) & 1;
+            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
+            ++m_watermarkSize;
+            bit = 1;
+            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
+            ++m_watermarkSize;
+            ++m_watermarkPos;
+        }
+    }
+    m_watermarkPos = 0;
+}
+
+FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+    auto ensemble = m_rti->ensemble;
+    size_t remaining = max_size;
+
+    if (remaining < 6) {
+        fs.num_bytes_written = 0;
+        return fs;
+    }
+
+    //Time and country identifier
+    auto fig0_10 = (FIGtype0_10 *)buf;
+
+    fig0_10->FIGtypeNumber = 0;
+    fig0_10->Length = 5;
+    fig0_10->CN = 0;
+    fig0_10->OE = 0;
+    fig0_10->PD = 0;
+    fig0_10->Extension = 10;
+    buf += 2;
+
+    tm* timeData;
+    timeData = gmtime(&m_rti->date);
+
+    fig0_10->RFU = 0;
+    fig0_10->setMJD(gregorian2mjd(timeData->tm_year + 1900,
+                timeData->tm_mon + 1,
+                timeData->tm_mday));
+    fig0_10->LSI = 0;
+    fig0_10->ConfInd = (m_watermarkData[m_watermarkPos >> 3] >>
+            (7 - (m_watermarkPos & 0x07))) & 1;
+    if (++m_watermarkPos == m_watermarkSize) {
+        m_watermarkPos = 0;
+    }
+    fig0_10->UTC = 0;
+    fig0_10->setHours(timeData->tm_hour);
+    fig0_10->Minutes = timeData->tm_min;
+    buf += 4;
+    remaining -= 6;
+
+    fs.num_bytes_written = max_size - remaining;
+    fs.complete_fig_transmitted = true;
+    return fs;
+}
+
 //=========== FIG 0/13 ===========
 
 FIG0_13::FIG0_13(FIGRuntimeInformation *rti) :
@@ -693,6 +817,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
         }
     }
 
+    fs.num_bytes_written = max_size - remaining;
     return fs;
 }
 

@@ -122,6 +122,45 @@ class FIG0_8 : public IFIG
         std::vector<DabComponent*>::iterator componentFIG0_8;
 };
 
+// FIG type 0/9
+// The Country, LTO and International table feature defines the local time
+// offset, the International Table and the Extended Country Code (ECC)
+class FIG0_9 : public IFIG
+{
+    public:
+        FIG0_9(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 9; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+};
+
+
+// FIG type 0/10
+// The date and time feature is used to signal a location-independent timing
+// reference in UTC format.
+class FIG0_10 : public IFIG
+{
+    public:
+        FIG0_10(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 10; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+
+        uint8_t m_watermarkData[128];
+        size_t  m_watermarkSize;
+        size_t  m_watermarkPos;
+};
+
 // FIG type 0/13
 // User Application Information
 class FIG0_13 : public IFIG

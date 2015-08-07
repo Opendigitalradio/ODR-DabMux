@@ -80,9 +80,10 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     allocate_fig_to_fib(0, 17, fib0);
 }
 
-void FIGCarousel::set_currentFrame(unsigned long currentFrame)
+void FIGCarousel::update(unsigned long currentFrame, time_t dabTime)
 {
     m_rti.currentFrame = currentFrame;
+    m_rti.date = dabTime;
 }
 
 void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, int fib)

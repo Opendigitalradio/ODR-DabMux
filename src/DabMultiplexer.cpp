@@ -633,7 +633,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     // FIB 0 Insertion
     bool new_fig_carousel = m_pt.get("general.new_fig_carousel", false);
     if (new_fig_carousel) {
-        fig_carousel.set_currentFrame(currentFrame);
+        fig_carousel.update(currentFrame, date);
         figSize += fig_carousel.carousel(0, &etiFrame[index], 30, currentFrame % 4);
         index += figSize;
     }

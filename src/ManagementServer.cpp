@@ -206,10 +206,12 @@ void ManagementServer::serverThread()
 
     while (m_running) {
         zmq::message_t zmq_message;
-        m_zmq_sock.recv(&zmq_message);
-
-
-        handle_message(zmq_message);
+        if (m_zmq_sock.recv(&zmq_message, ZMQ_DONTWAIT)) {
+            handle_message(zmq_message);
+        }
+        else {
+            usleep(10000);
+        }
     }
 
     m_fault = true;

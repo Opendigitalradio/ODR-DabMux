@@ -123,6 +123,92 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 1/4 ===========
+
+FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+
+    ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        component = m_rti->ensemble->components.end();
+    }
+
+    auto ensemble = m_rti->ensemble;
+
+    // Rotate through the subchannels until there is no more
+    // space
+    if (component == ensemble->components.end()) {
+        component = ensemble->components.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
+    for (; component != ensemble->components.end();
+            ++component) {
+
+        auto service = getService(*component, ensemble->services);
+
+        if (not (*component)->label.long_label().empty() ) {
+            if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
+
+                if (remaining < 5 + 16 + 2) {
+                    break;
+                }
+
+                // Programme
+                FIGtype1_4_programme *fig1_4;
+                fig1_4 = (FIGtype1_4_programme*)buf;
+
+                fig1_4->FIGtypeNumber = 1;
+                fig1_4->Length = 22;
+                fig1_4->Charset = 0;
+                fig1_4->OE = 0;
+                fig1_4->Extension = 4;
+                fig1_4->PD = 0;
+                fig1_4->rfa = 0;
+                fig1_4->SCIdS = (*component)->SCIdS;
+
+                fig1_4->SId = htons((*service)->id);
+                buf += 5;
+                remaining -= 5;
+            }
+            else {    // Data
+
+                if (remaining < 7 + 16 + 2) {
+                    break;
+                }
+
+                FIGtype1_4_data *fig1_4;
+                fig1_4 = (FIGtype1_4_data *)buf;
+                fig1_4->FIGtypeNumber = 1;
+                fig1_4->Length = 24;
+                fig1_4->Charset = 0;
+                fig1_4->OE = 0;
+                fig1_4->Extension = 4;
+                fig1_4->PD = 1;
+                fig1_4->rfa = 0;
+                fig1_4->SCIdS = (*component)->SCIdS;
+
+                fig1_4->SId = htonl((*service)->id);
+                buf += 7;
+                remaining -= 7;
+            }
+            (*component)->label.writeLabel(buf);
+            buf += 16;
+            remaining -= 16;
+
+            buf[0] = (*component)->label.flag() >> 8;
+            buf[1] = (*component)->label.flag() & 0xFF;
+            buf += 2;
+            remaining -= 2;
+        }
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
 //=========== FIG 1/5 ===========
 
 FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)

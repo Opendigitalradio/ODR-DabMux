@@ -67,6 +67,24 @@ class FIG1_1 : public IFIG
         std::vector<std::shared_ptr<DabService> >::iterator service;
 };
 
+// FIG type 1/4, service component label
+class FIG1_4 : public IFIG
+{
+    public:
+        FIG1_4(FIGRuntimeInformation* rti) :
+            m_rti(rti), m_initialised(false) {}
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 1; }
+        virtual const int figextension(void) const { return 4; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<DabComponent*>::iterator component;
+};
+
 // FIG type 1/5, data service label
 class FIG1_5 : public IFIG
 {

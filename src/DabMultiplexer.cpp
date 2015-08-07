@@ -1115,7 +1115,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     if (figSize > 30) {
         etiLog.log(error,
-                "FIG too big (%i > 30)\n", figSize);
+                "FIB0 overload (%i > 30)\n", figSize);
         throw MuxInitException();
     }
 
@@ -1512,7 +1512,12 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
             break;
     }
 
-    assert(figSize <= 30);
+    if (figSize > 30) {
+        etiLog.log(error,
+                "FIB1 overload (%i > 30)\n", figSize);
+        throw MuxInitException();
+    }
+
     memcpy(&etiFrame[index], Padding_FIB, 30 - figSize);
     index += 30 - figSize;
 
@@ -1525,7 +1530,11 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     figSize = 0;
     // FIB 2 insertion
-    if (rotateFIB < ensemble->services.size()) {
+    if (new_fig_carousel) {
+        figSize += fig_carousel.carousel(2, &etiFrame[index], 30, currentFrame % 4);
+        index += figSize;
+    }
+    else if (rotateFIB < ensemble->services.size()) {
         service = ensemble->services.begin() + rotateFIB;
 
         // FIG type 1/1, SI, Service label, one instance per subchannel
@@ -1615,6 +1624,12 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
             figSize += 2;
         }
     }
+
+    if (figSize > 30) {
+        etiLog.log(error,
+                "FIB2 overload (%i > 30)\n", figSize);
+        throw MuxInitException();
+    }
     memcpy(&etiFrame[index], Padding_FIB, 30 - figSize);
     index += 30 - figSize;
 
@@ -1630,6 +1645,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
      */
     if (ensemble->mode == 3) {
         memcpy(&etiFrame[index], Padding_FIB, 30);
+        /* Fill FIB3 with padding */
         index += 30;
 
         CRCtmp = 0xffff;
@@ -1639,7 +1655,8 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         etiFrame[index++] = ((char *) &CRCtmp)[0];
     }
 
-    if (ensemble->services.size() > 30) {
+    if (    !new_fig_carousel and
+            ensemble->services.size() > 30) {
         etiLog.log(error,
                 "Sorry, but this software currently can't write "
                 "Service Label of more than 30 services.\n");

@@ -631,10 +631,10 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     unsigned char figSize = 0;
 
     // FIB 0 Insertion
-    bool new_fib0_carousel = m_pt.get("general.new_fib0_carousel", false);
-    if (new_fib0_carousel) {
-        // TODO update currentframe in rti
-        figSize += fig_carousel.fib0(&etiFrame[index], 30, currentFrame % 4);
+    bool new_fig_carousel = m_pt.get("general.new_fig_carousel", false);
+    if (new_fig_carousel) {
+        fig_carousel.set_currentFrame(currentFrame);
+        figSize += fig_carousel.carousel(0, &etiFrame[index], 30, currentFrame % 4);
         index += figSize;
     }
     // Skip creating a block for the else because
@@ -1129,7 +1129,10 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     figSize = 0;
     // FIB 1 insertion
-    switch (rotateFIB) {
+    if (new_fig_carousel) {
+        figSize += fig_carousel.carousel(1, &etiFrame[index], 30, currentFrame % 4);
+        index += figSize;
+    } else switch (rotateFIB) {
         case 0:     // FIG 0/8 program
             fig0 = NULL;
 

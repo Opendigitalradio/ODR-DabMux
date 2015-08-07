@@ -102,6 +102,24 @@ class FIG0_3 : public IFIG
         FIGRuntimeInformation *m_rti;
 };
 
+// FIG type 0/8, MCI, Service Organization, one instance of
+// FIGtype0_8_Service for each subchannel
+class FIG0_8 : public IFIG
+{
+    public:
+        FIG0_8(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 8; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<DabComponent*>::iterator componentFIG0_8;
+};
+
 // FIG type 0/17
 class FIG0_17 : public IFIG
 {

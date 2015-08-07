@@ -55,10 +55,8 @@ class FIGCarousel {
 
         void allocate_fig_to_fib(int figtype, int extension, int fib);
 
-        size_t fib0(uint8_t *buf, size_t bufsize, int framephase);
-
-    private:
         size_t carousel(size_t fib, uint8_t *buf, size_t bufsize, int framephase);
+    private:
 
         FIGRuntimeInformation m_rti;
         std::map<std::pair<int, int>, IFIG*> m_figs_available;

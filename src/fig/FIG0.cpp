@@ -417,6 +417,154 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 0/8 ===========
+
+FIG0_8::FIG0_8(FIGRuntimeInformation *rti) :
+    m_rti(rti),
+    m_initialised(false)
+{
+}
+
+FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+    auto ensemble = m_rti->ensemble;
+    ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        componentFIG0_8 = m_rti->ensemble->components.end();
+    }
+
+    FIGtype0* fig0 = NULL;
+
+    if (componentFIG0_8 == ensemble->components.end()) {
+        componentFIG0_8 = ensemble->components.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
+    for (; componentFIG0_8 != ensemble->components.end();
+            ++componentFIG0_8) {
+        auto service = getService(*componentFIG0_8,
+                ensemble->services);
+        auto subchannel = getSubchannel(ensemble->subchannels,
+                (*componentFIG0_8)->subchId);
+        if (subchannel == ensemble->subchannels.end()) {
+            etiLog.log(error,
+                    "Subchannel %i does not exist for component "
+                    "of service %i\n",
+                    (*componentFIG0_8)->subchId,
+                    (*componentFIG0_8)->serviceId);
+            throw MuxInitException();
+        }
+
+        if (!(*service)->program)
+            continue;
+
+        if (fig0 == NULL) {
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 0;
+            fig0->OE = 0;
+            fig0->PD = 0;
+            fig0->Extension = 8;
+            buf += 2;
+            remaining -= 2;
+        }
+
+        if ((*service)->program) {
+            if ((*subchannel)->type == Packet) { // Data packet
+                if (remaining < 5) {
+                    break;
+                }
+                buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
+                buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
+                fig0->Length += 2;
+                buf += 2;
+                remaining -= 2;
+
+                FIGtype0_8_long* definition = (FIGtype0_8_long*)buf;
+                memset(definition, 0, 3);
+                definition->ext = 0;    // no rfa
+                definition->SCIdS = (*componentFIG0_8)->SCIdS;
+                definition->LS = 1;
+                definition->setSCId((*componentFIG0_8)->packet.id);
+                fig0->Length += 3;
+                buf += 3;             // 8 minus rfa
+                remaining -= 3;
+            }
+            else {    // Audio, data stream or FIDC
+                if (remaining < 4) {
+                    break;
+                }
+                buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
+                buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
+
+                fig0->Length += 2;
+                buf += 2;
+                remaining -= 2;
+
+                FIGtype0_8_short* definition = (FIGtype0_8_short*)buf;
+                memset(definition, 0, 2);
+                definition->ext = 0;    // no rfa
+                definition->SCIdS = (*componentFIG0_8)->SCIdS;
+                definition->LS = 0;
+                definition->MscFic = 0;
+                definition->Id = (*componentFIG0_8)->subchId;
+                fig0->Length += 2;
+                buf += 2;             // 4 minus rfa
+                remaining -= 2;
+            }
+        }
+        else { // Data
+            if ((*subchannel)->type == Packet) { // Data packet
+                if (remaining < 7) {
+                    break;
+                }
+                buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
+                buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
+                fig0->Length += 4;
+                buf += 4;
+                remaining -= 4;
+
+                FIGtype0_8_long* definition = (FIGtype0_8_long*)buf;
+                memset(definition, 0, 3);
+                definition->ext = 0;    // no rfa
+                definition->SCIdS = (*componentFIG0_8)->SCIdS;
+                definition->LS = 1;
+                definition->setSCId((*componentFIG0_8)->packet.id);
+                fig0->Length += 3;
+                buf += 3;             // 8 minus rfa
+                remaining -= 3;
+            }
+            else {    // Audio, data stream or FIDC
+                if (remaining < 6 ) {
+                    break;
+                }
+                buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
+                buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
+                fig0->Length += 4;
+                buf += 4;
+                remaining -= 4;
+
+                FIGtype0_8_short* definition = (FIGtype0_8_short*)buf;
+                memset(definition, 0, 2);
+                definition->ext = 0;    // no rfa
+                definition->SCIdS = (*componentFIG0_8)->SCIdS;
+                definition->LS = 0;
+                definition->MscFic = 0;
+                definition->Id = (*componentFIG0_8)->subchId;
+                fig0->Length += 2;
+                buf += 2;             // 4 minus rfa
+                remaining -= 2;
+            }
+        }
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
 //=========== FIG 0/17 ===========
 
 FIG0_17::FIG0_17(FIGRuntimeInformation *rti) :

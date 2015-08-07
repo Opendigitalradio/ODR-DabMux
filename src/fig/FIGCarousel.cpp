@@ -115,10 +115,6 @@ void dumpfib(const uint8_t *buf, size_t bufsize) {
     std::cerr << std::endl;
 }
 
-size_t FIGCarousel::fib0(uint8_t *buf, const size_t bufsize, int framephase) {
-    return carousel(0, buf, bufsize, framephase);
-}
-
 size_t FIGCarousel::carousel(
         size_t fib,
         uint8_t *buf,

@@ -139,7 +139,7 @@ class DabMultiplexer {
 #endif // HAVE_OUTPUT_EDI
 
         /* New FIG Carousel */
-        FIGCarousel fig_carousel;
+        FIC::FIGCarousel fig_carousel;
 };
 
 // DAB Mode

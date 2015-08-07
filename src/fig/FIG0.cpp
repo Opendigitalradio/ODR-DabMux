@@ -28,6 +28,8 @@
 #include "fig/FIG0.h"
 #include "DabMultiplexer.h"
 
+namespace FIC {
+
 #define PACKED __attribute__ ((packed))
 
 //=========== FIG 0/0 ===========
@@ -498,4 +500,6 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
     fs.num_bytes_written = max_size - remaining;
     return fs;
 }
+
+} // namespace FIC
 

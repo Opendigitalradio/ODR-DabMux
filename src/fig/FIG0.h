@@ -30,6 +30,8 @@
 
 #include "fig/FIG.h"
 
+namespace FIC {
+
 // FIG type 0/0, Multiplex Configuration Info (MCI),
 // Ensemble information
 class FIG0_0 : public IFIG
@@ -116,6 +118,8 @@ class FIG0_17 : public IFIG
         bool m_initialised;
         std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_17;
 };
+
+} // namespace FIC
 
 #endif // __FIG0_H_
 

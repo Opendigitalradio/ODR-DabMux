@@ -31,6 +31,8 @@
 #include <iostream>
 #include <deque>
 
+namespace FIC {
+
 /**************** FIGCarouselElement ****************/
 void FIGCarouselElement::reduce_deadline()
 {
@@ -210,4 +212,6 @@ size_t FIGCarousel::carousel(
 
     return bufsize - available_size;
 }
+
+} // namespace FIC
 

@@ -36,6 +36,8 @@
 #include <boost/shared_ptr.hpp>
 #include "MuxElements.h"
 
+namespace FIC {
+
 struct FIGCarouselElement {
     IFIG* fig;
     int   deadline; // unit: ms
@@ -70,6 +72,8 @@ class FIGCarousel {
         FIG0_3 m_fig0_3;
         FIG0_17 m_fig0_17;
 };
+
+} // namespace FIC
 
 #endif // __FIG_CAROUSEL_H_
 

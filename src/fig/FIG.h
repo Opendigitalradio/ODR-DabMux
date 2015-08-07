@@ -30,6 +30,8 @@
 #include <boost/shared_ptr.hpp>
 #include "MuxElements.h"
 
+namespace FIC {
+
 class FIGRuntimeInformation {
     public:
         FIGRuntimeInformation(boost::shared_ptr<dabEnsemble> e) :
@@ -104,6 +106,8 @@ class IFIG
         }
 
 };
+
+} // namespace FIC
 
 #endif // __FIG_H_
 

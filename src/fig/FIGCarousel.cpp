@@ -158,12 +158,12 @@ size_t FIGCarousel::carousel(
             });
 
     /* Carousel debugging help
-    std::cerr << "  Sorted figs:" << std::endl;
+    std::cerr << "  Sorted figs in FIB" << fib << ":" << std::endl;
     for (auto& fig_el : sorted_figs) {
         std::cerr << "    " << fig_el->fig->name() <<
             " d:" << fig_el->deadline << std::endl;
     }
-    */
+    // */
 
     /* Data structure to carry FIB */
     size_t available_size = bufsize;

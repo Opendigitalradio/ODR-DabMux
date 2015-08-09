@@ -47,6 +47,8 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include <vector>
+
 class UdpPacket;
 
 
@@ -71,6 +73,8 @@ class UdpSocket {
   int create(int port = 0, char *name = NULL);
 
   int send(UdpPacket &packet);
+  int send(const std::vector<uint8_t> data);
+  int send(std::vector<uint8_t> data, InetAddress destination);
   int receive(UdpPacket &packet);
   int joinGroup(char* groupname);
   /**
@@ -101,8 +105,10 @@ class UdpSocket {
 class UdpPacket {
  public:
   UdpPacket(unsigned int initSize = 1024);
-  // Not implemented
-  UdpPacket(const UdpPacket& packet);
+  UdpPacket(const UdpPacket& packet) = delete;
+  const UdpPacket& operator=(const UdpPacket&) = delete;
+  UdpPacket(const UdpPacket&& packet) = delete;
+  const UdpPacket& operator=(const UdpPacket&&) = delete;
   ~UdpPacket();
 
   char *getData();
@@ -114,8 +120,6 @@ class UdpPacket {
   void setOffset(unsigned long val);
   void setSize(unsigned newSize);
   InetAddress &getAddress();
-  // Not implemented
-  const UdpPacket& operator=(const UdpPacket&);
   
  private:
   char *dataBuf;
@@ -124,3 +128,4 @@ class UdpPacket {
 };
 
 #endif // _UDPSOCKET
+

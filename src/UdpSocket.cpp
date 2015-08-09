@@ -202,7 +202,6 @@ int UdpSocket::receive(UdpPacket &packet)
   return 0;
 }
 
-
 /**
  *  Send an UDP packet.
  *  @param packet The UDP packet to be sent. It includes the data and the
@@ -216,6 +215,30 @@ int UdpSocket::send(UdpPacket &packet)
 #endif
   int ret = sendto(listenSocket, packet.getData(), packet.getLength(), 0,
 		   packet.getAddress().getAddress(), sizeof(*packet.getAddress().getAddress()));
+  if (ret == SOCKET_ERROR
+#ifndef _WIN32
+      && errno != ECONNREFUSED
+#endif
+      ) {
+    setInetError("Can't send UDP packet");
+    return -1;
+  }
+  return 0;
+}
+
+
+/**
+ *  Send an UDP packet
+ *
+ *  return 0 if ok, -1 if error
+ */
+int UdpSocket::send(std::vector<uint8_t> data, InetAddress destination)
+{
+#ifdef DUMP
+  TRACE_CLASS("UdpSocket", "send(vector<uint8_t>)");
+#endif
+  int ret = sendto(listenSocket, &data[0], data.size(), 0,
+		   destination.getAddress(), sizeof(*destination.getAddress()));
   if (ret == SOCKET_ERROR
 #ifndef _WIN32
       && errno != ECONNREFUSED

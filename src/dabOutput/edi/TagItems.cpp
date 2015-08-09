@@ -151,7 +151,7 @@ std::vector<uint8_t> TagESTn::Assemble()
     packet.push_back((sstc >> 8) & 0xFF);
     packet.push_back(sstc & 0xFF);
 
-    for (size_t i = 0; i < mst_length; i++) {
+    for (size_t i = 0; i < mst_length * 8; i++) {
         packet.push_back(mst_data[i]);
     }
 

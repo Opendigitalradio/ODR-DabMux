@@ -1790,15 +1790,12 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
             // Send over ethernet
             for (const auto& edi_frag : edi_fragments) {
-                UdpPacket udppacket;
 
-                InetAddress& addr = udppacket.getAddress();
+                InetAddress addr;
                 addr.setAddress(edi_conf.dest_addr.c_str());
                 addr.setPort(edi_conf.dest_port);
 
-                udppacket.addData(&(edi_frag.front()), edi_frag.size());
-
-                edi_output.send(udppacket);
+                edi_output.send(edi_frag, addr);
 
                 if (edi_conf.dump) {
                     std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
@@ -1814,15 +1811,11 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         else {
             // Send over ethernet
 
-            UdpPacket udppacket;
-
-            InetAddress& addr = udppacket.getAddress();
+            InetAddress addr;
             addr.setAddress(edi_conf.dest_addr.c_str());
             addr.setPort(edi_conf.dest_port);
 
-            udppacket.addData(&(edi_afpacket.front()), edi_afpacket.size());
-
-            edi_output.send(udppacket);
+            edi_output.send(edi_afpacket, addr);
 
             if (edi_conf.dump) {
                 std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);

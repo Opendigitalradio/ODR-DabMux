@@ -184,7 +184,8 @@ class dabSubchannel
 {
 public:
     dabSubchannel(std::string& uid) :
-            uid(uid)
+            uid(uid),
+            id(0)
     {
     }
 

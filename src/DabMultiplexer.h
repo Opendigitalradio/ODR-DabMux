@@ -64,7 +64,7 @@ class MuxInitException : public std::exception
         std::string msg;
 };
 
-class DabMultiplexer {
+class DabMultiplexer : public RemoteControllable {
     public:
         DabMultiplexer(boost::shared_ptr<BaseRemoteController> rc,
                boost::property_tree::ptree pt);
@@ -79,6 +79,13 @@ class DabMultiplexer {
         void update_config(boost::property_tree::ptree pt);
 
         void set_edi_config(const edi_configuration_t& new_edi_conf);
+
+        /* Remote control */
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const std::string get_parameter(const std::string& parameter) const;
 
     private:
         void prepare_watermark(void);
@@ -139,6 +146,7 @@ class DabMultiplexer {
 #endif // HAVE_OUTPUT_EDI
 
         /* New FIG Carousel */
+        bool m_use_new_fig_carousel;
         FIC::FIGCarousel fig_carousel;
 };
 

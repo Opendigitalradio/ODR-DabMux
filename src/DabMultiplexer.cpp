@@ -78,6 +78,7 @@ const unsigned short BitRateTable[64] = {
 DabMultiplexer::DabMultiplexer(
         boost::shared_ptr<BaseRemoteController> rc,
         boost::property_tree::ptree pt) :
+    RemoteControllable("mux"),
     m_pt(pt),
     m_rc(rc),
     timestamp(0),
@@ -92,6 +93,9 @@ DabMultiplexer::DabMultiplexer(
     fig_carousel(ensemble)
 {
     prepare_watermark();
+
+    RC_ADD_PARAMETER(carousel,
+            "Set to 1 to use the new carousel");
 }
 
 void DabMultiplexer::prepare_watermark()
@@ -169,7 +173,9 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 void DabMultiplexer::prepare()
 {
     parse_ptree(m_pt, ensemble, m_rc);
+    m_use_new_fig_carousel = m_pt.get("general.new_fig_carousel", false);
 
+    this->enrol_at(m_rc);
     ensemble->enrol_at(m_rc);
 
     prepare_subchannels();
@@ -632,8 +638,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     unsigned char figSize = 0;
 
     // FIB 0 Insertion
-    bool new_fig_carousel = m_pt.get("general.new_fig_carousel", false);
-    if (new_fig_carousel) {
+    if (m_use_new_fig_carousel) {
         fig_carousel.update(currentFrame, date);
         figSize += fig_carousel.carousel(0, &etiFrame[index], 30, currentFrame % 4);
         index += figSize;
@@ -1131,7 +1136,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     figSize = 0;
     // FIB 1 insertion
-    if (new_fig_carousel) {
+    if (m_use_new_fig_carousel) {
         figSize += fig_carousel.carousel(1, &etiFrame[index], 30, currentFrame % 4);
         index += figSize;
     } else switch (rotateFIB) {
@@ -1531,7 +1536,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     figSize = 0;
     // FIB 2 insertion
-    if (new_fig_carousel) {
+    if (m_use_new_fig_carousel) {
         figSize += fig_carousel.carousel(2, &etiFrame[index], 30, currentFrame % 4);
         index += figSize;
     }
@@ -1656,7 +1661,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         etiFrame[index++] = ((char *) &CRCtmp)[0];
     }
 
-    if (    !new_fig_carousel and
+    if (    !m_use_new_fig_carousel and
             ensemble->services.size() > 30) {
         etiLog.log(error,
                 "Sorry, but this software currently can't write "
@@ -1826,11 +1831,6 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     }
 #endif // HAVE_OUTPUT_EDI
 
-    if (currentFrame % 100 == 0) {
-        etiLog.log(info, "ETI frame number %i Time: %d, no TIST\n",
-                currentFrame, mnsc_time.tv_sec);
-    }
-
 #if _DEBUG
     /********************************************************************** 
      ***********   Output a small message *********************************
@@ -1866,5 +1866,38 @@ void DabMultiplexer::print_info(void)
 
     etiLog.log(info, "--- Components list ---");
     printComponents(ensemble->components);
+}
+
+
+void DabMultiplexer::set_parameter(const std::string& parameter,
+               const std::string& value)
+{
+    if (parameter == "carousel") {
+        std::stringstream ss;
+        ss << value;
+        ss >> m_use_new_fig_carousel;
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+/* Getting a parameter always returns a string. */
+const std::string DabMultiplexer::get_parameter(const std::string& parameter) const
+{
+    stringstream ss;
+    if (parameter == "carousel") {
+        ss << m_use_new_fig_carousel;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+
 }
 

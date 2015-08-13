@@ -234,7 +234,7 @@ void DabComponent::set_parameter(const string& parameter,
         boost::split(fields, value, boost::is_any_of(","));
         if (fields.size() != 2) {
             throw ParameterError("Parameter 'label' must have format"
-                   " 'label,shortlabel'");
+                    " 'label,shortlabel'");
         }
         int success = this->label.setLabel(fields[0], fields[1]);
         stringstream ss;

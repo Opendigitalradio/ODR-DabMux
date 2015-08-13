@@ -77,6 +77,7 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         service = m_rti->ensemble->services.end();
+        m_initialised = true;
     }
 
     auto ensemble = m_rti->ensemble;
@@ -133,6 +134,7 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         component = m_rti->ensemble->components.end();
+        m_initialised = true;
     }
 
     auto ensemble = m_rti->ensemble;
@@ -219,6 +221,7 @@ FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         service = m_rti->ensemble->services.end();
+        m_initialised = true;
     }
 
     auto ensemble = m_rti->ensemble;

@@ -78,6 +78,7 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         subchannelFIG0_1 = m_rti->ensemble->subchannels.end();
+        m_initialised = true;
     }
 
     if (max_size < 6) {
@@ -181,6 +182,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         serviceFIG0_2 = m_rti->ensemble->services.end();
+        m_initialised = true;
     }
 
     auto ensemble = m_rti->ensemble;
@@ -431,6 +433,7 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         componentFIG0_8 = m_rti->ensemble->components.end();
+        m_initialised = true;
     }
 
     FIGtype0* fig0 = NULL;
@@ -713,6 +716,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         componentFIG0_13 = m_rti->ensemble->components.end();
+        m_initialised = true;
     }
 
     FIGtype0* fig0 = NULL;
@@ -845,6 +849,7 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         serviceFIG0_17 = m_rti->ensemble->services.end();
+        m_initialised = true;
     }
 
     auto ensemble = m_rti->ensemble;

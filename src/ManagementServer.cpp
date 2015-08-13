@@ -36,6 +36,7 @@
 #include <sstream>
 #include <ctime>
 #include <boost/thread.hpp>
+#include <boost/version.hpp>
 #include "ManagementServer.h"
 #include "Log.h"
 
@@ -230,6 +231,7 @@ bool ManagementServer::handle_setptree(
 
             etiLog.level(info) << "Received ptree " << new_ptree;
 
+#if (BOOST_VERSION / 100000 == 1) && (BOOST_VERSION / 100 % 1000 >= 58)
             boost::unique_lock<boost::mutex> lock(m_configmutex);
             m_pt.clear();
 
@@ -241,6 +243,9 @@ bool ManagementServer::handle_setptree(
             answer << "OK";
 
             return true;
+#else
+#  warning "Boost version too old, ptree loading through ManagementServer disabled"
+#endif
         }
         else {
             etiLog.level(error) <<

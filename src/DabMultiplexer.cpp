@@ -23,6 +23,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <set>
 #include "DabMultiplexer.h"
 #include "ConfigParser.h"
 #include <boost/make_shared.hpp>

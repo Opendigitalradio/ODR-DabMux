@@ -180,7 +180,6 @@ class FIG0_13 : public IFIG
         std::vector<DabComponent*>::iterator componentFIG0_13;
 };
 
-
 // FIG type 0/17
 class FIG0_17 : public IFIG
 {
@@ -196,6 +195,23 @@ class FIG0_17 : public IFIG
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_17;
+};
+
+// FIG type 0/18
+class FIG0_18 : public IFIG
+{
+    public:
+        FIG0_18(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 18; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<std::shared_ptr<DabService> >::iterator service;
 };
 
 } // namespace FIC

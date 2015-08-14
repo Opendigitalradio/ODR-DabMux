@@ -919,5 +919,79 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 0/18 ===========
+
+FIG0_18::FIG0_18(FIGRuntimeInformation *rti) :
+    m_rti(rti),
+    m_initialised(false)
+{
+}
+
+FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+    ssize_t remaining = max_size;
+
+    if (not m_initialised) {
+        service = m_rti->ensemble->services.end();
+        m_initialised = true;
+    }
+
+    auto ensemble = m_rti->ensemble;
+
+    FIGtype0* fig0 = NULL;
+
+    if (service == ensemble->services.end()) {
+        service = ensemble->services.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
+    for (; service != ensemble->services.end();
+            ++service) {
+
+        if ( (*service)->ASu == 0 ) {
+            continue;
+        }
+
+        // TODO support more than one cluster
+        const int numclusters = 1;
+
+        if (remaining < (int)sizeof(FIGtype0_18) + numclusters) {
+            break;
+        }
+
+        if (fig0 == NULL) {
+            if (remaining < 2 + (int)sizeof(FIGtype0_18) + numclusters) {
+                break;
+            }
+
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 0;
+            fig0->OE = 0;
+            fig0->PD = 0;
+            fig0->Extension = 18;
+            buf += 2;
+            remaining -= 2;
+        }
+
+        auto programme = (FIGtype0_18*)buf;
+        programme->SId = htons((*service)->id);
+        programme->ASu = htons((*service)->ASu);
+        programme->Rfa = 0;
+        programme->NumClusters = numclusters;
+        buf += sizeof(FIGtype0_18);
+        buf[0] = 0x1; // TODO support not only cluster 1
+        buf += numclusters;
+
+        fig0->Length += sizeof(FIGtype0_18) + numclusters;
+        remaining -= sizeof(FIGtype0_18) + numclusters;
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
 } // namespace FIC
 

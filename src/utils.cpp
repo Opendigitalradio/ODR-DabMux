@@ -387,6 +387,8 @@ void printServices(const vector<shared_ptr<DabService> >& services)
 
         etiLog.log(info, " language:    0x%x (%u)",
                 service->language, service->language);
+        etiLog.log(info, " announcements: 0x%x",
+                service->ASu);
         ++index;
     }
 }

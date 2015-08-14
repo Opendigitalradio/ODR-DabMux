@@ -47,6 +47,24 @@ enum class subchannel_type_t {
 };
 
 
+/* Announcement switching flags,
+ * define in ETSI TS 101 756 Table 15 */
+const char * const annoucement_flags_names[] = {
+    "Alarm",
+    "Traffic",
+    "Travel",
+    "Warning",
+    "News",
+    "Weather",
+    "Event",
+    "Special",
+    "ProgrammeInfo",
+    "Sports",
+    "Finance",
+    "tba1", "tba2", "tba3", "tba4", "tba5"
+};
+
+
 struct dabOutput {
     dabOutput(const char* proto, const char* name) :
         outputProto(proto), outputName(name), output(NULL) { }
@@ -298,6 +316,13 @@ class DabService : public RemoteControllable
         unsigned char pty;
         unsigned char language;
         bool program;
+
+        /* ASu (Announcement support) flags: this 16-bit flag field shall
+         * specify the type(s) of announcements by which it is possible to
+         * interrupt the reception of the service. The interpretation of this
+         * field shall be as defined in TS 101 756, table 14.
+         */
+        uint16_t ASu;
 
         subchannel_type_t getType(boost::shared_ptr<dabEnsemble> ensemble);
         unsigned char nbComponent(std::vector<DabComponent*>& components);

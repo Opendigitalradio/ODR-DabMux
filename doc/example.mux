@@ -86,6 +86,22 @@ services {
         pty 0
         language 0
         ; also supports id
+
+        ; List of announcement switching flags signalled in FIG 0/18
+        ; This lists all possible announcements. If one is left out, it is disabled.
+        announcements {
+            Alarm false
+            Traffic false
+            Travel false
+            Warning false
+            News false
+            Weather false
+            Event false
+            Special false
+            ProgrammeInfo false
+            Sports false
+            Finance false
+        }
     }
     srv-lu {
         label "Luschtig"

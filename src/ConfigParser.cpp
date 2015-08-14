@@ -235,8 +235,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
         bool service_already_existing = false;
 
-        for (auto srv : ensemble->services)
-        {
+        for (auto srv : ensemble->services) {
             if (srv->uid == serviceuid) {
                 service = srv;
                 service_already_existing = true;
@@ -248,6 +247,18 @@ void parse_ptree(boost::property_tree::ptree& pt,
             auto new_srv = make_shared<DabService>(serviceuid);
             ensemble->services.push_back(new_srv);
             service = new_srv;
+        }
+
+        /* Parse ASu */
+        service->ASu = 0;
+        for (size_t flag = 0; flag < 16; flag++) {
+            std::string announcement_name(annoucement_flags_names[flag]);
+            bool flag_set =
+                pt_service.get<bool>("announcements." + announcement_name, false);
+
+            if (flag_set) {
+                service->ASu |= (1 << flag);
+            }
         }
 
         int success = -5;

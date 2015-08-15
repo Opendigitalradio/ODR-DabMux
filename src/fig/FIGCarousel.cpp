@@ -68,7 +68,8 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     m_fig1_1(&m_rti),
     m_fig1_4(&m_rti),
     m_fig1_5(&m_rti),
-    m_fig0_18(&m_rti)
+    m_fig0_18(&m_rti),
+    m_fig0_19(&m_rti)
 {
     load_and_allocate(m_fig0_0, 0);
     load_and_allocate(m_fig0_1, 0);
@@ -85,6 +86,7 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     load_and_allocate(m_fig1_1, 2);
     load_and_allocate(m_fig1_5, 2);
     load_and_allocate(m_fig0_18, 2);
+    load_and_allocate(m_fig0_19, 2);
 }
 
 void FIGCarousel::load_and_allocate(IFIG& fig, int fib)

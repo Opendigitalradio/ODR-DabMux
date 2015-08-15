@@ -220,15 +220,32 @@ class FIG0_19 : public IFIG
     public:
         FIG0_19(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+        virtual FIG_rate repetition_rate(void);
 
         virtual const int figtype(void) const { return 0; }
         virtual const int figextension(void) const { return 19; }
 
     private:
         FIGRuntimeInformation *m_rti;
-        bool m_initialised;
-        std::vector<std::shared_ptr<DabService> >::iterator service;
+
+        void update_state(void);
+
+        /* When a new announcement gets active, it is moved into the list
+         * of new announcements, and gets transmitted at a faster rate for
+         * two seconds.
+         * Same for recently disabled announcements.
+         */
+
+        /* Map of cluster to frame count */
+        std::map<
+            std::shared_ptr<AnnouncementCluster>,int> m_new_announcements;
+
+        std::set<
+            std::shared_ptr<AnnouncementCluster> > m_repeated_announcements;
+
+        /* Map of cluster to frame count */
+        std::map<
+            std::shared_ptr<AnnouncementCluster>,int> m_disabled_announcements;
 };
 
 } // namespace FIC

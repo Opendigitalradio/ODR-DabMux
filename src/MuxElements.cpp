@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2014, 2015
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -28,6 +28,7 @@
 
 #include "MuxElements.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 const unsigned short Sub_Channel_SizeTable[64] = {
     16, 21, 24, 29, 35, 24, 29, 35,
@@ -43,6 +44,50 @@ const unsigned short Sub_Channel_SizeTable[64] = {
 
 
 using namespace std;
+
+std::string AnnouncementCluster::tostring() const
+{
+    stringstream ss;
+    ss << "    cluster id : " << (int)cluster_id;
+    ss << "    flags      : 0x" << boost::format("%04x") % flags;
+    ss << "    subchannel : " << subchanneluid;
+    if (m_active) {
+        ss << "  *";
+    }
+
+    return ss.str();
+}
+
+void AnnouncementCluster::set_parameter(const string& parameter,
+        const string& value)
+{
+    if (parameter == "active") {
+        stringstream ss;
+        ss << value;
+        ss >> m_active;
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+const string AnnouncementCluster::get_parameter(const string& parameter) const
+{
+    stringstream ss;
+    if (parameter == "active") {
+        ss << m_active;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+}
+
 
 int DabLabel::setLabel(const std::string& label)
 {

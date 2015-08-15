@@ -554,5 +554,13 @@ void printEnsemble(const boost::shared_ptr<dabEnsemble> ensemble)
     }
     etiLog.log(info, " intl. table. %d", ensemble->international_table);
 
+    if (ensemble->clusters.empty()) {
+        etiLog.level(info) << " No announcement clusters defined";
+    }
+    else {
+        for (const auto& cluster : ensemble->clusters) {
+            etiLog.level(info) << cluster->tostring();
+        }
+    }
 }
 

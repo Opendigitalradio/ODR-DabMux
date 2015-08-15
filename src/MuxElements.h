@@ -64,6 +64,34 @@ const char * const annoucement_flags_names[] = {
     "tba1", "tba2", "tba3", "tba4", "tba5"
 };
 
+/* Class representing an announcement cluster for FIG 0/19 */
+class AnnouncementCluster : public RemoteControllable {
+    public:
+        AnnouncementCluster(std::string name) :
+            RemoteControllable(name),
+            m_active(false)
+        {
+            RC_ADD_PARAMETER(active, "Signal this announcement");
+        }
+
+        uint8_t cluster_id;
+        uint16_t flags;
+        std::string subchanneluid;
+
+        std::string tostring(void) const;
+
+        bool is_active(void) const { return m_active; };
+
+    private:
+        bool m_active;
+
+        /* Remote control */
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const std::string get_parameter(const std::string& parameter) const;
+};
 
 struct dabOutput {
     dabOutput(const char* proto, const char* name) :
@@ -160,6 +188,8 @@ class dabEnsemble : public RemoteControllable {
         std::vector<std::shared_ptr<DabService> > services;
         std::vector<DabComponent*> components;
         std::vector<dabSubchannel*> subchannels;
+
+        std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
 };
 
 

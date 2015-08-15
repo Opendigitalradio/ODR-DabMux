@@ -994,5 +994,187 @@ FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 0/19 ===========
+
+FIG0_19::FIG0_19(FIGRuntimeInformation *rti) :
+    m_rti(rti)
+{ }
+
+FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
+{
+    using namespace std;
+
+    update_state();
+
+    FillStatus fs;
+    ssize_t remaining = max_size;
+
+    auto ensemble = m_rti->ensemble;
+
+    FIGtype0* fig0 = NULL;
+    set<AnnouncementCluster*> allclusters;
+    for (const auto& cluster : m_new_announcements) {
+        allclusters.insert(cluster.first.get());
+    }
+    for (const auto& cluster : m_repeated_announcements) {
+        allclusters.insert(cluster.get());
+    }
+    for (const auto& cluster : m_disabled_announcements) {
+        allclusters.insert(cluster.first.get());
+    }
+
+    fs.complete_fig_transmitted = true;
+    for (const auto& cluster : allclusters) {
+
+        if (remaining < (int)sizeof(FIGtype0_19)) {
+            fs.complete_fig_transmitted = false;
+            break;
+        }
+
+        if (fig0 == NULL) {
+            if (remaining < 2 + (int)sizeof(FIGtype0_19)) {
+                break;
+            }
+
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 0;
+            fig0->OE = 0;
+            fig0->PD = 0;
+            fig0->Extension = 19;
+            buf += 2;
+            remaining -= 2;
+        }
+
+        auto fig0_19 = (FIGtype0_19*)buf;
+        fig0_19->ClusterId = cluster->cluster_id;
+        if (cluster->is_active()) {
+            fig0_19->ASw = cluster->flags;
+        }
+        else {
+            fig0_19->ASw = 0;
+        }
+        fig0_19->NewFlag = 1;
+        fig0_19->RegionFlag = 0;
+        fig0_19->SubChId = 0;
+        bool found = false;
+
+        for (const auto& subchannel : ensemble->subchannels) {
+            cerr << "*****" << subchannel->uid << " vs " <<
+                cluster->subchanneluid << endl;
+
+            if (subchannel->uid == cluster->subchanneluid) {
+                fig0_19->SubChId = subchannel->id;
+                found = true;
+                break;
+            }
+        }
+        if (not found) {
+            etiLog.level(warn) << "FIG0/19: could not find subchannel " <<
+                cluster->subchanneluid << " for cluster " <<
+                (int)cluster->cluster_id;
+            continue;
+        }
+
+        buf += sizeof(FIGtype0_19);
+        remaining -= sizeof(FIGtype0_19);
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
+void FIG0_19::update_state()
+{
+    auto ensemble = m_rti->ensemble;
+
+    // We are called every 24ms, and must timeout after 2s
+    const int timeout = 2000/24;
+
+    etiLog.level(info) << " FIG0/19 new";
+    for (const auto& cluster : m_new_announcements) {
+        etiLog.level(info) << "  " << cluster.first->tostring()
+            << ": " << cluster.second;
+    }
+    etiLog.level(info) << " FIG0/19 repeated";
+    for (const auto& cluster : m_repeated_announcements) {
+        etiLog.level(info) << "  " << cluster->tostring();
+    }
+    etiLog.level(info) << " FIG0/19 disabled";
+    for (const auto& cluster : m_disabled_announcements) {
+        etiLog.level(info) << "  " << cluster.first->tostring()
+            << ": " << cluster.second;
+    }
+
+    etiLog.level(info) << " FIG0/19 in ensemble";
+    for (const auto& cluster : ensemble->clusters) {
+        etiLog.level(info) << "  " << cluster->tostring();
+        if (cluster->is_active()) {
+            if (m_repeated_announcements.count(cluster) > 0) {
+                // We are currently announcing this cluster
+                continue;
+            }
+
+            if (m_new_announcements.count(cluster) > 0) {
+                // We are currently announcing this cluster at a
+                // fast rate. Handle timeout:
+                m_new_announcements[cluster] -= 1;
+                if (m_new_announcements[cluster] <= 0) {
+                    m_repeated_announcements.insert(cluster);
+                    m_new_announcements.erase(cluster);
+                }
+                continue;
+            }
+
+            // unlikely
+            if (m_disabled_announcements.count(cluster) > 0) {
+                m_new_announcements[cluster] = timeout;
+                m_disabled_announcements.erase(cluster);
+                continue;
+            }
+
+            // It's a new announcement!
+            m_new_announcements[cluster] = timeout;
+        }
+        else { // Not active
+            if (m_disabled_announcements.count(cluster) > 0) {
+                m_disabled_announcements[cluster] -= 1;
+                if (m_disabled_announcements[cluster] <= 0) {
+                    m_disabled_announcements.erase(cluster);
+                }
+                continue;
+            }
+
+            if (m_repeated_announcements.count(cluster) > 0) {
+                // We are currently announcing this cluster
+                m_disabled_announcements[cluster] = timeout;
+                m_repeated_announcements.erase(cluster);
+                continue;
+            }
+
+            // unlikely
+            if (m_new_announcements.count(cluster) > 0) {
+                // We are currently announcing this cluster at a
+                // fast rate. We must stop announcing it
+                m_disabled_announcements[cluster] = timeout;
+                m_new_announcements.erase(cluster);
+                continue;
+            }
+        }
+    }
+}
+
+FIG_rate FIG0_19::repetition_rate(void)
+{
+    if (    m_new_announcements.size() > 0 or
+            m_disabled_announcements.size() ) {
+        return FIG_rate::A_B;
+    }
+    else {
+        return FIG_rate::B;
+    }
+}
+
 } // namespace FIC
 

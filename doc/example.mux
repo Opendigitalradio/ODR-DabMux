@@ -74,6 +74,18 @@ ensemble {
                           ; 2 corresponds to program types used in north america
     label "TuxMux"
     shortlabel "Tux"
+
+    ; Announcement settings for FIG0/19
+    announcements {
+        test_announcement {
+            cluster 1
+            flags {
+                Traffic true
+            }
+
+            subchannel sub-fu
+        }
+    }
 }
 
 ; Definition of DAB services
@@ -91,7 +103,7 @@ services {
         ; This lists all possible announcements. If one is left out, it is disabled.
         announcements {
             Alarm false
-            Traffic false
+            Traffic true
             Travel false
             Warning false
             News false

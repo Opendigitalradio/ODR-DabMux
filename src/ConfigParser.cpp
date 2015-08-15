@@ -125,6 +125,22 @@ int hexparse(std::string input)
     return value;
 }
 
+uint16_t get_announcement_flag_from_ptree(
+        boost::property_tree::ptree& pt
+        )
+{
+    uint16_t flags = 0;
+    for (size_t flag = 0; flag < 16; flag++) {
+        std::string announcement_name(annoucement_flags_names[flag]);
+        bool flag_set = pt.get<bool>(announcement_name, false);
+
+        if (flag_set) {
+            flags |= (1 << flag);
+        }
+    }
+
+    return flags;
+}
 
 void parse_ptree(boost::property_tree::ptree& pt,
         boost::shared_ptr<dabEnsemble> ensemble,
@@ -219,6 +235,24 @@ void parse_ptree(boost::property_tree::ptree& pt,
             abort();
     }
 
+    try {
+        ptree pt_announcements = pt_ensemble.get_child("announcements");
+        for (auto announcement : pt_announcements) {
+            string name = announcement.first;
+            ptree pt_announcement = announcement.second;
+
+            auto cl = make_shared<AnnouncementCluster>(name);
+            cl->cluster_id = pt_announcement.get<uint8_t>("cluster");
+            cl->flags = get_announcement_flag_from_ptree(pt_announcement);
+            cl->subchanneluid = pt_announcement.get<string>("subchannel");
+
+            cl->enrol_at(*rc);
+            ensemble->clusters.push_back(cl);
+        }
+    }
+    catch (ptree_error& e) {
+        etiLog.level(info) << "No announcements defined in ensemble";
+    }
 
     /******************** READ SERVICES PARAMETERS *************/
 
@@ -251,43 +285,43 @@ void parse_ptree(boost::property_tree::ptree& pt,
             service = new_srv;
         }
 
-        /* Parse ASu */
-        service->ASu = 0;
-        for (size_t flag = 0; flag < 16; flag++) {
-            std::string announcement_name(annoucement_flags_names[flag]);
-            bool flag_set =
-                pt_service.get<bool>("announcements." + announcement_name, false);
+        try {
+            /* Parse announcements */
+            service->ASu = get_announcement_flag_from_ptree(
+                    pt_service.get_child("announcements"));
 
-            if (flag_set) {
-                service->ASu |= (1 << flag);
+            auto clusterlist = pt_service.get<std::string>("announcements.clusters", "");
+            vector<string> clusters_s;
+            boost::split(clusters_s,
+                    clusterlist,
+                    boost::is_any_of(","));
+
+            for (const auto& cluster_s : clusters_s) {
+                if (cluster_s == "") {
+                    continue;
+                }
+                try {
+                    service->clusters.push_back(std::stoi(cluster_s));
+                }
+                catch (std::logic_error& e) {
+                    etiLog.level(warn) << "Cannot parse '" << clusterlist <<
+                        "' announcement clusters for service " << serviceuid <<
+                        ": " << e.what();
+                }
+            }
+
+            if (service->ASu != 0 and service->clusters.empty()) {
+                etiLog.level(warn) << "Cluster list for service " << serviceuid <<
+                    "is empty, but announcements are defined";
             }
         }
+        catch (ptree_error& e) {
+            service->ASu = 0;
+            service->clusters.clear();
 
-        auto clusterlist = pt_service.get<std::string>("announcements.clusters", "");
-        vector<string> clusters_s;
-        boost::split(clusters_s,
-                clusterlist,
-                boost::is_any_of(","));
-
-        for (const auto& cluster_s : clusters_s) {
-            if (cluster_s == "") {
-                continue;
-            }
-            try {
-                service->clusters.push_back(std::stoi(cluster_s));
-            }
-            catch (std::logic_error& e) {
-                etiLog.level(warn) << "Cannot parse '" << clusterlist <<
-                    "' announcement clusters for service " << serviceuid <<
-                    ": " << e.what();
-            }
+            etiLog.level(info) << "No announcements defined in service " <<
+                serviceuid;
         }
-
-        if (service->ASu != 0 and service->clusters.empty()) {
-            etiLog.level(warn) << "Cluster list for service " << serviceuid <<
-                "is empty, but announcements are defined";
-        }
-
 
         int success = -5;
 

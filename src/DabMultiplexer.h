@@ -395,6 +395,14 @@ struct FIGtype0_18 {
     /* Followed by uint8_t Cluster IDs */
 } PACKED;
 
+struct FIGtype0_19 {
+    uint8_t  ClusterId;
+    uint16_t ASw;
+    uint8_t  SubChId:6;
+    uint8_t  RegionFlag:1; // shall be zero
+    uint8_t  NewFlag:1;
+    // Region and RFa not supported
+} PACKED;
 
 struct FIGtype0_1 {
     uint8_t Length:5;

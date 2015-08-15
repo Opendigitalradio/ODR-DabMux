@@ -37,6 +37,8 @@
 #endif
 
 #include <boost/property_tree/ptree.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <exception>
 #include <iostream>
 #include <vector>
@@ -260,6 +262,32 @@ void parse_ptree(boost::property_tree::ptree& pt,
                 service->ASu |= (1 << flag);
             }
         }
+
+        auto clusterlist = pt_service.get<std::string>("announcements.clusters", "");
+        vector<string> clusters_s;
+        boost::split(clusters_s,
+                clusterlist,
+                boost::is_any_of(","));
+
+        for (const auto& cluster_s : clusters_s) {
+            if (cluster_s == "") {
+                continue;
+            }
+            try {
+                service->clusters.push_back(std::stoi(cluster_s));
+            }
+            catch (std::logic_error& e) {
+                etiLog.level(warn) << "Cannot parse '" << clusterlist <<
+                    "' announcement clusters for service " << serviceuid <<
+                    ": " << e.what();
+            }
+        }
+
+        if (service->ASu != 0 and service->clusters.empty()) {
+            etiLog.level(warn) << "Cluster list for service " << serviceuid <<
+                "is empty, but announcements are defined";
+        }
+
 
         int success = -5;
 

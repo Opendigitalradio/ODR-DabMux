@@ -101,6 +101,9 @@ services {
             ProgrammeInfo false
             Sports false
             Finance false
+
+            ; a comma separated list of clusters in which the service belongs to
+            clusters "1,2"
         }
     }
     srv-lu {

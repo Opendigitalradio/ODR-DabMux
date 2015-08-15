@@ -25,6 +25,7 @@
 #include <cstring>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include "DabMux.h"
 #include "utils.h"
 
@@ -389,6 +390,12 @@ void printServices(const vector<shared_ptr<DabService> >& services)
                 service->language, service->language);
         etiLog.log(info, " announcements: 0x%x",
                 service->ASu);
+
+        std::vector<std::string> clusters_s;
+        for (const auto& cluster : service->clusters) {
+            clusters_s.push_back(std::to_string(cluster));
+        }
+        etiLog.level(info) << " clusters: " << boost::join(clusters_s, ",");
         ++index;
     }
 }

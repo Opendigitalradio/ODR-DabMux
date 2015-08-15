@@ -323,6 +323,7 @@ class DabService : public RemoteControllable
          * field shall be as defined in TS 101 756, table 14.
          */
         uint16_t ASu;
+        std::vector<uint8_t> clusters;
 
         subchannel_type_t getType(boost::shared_ptr<dabEnsemble> ensemble);
         unsigned char nbComponent(std::vector<DabComponent*>& components);

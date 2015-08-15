@@ -214,6 +214,23 @@ class FIG0_18 : public IFIG
         std::vector<std::shared_ptr<DabService> >::iterator service;
 };
 
+// FIG type 0/19
+class FIG0_19 : public IFIG
+{
+    public:
+        FIG0_19(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 19; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<std::shared_ptr<DabService> >::iterator service;
+};
+
 } // namespace FIC
 
 #endif // __FIG0_H_

@@ -953,8 +953,7 @@ FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
             continue;
         }
 
-        // TODO support more than one cluster
-        const int numclusters = 1;
+        const ssize_t numclusters = (*service)->clusters.size();
 
         if (remaining < (int)sizeof(FIGtype0_18) + numclusters) {
             break;
@@ -982,8 +981,10 @@ FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
         programme->Rfa = 0;
         programme->NumClusters = numclusters;
         buf += sizeof(FIGtype0_18);
-        buf[0] = 0x1; // TODO support not only cluster 1
-        buf += numclusters;
+
+        for (uint8_t cluster : (*service)->clusters) {
+            *(buf++) = cluster;
+        }
 
         fig0->Length += sizeof(FIGtype0_18) + numclusters;
         remaining -= sizeof(FIGtype0_18) + numclusters;

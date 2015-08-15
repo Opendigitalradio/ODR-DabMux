@@ -1853,7 +1853,6 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
 void DabMultiplexer::print_info(void)
 {
-    return;
     // Print settings before starting
     etiLog.log(info, "--- Multiplex configuration ---");
     printEnsemble(ensemble);

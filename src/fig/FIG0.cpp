@@ -955,12 +955,12 @@ FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
 
         const ssize_t numclusters = (*service)->clusters.size();
 
-        if (remaining < (int)sizeof(FIGtype0_18) + numclusters) {
+        if (remaining < 5 + numclusters) {
             break;
         }
 
         if (fig0 == NULL) {
-            if (remaining < 2 + (int)sizeof(FIGtype0_18) + numclusters) {
+            if (remaining < 2 + 5 + numclusters) {
                 break;
             }
 
@@ -980,14 +980,14 @@ FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
         programme->ASu = htons((*service)->ASu);
         programme->Rfa = 0;
         programme->NumClusters = numclusters;
-        buf += sizeof(FIGtype0_18);
+        buf += 5;
 
         for (uint8_t cluster : (*service)->clusters) {
             *(buf++) = cluster;
         }
 
-        fig0->Length += sizeof(FIGtype0_18) + numclusters;
-        remaining -= sizeof(FIGtype0_18) + numclusters;
+        fig0->Length += 5 + numclusters;
+        remaining -= 5 + numclusters;
     }
 
     fs.num_bytes_written = max_size - remaining;
@@ -1012,6 +1012,8 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
     auto ensemble = m_rti->ensemble;
 
     FIGtype0* fig0 = NULL;
+
+    // Combine all clusters into one list
     set<AnnouncementCluster*> allclusters;
     for (const auto& cluster : m_new_announcements) {
         allclusters.insert(cluster.first.get());
@@ -1026,13 +1028,14 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
     fs.complete_fig_transmitted = true;
     for (const auto& cluster : allclusters) {
 
-        if (remaining < (int)sizeof(FIGtype0_19)) {
+        if (remaining < 6) {
             fs.complete_fig_transmitted = false;
             break;
         }
 
         if (fig0 == NULL) {
-            if (remaining < 2 + (int)sizeof(FIGtype0_19)) {
+            if (remaining < 2 + 6) {
+                fs.complete_fig_transmitted = false;
                 break;
             }
 
@@ -1061,9 +1064,6 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
         bool found = false;
 
         for (const auto& subchannel : ensemble->subchannels) {
-            cerr << "*****" << subchannel->uid << " vs " <<
-                cluster->subchanneluid << endl;
-
             if (subchannel->uid == cluster->subchanneluid) {
                 fig0_19->SubChId = subchannel->id;
                 found = true;
@@ -1077,10 +1077,16 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
             continue;
         }
 
-        buf += sizeof(FIGtype0_19);
-        remaining -= sizeof(FIGtype0_19);
+        buf += 6;
+        remaining -= 6;
     }
 
+    if (not fs.complete_fig_transmitted) {
+        etiLog.level(warn) << "FIG0/19 incomplete!";
+    }
+    else {
+        etiLog.level(warn) << "FIG0/19 complete " << remaining;
+    }
     fs.num_bytes_written = max_size - remaining;
     return fs;
 }
@@ -1092,6 +1098,7 @@ void FIG0_19::update_state()
     // We are called every 24ms, and must timeout after 2s
     const int timeout = 2000/24;
 
+#define DEBUG_FIG0_19
 #ifdef DEBUG_FIG0_19
     etiLog.level(info) << " FIG0/19 new";
     for (const auto& cluster : m_new_announcements) {

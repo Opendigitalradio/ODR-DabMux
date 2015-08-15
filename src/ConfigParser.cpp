@@ -134,6 +134,8 @@ uint16_t get_announcement_flag_from_ptree(
         std::string announcement_name(annoucement_flags_names[flag]);
         bool flag_set = pt.get<bool>(announcement_name, false);
 
+        cerr << "  CHECK FOR " << announcement_name << " " << flag_set << endl;
+
         if (flag_set) {
             flags |= (1 << flag);
         }
@@ -243,7 +245,8 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
             auto cl = make_shared<AnnouncementCluster>(name);
             cl->cluster_id = pt_announcement.get<uint8_t>("cluster");
-            cl->flags = get_announcement_flag_from_ptree(pt_announcement);
+            cl->flags = get_announcement_flag_from_ptree(
+                    pt_announcement.get_child("flags"));
             cl->subchanneluid = pt_announcement.get<string>("subchannel");
 
             cl->enrol_at(*rc);

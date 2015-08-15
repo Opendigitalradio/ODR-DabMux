@@ -84,11 +84,6 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more
     // space
-    if (service == ensemble->services.end()) {
-        service = ensemble->services.begin();
-        fs.complete_fig_transmitted = true;
-    }
-
     for (; service != ensemble->services.end();
             ++service) {
 
@@ -120,6 +115,11 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
         }
     }
 
+    if (service == ensemble->services.end()) {
+        service = ensemble->services.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
     fs.num_bytes_written = max_size - remaining;
     return fs;
 }
@@ -141,11 +141,6 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more
     // space
-    if (component == ensemble->components.end()) {
-        component = ensemble->components.begin();
-        fs.complete_fig_transmitted = true;
-    }
-
     for (; component != ensemble->components.end();
             ++component) {
 
@@ -207,6 +202,11 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
         }
     }
 
+    if (component == ensemble->components.end()) {
+        component = ensemble->components.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
     fs.num_bytes_written = max_size - remaining;
     return fs;
 }
@@ -228,11 +228,6 @@ FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more
     // space
-    if (service == ensemble->services.end()) {
-        service = ensemble->services.begin();
-        fs.complete_fig_transmitted = true;
-    }
-
     for (; service != ensemble->services.end();
             ++service) {
 
@@ -261,6 +256,11 @@ FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
+    }
+
+    if (service == ensemble->services.end()) {
+        service = ensemble->services.begin();
+        fs.complete_fig_transmitted = true;
     }
 
     fs.num_bytes_written = max_size - remaining;

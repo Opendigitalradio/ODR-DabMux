@@ -484,7 +484,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     for (subchannel = subchannels.begin(); subchannel != subchannels.end();
             ++subchannel) {
         dabProtection* protection = &(*subchannel)->protection;
-        etiLog.log(info, "Subchannel   %i", index);
+        etiLog.level(info) << "Subchannel   " << (*subchannel)->uid;
         etiLog.log(info, " input");
         etiLog.level(info) << "   URI:     " << (*subchannel)->inputUri;
         switch ((*subchannel)->type) {

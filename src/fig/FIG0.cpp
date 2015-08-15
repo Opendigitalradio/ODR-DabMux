@@ -1026,16 +1026,17 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
         allclusters.insert(cluster.first.get());
     }
 
+    const int length_0_19 = 4;
     fs.complete_fig_transmitted = true;
     for (const auto& cluster : allclusters) {
 
-        if (remaining < 6) {
+        if (remaining < length_0_19) {
             fs.complete_fig_transmitted = false;
             break;
         }
 
         if (fig0 == NULL) {
-            if (remaining < 2 + 6) {
+            if (remaining < 2 + length_0_19) {
                 fs.complete_fig_transmitted = false;
                 break;
             }
@@ -1054,7 +1055,7 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
         auto fig0_19 = (FIGtype0_19*)buf;
         fig0_19->ClusterId = cluster->cluster_id;
         if (cluster->is_active()) {
-            fig0_19->ASw = cluster->flags;
+            fig0_19->ASw = htons(cluster->flags);
         }
         else {
             fig0_19->ASw = 0;
@@ -1078,16 +1079,11 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
             continue;
         }
 
-        buf += 6;
-        remaining -= 6;
+        fig0->Length += length_0_19;
+        buf += length_0_19;
+        remaining -= length_0_19;
     }
 
-    if (not fs.complete_fig_transmitted) {
-        etiLog.level(warn) << "FIG0/19 incomplete!";
-    }
-    else {
-        etiLog.level(warn) << "FIG0/19 complete " << remaining;
-    }
     fs.num_bytes_written = max_size - remaining;
     return fs;
 }
@@ -1099,7 +1095,7 @@ void FIG0_19::update_state()
     // We are called every 24ms, and must timeout after 2s
     const int timeout = 2000/24;
 
-#define DEBUG_FIG0_19
+//#define DEBUG_FIG0_19
 #ifdef DEBUG_FIG0_19
     etiLog.level(info) << " FIG0/19 new";
     for (const auto& cluster : m_new_announcements) {

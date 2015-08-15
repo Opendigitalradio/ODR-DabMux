@@ -134,8 +134,6 @@ uint16_t get_announcement_flag_from_ptree(
         std::string announcement_name(annoucement_flags_names[flag]);
         bool flag_set = pt.get<bool>(announcement_name, false);
 
-        cerr << "  CHECK FOR " << announcement_name << " " << flag_set << endl;
-
         if (flag_set) {
             flags |= (1 << flag);
         }
@@ -244,7 +242,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
             ptree pt_announcement = announcement.second;
 
             auto cl = make_shared<AnnouncementCluster>(name);
-            cl->cluster_id = pt_announcement.get<uint8_t>("cluster");
+            cl->cluster_id = hexparse(pt_announcement.get<string>("cluster"));
             cl->flags = get_announcement_flag_from_ptree(
                     pt_announcement.get_child("flags"));
             cl->subchanneluid = pt_announcement.get<string>("subchannel");
@@ -255,6 +253,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
     }
     catch (ptree_error& e) {
         etiLog.level(info) << "No announcements defined in ensemble";
+        etiLog.level(debug) << "because " << e.what();
     }
 
     /******************** READ SERVICES PARAMETERS *************/
@@ -304,7 +303,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
                     continue;
                 }
                 try {
-                    service->clusters.push_back(std::stoi(cluster_s));
+                    service->clusters.push_back(hexparse(cluster_s));
                 }
                 catch (std::logic_error& e) {
                     etiLog.level(warn) << "Cannot parse '" << clusterlist <<
@@ -905,7 +904,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     /* Get id */
 
     try {
-        subchan->id = hexparse(pt.get<std::string>("subchid"));
+        subchan->id = hexparse(pt.get<std::string>("id"));
     }
     catch (ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel

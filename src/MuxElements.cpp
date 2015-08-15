@@ -48,12 +48,14 @@ using namespace std;
 std::string AnnouncementCluster::tostring() const
 {
     stringstream ss;
-    ss << "    cluster id : " << (int)cluster_id;
-    ss << "    flags      : 0x" << boost::format("%04x") % flags;
-    ss << "    subchannel : " << subchanneluid;
+    ss << "cluster id(" << (int)cluster_id;
+    ss << "flags 0x" << boost::format("%04x") % flags;
+    ss << ", subchannel " << subchanneluid;
     if (m_active) {
-        ss << "  *";
+        ss << " *";
     }
+
+    ss << " )";
 
     return ss.str();
 }

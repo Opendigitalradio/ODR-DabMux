@@ -1092,6 +1092,7 @@ void FIG0_19::update_state()
     // We are called every 24ms, and must timeout after 2s
     const int timeout = 2000/24;
 
+#ifdef DEBUG_FIG0_19
     etiLog.level(info) << " FIG0/19 new";
     for (const auto& cluster : m_new_announcements) {
         etiLog.level(info) << "  " << cluster.first->tostring()
@@ -1108,8 +1109,12 @@ void FIG0_19::update_state()
     }
 
     etiLog.level(info) << " FIG0/19 in ensemble";
+#endif
+
     for (const auto& cluster : ensemble->clusters) {
+#ifdef DEBUG_FIG0_19
         etiLog.level(info) << "  " << cluster->tostring();
+#endif
         if (cluster->is_active()) {
             if (m_repeated_announcements.count(cluster) > 0) {
                 // We are currently announcing this cluster

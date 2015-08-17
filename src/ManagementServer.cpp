@@ -231,7 +231,7 @@ bool ManagementServer::handle_setptree(
 
             etiLog.level(info) << "Received ptree " << new_ptree;
 
-#if (BOOST_VERSION / 100000 == 1) && (BOOST_VERSION / 100 % 1000 >= 58)
+#if (BOOST_VERSION / 100000 == 1) && (BOOST_VERSION / 100 % 1000 >= 55)
             boost::unique_lock<boost::mutex> lock(m_configmutex);
             m_pt.clear();
 

@@ -32,7 +32,7 @@
 using namespace std;
 using namespace boost;
 
-static unsigned char Padding_FIB[] = {
+static const unsigned char Padding_FIB[] = {
     0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -635,17 +635,16 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     tm* timeData;
 
-    unsigned char figSize = 0;
-
-    // FIB 0 Insertion
+    // Insert all FIBs
     if (m_use_new_fig_carousel) {
         fig_carousel.update(currentFrame, date);
-        figSize += fig_carousel.carousel(0, &etiFrame[index], 30, currentFrame % 4);
-        index += figSize;
+        const bool fib3_present = ensemble->mode == 3;
+        index += fig_carousel.write_fibs(&etiFrame[index], currentFrame % 4, fib3_present);
     }
-    // Skip creating a block for the else because
-    // I don't want to reindent the whole switch block
-    else switch (insertFIG) {
+    else {
+    unsigned char figSize = 0;
+        // FIB 0 Insertion
+        switch (insertFIG) {
 
         case 0:
         case 4:
@@ -1136,10 +1135,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     figSize = 0;
     // FIB 1 insertion
-    if (m_use_new_fig_carousel) {
-        figSize += fig_carousel.carousel(1, &etiFrame[index], 30, currentFrame % 4);
-        index += figSize;
-    } else switch (rotateFIB) {
+    switch (rotateFIB) {
         case 0:     // FIG 0/8 program
             fig0 = NULL;
 
@@ -1536,11 +1532,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     figSize = 0;
     // FIB 2 insertion
-    if (m_use_new_fig_carousel) {
-        figSize += fig_carousel.carousel(2, &etiFrame[index], 30, currentFrame % 4);
-        index += figSize;
-    }
-    else if (rotateFIB < ensemble->services.size()) {
+    if (rotateFIB < ensemble->services.size()) {
         service = ensemble->services.begin() + rotateFIB;
 
         // FIG type 1/1, SI, Service label, one instance per subchannel
@@ -1661,8 +1653,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         etiFrame[index++] = ((char *) &CRCtmp)[0];
     }
 
-    if (    !m_use_new_fig_carousel and
-            ensemble->services.size() > 30) {
+    if (ensemble->services.size() > 30) {
         etiLog.log(error,
                 "Sorry, but this software currently can't write "
                 "Service Label of more than 30 services.\n");
@@ -1674,6 +1665,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     // We rotate through the FIBs every 30 frames
     rotateFIB = (rotateFIB + 1) % 30;
+    }
 
     /**********************************************************************
      ******  Input Data Reading *******************************************

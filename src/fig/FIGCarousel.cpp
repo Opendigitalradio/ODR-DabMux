@@ -26,6 +26,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "crc.h"
 #include "Log.h"
 #include "fig/FIGCarousel.h"
 #include <boost/format.hpp>
@@ -73,25 +74,26 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_18(&m_rti),
     m_fig0_19(&m_rti)
 {
-    load_and_allocate(m_fig0_0, 0);
-    load_and_allocate(m_fig0_1, 0);
-    load_and_allocate(m_fig0_2, 0);
-    load_and_allocate(m_fig0_3, 0);
-    load_and_allocate(m_fig0_17, 0);
+    load_and_allocate(m_fig0_1, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_2, FIBAllocation::FIB_ANY);
 
-    load_and_allocate(m_fig0_8, 1);
-    load_and_allocate(m_fig1_0, 1);
-    load_and_allocate(m_fig0_13, 1);
-    load_and_allocate(m_fig0_10, 1);
-    load_and_allocate(m_fig0_9, 1);
+    load_and_allocate(m_fig0_0, FIBAllocation::FIB0);
+    load_and_allocate(m_fig0_3, FIBAllocation::FIB0);
+    load_and_allocate(m_fig0_17, FIBAllocation::FIB0);
 
-    load_and_allocate(m_fig1_1, 2);
-    load_and_allocate(m_fig1_5, 2);
-    load_and_allocate(m_fig0_18, 2);
-    load_and_allocate(m_fig0_19, 2);
+    load_and_allocate(m_fig0_8, FIBAllocation::FIB1);
+    load_and_allocate(m_fig1_0, FIBAllocation::FIB1);
+    load_and_allocate(m_fig0_13, FIBAllocation::FIB1);
+    load_and_allocate(m_fig0_10, FIBAllocation::FIB1);
+    load_and_allocate(m_fig0_9, FIBAllocation::FIB1);
+
+    load_and_allocate(m_fig1_1, FIBAllocation::FIB2);
+    load_and_allocate(m_fig1_5, FIBAllocation::FIB2);
+    load_and_allocate(m_fig0_18, FIBAllocation::FIB2);
+    load_and_allocate(m_fig0_19, FIBAllocation::FIB2);
 }
 
-void FIGCarousel::load_and_allocate(IFIG& fig, int fib)
+void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
 {
     int type = fig.figtype();
     int extension = fig.figextension();
@@ -106,12 +108,8 @@ void FIGCarousel::update(unsigned long currentFrame, time_t dabTime)
     m_rti.date = dabTime;
 }
 
-void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, int fib)
+void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, FIBAllocation fib)
 {
-    if (fib < 0 or fib >= 3) {
-        throw std::out_of_range("Invalid FIB");
-    }
-
     auto fig = m_figs_available.find(std::make_pair(figtype, extension));
 
     if (fig != m_figs_available.end()) {
@@ -136,23 +134,76 @@ void dumpfib(const uint8_t *buf, size_t bufsize) {
     std::cerr << std::endl;
 }
 
+size_t FIGCarousel::write_fibs(
+        uint8_t *buf,
+        int framephase,
+        bool fib3_present)
+{
+    /* Decrement all deadlines of all figs */
+    for (auto& fib_fig : m_fibs) {
+        auto fig = fib_fig.second;
+        for (auto fig_el : fig) {
+            fig_el.reduce_deadline();
+        }
+    }
+
+    const int fibCount = fib3_present ? 4 : 3;
+
+    for (int fib = 0; fib < fibCount; fib++) {
+        memset(buf, 0x00, 30);
+        size_t figSize = carousel(fib, buf, 30, framephase);
+
+        if (figSize < 30) {
+            buf[figSize] = 0xff; // end marker
+        }
+        else if (figSize > 30) {
+            std::stringstream ss;
+            ss << "FIB" << fib << " overload (" << figSize << "> 30)";
+            throw std::runtime_error(ss.str());
+        }
+
+        uint16_t CRCtmp = 0xffff;
+        CRCtmp = crc16(CRCtmp, buf, 30);
+        CRCtmp ^= 0xffff;
+
+        buf += 30;
+        *(buf++) = ((char *) &CRCtmp)[1];
+        *(buf++) = ((char *) &CRCtmp)[0];
+    }
+
+    return 32 * fibCount;
+}
+
 size_t FIGCarousel::carousel(
-        size_t fib,
+        int fib,
         uint8_t *buf,
         const size_t bufsize,
         int framephase)
 {
     uint8_t *pbuf = buf;
 
-    std::list<FIGCarouselElement>& figs = m_fibs[fib];
+    FIBAllocation fibix;
 
+    if (fib == 0) {
+        fibix = FIBAllocation::FIB0;
+    }
+    else if (fib == 1) {
+        fibix = FIBAllocation::FIB1;
+    }
+    else if (fib == 2) {
+        fibix = FIBAllocation::FIB2;
+    }
+    else {
+        throw std::invalid_argument("FIGCarousel::carousel called with invalid fib");
+    }
+
+    // Create our list of FIGs to consider for this FIB
     std::deque<FIGCarouselElement*> sorted_figs;
-
-    /* Decrement all deadlines */
-    for (auto& fig_el : figs) {
-        fig_el.reduce_deadline();
-
-        sorted_figs.push_back(&fig_el);
+    for (auto& fig : m_fibs[fibix]) {
+        sorted_figs.push_back(&fig);
+    }
+    for (auto& fig : m_fibs[FIBAllocation::FIB_ANY]) {
+        sorted_figs.push_back(&fig);
     }
 
     /* Sort the FIGs in the FIB according to their deadline */
@@ -190,7 +241,7 @@ size_t FIGCarousel::carousel(
                 pbuf += written;
 
 #if CAROUSELDEBUG
-                std::cerr << " ****** FIG0/0 wrote\t" << written << " bytes"
+                std::cerr << " ****** FIG0/0(special) wrote\t" << written << " bytes"
                     << std::endl;
 
                 if (    (*fig0_0)->fig->figtype() != 0 or
@@ -240,12 +291,13 @@ size_t FIGCarousel::carousel(
         if (written > 2) {
             available_size -= written;
             pbuf += written;
-#if CAROUSELDEBUG
-            std::cerr << " ****** FIG" << fig_el->fig->figtype() << "/" <<
-                fig_el->fig->figextension() << " wrote\t" << written <<
-                " bytes" << std::endl;
-#endif
         }
+#if CAROUSELDEBUG
+        std::cerr << " ****** FIG" << fig_el->fig->figtype() << "/" <<
+            fig_el->fig->figextension() << " wrote\t" << written <<
+            " bytes" << (status.complete_fig_transmitted ? ", complete" :
+            ", incomplete") << std::endl;
+#endif
 
         if (status.complete_fig_transmitted) {
             fig_el->increase_deadline();

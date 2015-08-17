@@ -48,40 +48,55 @@ struct FIGCarouselElement {
     void increase_deadline(void);
 };
 
+enum class FIBAllocation {
+    FIB0,
+    FIB1,
+    FIB2,
+    FIB3,
+    FIB_ANY
+};
+
 class FIGCarousel {
     public:
         FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble);
 
         void update(unsigned long currentFrame, time_t dabTime);
 
-        void allocate_fig_to_fib(int figtype, int extension, int fib);
+        void allocate_fig_to_fib(int figtype, int extension, FIBAllocation fib);
 
-        size_t carousel(size_t fib, uint8_t *buf, size_t bufsize, int framephase);
+        /* Write all FIBs to the buffer, including correct padding and crc.
+         * Returns number of bytes written.
+         *
+         * The buffer buf must be large enough to accomodate the FIBs, i.e.
+         * 32 bytes per FIB.
+         */
+        size_t write_fibs(
+                uint8_t *buf,
+                int framephase,
+                bool fib3_present);
+
     private:
+        size_t carousel(int fib, uint8_t *buf, size_t bufsize, int framephase);
 
-        void load_and_allocate(IFIG& fig, int fib);
+        void load_and_allocate(IFIG& fig, FIBAllocation fib);
 
         FIGRuntimeInformation m_rti;
         std::map<std::pair<int, int>, IFIG*> m_figs_available;
 
-        // Each FIB contains a list of carousel elements
-        std::map<int, std::list<FIGCarouselElement> > m_fibs;
+        // Some FIGs can be mapped to a specific FIB or to FIB_ANY
+        std::map<FIBAllocation, std::list<FIGCarouselElement> > m_fibs;
 
-        // FIB 0 figs
+        // See in ctor for allocation to FIBs
         FIG0_0 m_fig0_0;
         FIG0_1 m_fig0_1;
         FIG0_2 m_fig0_2;
         FIG0_3 m_fig0_3;
         FIG0_17 m_fig0_17;
-
-        // FIB 1 figs
         FIG0_8 m_fig0_8;
         FIG1_0 m_fig1_0;
         FIG0_13 m_fig0_13;
         FIG0_10 m_fig0_10;
         FIG0_9 m_fig0_9;
-
-        // FIB 2 figs
         FIG1_1 m_fig1_1;
         FIG1_4 m_fig1_4;
         FIG1_5 m_fig1_5;

@@ -141,9 +141,13 @@ size_t FIGCarousel::write_fibs(
 {
     /* Decrement all deadlines of all figs */
     for (auto& fib_fig : m_fibs) {
-        auto fig = fib_fig.second;
-        for (auto fig_el : fig) {
+        auto& fig = fib_fig.second;
+        for (auto& fig_el : fig) {
             fig_el.reduce_deadline();
+#if CAROUSELDEBUG
+            std::cerr << " * " << fig_el.fig->name() <<
+                " d:" << fig_el.deadline << std::endl;
+#endif
         }
     }
 
@@ -212,15 +216,6 @@ size_t FIGCarousel::carousel(
                 const FIGCarouselElement* right) {
             return left->deadline < right->deadline;
             });
-
-#if CAROUSELDEBUG
-    // Carousel debugging help
-    std::cerr << " ***** Sorted figs in FIB" << fib << ":" << std::endl;
-    for (auto& fig_el : sorted_figs) {
-        std::cerr << "    " << fig_el->fig->name() <<
-            " d:" << fig_el->deadline << std::endl;
-    }
-#endif
 
     /* Data structure to carry FIB */
     size_t available_size = bufsize;

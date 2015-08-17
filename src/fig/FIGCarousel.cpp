@@ -32,6 +32,8 @@
 #include <iostream>
 #include <deque>
 
+#define CAROUSELDEBUG 0
+
 namespace FIC {
 
 /**************** FIGCarouselElement ****************/
@@ -40,8 +42,8 @@ void FIGCarouselElement::reduce_deadline()
     deadline -= 24; //ms
 
     if (deadline < 0) {
-        etiLog.level(warn) << "FIG " << fig->name() <<
-            " has negative scheduling deadline";
+        etiLog.level(warn) << "Could not respect repetition rate for FIG " <<
+            fig->name() << " (" << deadline << "ms late)";
     }
 }
 
@@ -160,13 +162,14 @@ size_t FIGCarousel::carousel(
             return left->deadline < right->deadline;
             });
 
-    /* Carousel debugging help
-    std::cerr << "  Sorted figs in FIB" << fib << ":" << std::endl;
+#if CAROUSELDEBUG
+    // Carousel debugging help
+    std::cerr << " ***** Sorted figs in FIB" << fib << ":" << std::endl;
     for (auto& fig_el : sorted_figs) {
         std::cerr << "    " << fig_el->fig->name() <<
             " d:" << fig_el->deadline << std::endl;
     }
-    // */
+#endif
 
     /* Data structure to carry FIB */
     size_t available_size = bufsize;
@@ -178,8 +181,6 @@ size_t FIGCarousel::carousel(
             });
 
     if (fig0_0 != sorted_figs.end()) {
-        sorted_figs.erase(fig0_0);
-
         if (framephase == 0) { // TODO check for all TM
             FillStatus status = (*fig0_0)->fig->fill(pbuf, available_size);
             size_t written = status.num_bytes_written;
@@ -187,6 +188,24 @@ size_t FIGCarousel::carousel(
             if (written > 0) {
                 available_size -= written;
                 pbuf += written;
+
+#if CAROUSELDEBUG
+                std::cerr << " ****** FIG0/0 wrote\t" << written << " bytes"
+                    << std::endl;
+
+                if (    (*fig0_0)->fig->figtype() != 0 or
+                        (*fig0_0)->fig->figextension() != 0 or
+                        written != 6) {
+
+                    std::stringstream ss;
+                    ss << "Assertion error: FIG 0/0 is actually " <<
+                        (*fig0_0)->fig->figtype()
+                        << "/" << (*fig0_0)->fig->figextension() <<
+                        " and wrote " << written << " bytes";
+
+                    throw std::runtime_error(ss.str());
+                }
+#endif
             }
             else {
                 throw std::runtime_error("Failed to write FIG0/0");
@@ -196,6 +215,8 @@ size_t FIGCarousel::carousel(
                 (*fig0_0)->increase_deadline();
             }
         }
+
+        sorted_figs.erase(fig0_0);
     }
 
 
@@ -205,9 +226,25 @@ size_t FIGCarousel::carousel(
         FillStatus status = fig_el->fig->fill(pbuf, available_size);
         size_t written = status.num_bytes_written;
 
-        if (written > 0) {
+        // If exactly two bytes were written, it's because the FIG did
+        // only write the header, but no content.
+        // Writing only one byte is not allowed
+        if (written == 1 or written == 2) {
+            std::stringstream ss;
+            ss << "Assertion error: FIG" << fig_el->fig->figtype() << "/" <<
+                fig_el->fig->figextension() << " wrote not enough data (" <<
+                written << ")";
+            throw std::runtime_error(ss.str());
+        }
+
+        if (written > 2) {
             available_size -= written;
             pbuf += written;
+#if CAROUSELDEBUG
+            std::cerr << " ****** FIG" << fig_el->fig->figtype() << "/" <<
+                fig_el->fig->figextension() << " wrote\t" << written <<
+                " bytes" << std::endl;
+#endif
         }
 
         if (status.complete_fig_transmitted) {

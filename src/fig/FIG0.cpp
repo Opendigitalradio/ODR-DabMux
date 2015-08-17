@@ -87,17 +87,7 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
 
     auto ensemble = m_rti->ensemble;
 
-    FIGtype0_1 *figtype0_1;
-    figtype0_1 = (FIGtype0_1*)buf;
-
-    figtype0_1->FIGtypeNumber = 0;
-    figtype0_1->Length = 1;
-    figtype0_1->CN = 0;
-    figtype0_1->OE = 0;
-    figtype0_1->PD = 0;
-    figtype0_1->Extension = 1;
-    buf += 2;
-    remaining -= 2;
+    FIGtype0_1 *figtype0_1 = NULL;
 
     // Rotate through the subchannels until there is no more
     // space in the FIG0/1
@@ -105,7 +95,24 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
             ++subchannelFIG0_1) {
         dabProtection* protection = &(*subchannelFIG0_1)->protection;
 
-        if ( (protection->form == UEP && remaining < 3) ||
+        if (figtype0_1 == NULL) {
+            if ( (protection->form == UEP && remaining < 2 + 3) ||
+                 (protection->form == EEP && remaining < 2 + 4) ) {
+                break;
+            }
+
+            figtype0_1 = (FIGtype0_1*)buf;
+
+            figtype0_1->FIGtypeNumber = 0;
+            figtype0_1->Length = 1;
+            figtype0_1->CN = 0;
+            figtype0_1->OE = 0;
+            figtype0_1->PD = 0;
+            figtype0_1->Extension = 1;
+            buf += 2;
+            remaining -= 2;
+        }
+        else if ( (protection->form == UEP && remaining < 3) ||
              (protection->form == EEP && remaining < 4) ) {
             break;
         }
@@ -205,7 +212,14 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 
         ++cur;
 
+        const int required_size = (type == subchannel_type_t::Audio) ?
+            3 + 2 * (*serviceFIG0_2)->nbComponent(ensemble->components) :
+            5 + 2 * (*serviceFIG0_2)->nbComponent(ensemble->components);
+
         if (fig0_2 == NULL) {
+            if (remaining < 2 + required_size) {
+                break;
+            }
             fig0_2 = (FIGtype0_2 *)buf;
 
             fig0_2->FIGtypeNumber = 0;
@@ -217,16 +231,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
-
-        if (type == subchannel_type_t::Audio and
-                remaining < 3 + 2 *
-                (*serviceFIG0_2)->nbComponent(ensemble->components)) {
-            break;
-        }
-
-        if (type != subchannel_type_t::Audio and
-                remaining < 5 + 2 *
-                (*serviceFIG0_2)->nbComponent(ensemble->components)) {
+        else if (remaining < required_size) {
             break;
         }
 
@@ -350,6 +355,7 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
     FIGtype0_3_header *fig0_3_header = NULL;
     FIGtype0_3_data *fig0_3_data = NULL;
 
+    // TODO: implement component carousel
     for (auto& component : ensemble->components) {
         auto subchannel = getSubchannel(ensemble->subchannels,
                 component->subchId);
@@ -454,10 +460,14 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
             throw MuxInitException();
         }
 
-        if (!(*service)->program)
-            continue;
+        const int required_size = (*service)->program ?
+            ((*subchannel)->type == subchannel_type_t::Packet ? 5 : 4) :
+            ((*subchannel)->type == subchannel_type_t::Packet ? 7 : 6);
 
         if (fig0 == NULL) {
+            if (remaining < 2 + required_size) {
+                break;
+            }
             fig0 = (FIGtype0*)buf;
             fig0->FIGtypeNumber = 0;
             fig0->Length = 1;
@@ -468,12 +478,12 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
+        else if (remaining < required_size) {
+            break;
+        }
 
         if ((*service)->program) {
             if ((*subchannel)->type == subchannel_type_t::Packet) { // Data packet
-                if (remaining < 5) {
-                    break;
-                }
                 buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
                 buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
                 fig0->Length += 2;
@@ -491,9 +501,6 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
                 remaining -= 3;
             }
             else {    // Audio, data stream or FIDC
-                if (remaining < 4) {
-                    break;
-                }
                 buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
                 buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
 
@@ -515,9 +522,6 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
         }
         else { // Data
             if ((*subchannel)->type == subchannel_type_t::Packet) { // Data packet
-                if (remaining < 7) {
-                    break;
-                }
                 buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
                 buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
                 fig0->Length += 4;
@@ -535,9 +539,6 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
                 remaining -= 3;
             }
             else {    // Audio, data stream or FIDC
-                if (remaining < 6 ) {
-                    break;
-                }
                 buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
                 buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
                 fig0->Length += 4;
@@ -675,6 +676,7 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
     fig0_10->PD = 0;
     fig0_10->Extension = 10;
     buf += 2;
+    remaining -= 2;
 
     tm* timeData;
     timeData = gmtime(&m_rti->date);
@@ -693,7 +695,7 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
     fig0_10->setHours(timeData->tm_hour);
     fig0_10->Minutes = timeData->tm_min;
     buf += 4;
-    remaining -= 6;
+    remaining -= 4;
 
     fs.num_bytes_written = max_size - remaining;
     fs.complete_fig_transmitted = true;
@@ -740,7 +742,13 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
         if (    m_transmit_programme &&
                 (*subchannel)->type == subchannel_type_t::Audio &&
                 (*componentFIG0_13)->audio.uaType != 0xffff) {
+
+            const int required_size = 3+4+11;
+
             if (fig0 == NULL) {
+                if (remaining < 2 + required_size) {
+                    break;
+                }
                 fig0 = (FIGtype0*)buf;
                 fig0->FIGtypeNumber = 0;
                 fig0->Length = 1;
@@ -751,8 +759,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 buf += 2;
                 remaining -= 2;
             }
-
-            if (remaining < 3+4+11) {
+            else if (remaining < required_size) {
                 break;
             }
 
@@ -786,7 +793,12 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 (*subchannel)->type == subchannel_type_t::Packet &&
                 (*componentFIG0_13)->packet.appType != 0xffff) {
 
+            const int required_size = 5+2;
+
             if (fig0 == NULL) {
+                if (remaining < 2 + required_size) {
+                    break;
+                }
                 fig0 = (FIGtype0*)buf;
                 fig0->FIGtypeNumber = 0;
                 fig0->Length = 1;
@@ -797,8 +809,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 buf += 2;
                 remaining -= 2;
             }
-
-            if (remaining < 5+2) {
+            else if (remaining < required_size) {
                 break;
             }
 
@@ -865,7 +876,13 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
             continue;
         }
 
+        const int required_size = (*serviceFIG0_17)->language == 0 ? 4 : 5;
+
+
         if (fig0 == NULL) {
+            if (remaining < 2 + required_size) {
+                break;
+            }
             fig0 = (FIGtype0*)buf;
             fig0->FIGtypeNumber = 0;
             fig0->Length = 1;
@@ -876,16 +893,8 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
-
-        if ((*serviceFIG0_17)->language == 0) {
-            if (remaining < 4) {
-                break;
-            }
-        }
-        else {
-            if (remaining < 5) {
-                break;
-            }
+        else if (remaining < required_size) {
+            break;
         }
 
         auto programme = (FIGtype0_17_programme*)buf;
@@ -951,12 +960,11 @@ FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
 
         const ssize_t numclusters = (*service)->clusters.size();
 
-        if (remaining < 5 + numclusters) {
-            break;
-        }
+        const int required_size = 5 + numclusters;
+
 
         if (fig0 == NULL) {
-            if (remaining < 2 + 5 + numclusters) {
+            if (remaining < 2 + required_size) {
                 break;
             }
 
@@ -969,6 +977,9 @@ FillStatus FIG0_18::fill(uint8_t *buf, size_t max_size)
             fig0->Extension = 18;
             buf += 2;
             remaining -= 2;
+        }
+        else if (remaining < required_size) {
+            break;
         }
 
         auto programme = (FIGtype0_18*)buf;
@@ -1030,11 +1041,6 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
     fs.complete_fig_transmitted = true;
     for (const auto& cluster : allclusters) {
 
-        if (remaining < length_0_19) {
-            fs.complete_fig_transmitted = false;
-            break;
-        }
-
         if (fig0 == NULL) {
             if (remaining < 2 + length_0_19) {
                 fs.complete_fig_transmitted = false;
@@ -1051,6 +1057,11 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
+        else if (remaining < length_0_19) {
+            fs.complete_fig_transmitted = false;
+            break;
+        }
+
 
         auto fig0_19 = (FIGtype0_19*)buf;
         fig0_19->ClusterId = cluster->cluster_id;

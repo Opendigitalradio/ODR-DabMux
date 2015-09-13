@@ -17,7 +17,7 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [0.7.5], [matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux], [0.8.0], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])
@@ -56,7 +56,7 @@ AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
-AX_BOOST_BASE([1.41.0], [], AC_MSG_ERROR([BOOST 1.41 or later is required]))
+AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
 
 # we need to check for libm before checking for fec
 AC_CHECK_LIB([m], [sin])

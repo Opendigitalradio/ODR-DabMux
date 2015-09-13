@@ -28,7 +28,7 @@ Install odr-dabmux
 
     % tar xjf odr-dabmux-x.y.z.tar.bz2      # Unpack the source
     % cd odr-dabmux-x.y.z                   # Change to the source directory
-    % ./configure --enable-input-zeromq --enable-output-zeromq
+    % ./configure
                                             # Run the configure script
     % make                                  # Build ODR-DabMux
     [ as root ]
@@ -37,12 +37,14 @@ Install odr-dabmux
 Nearly as simple install procedure using repository:
 ====================================================
 
-The code in the repository is more recent than the latest
-release and could be less stable, but already have new
-features.
+The *master* branch in the repository always points to the
+latest release. If you are looking for a new feature or bug-fix
+that did not yet make its way into a release, you can clone the
+*next* branch from the repository.
 
-* Download and install fec as above
+* Download and install the dependencies as above
 * Clone the git repository
+* Switch to the *next* branch
 * Bootstrap autotools: <pre>% ./bootstrap.sh</pre>
 * Then use ./configure as above
 

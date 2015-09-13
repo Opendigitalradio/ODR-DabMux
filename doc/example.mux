@@ -9,9 +9,6 @@
 ; It consists of six mandatory sections, whose relative order in this
 ; file are of no importance.
 
-; In case of questions or ambiguities, the documentation for the
-; command-line configuration interface still mostly applies.
-
 ; The general section defines global multiplex parameters.
 general {
     ; the DAB Transmission mode (values 1-4 accepted)

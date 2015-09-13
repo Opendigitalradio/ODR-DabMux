@@ -12,8 +12,8 @@ impressed.
 Usage
 -----
 
-Launch ODR-DabMux with your preferred multiplex, and enable the statsserver
-(which will soon be renamed) in the configuration file to port 12720.
+Launch ODR-DabMux with your preferred multiplex, and enable the statistics and
+management server in the configuration file to port 12720.
 
 Start the gui/odr-dabmux-gui.py script on the same machine
 

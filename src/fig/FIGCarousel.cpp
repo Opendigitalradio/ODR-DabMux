@@ -74,24 +74,37 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_18(&m_rti),
     m_fig0_19(&m_rti)
 {
-    load_and_allocate(m_fig0_1, FIBAllocation::FIB_ANY);
-    load_and_allocate(m_fig0_2, FIBAllocation::FIB_ANY);
-
+    /* Complete MCI except FIG0/8 should be in FIB0.
+     * EN 300 401 Clause 6.1
+     *
+     * It seems that this has become a weak requirement
+     * with time, because current receivers can cope with
+     * FIGs in any FIB. During elaboration of the standard,
+     * receiver manufacturers were concerned about the complexity,
+     * and pushed for support for receivers that only could
+     * decode FIB0.
+     *
+     * If repetition rate cannot be maintained with this allocation,
+     * we should drop the requirement and allocate all FIGs except 0/0
+     * to FIB_ANY
+     */
     load_and_allocate(m_fig0_0, FIBAllocation::FIB0);
+    load_and_allocate(m_fig0_1, FIBAllocation::FIB0);
+    load_and_allocate(m_fig0_2, FIBAllocation::FIB0);
     load_and_allocate(m_fig0_3, FIBAllocation::FIB0);
-    load_and_allocate(m_fig0_17, FIBAllocation::FIB0);
 
-    load_and_allocate(m_fig0_8, FIBAllocation::FIB1);
-    load_and_allocate(m_fig1_0, FIBAllocation::FIB1);
-    load_and_allocate(m_fig0_13, FIBAllocation::FIB1);
-    load_and_allocate(m_fig0_10, FIBAllocation::FIB1);
-    load_and_allocate(m_fig0_9, FIBAllocation::FIB1);
+    load_and_allocate(m_fig0_17, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_8, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig1_0, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_13, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_10, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_9, FIBAllocation::FIB_ANY);
 
-    load_and_allocate(m_fig1_1, FIBAllocation::FIB2);
-    load_and_allocate(m_fig1_4, FIBAllocation::FIB2);
-    load_and_allocate(m_fig1_5, FIBAllocation::FIB2);
-    load_and_allocate(m_fig0_18, FIBAllocation::FIB2);
-    load_and_allocate(m_fig0_19, FIBAllocation::FIB2);
+    load_and_allocate(m_fig1_1, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig1_4, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig1_5, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_18, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_19, FIBAllocation::FIB_ANY);
 }
 
 void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)

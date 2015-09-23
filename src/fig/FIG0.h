@@ -27,6 +27,8 @@
 #define __FIG0_H_
 
 #include <cstdint>
+#include <map>
+#include <set>
 
 #include "fig/FIG.h"
 

@@ -778,7 +778,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #if defined(HAVE_INPUT_TEST) && defined(HAVE_FORMAT_RAW)
     } else if (type == "test") {
-        subchan->type = DataDmb;
+        subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
         operations = dabInputTestOperations;
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)

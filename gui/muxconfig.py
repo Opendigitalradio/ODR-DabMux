@@ -97,18 +97,33 @@ class ConfigurationHandler(object):
         self._config = None
         self._statistics = None
 
-        self._ctx = zmq.Context()
+        #self._ctx = zmq.Context()
+        #self.sock = zmq.Socket(self._ctx, zmq.REQ)
+        #self.sock.setsockopt(zmq.LINGER, 0)
+        #self.sock.connect("tcp://{}:{}".format(self._host, self._port))
+
+    def zRead(self, key):
+	self._ctx = zmq.Context()
         self.sock = zmq.Socket(self._ctx, zmq.REQ)
+        self.sock.setsockopt(zmq.LINGER, 0)
         self.sock.connect("tcp://{}:{}".format(self._host, self._port))
+	self.sock.send(key)
+	
+	# use poll for timeouts:
+	poller = zmq.Poller()
+	poller.register(self.sock, zmq.POLLIN)
+	if poller.poll(5*1000): # 5s timeout in milliseconds
+		recv = self.sock.recv()
+		self.sock.close()
+		self._ctx.term()
+		return recv
+	else:
+		raise IOError("Timeout processing ZMQ request")
 
     def load(self):
-        """Load the configuration from the multiplexer and
-        save it locally"""
-        self.sock.send(b'info')
-        server_info = self.sock.recv()
-
-        self.sock.send(b'getptree')
-        config_info = self.sock.recv()
+        """Load the configuration from the multiplexer and save it locally"""
+        server_info = self.zRead(b'info')
+        config_info = self.zRead(b'getptree')
 
         print("Config '%r'" % config_info)
 
@@ -118,12 +133,8 @@ class ConfigurationHandler(object):
     def update_stats(self):
         """Load the statistics from the multiplexer and
         save them locally"""
-
-        self.sock.send(b'info')
-        server_info = self.sock.recv()
-
-        self.sock.send(b'values')
-        stats_info = self.sock.recv()
+        server_info = self.zRead(b'info')
+        stats_info = self.zRead(b'values')
 
         self._statistics = json.loads(stats_info)['values']
 

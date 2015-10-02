@@ -27,7 +27,8 @@ class General(object):
     """Container object for general options"""
     def __init__(self, pt):
         ptree = pt['general']
-        for fieldname in ["nbframes",
+        for fieldname in [
+		"nbframes",
                 "statsserverport",
                 "writescca",
                 "tist",
@@ -44,7 +45,8 @@ class Service(object):
     def __init__(self, name, ptree):
         self.name = name
 
-        for fieldname in ['id',
+        for fieldname in [
+		"id",
                 "label",
                 "shortlabel",
                 "pty",
@@ -58,7 +60,8 @@ class Subchannel(object):
     """Container object for a subchannel"""
     def __init__(self, name, ptree):
         self.name = name
-        for fieldname in ['type',
+        for fieldname in [
+		"type",
                 "inputfile",
                 "zmq-buffer",
                 "zmq-prebuffering",

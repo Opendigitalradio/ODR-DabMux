@@ -114,15 +114,15 @@ def send_static(filename):
 
 
 if __name__ == '__main__':
-	# Get configuration file in argument
-	parser = argparse.ArgumentParser(description='management server for ODR-DabMux')
-	parser.add_argument('--host', default='127.0.0.1', help='socket host (default: 127.0.0.1)',required=False)
-	parser.add_argument('--port', default='8000', help='socket port (default: 8000)',required=False)
-	parser.add_argument('--mhost', default='127.0.0.1', help='mux host (default: 127.0.0.1)',required=False)
-	parser.add_argument('--mport', default='12720', help='mux port (default: 12720)',required=False)
-	cli_args = parser.parse_args()
-	
-	conf = ConfigurationHandler(cli_args.mhost, cli_args.mport)
-	
-	run(host=cli_args.host, port=int(cli_args.port), debug=True, reloader=False)
+    # Get configuration file in argument
+    parser = argparse.ArgumentParser(description='management server for ODR-DabMux')
+    parser.add_argument('--host', default='127.0.0.1', help='socket host (default: 127.0.0.1)',required=False)
+    parser.add_argument('--port', default='8000', help='socket port (default: 8000)',required=False)
+    parser.add_argument('--mhost', default='127.0.0.1', help='mux host (default: 127.0.0.1)',required=False)
+    parser.add_argument('--mport', default='12720', help='mux port (default: 12720)',required=False)
+    cli_args = parser.parse_args()
+
+    conf = ConfigurationHandler(cli_args.mhost, cli_args.mport)
+
+    run(host=cli_args.host, port=int(cli_args.port), debug=True, reloader=False)
 

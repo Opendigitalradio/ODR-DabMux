@@ -28,7 +28,7 @@ class General(object):
     def __init__(self, pt):
         ptree = pt['general']
         for fieldname in [
-		"nbframes",
+                "nbframes",
                 "statsserverport",
                 "writescca",
                 "tist",
@@ -46,7 +46,7 @@ class Service(object):
         self.name = name
 
         for fieldname in [
-		"id",
+                "id",
                 "label",
                 "shortlabel",
                 "pty",
@@ -61,7 +61,7 @@ class Subchannel(object):
     def __init__(self, name, ptree):
         self.name = name
         for fieldname in [
-		"type",
+                "type",
                 "inputfile",
                 "zmq-buffer",
                 "zmq-prebuffering",
@@ -106,22 +106,22 @@ class ConfigurationHandler(object):
         #self.sock.connect("tcp://{}:{}".format(self._host, self._port))
 
     def zRead(self, key):
-	self._ctx = zmq.Context()
+    self._ctx = zmq.Context()
         self.sock = zmq.Socket(self._ctx, zmq.REQ)
         self.sock.setsockopt(zmq.LINGER, 0)
         self.sock.connect("tcp://{}:{}".format(self._host, self._port))
-	self.sock.send(key)
-	
-	# use poll for timeouts:
-	poller = zmq.Poller()
-	poller.register(self.sock, zmq.POLLIN)
-	if poller.poll(5*1000): # 5s timeout in milliseconds
-		recv = self.sock.recv()
-		self.sock.close()
-		self._ctx.term()
-		return recv
-	else:
-		raise IOError("Timeout processing ZMQ request")
+    self.sock.send(key)
+    
+    # use poll for timeouts:
+    poller = zmq.Poller()
+    poller.register(self.sock, zmq.POLLIN)
+    if poller.poll(5*1000): # 5s timeout in milliseconds
+        recv = self.sock.recv()
+        self.sock.close()
+        self._ctx.term()
+        return recv
+    else:
+        raise IOError("Timeout processing ZMQ request")
 
     def load(self):
         """Load the configuration from the multiplexer and save it locally"""

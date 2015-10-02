@@ -128,8 +128,6 @@ class ConfigurationHandler(object):
         server_info = self.zRead(b'info')
         config_info = self.zRead(b'getptree')
 
-        print("Config '%r'" % config_info)
-
         self._server_version = json.loads(server_info)['service']
         self._config = json.loads(config_info)
 
@@ -142,7 +140,7 @@ class ConfigurationHandler(object):
         self._statistics = json.loads(stats_info)['values']
 
     def get_full_configuration(self):
-        return json.dumps(self._config, indent=4)
+        return self._config
 
     def set_full_configuration(self, config_json):
         self.sock.send(b'setptree', flags=zmq.SNDMORE)

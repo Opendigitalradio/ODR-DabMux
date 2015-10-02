@@ -63,7 +63,7 @@ def config_json_post():
 
     return template('configeditor',
             version = conf.get_mux_version(),
-            config  = conf.get_full_configuration(),
+            config  = json.dumps(conf.get_full_configuration(), indent=4),
             message = successmessage)
 
 @route('/config.json', method="GET")
@@ -73,8 +73,8 @@ def config_json_get():
 
     conf.load()
 
-    return {'version': conf.get_mux_version(),
-            'config':  conf.get_full_configuration()}
+    return { 'version': conf.get_mux_version(),
+            'config': conf.get_full_configuration() }
 
 
 @route('/')

@@ -32,7 +32,6 @@ from bottle import route, run, template, static_file, request
 import json
 
 import argparse
-import requests
 
 @route('/config')
 def config():

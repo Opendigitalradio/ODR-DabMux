@@ -123,7 +123,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     munin_config = config_top
 
     for conf in config['config']:
-        munin_config += config_template.format(ident=conf)
+        munin_config += config_template.format(ident=conf.replace('-', '_'))
 
     print(munin_config)
 else:

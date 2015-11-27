@@ -404,6 +404,19 @@ void DabService::set_parameter(const string& parameter,
                 throw ParameterError(ss.str());
         }
     }
+    else if (parameter == "pty") {
+        int newpty = std::stoi(value); // International code, 5 bits
+
+        if (newpty >= 0 and newpty < (1<<5)) {
+            pty = newpty;
+        }
+        else {
+            stringstream ss;
+            ss << m_name << " pty is out of bounds";
+            etiLog.level(warn) << ss.str();
+            throw ParameterError(ss.str());
+        }
+    }
     else {
         stringstream ss;
         ss << "Parameter '" << parameter <<
@@ -417,6 +430,9 @@ const string DabService::get_parameter(const string& parameter) const
     stringstream ss;
     if (parameter == "label") {
         ss << label.long_label() << "," << label.short_label();
+    }
+    else if (parameter == "pty") {
+        ss << (int)pty;
     }
     else {
         ss << "Parameter '" << parameter <<

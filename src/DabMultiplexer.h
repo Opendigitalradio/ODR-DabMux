@@ -381,10 +381,14 @@ struct FIGtype0_17_programme {
     uint16_t SId;
     uint8_t NFC:2;
     uint8_t Rfa:2;
-    uint8_t CC:1;
-    uint8_t L:1;
-    uint8_t PS:1;
-    uint8_t SD:1;
+    uint8_t CC:1; // Complimentary code
+    uint8_t L:1; // Signals presence of language field
+    uint8_t PS:1; // Primary/Secondary
+    // PS==0: language refers to primary service component
+    // PS==1: language refers to secondary service component
+    uint8_t SD:1; // Static/Dynamic
+    // SD==0: PTy and language may not represent the current programme contents
+    // SD==1: PTy and language represent the current programme contents
 } PACKED;
 
 struct FIGtype0_18 {

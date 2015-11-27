@@ -338,6 +338,7 @@ class DabService : public RemoteControllable
             uid(uid)
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
+            RC_ADD_PARAMETER(pty, "Programme Type");
         }
 
         std::string uid;

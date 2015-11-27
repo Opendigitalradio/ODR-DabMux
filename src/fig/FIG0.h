@@ -183,6 +183,7 @@ class FIG0_13 : public IFIG
 };
 
 // FIG type 0/17
+// Programme Type (PTy)
 class FIG0_17 : public IFIG
 {
     public:

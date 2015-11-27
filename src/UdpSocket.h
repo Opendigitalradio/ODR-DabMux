@@ -69,6 +69,8 @@ class UdpSocket {
   UdpSocket();
   UdpSocket(int port, char *name = NULL);
   ~UdpSocket();
+  UdpSocket(const UdpSocket& other) = delete;
+  const UdpSocket& operator=(const UdpSocket& other) = delete;
 
   static int init();
   static int clean();

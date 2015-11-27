@@ -321,17 +321,28 @@ outputs {
 
     ; The edi output has a different syntax
     edi {
-        destination "192.168.23.23"
+        ; example for unicast EDI
+        ;destination "192.168.23.23"
+        ; for unicast EDI, do not set source
+
+        ; example for multicast EDI, the source IP is required
+        ; so that the data is sent on the correct ethernet interface
+        destination "232.20.10.1"
+        source      "192.168.0.50"
+        ; The multicast TTL has to be adapted according to your network
+        ttl 1
+
+        ; The settings below apply to both unicast and multicast
+
+        ; EDI uses the UDP protocol
         port        12000
         sourceport  13000
 
-        ; EDI uses the UDP protocol
-
         ; Enable the PFT subsystem. If false, AFPackets are sent.
-        enable_pft  false
+        enable_pft  true
 
         ; How many lost fragments can be recovered by Reed-Solomon
-        fec         3
+        fec         2
 
         ; Length of a RS chunk, can be overriden
         ;default=207
@@ -341,7 +352,7 @@ outputs {
         dump        false
 
         ; show more debugging info
-        verbose     true
+        verbose     false
 
         ; (optional) set the kind of alignment to use in TAG Packets
         ; 0: no padding

@@ -151,7 +151,25 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
     }
 
     if (edi_conf.enabled) {
-        edi_output.create(edi_conf.source_port);
+        int err = edi_output.create(edi_conf.source_port);
+
+        if (err) {
+            etiLog.level(error) << "EDI socket creation failed!";
+            throw MuxInitException();
+        }
+
+        if (not edi_conf.source_addr.empty()) {
+            err = edi_output.setMulticastSource(edi_conf.source_addr.c_str());
+            if (err) {
+                etiLog.level(error) << "EDI socket set source failed!";
+                throw MuxInitException();
+            }
+            err = edi_output.setMulticastTTL(edi_conf.ttl);
+            if (err) {
+                etiLog.level(error) << "EDI socket set TTL failed!";
+                throw MuxInitException();
+            }
+        }
     }
 
     if (edi_conf.verbose) {

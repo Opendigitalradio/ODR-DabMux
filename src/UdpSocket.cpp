@@ -1,6 +1,9 @@
 /*
    Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the
    Queen in Right of Canada (Communications Research Center Canada)
+
+   Copyright (C) 2015 Matthias P. Braendli
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -155,6 +158,7 @@ int UdpSocket::create(int port, char *name)
     setInetError("Can't reuse address");
     return -1;
   }
+
   if (bind(listenSocket, address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
     setInetError("Can't bind socket");
     closesocket(listenSocket);
@@ -291,7 +295,35 @@ int UdpSocket::joinGroup(char* groupname)
   return 0;
 }
 
-  
+int UdpSocket::setMulticastTTL(int ttl)
+{
+    if (setsockopt(listenSocket, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl))
+            == SOCKET_ERROR) {
+        setInetError("Can't set ttl");
+        return -1;
+    }
+
+    return 0;
+}
+
+int UdpSocket::setMulticastSource(const char* source_addr)
+{
+    struct in_addr addr;
+    if (inet_aton(source_addr, &addr) == 0) {
+        setInetError("Can't parse source address");
+        return -1;
+    }
+
+    if (setsockopt(listenSocket, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof(addr))
+            == SOCKET_ERROR) {
+        setInetError("Can't set source address");
+        return -1;
+    }
+
+    return 0;
+}
+
+
 /**
  *  Constructs an UDP packet.
  *  @param initSize The initial size of the data buffer

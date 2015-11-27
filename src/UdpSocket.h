@@ -1,6 +1,9 @@
 /*
    Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the
    Queen in Right of Canada (Communications Research Center Canada)
+
+   Copyright (C) 2015 Matthias P. Braendli
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -58,7 +61,7 @@ class UdpPacket;
  *  A UDP socket is the sending or receiving point for a packet delivery service.
  *  Each packet sent or received on a datagram socket is individually
  *  addressed and routed. Multiple packets sent from one machine to another may
- *  be routed differently, and may arrive in any order. 
+ *  be routed differently, and may arrive in any order.
  *  @author Pascal Charest pascal.charest@crc.ca
  */
 class UdpSocket {
@@ -77,6 +80,8 @@ class UdpSocket {
   int send(std::vector<uint8_t> data, InetAddress destination);
   int receive(UdpPacket &packet);
   int joinGroup(char* groupname);
+  int setMulticastSource(const char* source_addr);
+  int setMulticastTTL(int ttl);
   /**
    *  Connects the socket on a specific address. Only data from this address
    *  will be received.

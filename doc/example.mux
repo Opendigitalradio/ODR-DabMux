@@ -1,5 +1,8 @@
 ; This is the official configuration file example that
 ; serves as documentation for the config file reader.
+; More information about the usage of the tools is available
+; in the guide, which can be found on the
+; www.opendigitalradio.org website.
 ;
 ; As you can see, comments are defined by semicolons.
 ;
@@ -16,7 +19,6 @@ general {
 
     ; the number of ETI frames to generate (set to 0 to get an unlimited number)
     nbframes 10
-
 
     ; boolean fileds can accept either false or true as values:
 
@@ -62,15 +64,20 @@ ensemble {
     id 0x4fff ; you can also use decimal if you want
     ecc 0xec ; Extended Country Code
 
-    local-time-offset 1     ; in hours, supports half-hour offsets
+    local-time-offset auto  ; autmatically calculate from system local time
                             ; or
-    ;local-time-offset auto ; autmatically calculate from system local time
+    ;local-time-offset 1    ; in hours, supports half-hour offsets
 
     international-table 1 ; See TS 101 756 clause 5.7
                           ; 1 corresponds to the PTy used in RDS
                           ; 2 corresponds to program types used in north america
+
+    ; all labels are maximum 16 characters in length
     label "TuxMux"
-    shortlabel "Tux"
+    ; The short label is built from the label by erasing letters, and cannot
+    ; be longer than 8 characters. If omitted, it will be truncated from the
+    ; label
+    shortlabel "TxMux"
 
     ; Announcement settings for FIG0/19
     announcements {
@@ -121,7 +128,6 @@ services {
     }
     srv-ri {
         label "rick"
-        shortlabel "rick"
     }
 
 }
@@ -245,8 +251,11 @@ components {
         ; data: unspecified=0, TMC=1, EWS=2, ITTS=3, paging=4, TDC=5, IP=59, MOT=60, proprietary=61
         type 0
 
-        label "funk"
-        shortlabel "fu"
+        ; According to specification, you should not define component labels if
+        ; the service is only used in one component. The service label is sufficient
+        ; in that case.
+        ;label "funk"
+        ;shortlabel "fu"
         service srv-fu
         subchannel sub-fu
 
@@ -276,12 +285,6 @@ components {
     }
 
     comp-lu {
-        ; labels are maximum 16 characters in length
-        label "luschtig"
-
-        ; a shortlabel is created by dropping some letters from the
-        ; label, max length 8
-        shortlabel "lu"
         service srv-lu
         subchannel sub-lu
 
@@ -289,8 +292,6 @@ components {
     }
 
     comp-ri {
-        label "rick"
-        shortlabel "rick"
         service srv-ri
         subchannel sub-ri
 

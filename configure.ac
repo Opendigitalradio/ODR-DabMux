@@ -198,7 +198,8 @@ AS_IF([test "x$enable_output_zeromq" = "xyes"],
        AC_DEFINE(HAVE_OUTPUT_ZEROMQ, [1], [Define if ZeroMQ output is enabled]))
 # EDI
 AC_ARG_ENABLE([output_edi],
-        AS_HELP_STRING([--enable-output-edi], [Enable EDI output]))
+        [AS_HELP_STRING([--disable-output-edi], [Disable EDI output])],
+        [], [enable_output_edi=yes])
 AS_IF([test "x$enable_output_edi" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_EDI, [1], [Define if EDI output is enabled])])
 

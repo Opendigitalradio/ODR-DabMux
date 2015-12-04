@@ -1752,10 +1752,22 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
     edi_tagDETI.tsta = tist->TIST;
 
-    timestamp += 3 << 17;
-    if (timestamp > 0xf9ffff)
+    /* Coding of the TIST, according to ETS 300 799 Annex C
+
+    Bit number      b0(MSb)..b6     b7..b9   b10..b17   b18..b20   b21..b23(LSb)
+    Bit number      b23(MSb)..b17   b16..b14 b13..b6    b5..b3     b2..b0(LSb)
+    as uint32_t
+    Width           7               3        8          3          3
+    Timestamp level 1               2        3          4          5
+    Valid range     [0..124], 127   [0..7]   [0..255]   [0..7]     [0..7]
+    Approximate     8 ms            1 ms     3,91 us    488 ns     61 ns
+    time resolution
+    */
+
+    timestamp += 24 << 13; // Shift 24ms by 13 to Timestamp level 2
+    if (timestamp > 0xf9FFff)
     {
-        timestamp -= 0xfa0000;
+        timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second
 
         // Also update MNSC time for next frame
         MNSC_increment_time = true;

@@ -386,9 +386,9 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
         }
         else if (m_enable_input) {
             // copy the input frame blockwise into the frame_buffer
-            uint8_t* frame = new uint8_t[framesize];
-            memcpy(frame, data, framesize);
-            m_frame_buffer.push_back(frame);
+            uint8_t* framedata = new uint8_t[framesize];
+            memcpy(framedata, data, framesize);
+            m_frame_buffer.push_back(framedata);
         }
         else {
             return 0;
@@ -397,7 +397,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
     else {
         etiLog.level(error) <<
             "inputZMQ " << m_name <<
-            " wrong data size: recv'd " << msg.size() <<
+            " wrong data size: recv'd " << msg.size() << " Bytes" <<
             ", need " << framesize << ".";
         messageReceived = false;
     }
@@ -498,9 +498,6 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
 void DabInputZmqBase::set_parameter(const string& parameter,
         const string& value)
 {
-    stringstream ss(value);
-    ss.exceptions ( stringstream::failbit | stringstream::badbit );
-
     if (parameter == "buffer") {
         size_t new_limit = atol(value.c_str());
 

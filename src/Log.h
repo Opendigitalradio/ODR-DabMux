@@ -73,10 +73,12 @@ class LogToSyslog : public LogBackend {
             int syslog_level = LOG_EMERG;
             switch (level) {
                 case debug: syslog_level = LOG_DEBUG; break;
-                case alert: syslog_level = LOG_ALERT; break;
                 case info:  syslog_level = LOG_INFO; break;
+                /* we don't have the notice level */
                 case warn:  syslog_level = LOG_WARNING; break;
                 case error: syslog_level = LOG_ERR; break;
+                default:    syslog_level = LOG_CRIT; break;
+                case alert: syslog_level = LOG_ALERT; break;
                 case emerg: syslog_level = LOG_EMERG; break;
             }
 

@@ -25,7 +25,7 @@
 #include <errno.h>
 
 
-const static short bitrateArray[4][4][16] = {
+static const short bitrateArray[4][4][16] = {
     { // MPEG 2.5
         {  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
            -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1 }, // layer invalid
@@ -69,7 +69,7 @@ const static short bitrateArray[4][4][16] = {
 };
 
 
-const static int samplingrateArray[4][4] = {
+static const int samplingrateArray[4][4] = {
     { 11025, 12000, 8000, 0 },  // MPEG 2.5
     { -1, -1, -1, -1 },         // MPEG invalid
     { 22050, 24000, 16000, 0 }, // MPEG 2

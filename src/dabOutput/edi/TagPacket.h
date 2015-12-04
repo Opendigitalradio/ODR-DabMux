@@ -42,9 +42,13 @@
 class TagPacket
 {
     public:
+        TagPacket(unsigned int alignment);
         std::vector<uint8_t> Assemble();
 
         std::list<TagItem*> tag_items;
+
+    private:
+        unsigned int m_alignment;
 };
 
 #endif

@@ -21,7 +21,7 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 if IS_GIT_REPO
-GITVERSION_FLAGS = -DGITVERSION="\"`git describe`\""
+GITVERSION_FLAGS = -DGITVERSION="\"`git describe --dirty`\""
 else
 GITVERSION_FLAGS =
 endif
@@ -30,7 +30,7 @@ FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
 if HAVE_ZEROMQ_TEST
-bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen
+bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen odr-zmq2farsync
 
 ZMQ_LIBS    =-lzmq
 else
@@ -39,9 +39,11 @@ bin_PROGRAMS=odr-dabmux odr-bridgetest
 ZMQ_LIBS    =
 endif
 
-odr_dabmux_CPPFLAGS =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
+odr_dabmux_CFLAGS   =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
+odr_dabmux_CXXFLAGS =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
+					 DabMultiplexer.cpp DabMultiplexer.h \
                      dabInput.h dabInput.cpp \
                      dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
                      dabInputDabplusFifo.h dabInputDabplusFifo.cpp \
@@ -95,7 +97,11 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      ManagementServer.h ManagementServer.cpp \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp \
-                     zmq.hpp
+                     zmq.hpp \
+                     fig/FIG0.cpp fig/FIG0.h \
+                     fig/FIG1.cpp fig/FIG1.h \
+                     fig/FIGCarousel.cpp fig/FIGCarousel.h \
+                     fig/FIG.h
 
 odr_bridgetest_CFLAGS   =-DBRIDGE_TEST
 odr_bridgetest_SOURCES  =bridge.c \
@@ -104,4 +110,13 @@ odr_bridgetest_SOURCES  =bridge.c \
 zmqinput_keygen_SOURCES  = zmqinput-keygen.c
 zmqinput_keygen_LDADD    = $(ZMQ_LIBS)
 zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS)
+
+odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
+                           dabOutput/dabOutput.h \
+                           dabOutput/dabOutputRaw.cpp \
+                           Log.h Log.cpp \
+                           zmq.hpp
+odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
+odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
+odr_zmq2farsync_CXXFLAGS = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 

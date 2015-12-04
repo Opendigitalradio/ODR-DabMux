@@ -29,6 +29,7 @@
 #define _UTILS_H
 
 #include <cstdio>
+#include "MuxElements.h"
 
 time_t getDabTime();
 
@@ -49,17 +50,18 @@ void printUsageConfigfile(char *name, FILE* out = stderr);
 /* The following four utility functions display a
  * description of all outputs, services, components
  * resp. subchannels*/
-void printOutputs(std::vector<dabOutput*>& outputs);
+void printOutputs(std::vector<boost::shared_ptr<DabOutput> >& outputs);
 
-void printServices(std::vector<DabService*>& services);
+void printServices(const std::vector<std::shared_ptr<DabService> >& services);
 
 void printComponents(std::vector<DabComponent*>& components);
 
 void printSubchannels(std::vector<dabSubchannel*>& subchannels);
 
 /* Print information about the whole ensemble */
-void printEnsemble(dabEnsemble* ensemble);
+void printEnsemble(const boost::shared_ptr<dabEnsemble> ensemble);
 
 /* Print detailed component information */
 void printComponent(DabComponent* component);
 #endif
+

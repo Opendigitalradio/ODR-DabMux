@@ -36,23 +36,17 @@
 #include "MuxElements.h"
 #include "DabMux.h"
 #include <boost/property_tree/ptree.hpp>
+#include <boost/shared_ptr.hpp>
 
 void parse_ptree(boost::property_tree::ptree& pt,
-        std::vector<dabOutput*> &outputs,
-        dabEnsemble* ensemble,
-        bool* enableTist,
-        unsigned* FICL,
-        bool* factumAnalyzer,
-        unsigned long* limit,
-        BaseRemoteController** rc,
-        int* mgmtserverport,
-        edi_configuration_t* edi);
+        boost::shared_ptr<dabEnsemble> ensemble,
+        boost::shared_ptr<BaseRemoteController> rc);
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,
-        dabEnsemble* ensemble,
+        boost::shared_ptr<dabEnsemble> ensemble,
         std::string subchanuid,
-        BaseRemoteController* rc);
+        boost::shared_ptr<BaseRemoteController> rc);
 
 #endif
 

@@ -266,7 +266,7 @@ int TcpSocket::write(const void* data, int size)
   // ignore BROKENPIPE signal (we handle it instead)
 //  void* old_sigpipe = signal ( SIGPIPE, SIG_IGN );
   // try to send data
-  int ret = send(listenSocket, (char*)data, size, 0 /*MSG_NOSIGNAL*/	);
+  int ret = send(listenSocket, (const char*)data, size, 0 /*MSG_NOSIGNAL*/	);
   // restore the BROKENPIPE handling
 //  signal ( SIGPIPE,  (__sighandler_t)old_sigpipe );
   if (ret == SOCKET_ERROR) {

@@ -7,7 +7,7 @@
 
     http://www.opendigitalradio.org
 
-   A TCP Socket server that serves state information and statistics for
+   A server that serves state information and statistics for
    monitoring purposes, and also serves the internal configuration
    property tree.
 
@@ -15,7 +15,7 @@
         http://munin-monitoring.org/
    but is not specific to it.
 
-   The TCP Server responds in JSON, and accepts the commands:
+   The responds in JSON, and accepts the commands:
     - config
     - values
       Inspired by the munin equivalent
@@ -27,6 +27,7 @@
       Returns the internal boost property_tree that contains the 
       multiplexer configuration DB.
 
+   The server is using REQ/REP ZeroMQ sockets.
    */
 /*
    This file is part of ODR-DabMux.
@@ -52,15 +53,12 @@
 #   include "config.h"
 #endif
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <pthread.h>
+#include "zmq.hpp"
 #include <string>
 #include <map>
+#include <atomic>
 #include <boost/thread.hpp>
+#include <boost/bind.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <ctime>
@@ -317,31 +315,28 @@ class ManagementServer
 {
     public:
         ManagementServer() :
-            m_listenport(0),
+            m_zmq_context(),
+            m_zmq_sock(m_zmq_context, ZMQ_REP),
             m_running(false),
             m_fault(false),
-            m_pending(false)
-            { }
-
-        ManagementServer(int listen_port) :
-            m_listenport(listen_port),
-            m_running(false),
-            m_fault(false),
-            m_thread(&ManagementServer::serverThread, this),
-            m_pending(false)
-            {
-                m_sock = 0;
-            }
+            m_pending(false) { }
 
         ~ManagementServer()
         {
             m_running = false;
             m_fault = false;
             m_pending = false;
-            if (m_sock) {
-                close(m_sock);
-            }
+
+            // TODO notify
             m_thread.join();
+        }
+
+        void open(int listenport)
+        {
+            m_listenport = listenport;
+            if (m_listenport > 0) {
+                m_thread = boost::thread(&ManagementServer::serverThread, this);
+            }
         }
 
         /* Un-/Register a statistics data source */
@@ -351,18 +346,16 @@ class ManagementServer
         /* Ask if there is a configuration request pending */
         bool request_pending() { return m_pending; }
 
+        /* Load a ptree given by the management server.
+         *
+         * Returns true if the ptree was updated
+         */
+        bool retrieve_new_ptree(boost::property_tree::ptree& pt);
+
         /* Update the copy of the configuration property tree and notify the
          * update to the internal server thread.
          */
-        void update_ptree(const boost::property_tree::ptree& pt) {
-            if (m_running) {
-                boost::unique_lock<boost::mutex> lock(m_configmutex);
-                m_pt = pt;
-                m_pending = false;
-
-                m_condition.notify_one();
-            }
-        }
+        void update_ptree(const boost::property_tree::ptree& pt);
 
         bool fault_detected() { return m_fault; }
         void restart(void);
@@ -370,23 +363,26 @@ class ManagementServer
     private:
         void restart_thread(long);
 
-        /******* TCP Socket Server ******/
+        /******* Server ******/
+        zmq::context_t m_zmq_context;
+        zmq::socket_t  m_zmq_sock;
+
         // no copying (because of the thread)
         ManagementServer(const ManagementServer& other);
 
         void serverThread(void);
+        void handle_message(zmq::message_t& zmq_message);
+        bool handle_setptree(zmq::message_t& zmq_message, std::stringstream& answer);
 
         bool isInputRegistered(std::string& id);
 
         int m_listenport;
 
         // serverThread runs in a separate thread
-        bool m_running;
-        bool m_fault;
+        std::atomic<bool> m_running;
+        std::atomic<bool> m_fault;
         boost::thread m_thread;
         boost::thread m_restarter_thread;
-
-        int m_sock;
 
         /******* Statistics Data ********/
         std::map<std::string, InputStat*> m_inputStats;
@@ -415,13 +411,16 @@ class ManagementServer
 
         /******** Configuration Data *******/
         bool m_pending;
+        bool m_retrieve_pending;
         boost::condition_variable m_condition;
         mutable boost::mutex m_configmutex;
 
         boost::property_tree::ptree m_pt;
 };
 
-extern ManagementServer* mgmt_server;
+// If necessary construct the management server singleton and return
+// a reference to it
+ManagementServer& get_mgmt_server();
 
 #endif
 

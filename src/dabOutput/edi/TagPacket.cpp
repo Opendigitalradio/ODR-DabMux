@@ -31,7 +31,10 @@
 #include <string>
 #include <list>
 #include <stdint.h>
+#include <cassert>
 
+TagPacket::TagPacket(unsigned int alignment) : m_alignment(alignment)
+{ }
 
 std::vector<uint8_t> TagPacket::Assemble()
 {
@@ -41,21 +44,28 @@ std::vector<uint8_t> TagPacket::Assemble()
 
     //std::cerr << "Assemble TAGPacket" << std::endl;
 
-    size_t packet_length = 0;
     for (tag = tag_items.begin(); tag != tag_items.end(); ++tag) {
         std::vector<uint8_t> tag_data = (*tag)->Assemble();
         packet.insert(packet.end(), tag_data.begin(), tag_data.end());
 
-        packet_length += tag_data.size();
-
         //std::cerr << "     Add TAGItem of length " << tag_data.size() << std::endl;
     }
 
-    // Add padding
-    while (packet_length % 8 > 0)
-    {
-        packet.push_back(0); // TS 102 821, 5.1, "padding shall be undefined"
-        packet_length++;
+    if (m_alignment == 0) { /* no padding */ }
+    else if (m_alignment == 8) {
+        // Add padding inside TAG packet
+        while (packet.size() % 8 > 0) {
+            packet.push_back(0); // TS 102 821, 5.1, "padding shall be undefined"
+        }
+    }
+    else if (m_alignment > 8) {
+        TagStarDMY dmy(m_alignment - 8);
+        auto dmy_data = dmy.Assemble();
+        packet.insert(packet.end(), dmy_data.begin(), dmy_data.end());
+    }
+    else {
+        std::cerr << "Invalid alignment requirement " << m_alignment <<
+            " defined in TagPacket" << std::endl;
     }
 
     return packet;

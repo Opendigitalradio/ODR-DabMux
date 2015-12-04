@@ -17,7 +17,7 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [0.7.4], [matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux], [0.8.1], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])
@@ -52,9 +52,17 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
+AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
+
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
-AX_BOOST_BASE([1.41.0], [], AC_MSG_ERROR([BOOST 1.41 or later is required]))
+AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
+
+# we need to check for libm before checking for fec
+AC_CHECK_LIB([m], [sin])
+AC_SEARCH_LIBS([init_rs_char], [fec], [], [
+  AC_MSG_ERROR([unable to find libfec])
+])
 
 # Checks for header files.
 AC_MSG_CHECKING([for OS type])
@@ -188,6 +196,12 @@ AS_IF([test "x$enable_output_zeromq" = "xyes"],
        AC_CHECK_LIB(zmq, zmq_init, [true], [AC_MSG_ERROR([ZeroMQ libzmq is required])]))
 AS_IF([test "x$enable_output_zeromq" = "xyes"],
        AC_DEFINE(HAVE_OUTPUT_ZEROMQ, [1], [Define if ZeroMQ output is enabled]))
+# EDI
+AC_ARG_ENABLE([output_edi],
+        [AS_HELP_STRING([--disable-output-edi], [Disable EDI output])],
+        [], [enable_output_edi=yes])
+AS_IF([test "x$enable_output_edi" = "xyes"],
+        [AC_DEFINE(HAVE_OUTPUT_EDI, [1], [Define if EDI output is enabled])])
 
 # Link against lzmq
 AM_CONDITIONAL([HAVE_ZEROMQ_TEST],
@@ -281,7 +295,7 @@ echo
 echo "Outputs:"
 enabled=""
 disabled=""
-for output in file fifo udp tcp raw simul zeromq
+for output in file fifo udp tcp raw simul zeromq edi
 do
     eval var=\$enable_output_$output
     AS_IF([test "x$var" = "xyes"],

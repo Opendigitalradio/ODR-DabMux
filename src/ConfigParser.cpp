@@ -37,6 +37,8 @@
 #endif
 
 #include <boost/property_tree/ptree.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <exception>
 #include <iostream>
 #include <vector>
@@ -123,17 +125,26 @@ int hexparse(std::string input)
     return value;
 }
 
+uint16_t get_announcement_flag_from_ptree(
+        boost::property_tree::ptree& pt
+        )
+{
+    uint16_t flags = 0;
+    for (size_t flag = 0; flag < 16; flag++) {
+        std::string announcement_name(annoucement_flags_names[flag]);
+        bool flag_set = pt.get<bool>(announcement_name, false);
+
+        if (flag_set) {
+            flags |= (1 << flag);
+        }
+    }
+
+    return flags;
+}
 
 void parse_ptree(boost::property_tree::ptree& pt,
-        vector<dabOutput*> &outputs,
-        dabEnsemble* ensemble,
-        bool* enableTist,
-        unsigned* FICL,
-        bool* factumAnalyzer,
-        unsigned long* limit,
-        BaseRemoteController** rc,
-        int* mgmtserverport,
-        edi_configuration_t* edi
+        boost::shared_ptr<dabEnsemble> ensemble,
+        boost::shared_ptr<BaseRemoteController> rc
         )
 {
     using boost::property_tree::ptree;
@@ -150,38 +161,11 @@ void parse_ptree(boost::property_tree::ptree& pt,
         ensemble->mode = 0;
     }
 
-    if (ensemble->mode == 3) {
-        *FICL = 32;
-    }
-    else {
-        *FICL = 24;
-    }
-
-    /* Number of frames to generate */
-    *limit = pt_general.get("nbframes", 0);
-
     /* Enable Logging to syslog conditionally */
     if (pt_general.get<bool>("syslog", false)) {
         etiLog.register_backend(new LogToSyslog()); // TODO don't leak the LogToSyslog backend
     }
 
-    *factumAnalyzer = pt_general.get("writescca", false);
-
-    *enableTist = pt_general.get("tist", false);
-
-    *mgmtserverport = pt_general.get<int>("managementport",
-                      pt_general.get<int>("statsserverport", 0) );
-
-    /************** READ REMOTE CONTROL PARAMETERS *************/
-    ptree pt_rc = pt.get_child("remotecontrol");
-    int telnetport = pt_rc.get<int>("telnetport", 0);
-
-    if (telnetport != 0) {
-        *rc = new RemoteControllerTelnet(telnetport);
-    }
-    else {
-        *rc = new RemoteControllerDummy();
-    }
 
     /******************** READ ENSEMBLE PARAMETERS *************/
     ptree pt_ensemble = pt.get_child("ensemble");
@@ -251,22 +235,95 @@ void parse_ptree(boost::property_tree::ptree& pt,
             abort();
     }
 
+    try {
+        ptree pt_announcements = pt_ensemble.get_child("announcements");
+        for (auto announcement : pt_announcements) {
+            string name = announcement.first;
+            ptree pt_announcement = announcement.second;
+
+            auto cl = make_shared<AnnouncementCluster>(name);
+            cl->cluster_id = hexparse(pt_announcement.get<string>("cluster"));
+            cl->flags = get_announcement_flag_from_ptree(
+                    pt_announcement.get_child("flags"));
+            cl->subchanneluid = pt_announcement.get<string>("subchannel");
+
+            cl->enrol_at(*rc);
+            ensemble->clusters.push_back(cl);
+        }
+    }
+    catch (ptree_error& e) {
+        etiLog.level(info) << "No announcements defined in ensemble";
+        etiLog.level(debug) << "because " << e.what();
+    }
 
     /******************** READ SERVICES PARAMETERS *************/
 
-    map<string, DabService*> allservices;
+    map<string, shared_ptr<DabService> > allservices;
 
     /* For each service, we keep a separate SCIdS counter */
-    map<DabService*, int> SCIdS_per_service;
+    map<shared_ptr<DabService>, int> SCIdS_per_service;
 
     ptree pt_services = pt.get_child("services");
     for (ptree::iterator it = pt_services.begin();
             it != pt_services.end(); ++it) {
         string serviceuid = it->first;
         ptree pt_service = it->second;
-        DabService* service = new DabService(serviceuid);
-        ensemble->services.push_back(service);
-        service->enrol_at(**rc);
+
+        shared_ptr<DabService> service;
+
+        bool service_already_existing = false;
+
+        for (auto srv : ensemble->services) {
+            if (srv->uid == serviceuid) {
+                service = srv;
+                service_already_existing = true;
+                break;
+            }
+        }
+
+        if (not service_already_existing) {
+            auto new_srv = make_shared<DabService>(serviceuid);
+            ensemble->services.push_back(new_srv);
+            service = new_srv;
+        }
+
+        try {
+            /* Parse announcements */
+            service->ASu = get_announcement_flag_from_ptree(
+                    pt_service.get_child("announcements"));
+
+            auto clusterlist = pt_service.get<std::string>("announcements.clusters", "");
+            vector<string> clusters_s;
+            boost::split(clusters_s,
+                    clusterlist,
+                    boost::is_any_of(","));
+
+            for (const auto& cluster_s : clusters_s) {
+                if (cluster_s == "") {
+                    continue;
+                }
+                try {
+                    service->clusters.push_back(hexparse(cluster_s));
+                }
+                catch (std::logic_error& e) {
+                    etiLog.level(warn) << "Cannot parse '" << clusterlist <<
+                        "' announcement clusters for service " << serviceuid <<
+                        ": " << e.what();
+                }
+            }
+
+            if (service->ASu != 0 and service->clusters.empty()) {
+                etiLog.level(warn) << "Cluster list for service " << serviceuid <<
+                    "is empty, but announcements are defined";
+            }
+        }
+        catch (ptree_error& e) {
+            service->ASu = 0;
+            service->clusters.clear();
+
+            etiLog.level(info) << "No announcements defined in service " <<
+                serviceuid;
+        }
 
         int success = -5;
 
@@ -332,13 +389,13 @@ void parse_ptree(boost::property_tree::ptree& pt,
     ptree pt_subchans = pt.get_child("subchannels");
     for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
-        dabSubchannel* subchan = new dabSubchannel();
+        dabSubchannel* subchan = new dabSubchannel(subchanuid);
 
         ensemble->subchannels.push_back(subchan);
 
         try {
             setup_subchannel_from_ptree(subchan, it->second, ensemble,
-                    subchanuid, *rc);
+                    subchanuid, rc);
         }
         catch (runtime_error &e) {
             etiLog.log(error,
@@ -365,7 +422,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
         string componentuid = it->first;
         ptree pt_comp = it->second;
 
-        DabService* service;
+        shared_ptr<DabService> service;
         try {
             // Those two uids serve as foreign keys to select the service+subchannel
             string service_uid = pt_comp.get<string>("service");
@@ -406,8 +463,6 @@ void parse_ptree(boost::property_tree::ptree& pt,
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
         DabComponent* component = new DabComponent(componentuid);
-
-        component->enrol_at(**rc);
 
         component->serviceId = service->id;
         component->subchId = subchannel->id;
@@ -495,65 +550,13 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
     }
 
-    /******************** READ OUTPUT PARAMETERS ***************/
-    map<string, dabOutput*> alloutputs;
-    ptree pt_outputs = pt.get_child("outputs");
-    for (ptree::iterator it = pt_outputs.begin(); it != pt_outputs.end(); ++it) {
-        string outputuid = it->first;
-
-        if (outputuid == "edi") {
-            ptree pt_edi = pt_outputs.get_child("edi");
-
-            edi->enabled     = true;
-
-            edi->dest_addr   = pt_edi.get<string>("destination");
-            edi->dest_port   = pt_edi.get<unsigned int>("port");
-            edi->source_port = pt_edi.get<unsigned int>("sourceport");
-
-            edi->dump        = pt_edi.get<bool>("dump");
-            edi->enable_pft  = pt_edi.get<bool>("enable_pft");
-            edi->verbose     = pt_edi.get<bool>("verbose");
-        }
-        else {
-            string uri = pt_outputs.get<string>(outputuid);
-
-            size_t proto_pos = uri.find("://");
-            if (proto_pos == std::string::npos) {
-                stringstream ss;
-                ss << "Output with uid " << outputuid << " no protocol defined!";
-                throw runtime_error(ss.str());
-            }
-
-            char* uri_c = new char[512];
-            memset(uri_c, 0, 512);
-            uri.copy(uri_c, 511);
-
-            uri_c[proto_pos] = '\0';
-
-            char* outputName = uri_c + proto_pos + 3;
-
-            dabOutput* output = new dabOutput(uri_c, outputName);
-            outputs.push_back(output);
-
-            // keep outputs in map, and check for uniqueness of the uid
-            if (alloutputs.count(outputuid) == 0) {
-                alloutputs[outputuid] = output;
-            }
-            else {
-                stringstream ss;
-                ss << "output with uid " << outputuid << " not unique!";
-                throw runtime_error(ss.str());
-            }
-        }
-    }
-
 }
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,
-        dabEnsemble* ensemble,
+        boost::shared_ptr<dabEnsemble> ensemble,
         string subchanuid,
-        BaseRemoteController* rc)
+        boost::shared_ptr<BaseRemoteController> rc)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
@@ -609,7 +612,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     if (0) {
 #if defined(HAVE_FORMAT_MPEG)
     } else if (type == "audio") {
-        subchan->type = Audio;
+        subchan->type = subchannel_type_t::Audio;
         subchan->bitrate = 0;
 
         if (0) {
@@ -668,7 +671,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_MPEG)
 #if defined(HAVE_FORMAT_DABPLUS)
     } else if (type == "dabplus") {
-        subchan->type = Audio;
+        subchan->type = subchannel_type_t::Audio;
         subchan->bitrate = 32;
 
         if (0) {
@@ -771,17 +774,17 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
 
-        subchan->type = DataDmb;
+        subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #if defined(HAVE_INPUT_TEST) && defined(HAVE_FORMAT_RAW)
     } else if (type == "test") {
-        subchan->type = DataDmb;
+        subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
         operations = dabInputTestOperations;
 #endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
     } else if (type == "packet") {
-        subchan->type = Packet;
+        subchan->type = subchannel_type_t::Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
 #ifdef HAVE_INPUT_FILE
         operations = dabInputPacketFileOperations;
@@ -792,7 +795,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_FILE)
 #ifdef HAVE_FORMAT_EPM
     } else if (type == "enhancedpacked") {
-        subchan->type = Packet;
+        subchan->type = subchannel_type_t::Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
         operations = dabInputEnhancedPacketFileOperations;
 #endif // defined(HAVE_FORMAT_EPM)
@@ -815,7 +818,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
 
-        subchan->type = DataDmb;
+        subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
 #endif
     } else {
@@ -857,7 +860,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     if (nonblock) {
         switch (subchan->type) {
 #ifdef HAVE_FORMAT_PACKET
-            case 3:
+            case subchannel_type_t::Packet:
                 if (operations == dabInputPacketFileOperations) {
                     operations = dabInputFifoOperations;
 #ifdef HAVE_FORMAT_EPM
@@ -873,7 +876,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 break;
 #endif // defined(HAVE_FORMAT_PACKET)
 #ifdef HAVE_FORMAT_MPEG
-            case 0:
+            case subchannel_type_t::Audio:
                 if (operations == dabInputMpegFileOperations) {
                     operations = dabInputMpegFifoOperations;
                 } else if (operations == dabInputDabplusFileOperations) {
@@ -886,6 +889,8 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
                 }
                 break;
 #endif // defined(HAVE_FORMAT_MPEG)
+            case subchannel_type_t::DataDmb:
+            case subchannel_type_t::Fidc:
             default:
                 stringstream ss;
                 ss << "Subchannel with uid " << subchanuid <<
@@ -899,7 +904,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     /* Get id */
 
     try {
-        subchan->id = hexparse(pt.get<std::string>("subchid"));
+        subchan->id = hexparse(pt.get<std::string>("id"));
     }
     catch (ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel

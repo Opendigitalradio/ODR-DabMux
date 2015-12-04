@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013, 2014 Matthias P. Braendli
+   Copyright (C) 2013, 2014, 2015 Matthias P. Braendli
    http://mpb.li
 */
 /*
@@ -24,6 +24,8 @@
 */
 #include <cstring>
 #include <iostream>
+#include <boost/shared_ptr.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include "DabMux.h"
 #include "utils.h"
 
@@ -73,7 +75,7 @@ void header_message()
     fprintf(stderr,
             "(Communications Research Centre Canada) All rights reserved.\n\n");
     fprintf(stderr,
-            "Copyright (C) 2013, 2014 Matthias P. Braendli\n");
+            "Copyright (C) 2013, 2014, 2015 Matthias P. Braendli\n");
     fprintf(stderr,
             "http://opendigitalradio.org\n\n");
 
@@ -220,12 +222,12 @@ void printUsage(char *name, FILE* out)
             "  within the common interleaved frame.\n"
             "\n"
             "   __________________________________________________\n"
-            "  |                   CRC-Ensemble                   |  ENSEMBLE\n"
+            "  |                     Ensemble                     |  ENSEMBLE\n"
             "  |__________________________________________________|\n"
             "          |                 |                 |\n"
             "          |                 |                 |\n"
             "   _______V______    _______V______    _______V______\n"
-            "  | CRC-Service1 |  | CRC-Service2 |  | CRC-Service3 |  SERVICES\n"
+            "  |   Service 1  |  |   Service 2  |  |   Service 3  |  SERVICES\n"
             "  |______________|  |______________|  |______________|\n"
             "     |        |        |        | |______         |\n"
             "     |        |        |        |        |        |\n"
@@ -330,12 +332,12 @@ void printUsage(char *name, FILE* out)
             "  within the common interleaved frame.\n"
             "\n"
             "   __________________________________________________\n"
-            "  |                   CRC-Ensemble                   |  ENSEMBLE\n"
+            "  |                     Ensemble                     |  ENSEMBLE\n"
             "  |__________________________________________________|\n"
             "          |                 |                 |\n"
             "          |                 |                 |\n"
             "   _______V______    _______V______    _______V______\n"
-            "  | CRC-Service1 |  | CRC-Service2 |  | CRC-Service3 |  SERVICES\n"
+            "  |   Service 1  |  |   Service 2  |  |   Service 3  |  SERVICES\n"
             "  |______________|  |______________|  |______________|\n"
             "     |        |        |        | |______         |\n"
             "     |        |        |        |        |        |\n"
@@ -352,47 +354,48 @@ void printUsage(char *name, FILE* out)
 }
 #endif
 
-void printOutputs(vector<dabOutput*>& outputs)
+void printOutputs(vector<boost::shared_ptr<DabOutput> >& outputs)
 {
-    vector<dabOutput*>::const_iterator output;
     int index = 0;
 
-    for (output = outputs.begin(); output != outputs.end(); ++output) {
+    for (auto output : outputs) {
         etiLog.log(info, "Output      %i", index);
-        etiLog.level(info) << "  protocol: " <<
-                (*output)->outputProto;
-
-        etiLog.level(info) << "  name:     " <<
-                (*output)->outputName.c_str();
-        // Daboutputfile mangles with outputName, inserting \0 to
-        // cut the string in several parts. That doesn't work
-        // with stl strings. Thats why the .c_str()
+        etiLog.level(info) << "  URI: " <<
+            output->get_info();
 
         ++index;
     }
 }
 
-void printServices(vector<DabService*>& services)
+void printServices(const vector<shared_ptr<DabService> >& services)
 {
-    vector<DabService*>::const_iterator current;
     int index = 0;
 
-    for (current = services.begin(); current != services.end(); ++current) {
+    for (auto service : services) {
 
-        etiLog.level(info) << "Service       " << (*current)->get_rc_name();
-        etiLog.level(info) << " label:       " << (*current)->label.text();
+        etiLog.level(info) << "Service       " << service->get_rc_name();
+        etiLog.level(info) << " label:       " <<
+                service->label.long_label();
         etiLog.level(info) << " short label: " <<
-                (*current)->label.short_label();
+                service->label.short_label();
 
-        etiLog.log(info, " (0x%x)", (*current)->label.flag());
-        etiLog.log(info, " id:          0x%lx (%lu)", (*current)->id,
-                (*current)->id);
+        etiLog.log(info, " (0x%x)", service->label.flag());
+        etiLog.log(info, " id:          0x%lx (%lu)", service->id,
+                service->id);
 
-        etiLog.log(info, " pty:         0x%x (%u)", (*current)->pty,
-                (*current)->pty);
+        etiLog.log(info, " pty:         0x%x (%u)", service->pty,
+                service->pty);
 
         etiLog.log(info, " language:    0x%x (%u)",
-                (*current)->language, (*current)->language);
+                service->language, service->language);
+        etiLog.log(info, " announcements: 0x%x",
+                service->ASu);
+
+        std::vector<std::string> clusters_s;
+        for (const auto& cluster : service->clusters) {
+            clusters_s.push_back(std::to_string(cluster));
+        }
+        etiLog.level(info) << " clusters: " << boost::join(clusters_s, ",");
         ++index;
     }
 }
@@ -413,7 +416,8 @@ void printComponent(DabComponent* component)
 {
     etiLog.log(info, " service id:             %i", component->serviceId);
     etiLog.log(info, " subchannel id:          %i", component->subchId);
-    etiLog.log(info, " label:                  %s", component->label.text());
+    etiLog.level(info) << " label:                  " <<
+            component->label.long_label();
     etiLog.level(info) << " short label:            " <<
             component->label.short_label();
 
@@ -480,25 +484,25 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     for (subchannel = subchannels.begin(); subchannel != subchannels.end();
             ++subchannel) {
         dabProtection* protection = &(*subchannel)->protection;
-        etiLog.log(info, "Subchannel   %i", index);
+        etiLog.level(info) << "Subchannel   " << (*subchannel)->uid;
         etiLog.log(info, " input");
         etiLog.level(info) << "   URI:     " << (*subchannel)->inputUri;
         switch ((*subchannel)->type) {
-        case Audio:
-            etiLog.log(info, " type:       audio");
-            break;
-        case DataDmb:
-            etiLog.log(info, " type:       data");
-            break;
-        case Fidc:
-            etiLog.log(info, " type:       fidc");
-            break;
-        case Packet:
-            etiLog.log(info, " type:       packet");
-            break;
-        default:
-            etiLog.log(info, " type:       unknown");
-            break;
+            case subchannel_type_t::Audio:
+                etiLog.log(info, " type:       audio");
+                break;
+            case subchannel_type_t::DataDmb:
+                etiLog.log(info, " type:       data");
+                break;
+            case subchannel_type_t::Fidc:
+                etiLog.log(info, " type:       fidc");
+                break;
+            case subchannel_type_t::Packet:
+                etiLog.log(info, " type:       packet");
+                break;
+            default:
+                etiLog.log(info, " type:       unknown");
+                break;
         }
         etiLog.log(info, " id:         %i",
                 (*subchannel)->id);
@@ -526,12 +530,13 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     }
 }
 
-void printEnsemble(dabEnsemble* ensemble)
+void printEnsemble(const boost::shared_ptr<dabEnsemble> ensemble)
 {
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);
     etiLog.log(info, " ecc:         0x%x (%u)", ensemble->ecc, ensemble->ecc);
-    etiLog.log(info, " label:       %s", ensemble->label.text());
+    etiLog.level(info) << " label:       " <<
+            ensemble->label.long_label();
     etiLog.level(info) << " short label: " <<
             ensemble->label.short_label();
 
@@ -549,5 +554,13 @@ void printEnsemble(dabEnsemble* ensemble)
     }
     etiLog.log(info, " intl. table. %d", ensemble->international_table);
 
+    if (ensemble->clusters.empty()) {
+        etiLog.level(info) << " No announcement clusters defined";
+    }
+    else {
+        for (const auto& cluster : ensemble->clusters) {
+            etiLog.level(info) << cluster->tostring();
+        }
+    }
 }
 

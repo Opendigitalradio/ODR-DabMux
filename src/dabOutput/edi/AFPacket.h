@@ -39,6 +39,8 @@ typedef std::vector<uint8_t> AFPacket;
 class AFPacketiser
 {
     public:
+        AFPacketiser() :
+            m_verbose(false) {};
         AFPacketiser(bool verbose) :
             m_verbose(verbose) {};
 

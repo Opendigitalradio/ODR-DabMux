@@ -49,11 +49,17 @@ class PFT
     public:
         static const int ParityBytes = 48;
 
-        PFT(unsigned int RSDataWordLength,
-            unsigned int NumRecoverableFragments,
-            const edi_configuration_t &conf) :
-            m_k(RSDataWordLength),
-            m_m(NumRecoverableFragments),
+        PFT() :
+            m_k(207),
+            m_m(3),
+            m_dest_port(12000),
+            m_pseq(0),
+            m_verbose(false)
+        { }
+
+        PFT(const edi_configuration_t &conf) :
+            m_k(conf.chunk_len),
+            m_m(conf.fec),
             m_dest_port(conf.dest_port),
             m_pseq(0),
             m_verbose(conf.verbose)

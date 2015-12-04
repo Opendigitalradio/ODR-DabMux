@@ -2,7 +2,9 @@ Telnet Remote Control
 =====================
 
 ODR-DabMux can be configured to set up a simple telnet remote control that can
-be used to modify some parameters without restarting the multiplexer.
+be used to modify some parameters without restarting the multiplexer. The same
+functionality available through telnet is also available over a ZeroMQ REQ/REP
+socket, to make automation easier.
 
 The server only listens on localhost for security reasons. Remote access should
 be done using a VPN or SSH port forwarding.

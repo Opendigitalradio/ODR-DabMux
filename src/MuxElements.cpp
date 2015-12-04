@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2014, 2015
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -24,9 +24,11 @@
 */
 
 #include <vector>
+#include <algorithm>
 
 #include "MuxElements.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 const unsigned short Sub_Channel_SizeTable[64] = {
     16, 21, 24, 29, 35, 24, 29, 35,
@@ -43,29 +45,72 @@ const unsigned short Sub_Channel_SizeTable[64] = {
 
 using namespace std;
 
-int DabLabel::setLabel(const std::string& text)
+std::string AnnouncementCluster::tostring() const
 {
-    int len = text.length();
-    if (len > 16)
+    stringstream ss;
+    ss << "cluster id(" << (int)cluster_id;
+    ss << ", flags 0x" << boost::format("%04x") % flags;
+    ss << ", subchannel " << subchanneluid;
+    if (m_active) {
+        ss << " *";
+    }
+
+    ss << " )";
+
+    return ss.str();
+}
+
+void AnnouncementCluster::set_parameter(const string& parameter,
+        const string& value)
+{
+    if (parameter == "active") {
+        stringstream ss;
+        ss << value;
+        ss >> m_active;
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+const string AnnouncementCluster::get_parameter(const string& parameter) const
+{
+    stringstream ss;
+    if (parameter == "active") {
+        ss << m_active;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+}
+
+
+int DabLabel::setLabel(const std::string& label)
+{
+    size_t len = label.length();
+    if (len > DABLABEL_LENGTH)
         return -3;
 
-    memset(m_text, 0, 17);
-    memcpy(m_text, text.c_str(), len);
-
     m_flag = 0xFF00; // truncate the label to the eight first characters
+
+    m_label = label;
 
     return 0;
 }
 
-int DabLabel::setLabel(const std::string& text, const std::string& short_label)
+int DabLabel::setLabel(const std::string& label, const std::string& short_label)
 {
     DabLabel newlabel;
 
-    memset(newlabel.m_text, 0, 17);
-    int len = text.length();
-    if (len > 16)
-        return -3;
-    memcpy(newlabel.m_text, text.c_str(), len);
+    int result = newlabel.setLabel(label);
+    if (result < 0)
+        return result;
 
     /* First check if we can actually create the short label */
     int flag = newlabel.setShortLabel(short_label);
@@ -73,8 +118,8 @@ int DabLabel::setLabel(const std::string& text, const std::string& short_label)
         return flag;
 
     // short label is valid.
-    memcpy(this->m_text, newlabel.m_text, 17);
-    this->m_flag = flag & 0xFFFF;
+    m_flag = flag & 0xFFFF;
+    m_label = newlabel.m_label;
 
     return 0;
 }
@@ -104,10 +149,10 @@ int DabLabel::setShortLabel(const std::string& slabel)
     /* Iterate over the label and set the bits in the flag
      * according to the characters in the slabel
      */
-    for (int i = 0; i < 32; ++i) {
-        if (*slab == this->m_text[i]) {
+    for (size_t i = 0; i < m_label.size(); ++i) {
+        if (*slab == m_label[i]) {
             flag |= 0x8000 >> i;
-            if (*(++slab) == 0) {
+            if (*(++slab) == '\0') {
                 break;
             }
         }
@@ -117,7 +162,7 @@ int DabLabel::setShortLabel(const std::string& slabel)
      * we went through the whole label, the short label
      * cannot be represented
      */
-    if (*slab != 0) {
+    if (*slab != '\0') {
         return -1;
     }
 
@@ -138,15 +183,22 @@ int DabLabel::setShortLabel(const std::string& slabel)
 const string DabLabel::short_label() const
 {
     stringstream shortlabel;
-    for (int i = 0; i < 32; ++i) {
+    for (size_t i = 0; i < m_label.size(); ++i) {
         if (m_flag & 0x8000 >> i) {
-            shortlabel << m_text[i];
+            shortlabel << m_label[i];
         }
     }
 
     return shortlabel.str();
 }
 
+void DabLabel::writeLabel(uint8_t* buf) const
+{
+    memset(buf, ' ', DABLABEL_LENGTH);
+    if (m_label.size() <= DABLABEL_LENGTH) {
+        std::copy(m_label.begin(), m_label.end(), (char*)buf);
+    }
+}
 
 vector<dabSubchannel*>::iterator getSubchannel(
         vector<dabSubchannel*>& subchannels, int id)
@@ -186,19 +238,19 @@ vector<DabComponent*>::iterator getComponent(
     return getComponent(components, serviceId, components.end());
 }
 
-vector<DabService*>::iterator getService(
+std::vector<std::shared_ptr<DabService> >::iterator getService(
         DabComponent* component,
-        vector<DabService*>& services)
+        std::vector<std::shared_ptr<DabService> >& services)
 {
-    vector<DabService*>::iterator service;
-
-    for (service = services.begin(); service != services.end(); ++service) {
-        if ((*service)->id == component->serviceId) {
-            break;
+    size_t i = 0;
+    for (auto service : services) {
+        if (service->id == component->serviceId) {
+            return services.begin() + i;
         }
+        i++;
     }
 
-    return service;
+    throw std::runtime_error("Service not included in any component");
 }
 
 bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
@@ -215,7 +267,7 @@ bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
                 "for defining packet ");
         return false;
     }
-    if ((*getSubchannel(subchannels, subchId))->type != Packet) {
+    if ((*getSubchannel(subchannels, subchId))->type != subchannel_type_t::Packet) {
         return false;
     }
     return true;
@@ -224,15 +276,12 @@ bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
 void DabComponent::set_parameter(const string& parameter,
         const string& value)
 {
-    stringstream ss(value);
-    ss.exceptions ( stringstream::failbit | stringstream::badbit );
-
     if (parameter == "label") {
         vector<string> fields;
         boost::split(fields, value, boost::is_any_of(","));
         if (fields.size() != 2) {
             throw ParameterError("Parameter 'label' must have format"
-                   " 'label,shortlabel'");
+                    " 'label,shortlabel'");
         }
         int success = this->label.setLabel(fields[0], fields[1]);
         stringstream ss;
@@ -274,10 +323,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "label") {
-        char l[17];
-        l[16] = '\0';
-        memcpy(l, label.text(), 16);
-        ss << l << "," << label.short_label();
+        ss << label.long_label() << "," << label.short_label();
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -289,17 +335,18 @@ const string DabComponent::get_parameter(const string& parameter) const
 }
 
 
-unsigned char DabService::getType(dabEnsemble* ensemble)
+subchannel_type_t DabService::getType(boost::shared_ptr<dabEnsemble> ensemble)
 {
     vector<dabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
-        return 4;
+        throw std::runtime_error("No component found for service");
     }
+
     subchannel = getSubchannel(ensemble->subchannels, (*component)->subchId);
     if (subchannel == ensemble->subchannels.end()) {
-        return 8;
+        throw std::runtime_error("Could not find subchannel associated with service");
     }
 
     return (*subchannel)->type;
@@ -322,9 +369,6 @@ unsigned char DabService::nbComponent(vector<DabComponent*>& components)
 void DabService::set_parameter(const string& parameter,
         const string& value)
 {
-    stringstream ss(value);
-    ss.exceptions ( stringstream::failbit | stringstream::badbit );
-
     if (parameter == "label") {
         vector<string> fields;
         boost::split(fields, value, boost::is_any_of(","));
@@ -360,6 +404,19 @@ void DabService::set_parameter(const string& parameter,
                 throw ParameterError(ss.str());
         }
     }
+    else if (parameter == "pty") {
+        int newpty = std::stoi(value); // International code, 5 bits
+
+        if (newpty >= 0 and newpty < (1<<5)) {
+            pty = newpty;
+        }
+        else {
+            stringstream ss;
+            ss << m_name << " pty is out of bounds";
+            etiLog.level(warn) << ss.str();
+            throw ParameterError(ss.str());
+        }
+    }
     else {
         stringstream ss;
         ss << "Parameter '" << parameter <<
@@ -372,10 +429,10 @@ const string DabService::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "label") {
-        char l[17];
-        l[16] = '\0';
-        memcpy(l, label.text(), 16);
-        ss << l << "," << label.short_label();
+        ss << label.long_label() << "," << label.short_label();
+    }
+    else if (parameter == "pty") {
+        ss << (int)pty;
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -388,9 +445,6 @@ const string DabService::get_parameter(const string& parameter) const
 
 void dabEnsemble::set_parameter(const string& parameter, const string& value)
 {
-    stringstream ss(value);
-    ss.exceptions ( stringstream::failbit | stringstream::badbit );
-
     if (parameter == "localtimeoffset") {
         if (value == "auto") {
             lto_auto = true;

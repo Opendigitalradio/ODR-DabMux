@@ -52,7 +52,7 @@ RSBlock PFT::Protect(AFPacket af_packet)
 
     // number of chunks is ceil(afpacketsize / m_k)
     // TS 102 821 7.2.2: c = ceil(l / k_max)
-    m_num_chunks = CEIL_DIV(af_packet.size(), 207);
+    m_num_chunks = CEIL_DIV(af_packet.size(), m_k);
 
     if (m_verbose) {
         fprintf(stderr, "Protect %zu chunks of size %zu\n",

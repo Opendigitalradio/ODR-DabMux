@@ -1,5 +1,8 @@
 ; This is the official configuration file example that
 ; serves as documentation for the config file reader.
+; More information about the usage of the tools is available
+; in the guide, which can be found on the
+; www.opendigitalradio.org website.
 ;
 ; As you can see, comments are defined by semicolons.
 ;
@@ -9,9 +12,6 @@
 ; It consists of six mandatory sections, whose relative order in this
 ; file are of no importance.
 
-; In case of questions or ambiguities, the documentation for the
-; command-line configuration interface still mostly applies.
-
 ; The general section defines global multiplex parameters.
 general {
     ; the DAB Transmission mode (values 1-4 accepted)
@@ -19,7 +19,6 @@ general {
 
     ; the number of ETI frames to generate (set to 0 to get an unlimited number)
     nbframes 10
-
 
     ; boolean fileds can accept either false or true as values:
 
@@ -41,6 +40,11 @@ general {
     ; If the port is zero, or the line commented, the server
     ; is not started.
     managementport 12720
+
+    ; FIG Carousel
+    ; Set this to true to use the new FIG carousel implementation,
+    ; which makes better usage of the FIB space.
+    new_fig_carousel true
 }
 
 remotecontrol {
@@ -60,15 +64,32 @@ ensemble {
     id 0x4fff ; you can also use decimal if you want
     ecc 0xec ; Extended Country Code
 
-    local-time-offset 1     ; in hours, supports half-hour offsets
+    local-time-offset auto  ; autmatically calculate from system local time
                             ; or
-    ;local-time-offset auto ; autmatically calculate from system local time
+    ;local-time-offset 1    ; in hours, supports half-hour offsets
 
     international-table 1 ; See TS 101 756 clause 5.7
                           ; 1 corresponds to the PTy used in RDS
                           ; 2 corresponds to program types used in north america
+
+    ; all labels are maximum 16 characters in length
     label "TuxMux"
-    shortlabel "Tux"
+    ; The short label is built from the label by erasing letters, and cannot
+    ; be longer than 8 characters. If omitted, it will be truncated from the
+    ; label
+    shortlabel "TxMux"
+
+    ; Announcement settings for FIG0/19
+    announcements {
+        test_announcement {
+            cluster 1
+            flags {
+                Traffic true
+            }
+
+            subchannel sub-fu
+        }
+    }
 }
 
 ; Definition of DAB services
@@ -81,6 +102,25 @@ services {
         pty 0
         language 0
         ; also supports id
+
+        ; List of announcement switching flags signalled in FIG 0/18
+        ; This lists all possible announcements. If one is left out, it is disabled.
+        announcements {
+            Alarm false
+            Traffic true
+            Travel false
+            Warning false
+            News false
+            Weather false
+            Event false
+            Special false
+            ProgrammeInfo false
+            Sports false
+            Finance false
+
+            ; a comma separated list of clusters in which the service belongs to
+            clusters "1,2"
+        }
     }
     srv-lu {
         label "Luschtig"
@@ -88,7 +128,6 @@ services {
     }
     srv-ri {
         label "rick"
-        shortlabel "rick"
     }
 
 }
@@ -212,8 +251,11 @@ components {
         ; data: unspecified=0, TMC=1, EWS=2, ITTS=3, paging=4, TDC=5, IP=59, MOT=60, proprietary=61
         type 0
 
-        label "funk"
-        shortlabel "fu"
+        ; According to specification, you should not define component labels if
+        ; the service is only used in one component. The service label is sufficient
+        ; in that case.
+        ;label "funk"
+        ;shortlabel "fu"
         service srv-fu
         subchannel sub-fu
 
@@ -243,12 +285,6 @@ components {
     }
 
     comp-lu {
-        ; labels are maximum 16 characters in length
-        label "luschtig"
-
-        ; a shortlabel is created by dropping some letters from the
-        ; label, max length 8
-        shortlabel "lu"
         service srv-lu
         subchannel sub-lu
 
@@ -256,8 +292,6 @@ components {
     }
 
     comp-ri {
-        label "rick"
-        shortlabel "rick"
         service srv-ri
         subchannel sub-ri
 
@@ -287,20 +321,44 @@ outputs {
 
     ; The edi output has a different syntax
     edi {
-        destination "192.168.23.23"
+        ; example for unicast EDI
+        ;destination "192.168.23.23"
+        ; for unicast EDI, do not set source
+
+        ; example for multicast EDI, the source IP is required
+        ; so that the data is sent on the correct ethernet interface
+        destination "232.20.10.1"
+        source      "192.168.0.50"
+        ; The multicast TTL has to be adapted according to your network
+        ttl 1
+
+        ; The settings below apply to both unicast and multicast
+
+        ; EDI uses the UDP protocol
         port        12000
         sourceport  13000
 
-        ; EDI uses the UDP protocol
-
         ; Enable the PFT subsystem. If false, AFPackets are sent.
-        enable_pft  false
+        enable_pft  true
+
+        ; How many lost fragments can be recovered by Reed-Solomon
+        fec         2
+
+        ; Length of a RS chunk, can be overriden
+        ;default=207
+        ;chunk_len   207
 
         ; Save the packets sent over ethernet to the file ./edi.debug
         dump        false
 
         ; show more debugging info
-        verbose     true
+        verbose     false
+
+        ; (optional) set the kind of alignment to use in TAG Packets
+        ; 0: no padding
+        ; 8: pad to eight bytes (default)
+        ; above 8: insert *dmy TAG Item to pad to given size in bytes
+        ;tagpacket_alignment 8
     }
 
     ; Other outputs:

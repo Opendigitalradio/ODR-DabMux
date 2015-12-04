@@ -1,6 +1,32 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2015-11-27: Matthias P. Braendli <matthias@mpb.li>
+	(v0.8.1):
+		Fix compilation with test input.
+		Add PTy to remote control.
+		Add EDI options to configuration file for multicast settings.
+
+2015-09-13: Matthias P. Braendli <matthias@mpb.li>
+	(v0.8.0):
+		Pad labels with spaces instead of terminating them with NUL.
+		Modify real-time priority.
+		Refactor big mux loop into separate function.
+		Add ability to read out full configuration tree in JSON.
+		Remove old command-line interface.
+		Fix EDI errors.
+		Replace TCP socket for Statistics and Management server by ZMQ
+		REP/REQ.
+		Start activities on a simple web GUI for monitoring and configuration.
+		Add new FIG carousel, not enabled by default.
+		Add utility to drive a FarSync card from a ZMQ ETI stream.
+		Improve FIG0/13 signalling (DG flag, CAOrg removal)
+		Add announcement support (FIG0/18 and 0/19)
+
+2015-07-27: Matthias P. Braendli <matthias@mpb.li>
+	(v0.7.5):
+		Fix segmentation fault in short label check logic.
+
 2015-07-03: Matthias P. Braendli <matthias@mpb.li>
 	(v0.7.4):
 		Allow empty component labels

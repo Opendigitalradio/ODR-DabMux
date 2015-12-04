@@ -39,6 +39,60 @@
 #include "RemoteControl.h"
 #include "Eti.h"
 
+enum class subchannel_type_t {
+    Audio = 0,
+    DataDmb = 1,
+    Fidc = 2,
+    Packet = 3
+};
+
+
+/* Announcement switching flags,
+ * define in ETSI TS 101 756 Table 15 */
+const char * const annoucement_flags_names[] = {
+    "Alarm",
+    "Traffic",
+    "Travel",
+    "Warning",
+    "News",
+    "Weather",
+    "Event",
+    "Special",
+    "ProgrammeInfo",
+    "Sports",
+    "Finance",
+    "tba1", "tba2", "tba3", "tba4", "tba5"
+};
+
+/* Class representing an announcement cluster for FIG 0/19 */
+class AnnouncementCluster : public RemoteControllable {
+    public:
+        AnnouncementCluster(std::string name) :
+            RemoteControllable(name),
+            m_active(false)
+        {
+            RC_ADD_PARAMETER(active, "Signal this announcement");
+        }
+
+        uint8_t cluster_id;
+        uint16_t flags;
+        std::string subchanneluid;
+
+        std::string tostring(void) const;
+
+        bool is_active(void) const { return m_active; };
+
+    private:
+        bool m_active;
+
+        /* Remote control */
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const std::string get_parameter(const std::string& parameter) const;
+};
+
 struct dabOutput {
     dabOutput(const char* proto, const char* name) :
         outputProto(proto), outputName(name), output(NULL) { }
@@ -100,7 +154,7 @@ class DabLabel
 class DabService;
 class DabComponent;
 
-struct dabSubchannel;
+class dabSubchannel;
 class dabEnsemble : public RemoteControllable {
     public:
         dabEnsemble()
@@ -134,6 +188,8 @@ class dabEnsemble : public RemoteControllable {
         std::vector<std::shared_ptr<DabService> > services;
         std::vector<DabComponent*> components;
         std::vector<dabSubchannel*> subchannels;
+
+        std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
 };
 
 
@@ -172,18 +228,12 @@ struct dabProtection {
     };
 };
 
-enum dab_subchannel_type_t {
-    Audio = 0,
-    DataDmb = 1,
-    Fidc = 2,
-    Packet = 3
-};
-
 class dabSubchannel
 {
 public:
     dabSubchannel(std::string& uid) :
-            uid(uid)
+            uid(uid),
+            id(0)
     {
     }
 
@@ -192,7 +242,7 @@ public:
     std::string inputUri;
     DabInputBase* input;
     unsigned char id;
-    dab_subchannel_type_t type;
+    subchannel_type_t type;
     uint16_t startAddress;
     uint16_t bitrate;
     dabProtection protection;
@@ -288,6 +338,7 @@ class DabService : public RemoteControllable
             uid(uid)
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
+            RC_ADD_PARAMETER(pty, "Programme Type");
         }
 
         std::string uid;
@@ -297,7 +348,15 @@ class DabService : public RemoteControllable
         unsigned char language;
         bool program;
 
-        unsigned char getType(boost::shared_ptr<dabEnsemble> ensemble);
+        /* ASu (Announcement support) flags: this 16-bit flag field shall
+         * specify the type(s) of announcements by which it is possible to
+         * interrupt the reception of the service. The interpretation of this
+         * field shall be as defined in TS 101 756, table 14.
+         */
+        uint16_t ASu;
+        std::vector<uint8_t> clusters;
+
+        subchannel_type_t getType(boost::shared_ptr<dabEnsemble> ensemble);
         unsigned char nbComponent(std::vector<DabComponent*>& components);
 
         DabLabel label;

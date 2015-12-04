@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2014, 2015
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -28,6 +28,7 @@
 
 #include "MuxElements.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 const unsigned short Sub_Channel_SizeTable[64] = {
     16, 21, 24, 29, 35, 24, 29, 35,
@@ -43,6 +44,52 @@ const unsigned short Sub_Channel_SizeTable[64] = {
 
 
 using namespace std;
+
+std::string AnnouncementCluster::tostring() const
+{
+    stringstream ss;
+    ss << "cluster id(" << (int)cluster_id;
+    ss << ", flags 0x" << boost::format("%04x") % flags;
+    ss << ", subchannel " << subchanneluid;
+    if (m_active) {
+        ss << " *";
+    }
+
+    ss << " )";
+
+    return ss.str();
+}
+
+void AnnouncementCluster::set_parameter(const string& parameter,
+        const string& value)
+{
+    if (parameter == "active") {
+        stringstream ss;
+        ss << value;
+        ss >> m_active;
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+const string AnnouncementCluster::get_parameter(const string& parameter) const
+{
+    stringstream ss;
+    if (parameter == "active") {
+        ss << m_active;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+}
+
 
 int DabLabel::setLabel(const std::string& label)
 {
@@ -105,7 +152,7 @@ int DabLabel::setShortLabel(const std::string& slabel)
     for (size_t i = 0; i < m_label.size(); ++i) {
         if (*slab == m_label[i]) {
             flag |= 0x8000 >> i;
-            if (*(++slab) == 0) {
+            if (*(++slab) == '\0') {
                 break;
             }
         }
@@ -220,7 +267,7 @@ bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
                 "for defining packet ");
         return false;
     }
-    if ((*getSubchannel(subchannels, subchId))->type != Packet) {
+    if ((*getSubchannel(subchannels, subchId))->type != subchannel_type_t::Packet) {
         return false;
     }
     return true;
@@ -234,7 +281,7 @@ void DabComponent::set_parameter(const string& parameter,
         boost::split(fields, value, boost::is_any_of(","));
         if (fields.size() != 2) {
             throw ParameterError("Parameter 'label' must have format"
-                   " 'label,shortlabel'");
+                    " 'label,shortlabel'");
         }
         int success = this->label.setLabel(fields[0], fields[1]);
         stringstream ss;
@@ -288,17 +335,18 @@ const string DabComponent::get_parameter(const string& parameter) const
 }
 
 
-unsigned char DabService::getType(boost::shared_ptr<dabEnsemble> ensemble)
+subchannel_type_t DabService::getType(boost::shared_ptr<dabEnsemble> ensemble)
 {
     vector<dabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
-        return 4;
+        throw std::runtime_error("No component found for service");
     }
+
     subchannel = getSubchannel(ensemble->subchannels, (*component)->subchId);
     if (subchannel == ensemble->subchannels.end()) {
-        return 8;
+        throw std::runtime_error("Could not find subchannel associated with service");
     }
 
     return (*subchannel)->type;
@@ -356,6 +404,19 @@ void DabService::set_parameter(const string& parameter,
                 throw ParameterError(ss.str());
         }
     }
+    else if (parameter == "pty") {
+        int newpty = std::stoi(value); // International code, 5 bits
+
+        if (newpty >= 0 and newpty < (1<<5)) {
+            pty = newpty;
+        }
+        else {
+            stringstream ss;
+            ss << m_name << " pty is out of bounds";
+            etiLog.level(warn) << ss.str();
+            throw ParameterError(ss.str());
+        }
+    }
     else {
         stringstream ss;
         ss << "Parameter '" << parameter <<
@@ -369,6 +430,9 @@ const string DabService::get_parameter(const string& parameter) const
     stringstream ss;
     if (parameter == "label") {
         ss << label.long_label() << "," << label.short_label();
+    }
+    else if (parameter == "pty") {
+        ss << (int)pty;
     }
     else {
         ss << "Parameter '" << parameter <<

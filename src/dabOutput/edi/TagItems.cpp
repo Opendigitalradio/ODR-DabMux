@@ -151,7 +151,7 @@ std::vector<uint8_t> TagESTn::Assemble()
     packet.push_back((sstc >> 8) & 0xFF);
     packet.push_back(sstc & 0xFF);
 
-    for (size_t i = 0; i < mst_length; i++) {
+    for (size_t i = 0; i < mst_length * 8; i++) {
         packet.push_back(mst_data[i]);
     }
 
@@ -171,5 +171,25 @@ std::vector<uint8_t> TagESTn::Assemble()
     */
     return packet;
 }
+
+std::vector<uint8_t> TagStarDMY::Assemble()
+{
+    std::string pack_data("*dmy");
+    std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
+
+    packet.resize(4 + 4 + length_);
+
+    const uint32_t length_bits = length_ * 8;
+
+    packet[4] = (length_bits >> 24) & 0xFF;
+    packet[5] = (length_bits >> 16) & 0xFF;
+    packet[6] = (length_bits >> 8) & 0xFF;
+    packet[7] = length_bits & 0xFF;
+
+    // The remaining bytes in the packet are "undefined data"
+
+    return packet;
+}
+
 #endif
 

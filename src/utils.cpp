@@ -25,6 +25,7 @@
 #include <cstring>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include "DabMux.h"
 #include "utils.h"
 
@@ -387,6 +388,14 @@ void printServices(const vector<shared_ptr<DabService> >& services)
 
         etiLog.log(info, " language:    0x%x (%u)",
                 service->language, service->language);
+        etiLog.log(info, " announcements: 0x%x",
+                service->ASu);
+
+        std::vector<std::string> clusters_s;
+        for (const auto& cluster : service->clusters) {
+            clusters_s.push_back(std::to_string(cluster));
+        }
+        etiLog.level(info) << " clusters: " << boost::join(clusters_s, ",");
         ++index;
     }
 }
@@ -475,25 +484,25 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     for (subchannel = subchannels.begin(); subchannel != subchannels.end();
             ++subchannel) {
         dabProtection* protection = &(*subchannel)->protection;
-        etiLog.log(info, "Subchannel   %i", index);
+        etiLog.level(info) << "Subchannel   " << (*subchannel)->uid;
         etiLog.log(info, " input");
         etiLog.level(info) << "   URI:     " << (*subchannel)->inputUri;
         switch ((*subchannel)->type) {
-        case Audio:
-            etiLog.log(info, " type:       audio");
-            break;
-        case DataDmb:
-            etiLog.log(info, " type:       data");
-            break;
-        case Fidc:
-            etiLog.log(info, " type:       fidc");
-            break;
-        case Packet:
-            etiLog.log(info, " type:       packet");
-            break;
-        default:
-            etiLog.log(info, " type:       unknown");
-            break;
+            case subchannel_type_t::Audio:
+                etiLog.log(info, " type:       audio");
+                break;
+            case subchannel_type_t::DataDmb:
+                etiLog.log(info, " type:       data");
+                break;
+            case subchannel_type_t::Fidc:
+                etiLog.log(info, " type:       fidc");
+                break;
+            case subchannel_type_t::Packet:
+                etiLog.log(info, " type:       packet");
+                break;
+            default:
+                etiLog.log(info, " type:       unknown");
+                break;
         }
         etiLog.log(info, " id:         %i",
                 (*subchannel)->id);
@@ -545,5 +554,13 @@ void printEnsemble(const boost::shared_ptr<dabEnsemble> ensemble)
     }
     etiLog.log(info, " intl. table. %d", ensemble->international_table);
 
+    if (ensemble->clusters.empty()) {
+        etiLog.level(info) << " No announcement clusters defined";
+    }
+    else {
+        for (const auto& cluster : ensemble->clusters) {
+            etiLog.level(info) << cluster->tostring();
+        }
+    }
 }
 

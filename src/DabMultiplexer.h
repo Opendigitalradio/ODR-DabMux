@@ -35,6 +35,7 @@
 #include "dabOutput/edi/TagPacket.h"
 #include "dabOutput/edi/AFPacket.h"
 #include "dabOutput/edi/PFT.h"
+#include "fig/FIGCarousel.h"
 #include "crc.h"
 #include "utils.h"
 #include "UdpSocket.h"
@@ -63,7 +64,7 @@ class MuxInitException : public std::exception
         std::string msg;
 };
 
-class DabMultiplexer {
+class DabMultiplexer : public RemoteControllable {
     public:
         DabMultiplexer(boost::shared_ptr<BaseRemoteController> rc,
                boost::property_tree::ptree pt);
@@ -78,6 +79,13 @@ class DabMultiplexer {
         void update_config(boost::property_tree::ptree pt);
 
         void set_edi_config(const edi_configuration_t& new_edi_conf);
+
+        /* Remote control */
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const std::string get_parameter(const std::string& parameter) const;
 
     private:
         void prepare_watermark(void);
@@ -136,6 +144,10 @@ class DabMultiplexer {
         // The AF Packet will be protected with reed-solomon and split in fragments
         PFT edi_pft;
 #endif // HAVE_OUTPUT_EDI
+
+        /* New FIG Carousel */
+        bool m_use_new_fig_carousel;
+        FIC::FIGCarousel fig_carousel;
 };
 
 // DAB Mode
@@ -369,12 +381,32 @@ struct FIGtype0_17_programme {
     uint16_t SId;
     uint8_t NFC:2;
     uint8_t Rfa:2;
-    uint8_t CC:1;
-    uint8_t L:1;
-    uint8_t PS:1;
-    uint8_t SD:1;
+    uint8_t CC:1; // Complimentary code
+    uint8_t L:1; // Signals presence of language field
+    uint8_t PS:1; // Primary/Secondary
+    // PS==0: language refers to primary service component
+    // PS==1: language refers to secondary service component
+    uint8_t SD:1; // Static/Dynamic
+    // SD==0: PTy and language may not represent the current programme contents
+    // SD==1: PTy and language represent the current programme contents
 } PACKED;
 
+struct FIGtype0_18 {
+    uint16_t SId;
+    uint16_t ASu;
+    uint8_t  NumClusters:5;
+    uint8_t  Rfa:3;
+    /* Followed by uint8_t Cluster IDs */
+} PACKED;
+
+struct FIGtype0_19 {
+    uint8_t  ClusterId;
+    uint16_t ASw;
+    uint8_t  SubChId:6;
+    uint8_t  RegionFlag:1; // shall be zero
+    uint8_t  NewFlag:1;
+    // Region and RFa not supported
+} PACKED;
 
 struct FIGtype0_1 {
     uint8_t Length:5;
@@ -431,7 +463,7 @@ struct FIG0_13_app {
         typeHigh = type >> 3;
         typeLow = type & 0x1f;
     }
-    uint32_t xpad;
+    uint16_t xpad;
 } PACKED;
 
 #define FIG0_13_APPTYPE_SLIDESHOW  0x2

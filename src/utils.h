@@ -52,7 +52,7 @@ void printUsageConfigfile(char *name, FILE* out = stderr);
  * resp. subchannels*/
 void printOutputs(std::vector<boost::shared_ptr<DabOutput> >& outputs);
 
-void printServices(std::vector<std::shared_ptr<DabService> >& services);
+void printServices(const std::vector<std::shared_ptr<DabService> >& services);
 
 void printComponents(std::vector<DabComponent*>& components);
 

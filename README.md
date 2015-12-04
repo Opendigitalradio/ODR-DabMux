@@ -1,26 +1,28 @@
 Overview
 ========
 
-*ODR-DabMux* is a fork of CRC-DabMux, which was developed by the Communications
-Research Center Canada. It has been forked by the
+ODR-DabMux is a *DAB (Digital Audio Broadcasting) multiplexer* compliant to
+ETSI EN 300 401. It is the continuation of the work started by the
+Communications Research Center Canada on CRC-DabMux, and is now pursued in the
 [Opendigitalradio project](http://opendigitalradio.org).
 
-ODR-DabMux is a *DAB (Digital Audio Broadcasting) multiplexer* compliant to
-ETSI EN 300 401.
+ODR-DabMux is part of the ODR-mmbTools tool set. More information about the
+ODR-mmbTools is available in the *guide*, available on the
+[Opendigitalradio mmbTools page](http://www.opendigitalradio.org/mmbtools).
 
-In addition to the features of CRC-DabMux, this fork contains:
-
-- configuration file support, see doc/example.mux
-- timestamping support required for SFN
-- a ZeroMQ ETI output that can be used with ODR-DabMod
-- a ZeroMQ dabplus input that can be used with fdk-aac-dabplus
-  and toolame-dab, and supports CURVE authentication
-- supports logging to syslog
-- supports ZMQ input monitoring with munin tool
-- includes a Telnet Remote Control for setting/getting parameters
-  (can change subchannel and component labels, and ZMQ input buffer
-   parameters)
-- an experimental EDI output
+Features of ODR-DabMux:
+- Standards-compliant DAB multiplexer
+- Configuration file, see doc/example.mux
+- Timestamping support required for SFN
+- ZeroMQ ETI output that can be used with ODR-DabMod
+- ZeroMQ input that can be used with FDK-AAC-DABplus
+  and Toolame-DAB, and supports CURVE authentication
+- Logging to syslog
+- Monitoring using munin tool
+- Includes a Telnet and ZMQ Remote Control for setting/getting parameters
+- EDI output
+- Something that will one day become a nice GUI for configuration,
+  see gui/README.md
 
 The src/ directory contains the source code of ODR-DabMux.
 

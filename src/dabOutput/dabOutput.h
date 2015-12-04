@@ -55,13 +55,21 @@
 
 // Configuration for EDI output
 struct edi_configuration_t {
+    edi_configuration_t() :
+        enabled(false),
+        verbose(false) {}
+    unsigned chunk_len; // RSk, data length of each chunk
+    unsigned fec;       // number of fragments that can be recovered
     bool enabled;
-    unsigned int source_port;
     bool dump;
     bool verbose;
     bool enable_pft;
     std::string dest_addr;
+    std::string source_addr;
+    unsigned int source_port;
     unsigned int dest_port;
+    unsigned int ttl;
+    unsigned int tagpacket_alignment;
 };
 
 

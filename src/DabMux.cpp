@@ -321,15 +321,22 @@ int main(int argc, char *argv[])
 #if HAVE_OUTPUT_EDI
                 ptree pt_edi = pt_outputs.get_child("edi");
 
-                edi_conf.enabled     = true;
+                edi_conf.enabled             = true;
 
-                edi_conf.dest_addr   = pt_edi.get<string>("destination");
-                edi_conf.dest_port   = pt_edi.get<unsigned int>("port");
-                edi_conf.source_port = pt_edi.get<unsigned int>("sourceport");
+                edi_conf.dest_addr           = pt_edi.get<string>("destination");
+                edi_conf.dest_port           = pt_edi.get<unsigned int>("port");
+                edi_conf.source_addr         = pt_edi.get<string>("source", "");
+                edi_conf.source_port         = pt_edi.get<unsigned int>("sourceport");
+                edi_conf.ttl                 = pt_edi.get<unsigned int>("ttl", 1);
 
-                edi_conf.dump        = pt_edi.get<bool>("dump");
-                edi_conf.enable_pft  = pt_edi.get<bool>("enable_pft");
-                edi_conf.verbose     = pt_edi.get<bool>("verbose");
+                edi_conf.dump                = pt_edi.get<bool>("dump");
+                edi_conf.enable_pft          = pt_edi.get<bool>("enable_pft");
+                edi_conf.verbose             = pt_edi.get<bool>("verbose");
+
+                edi_conf.fec                 = pt_edi.get<unsigned int>("fec", 3);
+                edi_conf.chunk_len           = pt_edi.get<unsigned int>("chunk_len", 207);
+
+                edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);
 
                 mux.set_edi_config(edi_conf);
 #else
@@ -425,10 +432,13 @@ int main(int argc, char *argv[])
 
 #if HAVE_OUTPUT_EDI
         if (edi_conf.enabled) {
-            etiLog.level(warn) << "EXPERIMENTAL EDI OUTPUT ENABLED!";
-            etiLog.level(info) << "edi to " << edi_conf.dest_addr << ":" << edi_conf.dest_port;
-            etiLog.level(info) << "source port " << edi_conf.source_port;
-            etiLog.level(info) << "verbose     " << edi_conf.verbose;
+            etiLog.level(info) << "EDI to " << edi_conf.dest_addr << ":" << edi_conf.dest_port;
+            if (not edi_conf.source_addr.empty()) {
+                etiLog.level(info) << " source      " << edi_conf.source_addr;
+                etiLog.level(info) << " ttl         " << edi_conf.ttl;
+            }
+            etiLog.level(info) << " source port " << edi_conf.source_port;
+            etiLog.level(info) << " verbose     " << edi_conf.verbose;
         }
 #endif
 

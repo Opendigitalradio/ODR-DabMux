@@ -84,6 +84,7 @@ int dabInputDabplusFileRead(void* args, void* buffer, int size)
             delete[] data->buffer;
         }
         data->buffer = new uint8_t[size * 5];
+        memset(data->buffer, 0, size * 5);
         data->bufferSize = size * 5;
         data->bufferIndex = 0;
     }

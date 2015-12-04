@@ -794,7 +794,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
 #   pragma error("Must define at least one packet input")
 #endif // defined(HAVE_INPUT_FILE)
 #ifdef HAVE_FORMAT_EPM
-    } else if (type == "enhancedpacked") {
+    } else if (type == "enhancedpacket") {
         subchan->type = subchannel_type_t::Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
         operations = dabInputEnhancedPacketFileOperations;

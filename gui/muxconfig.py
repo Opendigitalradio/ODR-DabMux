@@ -27,7 +27,8 @@ class General(object):
     """Container object for general options"""
     def __init__(self, pt):
         ptree = pt['general']
-        for fieldname in ["nbframes",
+        for fieldname in [
+                "nbframes",
                 "statsserverport",
                 "writescca",
                 "tist",
@@ -44,7 +45,8 @@ class Service(object):
     def __init__(self, name, ptree):
         self.name = name
 
-        for fieldname in ['id',
+        for fieldname in [
+                "id",
                 "label",
                 "shortlabel",
                 "pty",
@@ -58,7 +60,8 @@ class Subchannel(object):
     """Container object for a subchannel"""
     def __init__(self, name, ptree):
         self.name = name
-        for fieldname in ['type',
+        for fieldname in [
+                "type",
                 "inputfile",
                 "zmq-buffer",
                 "zmq-prebuffering",
@@ -97,20 +100,33 @@ class ConfigurationHandler(object):
         self._config = None
         self._statistics = None
 
+        #self._ctx = zmq.Context()
+        #self.sock = zmq.Socket(self._ctx, zmq.REQ)
+        #self.sock.setsockopt(zmq.LINGER, 0)
+        #self.sock.connect("tcp://{}:{}".format(self._host, self._port))
+
+    def zRead(self, key):
         self._ctx = zmq.Context()
         self.sock = zmq.Socket(self._ctx, zmq.REQ)
+        self.sock.setsockopt(zmq.LINGER, 0)
         self.sock.connect("tcp://{}:{}".format(self._host, self._port))
+        self.sock.send(key)
+    
+        # use poll for timeouts:
+        poller = zmq.Poller()
+        poller.register(self.sock, zmq.POLLIN)
+        if poller.poll(5*1000): # 5s timeout in milliseconds
+            recv = self.sock.recv()
+            self.sock.close()
+            self._ctx.term()
+            return recv
+        else:
+            raise IOError("Timeout processing ZMQ request")
 
     def load(self):
-        """Load the configuration from the multiplexer and
-        save it locally"""
-        self.sock.send(b'info')
-        server_info = self.sock.recv()
-
-        self.sock.send(b'getptree')
-        config_info = self.sock.recv()
-
-        print("Config '%r'" % config_info)
+        """Load the configuration from the multiplexer and save it locally"""
+        server_info = self.zRead(b'info')
+        config_info = self.zRead(b'getptree')
 
         self._server_version = json.loads(server_info)['service']
         self._config = json.loads(config_info)
@@ -118,17 +134,13 @@ class ConfigurationHandler(object):
     def update_stats(self):
         """Load the statistics from the multiplexer and
         save them locally"""
-
-        self.sock.send(b'info')
-        server_info = self.sock.recv()
-
-        self.sock.send(b'values')
-        stats_info = self.sock.recv()
+        server_info = self.zRead(b'info')
+        stats_info = self.zRead(b'values')
 
         self._statistics = json.loads(stats_info)['values']
 
     def get_full_configuration(self):
-        return json.dumps(self._config, indent=4)
+        return self._config
 
     def set_full_configuration(self, config_json):
         self.sock.send(b'setptree', flags=zmq.SNDMORE)

@@ -101,13 +101,13 @@ if len(sys.argv) == 1:
     munin_values = ""
     for ident in values:
         v = values[ident]['inputstat']
-        munin_values += "multigraph buffers_{ident}\n".format(ident=ident)
+        munin_values += "multigraph buffers_{ident}\n".format(ident=ident.replace('-', '_'))
         munin_values += "high.value {}\n".format(v['max_fill'])
         munin_values += "low.value {}\n".format(v['min_fill'])
-        munin_values += "multigraph over_underruns_{ident}\n".format(ident=ident)
+        munin_values += "multigraph over_underruns_{ident}\n".format(ident=ident.replace('-', '_'))
         munin_values += "underruns.value {}\n".format(v['num_underruns'])
         munin_values += "overruns.value {}\n".format(v['num_overruns'])
-        munin_values += "multigraph audio_levels_{ident}\n".format(ident=ident)
+        munin_values += "multigraph audio_levels_{ident}\n".format(ident=ident.replace('-', '_'))
         munin_values += "left.value {}\n".format(v['peak_left'])
         munin_values += "right.value {}\n".format(v['peak_right'])
 
@@ -123,7 +123,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     munin_config = config_top
 
     for conf in config['config']:
-        munin_config += config_template.format(ident=conf)
+        munin_config += config_template.format(ident=conf.replace('-', '_'))
 
     print(munin_config)
 else:

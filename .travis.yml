@@ -1,4 +1,5 @@
 language: c++
+sudo: required
 
 addons: &addons
   apt:
@@ -43,10 +44,6 @@ before_script:
 compiler:
   - gcc
   - clang
-
-before_script:
-  - pkg-config --modversion libzmq || true
-  - pkg-config --modversion libzmq3 || true
 
 script:
   - bash ./.travis_build.sh

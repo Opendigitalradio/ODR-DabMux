@@ -1,0 +1,25 @@
+language: c++
+
+compiler:
+  - gcc
+  - clang
+
+before_script:
+  - sudo add-apt-repository ppa:chris-lea/zeromq -y
+  - sudo add-apt-repository ppa:chris-lea/libsodium -y
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libzmq5-dev libzmq5 automake libtool
+  - pkg-config --modversion libzmq || true
+  - pkg-config --modversion libzmq3 || true
+  - git clone https://github.com/Opendigitalradio/ka9q-fec.git
+  - cd ka9q-fec
+  - ./configure
+  - make
+  - sudo make install
+  - cd ..
+
+script:
+  - ./bootstrap.sh
+  - ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
+  - make
+

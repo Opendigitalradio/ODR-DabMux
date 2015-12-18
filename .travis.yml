@@ -11,10 +11,7 @@ before_script:
   - sudo apt-get install -y libzmq5-dev libzmq5 automake libtool
   - pkg-config --modversion libzmq || true
   - pkg-config --modversion libzmq3 || true
-  - git clone https://github.com/Opendigitalradio/ka9q-fec.git && cd ka9q-fec && mkdir build && cd build && cmake .. && make && sudo make install
 
 script:
-  - ./bootstrap.sh
-  - ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
-  - make
+  - bash ./.travis_build.sh
 

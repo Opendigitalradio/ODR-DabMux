@@ -137,7 +137,7 @@ std::vector<uint8_t> TagESTn::Assemble()
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
     packet.reserve(mst_length*8 + 16);
 
-    packet.push_back(id_);
+    packet.push_back(id);
 
     // Placeholder for length
     packet.push_back(0);

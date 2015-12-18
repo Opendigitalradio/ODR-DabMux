@@ -442,8 +442,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     TagDETI edi_tagDETI;
     TagStarPTR edi_tagStarPtr;
-    list<TagESTn> edi_subchannels;
-    map<dabSubchannel*, TagESTn*> edi_subchannelToTag;
+    map<dabSubchannel*, TagESTn> edi_subchannelToTag;
 
     // The above Tag Items will be assembled into a TAG Packet
     TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
@@ -550,7 +549,8 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         sstc->STL_high = getSizeDWord(*subchannel) / 256;
         sstc->STL_low = getSizeDWord(*subchannel) % 256;
 
-        TagESTn tag_ESTn(edi_stream_id++);
+        TagESTn tag_ESTn;
+        tag_ESTn.id = edi_stream_id++;
         tag_ESTn.scid = (*subchannel)->id;
         tag_ESTn.sad = (*subchannel)->startAddress;
         tag_ESTn.tpl = sstc->TPL;
@@ -558,8 +558,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         tag_ESTn.mst_length = getSizeByte(*subchannel) / 8;
         assert(getSizeByte(*subchannel) % 8 == 0);
 
-        edi_subchannels.push_back(tag_ESTn);
-        edi_subchannelToTag[*subchannel] = &edi_subchannels.back();
+        edi_subchannelToTag[*subchannel] = tag_ESTn;
         index += 4;
     }
 
@@ -1696,7 +1695,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
 
-        TagESTn* tag = edi_subchannelToTag[*subchannel];
+        TagESTn& tag = edi_subchannelToTag[*subchannel];
 
         int sizeSubchannel = getSizeByte(*subchannel);
         int result = (*subchannel)->input->readFrame(
@@ -1709,7 +1708,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         }
 
         // save pointer to Audio or Data Stream into correct TagESTn for EDI
-        tag->mst_data = &etiFrame[index];
+        tag.mst_data = &etiFrame[index];
 
         index += sizeSubchannel;
     }
@@ -1807,8 +1806,8 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
         edi_tagpacket.tag_items.push_back(&edi_tagDETI);
 
-        for (auto& tag : edi_subchannels) {
-            edi_tagpacket.tag_items.push_back(&tag);
+        for (auto& tag : edi_subchannelToTag) {
+            edi_tagpacket.tag_items.push_back(&tag.second);
         }
 
         // Assemble into one AF Packet

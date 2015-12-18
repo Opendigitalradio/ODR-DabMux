@@ -94,8 +94,6 @@ class TagDETI : public TagItem
 class TagESTn : public TagItem
 {
     public:
-        TagESTn(uint8_t id) : id_(id) {} ;
-
         std::vector<uint8_t> Assemble();
 
         // SSTCn
@@ -108,8 +106,7 @@ class TagESTn : public TagItem
         uint8_t* mst_data;
         size_t mst_length; // STLn * 8 bytes
 
-    private:
-        uint8_t id_;
+        uint8_t id;
 };
 
 // ETSI TS 102 821, 5.2.2.2 Dummy padding

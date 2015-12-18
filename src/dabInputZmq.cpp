@@ -71,9 +71,10 @@ int readkey(string& keyfile, char* key)
     if (fd < 0)
         return fd;
     int ret = read(fd, key, CURVE_KEYLEN);
-    if (ret < 0)
-        return ret;
     close(fd);
+    if (ret < 0) {
+        return ret;
+    }
 
     /* It needs to be zero-terminated */
     key[CURVE_KEYLEN] = '\0';

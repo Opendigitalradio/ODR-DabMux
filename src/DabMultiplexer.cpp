@@ -238,6 +238,9 @@ void DabMultiplexer::prepare()
      * synchronisation is preserved.
      */
     gettimeofday(&mnsc_time, NULL);
+
+    // Shift ms by 13 to Timestamp level 2, see below in Section TIST
+    timestamp = (mnsc_time.tv_usec / 1000) << 13;
 }
 
 

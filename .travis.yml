@@ -9,7 +9,6 @@ addons: &addons
       - libstdc++-5-dev
       - swig
       - python
-      - qtbase5-dev
       - libzmq5-dev
       - libzmq5
       - automake
@@ -23,6 +22,23 @@ addons: &addons
       - ubuntu-sdk-team
       - ppa:chris-lea/zeromq
       - ppa:chris-lea/libsodium
+
+before_script:
+  - |
+      case "$CXX" in #(
+      g++*) CXX=g++-5 #(
+      ;;
+      clang++*) CXX=clang++-3.7
+      ;;
+      esac
+  - |
+      case "$CC" in #(
+      gcc*) CC=gcc-5 #(
+      ;;
+      clang*) CC=clang-3.7
+      ;;
+      esac
+  - export CXX CC
 
 compiler:
   - gcc

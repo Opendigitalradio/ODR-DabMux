@@ -54,6 +54,7 @@ class PFT
             m_m(3),
             m_dest_port(12000),
             m_pseq(0),
+            m_num_chunks(0),
             m_verbose(false)
         { }
 
@@ -62,6 +63,7 @@ class PFT
             m_m(conf.fec),
             m_dest_port(conf.dest_port),
             m_pseq(0),
+            m_num_chunks(0),
             m_verbose(conf.verbose)
         {
             if (m_k > 207) {

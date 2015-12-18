@@ -556,6 +556,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         tag_ESTn.tpl = sstc->TPL;
         tag_ESTn.rfa = 0; // two bits
         tag_ESTn.mst_length = getSizeByte(*subchannel) / 8;
+        tag_ESTn.mst_data = nullptr;
         assert(getSizeByte(*subchannel) % 8 == 0);
 
         edi_subchannelToTag[*subchannel] = tag_ESTn;

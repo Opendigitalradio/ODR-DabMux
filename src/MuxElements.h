@@ -233,7 +233,12 @@ class dabSubchannel
 public:
     dabSubchannel(std::string& uid) :
             uid(uid),
-            id(0)
+            input(),
+            id(0),
+            type(subchannel_type_t::Audio),
+            startAddress(0),
+            bitrate(0),
+            protection()
     {
     }
 

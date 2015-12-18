@@ -1,46 +1,15 @@
 language: c++
 sudo: required
+dist: trusty
 
 addons: &addons
   apt:
     packages: &packages
-      - g++-5
-      - gcc-5
-      - clang-3.7
-      - libstdc++-5-dev
-      - swig
-      - python
-      - libzmq5-dev
-      - libzmq5
+      - libzmq3-dev
+      - libzmq3
       - automake
       - libtool
       - libboost-dev
-    sources: &sources
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise-3.5
-      - llvm-toolchain-precise-3.6
-      - llvm-toolchain-precise-3.7
-      - llvm-toolchain-precise
-      - ubuntu-sdk-team
-      - ppa:chris-lea/zeromq
-      - ppa:chris-lea/libsodium
-
-before_script:
-  - |
-      case "$CXX" in #(
-      g++*) CXX=g++-5 #(
-      ;;
-      clang++*) CXX=clang++-3.7
-      ;;
-      esac
-  - |
-      case "$CC" in #(
-      gcc*) CC=gcc-5 #(
-      ;;
-      clang*) CC=clang-3.7
-      ;;
-      esac
-  - export CXX CC
 
 compiler:
   - gcc

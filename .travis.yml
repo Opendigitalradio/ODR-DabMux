@@ -9,7 +9,7 @@ addons: &addons
       - libzmq3
       - automake
       - libtool
-      - boost-defaults
+      - libboost1.55-all-dev
 
 compiler:
   - gcc

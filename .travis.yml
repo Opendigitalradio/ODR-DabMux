@@ -11,12 +11,7 @@ before_script:
   - sudo apt-get install -y libzmq5-dev libzmq5 automake libtool
   - pkg-config --modversion libzmq || true
   - pkg-config --modversion libzmq3 || true
-  - git clone https://github.com/Opendigitalradio/ka9q-fec.git
-  - cd ka9q-fec
-  - ./configure
-  - make
-  - sudo make install
-  - cd ..
+  - git clone https://github.com/Opendigitalradio/ka9q-fec.git && cd ka9q-fec && ./configure && make && sudo make install
 
 script:
   - ./bootstrap.sh

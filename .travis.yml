@@ -26,6 +26,7 @@ script:
     make
     sudo make install
     popd
+  - |
     ./bootstrap.sh
     ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
     make

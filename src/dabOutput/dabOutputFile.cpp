@@ -82,6 +82,7 @@ int DabOutputFile::Open(const char* filename)
 int DabOutputFile::Write(void* buffer, int size)
 {
     uint8_t padding[6144];
+    const uint16_t frame_size = size;
     ++nbFrames_;
 
     switch (this->type_) {
@@ -92,14 +93,14 @@ int DabOutputFile::Write(void* buffer, int size)
 
         // Writting nb frame length at end of file
         if (lseek(this->file_, 0, SEEK_END) == -1) goto FILE_WRITE_ERROR;
-        if (write(this->file_, &size, 2) == -1) goto FILE_WRITE_ERROR;
+        if (write(this->file_, &frame_size, 2) == -1) goto FILE_WRITE_ERROR;
 
         // Appending data
         if (write(this->file_, buffer, size) == -1) goto FILE_WRITE_ERROR;
         break;
     case ETI_FILE_TYPE_STREAMED:
         // Writting nb frame length at end of file
-        if (write(this->file_, &size, 2) == -1) goto FILE_WRITE_ERROR;
+        if (write(this->file_, &frame_size, 2) == -1) goto FILE_WRITE_ERROR;
 
         // Appending data
         if (write(this->file_, buffer, size) == -1) goto FILE_WRITE_ERROR;

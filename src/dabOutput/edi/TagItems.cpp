@@ -33,6 +33,7 @@
 #include <iostream>
 #include <string>
 #include <stdint.h>
+#include <stdexcept>
 
 std::vector<uint8_t> TagStarPTR::Assemble()
 {

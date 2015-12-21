@@ -380,13 +380,13 @@ void printServices(const vector<shared_ptr<DabService> >& services)
                 service->label.short_label();
 
         etiLog.log(info, " (0x%x)", service->label.flag());
-        etiLog.log(info, " id:          0x%lx (%lu)", service->id,
+        etiLog.log(info, " id:            0x%lx (%lu)", service->id,
                 service->id);
 
-        etiLog.log(info, " pty:         0x%x (%u)", service->pty,
+        etiLog.log(info, " pty:           0x%x (%u)", service->pty,
                 service->pty);
 
-        etiLog.log(info, " language:    0x%x (%u)",
+        etiLog.log(info, " language:      0x%x (%u)",
                 service->language, service->language);
         etiLog.log(info, " announcements: 0x%x",
                 service->ASu);
@@ -414,8 +414,10 @@ void printComponents(vector<DabComponent*>& components)
 
 void printComponent(DabComponent* component)
 {
-    etiLog.log(info, " service id:             %i", component->serviceId);
-    etiLog.log(info, " subchannel id:          %i", component->subchId);
+    etiLog.log(info, " service id:             0x%x (%u)",
+            component->serviceId, component->serviceId);
+    etiLog.log(info, " subchannel id:          0x%x (%u)",
+            component->subchId, component->subchId);
     etiLog.level(info) << " label:                  " <<
             component->label.long_label();
     etiLog.level(info) << " short label:            " <<
@@ -426,7 +428,8 @@ void printComponent(DabComponent* component)
             component->type);
 
     if (component->packet.appType != 0xFFFF) {
-        etiLog.log(info, " (packet) id:            %u", component->packet.id);
+        etiLog.log(info, " (packet) id:            0x%x (%u)",
+                component->packet.id, component->packet.id);
         etiLog.log(info, " (packet) address:       %u",
                 component->packet.address);
 
@@ -504,8 +507,8 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
                 etiLog.log(info, " type:       unknown");
                 break;
         }
-        etiLog.log(info, " id:         %i",
-                (*subchannel)->id);
+        etiLog.log(info, " id:         0x%x (%u)",
+                (*subchannel)->id, (*subchannel)->id);
         etiLog.log(info, " bitrate:    %i",
                 (*subchannel)->bitrate);
         if (protection->form == UEP) {
@@ -522,7 +525,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
             etiLog.log(info, "  level:     %i",
                     (*subchannel)->protection.level);
         }
-        etiLog.log(info, " SAD:        %i",
+        etiLog.log(info, " SAD:        %u",
                 (*subchannel)->startAddress);
         etiLog.log(info, " size (CU):  %i",
                 getSizeCu(*subchannel));

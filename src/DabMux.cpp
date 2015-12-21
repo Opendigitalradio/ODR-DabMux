@@ -29,7 +29,7 @@
 #   include "config.h"
 #endif
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <cstdio>
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     int returnCode = 0;
 
     ptree pt;
-    std::vector<boost::shared_ptr<DabOutput> > outputs;
+    std::vector<std::shared_ptr<DabOutput> > outputs;
 
     try {
         if (argc == 2) { // Assume the only argument is a config file
@@ -276,15 +276,13 @@ int main(int argc, char *argv[])
         /************** READ REMOTE CONTROL PARAMETERS *************/
         int telnetport = pt.get<int>("remotecontrol.telnetport", 0);
 
-        boost::shared_ptr<BaseRemoteController> rc;
+        std::shared_ptr<BaseRemoteController> rc;
 
         if (telnetport != 0) {
-            rc = boost::shared_ptr<RemoteControllerTelnet>(
-                    new RemoteControllerTelnet(telnetport));
+            rc = std::make_shared<RemoteControllerTelnet>(telnetport);
         }
         else {
-            rc = boost::shared_ptr<RemoteControllerDummy>(
-                    new RemoteControllerDummy());
+            rc = std::make_shared<RemoteControllerDummy>();
         }
 
         DabMultiplexer mux(rc, pt);
@@ -412,7 +410,7 @@ int main(int argc, char *argv[])
                     return -1;
                 }
 
-                boost::shared_ptr<DabOutput> dabout(output);
+                std::shared_ptr<DabOutput> dabout(output);
                 outputs.push_back(dabout);
 
             }

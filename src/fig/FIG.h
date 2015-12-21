@@ -27,7 +27,7 @@
 #ifndef __FIG_H_
 #define __FIG_H_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "MuxElements.h"
 
 namespace FIC {
@@ -36,14 +36,14 @@ namespace FIC {
 
 class FIGRuntimeInformation {
     public:
-        FIGRuntimeInformation(boost::shared_ptr<dabEnsemble> e) :
+        FIGRuntimeInformation(std::shared_ptr<dabEnsemble> e) :
             currentFrame(0),
             ensemble(e),
             factumAnalyzer(false) {}
 
         time_t date;
         unsigned long currentFrame;
-        boost::shared_ptr<dabEnsemble> ensemble;
+        std::shared_ptr<dabEnsemble> ensemble;
         bool factumAnalyzer;
 };
 

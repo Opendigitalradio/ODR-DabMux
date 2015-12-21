@@ -49,7 +49,7 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/property_tree/ptree.hpp>
 
 class MuxInitException : public std::exception
@@ -66,13 +66,14 @@ class MuxInitException : public std::exception
 
 class DabMultiplexer : public RemoteControllable {
     public:
-        DabMultiplexer(boost::shared_ptr<BaseRemoteController> rc,
-               boost::property_tree::ptree pt);
+        DabMultiplexer(
+                std::shared_ptr<BaseRemoteController> rc,
+                boost::property_tree::ptree pt);
         void prepare(void);
 
         unsigned long getCurrentFrame() { return currentFrame; }
 
-        void mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outputs);
+        void mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs);
 
         void print_info(void);
 
@@ -95,7 +96,7 @@ class DabMultiplexer : public RemoteControllable {
         void reconfigure(void);
 
         boost::property_tree::ptree m_pt;
-        boost::shared_ptr<BaseRemoteController> m_rc;
+        std::shared_ptr<BaseRemoteController> m_rc;
 
         unsigned timestamp;
         bool MNSC_increment_time;
@@ -128,11 +129,11 @@ class DabMultiplexer : public RemoteControllable {
 
         std::vector<dabSubchannel*>::iterator subchannelFIG0_1;
 
-        boost::shared_ptr<dabEnsemble> ensemble;
+        std::shared_ptr<dabEnsemble> ensemble;
 
         // Multiplex reconfiguration requires two sets of configurations
         boost::property_tree::ptree m_pt_next;
-        boost::shared_ptr<dabEnsemble> ensemble_next;
+        std::shared_ptr<dabEnsemble> ensemble_next;
 
 #if HAVE_OUTPUT_EDI
         std::ofstream edi_debug_file;

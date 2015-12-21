@@ -24,6 +24,7 @@
 */
 
 #include <vector>
+#include <memory>
 #include <algorithm>
 
 #include "MuxElements.h"
@@ -335,7 +336,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 }
 
 
-subchannel_type_t DabService::getType(boost::shared_ptr<dabEnsemble> ensemble)
+subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble)
 {
     vector<dabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =

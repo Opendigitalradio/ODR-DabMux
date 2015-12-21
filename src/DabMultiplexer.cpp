@@ -24,9 +24,9 @@
 */
 
 #include <set>
+#include <memory>
 #include "DabMultiplexer.h"
 #include "ConfigParser.h"
-#include <boost/make_shared.hpp>
 #include "fig/FIG.h"
 
 using namespace std;
@@ -76,7 +76,7 @@ const unsigned short BitRateTable[64] = {
 };
 
 DabMultiplexer::DabMultiplexer(
-        boost::shared_ptr<BaseRemoteController> rc,
+        std::shared_ptr<BaseRemoteController> rc,
         boost::property_tree::ptree pt) :
     RemoteControllable("mux"),
     m_pt(pt),
@@ -89,7 +89,7 @@ DabMultiplexer::DabMultiplexer(
     currentFrame(0),
     insertFIG(0),
     rotateFIB(0),
-    ensemble(boost::make_shared<dabEnsemble>()),
+    ensemble(std::make_shared<dabEnsemble>()),
     fig_carousel(ensemble)
 {
     prepare_watermark();
@@ -125,7 +125,7 @@ void DabMultiplexer::prepare_watermark()
 
 void DabMultiplexer::update_config(boost::property_tree::ptree pt)
 {
-    ensemble_next = boost::make_shared<dabEnsemble>();
+    ensemble_next = std::make_shared<dabEnsemble>();
 
     m_pt_next = pt;
 
@@ -425,7 +425,7 @@ void DabMultiplexer::prepare_data_inputs()
 }
 
 /*  Each call creates one ETI frame */
-void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outputs)
+void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs)
 {
     int cur;
     time_t date;

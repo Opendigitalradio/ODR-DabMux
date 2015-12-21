@@ -31,6 +31,7 @@
 #include "fig/FIGCarousel.h"
 #include <boost/format.hpp>
 #include <iostream>
+#include <memory>
 #include <deque>
 
 #define CAROUSELDEBUG 0
@@ -56,7 +57,7 @@ void FIGCarouselElement::increase_deadline()
 
 /**************** FIGCarousel *****************/
 
-FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
+FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_rti(ensemble),
     m_fig0_0(&m_rti),
     m_fig0_1(&m_rti),

@@ -361,7 +361,7 @@ class DabService : public RemoteControllable
         uint16_t ASu;
         std::vector<uint8_t> clusters;
 
-        subchannel_type_t getType(boost::shared_ptr<dabEnsemble> ensemble);
+        subchannel_type_t getType(std::shared_ptr<dabEnsemble> ensemble);
         unsigned char nbComponent(std::vector<DabComponent*>& components);
 
         DabLabel label;

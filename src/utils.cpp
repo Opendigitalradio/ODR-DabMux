@@ -24,7 +24,7 @@
 */
 #include <cstring>
 #include <iostream>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/algorithm/string/join.hpp>
 #include "DabMux.h"
 #include "utils.h"
@@ -354,7 +354,7 @@ void printUsage(char *name, FILE* out)
 }
 #endif
 
-void printOutputs(vector<boost::shared_ptr<DabOutput> >& outputs)
+void printOutputs(vector<shared_ptr<DabOutput> >& outputs)
 {
     int index = 0;
 
@@ -533,7 +533,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
     }
 }
 
-void printEnsemble(const boost::shared_ptr<dabEnsemble> ensemble)
+void printEnsemble(const shared_ptr<dabEnsemble> ensemble)
 {
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);

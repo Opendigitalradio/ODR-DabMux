@@ -39,6 +39,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <memory>
 #include <exception>
 #include <iostream>
 #include <vector>
@@ -143,8 +144,8 @@ uint16_t get_announcement_flag_from_ptree(
 }
 
 void parse_ptree(boost::property_tree::ptree& pt,
-        boost::shared_ptr<dabEnsemble> ensemble,
-        boost::shared_ptr<BaseRemoteController> rc
+        std::shared_ptr<dabEnsemble> ensemble,
+        std::shared_ptr<BaseRemoteController> rc
         )
 {
     using boost::property_tree::ptree;
@@ -554,9 +555,9 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
 void setup_subchannel_from_ptree(dabSubchannel* subchan,
         boost::property_tree::ptree &pt,
-        boost::shared_ptr<dabEnsemble> ensemble,
+        std::shared_ptr<dabEnsemble> ensemble,
         string subchanuid,
-        boost::shared_ptr<BaseRemoteController> rc)
+        std::shared_ptr<BaseRemoteController> rc)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;

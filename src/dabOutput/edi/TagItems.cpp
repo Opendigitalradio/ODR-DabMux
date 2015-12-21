@@ -145,6 +145,17 @@ std::vector<uint8_t> TagESTn::Assemble()
     packet.push_back(0);
     packet.push_back(0);
 
+    if (tpl > 0x3F) {
+        throw std::runtime_error("TagESTn: invalid TPL value");
+    }
+
+    if (sad > 0x3FF) {
+        throw std::runtime_error("TagESTn: invalid SAD value");
+    }
+
+    if (scid > 0x3F) {
+        throw std::runtime_error("TagESTn: invalid SCID value");
+    }
 
     uint32_t sstc = (scid << 18) | (sad << 8) | (tpl << 2) | rfa;
     packet.push_back((sstc >> 16) & 0xFF);

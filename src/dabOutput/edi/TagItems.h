@@ -97,10 +97,10 @@ class TagESTn : public TagItem
         std::vector<uint8_t> Assemble();
 
         // SSTCn
-        uint8_t scid;
-        uint8_t sad;
-        uint8_t tpl;
-        uint8_t rfa;
+        uint8_t  scid;
+        uint16_t sad;
+        uint8_t  tpl;
+        uint8_t  rfa;
 
         // Pointer to MSTn data
         uint8_t* mst_data;

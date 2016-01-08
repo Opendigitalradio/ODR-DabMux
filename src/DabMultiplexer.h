@@ -45,6 +45,7 @@
 #include "MuxElements.h"
 #include "RemoteControl.h"
 #include "Eti.h"
+#include "ClockTAI.h"
 #include <exception>
 #include <vector>
 #include <memory>
@@ -136,6 +137,8 @@ class DabMultiplexer : public RemoteControllable {
         std::shared_ptr<dabEnsemble> ensemble_next;
 
 #if HAVE_OUTPUT_EDI
+        ClockTAI m_clock_tai;
+
         std::ofstream edi_debug_file;
         UdpSocket edi_output;
 

@@ -239,6 +239,30 @@ void DabMultiplexer::prepare()
      */
     gettimeofday(&mnsc_time, NULL);
 
+#if HAVE_OUTPUT_EDI
+    // Try to load offset once
+
+    bool tist_enabled = m_pt.get("general.tist", false);
+
+    try {
+        m_clock_tai.get_offset();
+    }
+    catch (std::runtime_error& e) {
+        const char* err_msg =
+            "Could not initialise TAI clock properly required by "
+            "EDI with timestamp. Do you have a working internet "
+            "connection?";
+
+        if (tist_enabled and edi_conf.enabled) {
+            etiLog.level(error) << err_msg;
+            throw e;
+        }
+        else {
+            etiLog.level(warn) << err_msg;
+        }
+    }
+#endif
+
     // Shift ms by 13 to Timestamp level 2, see below in Section TIST
     timestamp = (mnsc_time.tv_usec / 1000) << 13;
 }
@@ -450,6 +474,18 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.atstf = 1;
     edi_tagDETI.utco = 0;
     edi_tagDETI.seconds = 0;
+    try {
+        bool tist_enabled = m_pt.get("general.tist", false);
+
+        if (tist_enabled and edi_conf.enabled) {
+            edi_tagDETI.set_utco(m_clock_tai.get_offset());
+        }
+
+        edi_tagDETI.set_seconds(mnsc_time);
+    }
+    catch (std::runtime_error& e) {
+        etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
+    }
 
     date = getDabTime();
 

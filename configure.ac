@@ -201,11 +201,17 @@ AC_ARG_ENABLE([output_edi],
         [AS_HELP_STRING([--disable-output-edi], [Disable EDI output])],
         [], [enable_output_edi=yes])
 AS_IF([test "x$enable_output_edi" = "xyes"],
+       AC_CHECK_LIB(curl, curl_easy_init, [true], [AC_MSG_ERROR([cURL is required for EDI output])]))
+AS_IF([test "x$enable_output_edi" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_EDI, [1], [Define if EDI output is enabled])])
 
 # Link against lzmq
 AM_CONDITIONAL([HAVE_ZEROMQ_TEST],
 			   [test "x$enable_output_zeromq" = "xyes" -o "x$enable_input_zeromq" = "xyes"])
+
+# Link against cURL
+AM_CONDITIONAL([HAVE_CURL_TEST],
+			   [test "x$enable_output_edi" = "xyes"])
 
 
 # Formats

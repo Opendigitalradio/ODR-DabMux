@@ -74,8 +74,43 @@ class TagDETI : public TagItem
 
         // ATST (optional)
         bool atstf; // presence of atst data
+
+        /* UTCO: Offset (in seconds) between UTC and the Seconds value. The
+         * value is expressed as an unsigned 8-bit quantity. As of February
+         * 2009, the value shall be 2 and shall change as a result of each
+         * modification of the number of leap seconds, as proscribed by
+         * International Earth Rotation and Reference Systems Service (IERS).
+         *
+         * According to Annex F
+         *  EDI = TAI - 32s (constant)
+         *  EDI = UTC + UTCO
+         * we derive
+         *  UTCO = TAI-UTC - 32
+         * where the TAI-UTC offset is given by the USNO bulletin using
+         * the ClockTAI module.
+         */
         uint8_t utco;
+
+        void set_utco(int tai_utc_offset) { utco = tai_utc_offset - 32; }
+
+        /* The number of SI seconds since 2000-01-01 T 00:00:00 UTC as an
+         * unsigned 32-bit quantity
+         */
         uint32_t seconds;
+
+        void set_seconds(struct timeval tv)
+        {
+            time_t posix_timestamp_1_jan_2000 = 946684800;
+            seconds = tv.tv_sec - posix_timestamp_1_jan_2000;
+        }
+
+
+        /* TSTA: Shall be the 24 least significant bits of the Time Stamp
+         * (TIST) field from the STI-D(LI) Frame. The full definition for the
+         * STI TIST can be found in annex B of EN 300 797 [4]. The most
+         * significant 8 bits of the TIST field of the incoming STI-D(LI)
+         * frame, if required, may be carried in the RFAD field.
+         */
         uint32_t tsta;
 
         // the FIC (optional)

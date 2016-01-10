@@ -264,10 +264,11 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
     std::stringstream answer;
     std::string data((char*)zmq_message.data(), zmq_message.size());
 
-    try {
-        etiLog.level(info) << "RC: Accepted";
+    etiLog.level(debug) << "ManagementServer: '" << data << "' request";
 
+    try {
         if (data == "info") {
+
             answer <<
                 "{ \"service\": \"" <<
                 PACKAGE_NAME << " " <<
@@ -300,6 +301,7 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
             boost::property_tree::json_parser::write_json(answer, m_pt);
         }
         else {
+            etiLog.level(warn) << "ManagementServer: Invalid request '" << data << "'";
             answer << "Invalid command";
         }
 

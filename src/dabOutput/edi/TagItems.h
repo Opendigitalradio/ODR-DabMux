@@ -98,7 +98,7 @@ class TagDETI : public TagItem
          */
         uint32_t seconds;
 
-        void set_seconds(struct timeval tv)
+        void set_seconds(struct timespec tv)
         {
             time_t posix_timestamp_1_jan_2000 = 946684800;
             seconds = tv.tv_sec - posix_timestamp_1_jan_2000;

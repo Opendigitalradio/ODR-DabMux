@@ -30,6 +30,7 @@
 #endif
 
 #include "ClockTAI.h"
+#include "Log.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -71,11 +72,14 @@ int ClockTAI::get_offset()
         else if (download_tai_utc_bulletin(tai_data_url2) == 0) {
             m_offset = parse_tai_offset();
         }
+        else {
+            throw std::runtime_error("Could not fetch TAI-UTC offset");
+        }
+
+        etiLog.level(info) << "Updated TAI-UTC offset to " << m_offset << "s.";
     }
 
     return m_offset;
-
-    throw std::runtime_error("Could not fetch TAI-UTC offset");
 }
 
 #if SUPPORT_SETTING_CLOCK_TAI

@@ -102,6 +102,7 @@ class DabMultiplexer : public RemoteControllable {
         unsigned timestamp;
         bool MNSC_increment_time;
         struct timeval mnsc_time;
+        struct timespec edi_time;
 
         edi_configuration_t edi_conf;
 

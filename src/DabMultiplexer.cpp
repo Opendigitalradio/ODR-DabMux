@@ -239,6 +239,10 @@ void DabMultiplexer::prepare()
      */
     gettimeofday(&mnsc_time, NULL);
 
+    if (clock_gettime(CLOCK_REALTIME, &edi_time)) {
+        throw std::runtime_error("Setting eti_time with clock_gettime failed");
+    }
+
 #if HAVE_OUTPUT_EDI
     // Try to load offset once
 
@@ -470,22 +474,6 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     // The above Tag Items will be assembled into a TAG Packet
     TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
-
-    edi_tagDETI.atstf = 1;
-    edi_tagDETI.utco = 0;
-    edi_tagDETI.seconds = 0;
-    try {
-        bool tist_enabled = m_pt.get("general.tist", false);
-
-        if (tist_enabled and edi_conf.enabled) {
-            edi_tagDETI.set_utco(m_clock_tai.get_offset());
-        }
-
-        edi_tagDETI.set_seconds(mnsc_time);
-    }
-    catch (std::runtime_error& e) {
-        etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
-    }
 
     date = getDabTime();
 
@@ -1784,12 +1772,29 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     bool enableTist = m_pt.get("general.tist", false);
     if (enableTist) {
         tist->TIST = htonl(timestamp) | 0xff;
+        edi_tagDETI.tsta = timestamp & 0xffffff;
     }
     else {
         tist->TIST = htonl(0xffffff) | 0xff;
+        edi_tagDETI.tsta = 0xffffff;
     }
 
-    edi_tagDETI.tsta = tist->TIST;
+    edi_tagDETI.atstf = 1;
+    edi_tagDETI.utco = 0;
+    edi_tagDETI.seconds = 0;
+    try {
+        bool tist_enabled = m_pt.get("general.tist", false);
+
+        if (tist_enabled and edi_conf.enabled) {
+            edi_tagDETI.set_utco(m_clock_tai.get_offset());
+            edi_tagDETI.set_seconds(edi_time);
+        }
+
+    }
+    catch (std::runtime_error& e) {
+        etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
+    }
+
 
     /* Coding of the TIST, according to ETS 300 799 Annex C
 
@@ -1808,8 +1813,11 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     {
         timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second
 
-        // Also update MNSC time for next frame
+        // Also update MNSC time for next time FP==0
         MNSC_increment_time = true;
+
+        // Immediately update edi time
+        edi_time.tv_sec++;
     }
 
 

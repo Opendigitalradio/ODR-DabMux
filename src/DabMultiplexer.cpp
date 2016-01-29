@@ -264,8 +264,8 @@ void DabMultiplexer::prepare()
     }
 #endif
 
-    // Shift ms by 13 to Timestamp level 2, see below in Section TIST
-    timestamp = (mnsc_time.tv_usec / 1000) << 13;
+    // Shift ms by 14 to Timestamp level 2, see below in Section TIST
+    timestamp = (mnsc_time.tv_usec / 1000) << 14;
 }
 
 
@@ -1805,7 +1805,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     time resolution
     */
 
-    timestamp += 24 << 13; // Shift 24ms by 13 to Timestamp level 2
+    timestamp += 24 << 14; // Shift 24ms by 14 to Timestamp level 2
     if (timestamp > 0xf9FFff)
     {
         timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second

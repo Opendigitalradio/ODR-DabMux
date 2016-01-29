@@ -248,21 +248,18 @@ void DabMultiplexer::prepare()
 
     bool tist_enabled = m_pt.get("general.tist", false);
 
-    try {
-        m_clock_tai.get_offset();
-    }
-    catch (std::runtime_error& e) {
-        const char* err_msg =
-            "Could not initialise TAI clock properly required by "
-            "EDI with timestamp. Do you have a working internet "
-            "connection?";
+    if (tist_enabled and edi_conf.enabled) {
+        try {
+            m_clock_tai.get_offset();
+        }
+        catch (std::runtime_error& e) {
+            const char* err_msg =
+                "Could not initialise TAI clock properly required by "
+                "EDI with timestamp. Do you have a working internet "
+                "connection?";
 
-        if (tist_enabled and edi_conf.enabled) {
             etiLog.level(error) << err_msg;
             throw e;
-        }
-        else {
-            etiLog.level(warn) << err_msg;
         }
     }
 #endif

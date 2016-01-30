@@ -10,6 +10,7 @@ addons: &addons
       - automake
       - libtool
       - libboost1.55-all-dev
+      - libcurl4-openssl-dev
 
 compiler:
   - gcc

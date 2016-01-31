@@ -85,14 +85,13 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
      * and pushed for support for receivers that only could
      * decode FIB0.
      *
-     * If repetition rate cannot be maintained with this allocation,
-     * we should drop the requirement and allocate all FIGs except 0/0
-     * to FIB_ANY
+     * In order to alleviate repetition rate issues,
+     * this requirement has been dropped.
      */
     load_and_allocate(m_fig0_0, FIBAllocation::FIB0);
-    load_and_allocate(m_fig0_1, FIBAllocation::FIB0);
-    load_and_allocate(m_fig0_2, FIBAllocation::FIB0);
-    load_and_allocate(m_fig0_3, FIBAllocation::FIB0);
+    load_and_allocate(m_fig0_1, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_2, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_3, FIBAllocation::FIB_ANY);
 
     load_and_allocate(m_fig0_17, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_8, FIBAllocation::FIB_ANY);

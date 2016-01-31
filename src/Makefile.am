@@ -102,7 +102,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      bridge.h bridge.c \
                      crc.h crc.c \
                      dabUtils.h dabUtils.cpp \
-                     fig/FIG.h \
+                     fig/FIG.h fig/FIG.cpp \
                      fig/FIG0.cpp fig/FIG0.h \
                      fig/FIG1.cpp fig/FIG1.h \
                      fig/FIGCarousel.cpp fig/FIGCarousel.h \

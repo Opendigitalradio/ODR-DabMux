@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    */
@@ -66,19 +66,7 @@ enum class FIG_rate {
 };
 
 /* Helper function to calculate the deadline for the next transmission, in milliseconds */
-inline int rate_increment_ms(FIG_rate rate)
-{
-    switch (rate) {
-        case FIG_rate::FIG0_0:    return 96;        // Is a special case
-        case FIG_rate::A:         return 100;
-        case FIG_rate::A_B:       return 200;
-        case FIG_rate::B:         return 1000;
-        case FIG_rate::C:         return 10000;
-        case FIG_rate::D:         return 30000;
-        case FIG_rate::E:         return 120000;
-    }
-    return 1000; //some default value, shouldn't be used
-}
+int rate_increment_ms(FIG_rate rate);
 
 /* The fill function of each FIG shall return a status telling
  * the carousel how many bytes have been written, and if the complete

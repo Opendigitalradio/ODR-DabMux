@@ -321,22 +321,34 @@ outputs {
 
     ; The edi output has a different syntax
     edi {
-        ; example for unicast EDI
-        ;destination "192.168.23.23"
-        ; for unicast EDI, do not set source
-
-        ; example for multicast EDI, the source IP is required
-        ; so that the data is sent on the correct ethernet interface
-        destination "232.20.10.1"
-        source      "192.168.0.50"
-        ; The multicast TTL has to be adapted according to your network
-        ttl 1
-
-        ; The settings below apply to both unicast and multicast
-
         ; EDI uses the UDP protocol
+        destinations {
+            ; The names you give to the destinations have no meaning,
+            ; but have to be unique. You can give them meaningful names to help
+            ; you identify the outputs.
+            example_unicast {
+                ; example for unicast EDI
+                ; for unicast EDI, do not set source
+                destination "192.168.23.23"
+                sourceport  13000
+            }
+            example_multicast {
+                ; example for multicast EDI, the source IP is required
+                ; so that the data is sent on the correct ethernet interface
+                destination "232.20.10.1"
+                source      "192.168.0.50"
+                ; The multicast TTL has to be adapted according to your network
+                ttl 1
+
+                sourceport  13000
+            }
+        }
+
+        ; The settings below apply to all destinations
+        ; The destination port cannot be set independently for
+        ; different outputs because it is encoded in the transport
+        ; header of the PFT layer.
         port        12000
-        sourceport  13000
 
         ; Enable the PFT subsystem. If false, AFPackets are sent.
         enable_pft  true

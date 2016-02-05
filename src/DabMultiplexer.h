@@ -141,7 +141,6 @@ class DabMultiplexer : public RemoteControllable {
         ClockTAI m_clock_tai;
 
         std::ofstream edi_debug_file;
-        UdpSocket edi_output;
 
         // The TagPacket will then be placed into an AFPacket
         AFPacketiser edi_afPacketiser;

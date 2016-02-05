@@ -150,25 +150,30 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
         edi_debug_file.open("./edi.debug");
     }
 
-    if (edi_conf.enabled) {
-        int err = edi_output.create(edi_conf.source_port);
+    if (edi_conf.enabled()) {
+        for (auto& edi_destination : edi_conf.destinations) {
+            auto edi_output = std::make_shared<UdpSocket>();
+            int err = edi_output->create(edi_destination.source_port);
 
-        if (err) {
-            etiLog.level(error) << "EDI socket creation failed!";
-            throw MuxInitException();
-        }
-
-        if (not edi_conf.source_addr.empty()) {
-            err = edi_output.setMulticastSource(edi_conf.source_addr.c_str());
             if (err) {
-                etiLog.level(error) << "EDI socket set source failed!";
+                etiLog.level(error) << "EDI socket creation failed!";
                 throw MuxInitException();
             }
-            err = edi_output.setMulticastTTL(edi_conf.ttl);
-            if (err) {
-                etiLog.level(error) << "EDI socket set TTL failed!";
-                throw MuxInitException();
+
+            if (not edi_destination.source_addr.empty()) {
+                err = edi_output->setMulticastSource(edi_destination.source_addr.c_str());
+                if (err) {
+                    etiLog.level(error) << "EDI socket set source failed!";
+                    throw MuxInitException();
+                }
+                err = edi_output->setMulticastTTL(edi_destination.ttl);
+                if (err) {
+                    etiLog.level(error) << "EDI socket set TTL failed!";
+                    throw MuxInitException();
+                }
             }
+
+            edi_destination.socket = edi_output;
         }
     }
 
@@ -248,7 +253,7 @@ void DabMultiplexer::prepare()
 
     bool tist_enabled = m_pt.get("general.tist", false);
 
-    if (tist_enabled and edi_conf.enabled) {
+    if (tist_enabled and edi_conf.enabled()) {
         try {
             m_clock_tai.get_offset();
         }
@@ -1782,7 +1787,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     try {
         bool tist_enabled = m_pt.get("general.tist", false);
 
-        if (tist_enabled and edi_conf.enabled) {
+        if (tist_enabled and edi_conf.enabled()) {
             edi_tagDETI.set_utco(m_clock_tai.get_offset());
             edi_tagDETI.set_seconds(edi_time);
         }
@@ -1843,7 +1848,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      ***********   Finalise and send EDI   ********************************
      **********************************************************************/
 
-    if (edi_conf.enabled) {
+    if (edi_conf.enabled()) {
         // put tags *ptr, DETI and all subchannels into one TagPacket
         edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
         edi_tagpacket.tag_items.push_back(&edi_tagDETI);
@@ -1862,12 +1867,13 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
             // Send over ethernet
             for (const auto& edi_frag : edi_fragments) {
+                for (auto& dest : edi_conf.destinations) {
+                    InetAddress addr;
+                    addr.setAddress(dest.dest_addr.c_str());
+                    addr.setPort(edi_conf.dest_port);
 
-                InetAddress addr;
-                addr.setAddress(edi_conf.dest_addr.c_str());
-                addr.setPort(edi_conf.dest_port);
-
-                edi_output.send(edi_frag, addr);
+                    dest.socket->send(edi_frag, addr);
+                }
 
                 if (edi_conf.dump) {
                     std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
@@ -1882,12 +1888,13 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
         else {
             // Send over ethernet
+            for (auto& dest : edi_conf.destinations) {
+                InetAddress addr;
+                addr.setAddress(dest.dest_addr.c_str());
+                addr.setPort(edi_conf.dest_port);
 
-            InetAddress addr;
-            addr.setAddress(edi_conf.dest_addr.c_str());
-            addr.setPort(edi_conf.dest_port);
-
-            edi_output.send(edi_afpacket, addr);
+                dest.socket->send(edi_afpacket, addr);
+            }
 
             if (edi_conf.dump) {
                 std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);

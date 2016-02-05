@@ -35,6 +35,8 @@
 #include "string.h"
 #include <stdexcept>
 #include <signal.h>
+#include <vector>
+#include <memory>
 #ifdef _WIN32
 #   include <io.h>
 #   ifdef __MINGW32__
@@ -53,23 +55,31 @@
 #  include "zmq.hpp"
 #endif
 
-// Configuration for EDI output
-struct edi_configuration_t {
-    edi_configuration_t() :
-        enabled(false),
-        verbose(false) {}
-    unsigned chunk_len; // RSk, data length of each chunk
-    unsigned fec;       // number of fragments that can be recovered
-    bool enabled;
-    bool dump;
-    bool verbose;
-    bool enable_pft;
+/** Configuration for EDI output */
+
+// Can represent both unicast and multicast destinations
+struct edi_destination_t {
     std::string dest_addr;
     std::string source_addr;
     unsigned int source_port;
-    unsigned int dest_port;
     unsigned int ttl;
+
+    std::shared_ptr<UdpSocket> socket;
+};
+
+struct edi_configuration_t {
+    edi_configuration_t() :
+        verbose(false) {}
+    unsigned chunk_len; // RSk, data length of each chunk
+    unsigned fec;       // number of fragments that can be recovered
+    bool dump;          // dump a file with the EDI packets
+    bool verbose;
+    bool enable_pft;    // Enable protection and fragmentation
     unsigned int tagpacket_alignment;
+    std::vector<edi_destination_t> destinations;
+    unsigned int dest_port; // common destination port, because it's encoded in the transport layer
+
+    bool enabled() { return destinations.size() > 0; }
 };
 
 

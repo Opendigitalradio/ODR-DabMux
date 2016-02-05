@@ -318,14 +318,18 @@ int main(int argc, char *argv[])
             if (outputuid == "edi") {
 #if HAVE_OUTPUT_EDI
                 ptree pt_edi = pt_outputs.get_child("edi");
+                for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
+                    edi_destination_t dest;
+                    dest.dest_addr   = pt_edi_dest.second.get<string>("destination");
+                    dest.ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
 
-                edi_conf.enabled             = true;
+                    dest.source_addr = pt_edi_dest.second.get<string>("source", "");
+                    dest.source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
 
-                edi_conf.dest_addr           = pt_edi.get<string>("destination");
+                    edi_conf.destinations.push_back(dest);
+                }
+
                 edi_conf.dest_port           = pt_edi.get<unsigned int>("port");
-                edi_conf.source_addr         = pt_edi.get<string>("source", "");
-                edi_conf.source_port         = pt_edi.get<unsigned int>("sourceport");
-                edi_conf.ttl                 = pt_edi.get<unsigned int>("ttl", 1);
 
                 edi_conf.dump                = pt_edi.get<bool>("dump");
                 edi_conf.enable_pft          = pt_edi.get<bool>("enable_pft");
@@ -429,14 +433,17 @@ int main(int argc, char *argv[])
         printOutputs(outputs);
 
 #if HAVE_OUTPUT_EDI
-        if (edi_conf.enabled) {
-            etiLog.level(info) << "EDI to " << edi_conf.dest_addr << ":" << edi_conf.dest_port;
-            if (not edi_conf.source_addr.empty()) {
-                etiLog.level(info) << " source      " << edi_conf.source_addr;
-                etiLog.level(info) << " ttl         " << edi_conf.ttl;
-            }
-            etiLog.level(info) << " source port " << edi_conf.source_port;
+        if (edi_conf.enabled()) {
+            etiLog.level(info) << "EDI";
             etiLog.level(info) << " verbose     " << edi_conf.verbose;
+            for (auto& edi_dest : edi_conf.destinations) {
+                etiLog.level(info) << " to " << edi_dest.dest_addr << ":" << edi_conf.dest_port;
+                if (not edi_dest.source_addr.empty()) {
+                    etiLog.level(info) << "  source      " << edi_dest.source_addr;
+                    etiLog.level(info) << "  ttl         " << edi_dest.ttl;
+                }
+                etiLog.level(info) << "  source port " << edi_dest.source_port;
+            }
         }
 #endif
 

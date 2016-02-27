@@ -204,6 +204,8 @@ AS_IF([test "x$enable_output_edi" = "xyes"],
        AC_CHECK_LIB(curl, curl_easy_init, [true], [AC_MSG_ERROR([cURL is required for EDI output])]))
 AS_IF([test "x$enable_output_edi" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_EDI, [1], [Define if EDI output is enabled])])
+AS_IF([test "x$enable_output_edi" = "xyes"],
+        [AC_DEFINE(HAVE_CURL, [1], [Define if cURL is available])])
 
 # Link against lzmq
 AM_CONDITIONAL([HAVE_ZEROMQ_TEST],

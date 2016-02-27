@@ -35,7 +35,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/timex.h>
-#include <curl/curl.h>
+#ifdef HAVE_CURL
+#  include <curl/curl.h>
+#endif
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -156,6 +158,7 @@ int ClockTAI::download_tai_utc_bulletin(const char* url)
 {
     int r = 0;
 
+#ifdef HAVE_CURL
     CURL *curl;
     CURLcode res;
 
@@ -186,6 +189,7 @@ int ClockTAI::download_tai_utc_bulletin(const char* url)
         /* always cleanup */
         curl_easy_cleanup(curl);
     }
+#endif // HAVE_CURL
     return r;
 }
 

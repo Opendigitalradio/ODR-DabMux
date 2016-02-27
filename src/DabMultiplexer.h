@@ -137,9 +137,9 @@ class DabMultiplexer : public RemoteControllable {
         boost::property_tree::ptree m_pt_next;
         std::shared_ptr<dabEnsemble> ensemble_next;
 
-#if HAVE_OUTPUT_EDI
         ClockTAI m_clock_tai;
 
+#if HAVE_OUTPUT_EDI
         std::ofstream edi_debug_file;
 
         // The TagPacket will then be placed into an AFPacket

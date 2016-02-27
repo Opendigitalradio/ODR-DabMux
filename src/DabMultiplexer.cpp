@@ -83,8 +83,6 @@ DabMultiplexer::DabMultiplexer(
     m_rc(rc),
     timestamp(0),
     MNSC_increment_time(false),
-    m_watermarkSize(0),
-    m_watermarkPos(0),
     sync(0x49C5F8),
     currentFrame(0),
     insertFIG(0),
@@ -92,35 +90,8 @@ DabMultiplexer::DabMultiplexer(
     ensemble(std::make_shared<dabEnsemble>()),
     fig_carousel(ensemble)
 {
-    prepare_watermark();
-
     RC_ADD_PARAMETER(carousel,
             "Set to 1 to use the new carousel");
-}
-
-void DabMultiplexer::prepare_watermark()
-{
-    uint8_t buffer[sizeof(m_watermarkData) / 2];
-    snprintf((char*)buffer, sizeof(buffer),
-            "%s %s, compiled at %s, %s",
-            PACKAGE_NAME, PACKAGE_VERSION, __DATE__, __TIME__);
-
-    memset(m_watermarkData, 0, sizeof(m_watermarkData));
-    m_watermarkData[0] = 0x55; // Sync
-    m_watermarkData[1] = 0x55;
-    m_watermarkSize = 16;
-    for (unsigned i = 0; i < strlen((char*)buffer); ++i) {
-        for (int j = 0; j < 8; ++j) {
-            uint8_t bit = (buffer[m_watermarkPos >> 3] >> (7 - (m_watermarkPos & 0x07))) & 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            bit = 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            ++m_watermarkPos;
-        }
-    }
-    m_watermarkPos = 0;
 }
 
 void DabMultiplexer::update_config(boost::property_tree::ptree pt)
@@ -1516,11 +1487,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
                             timeData->tm_mon + 1,
                             timeData->tm_mday));
                 fig0_10->LSI = 0;
-                fig0_10->ConfInd = (m_watermarkData[m_watermarkPos >> 3] >>
-                        (7 - (m_watermarkPos & 0x07))) & 1;
-                if (++m_watermarkPos == m_watermarkSize) {
-                    m_watermarkPos = 0;
-                }
+                fig0_10->ConfInd = 1;
                 fig0_10->UTC = 0;
                 fig0_10->setHours(timeData->tm_hour);
                 fig0_10->Minutes = timeData->tm_min;

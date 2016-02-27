@@ -90,7 +90,6 @@ class DabMultiplexer : public RemoteControllable {
         virtual const std::string get_parameter(const std::string& parameter) const;
 
     private:
-        void prepare_watermark(void);
         void prepare_subchannels(void);
         void prepare_services_components(void);
         void prepare_data_inputs(void);
@@ -105,11 +104,6 @@ class DabMultiplexer : public RemoteControllable {
         struct timespec edi_time;
 
         edi_configuration_t edi_conf;
-
-
-        uint8_t m_watermarkData[128];
-        size_t  m_watermarkSize;
-        size_t  m_watermarkPos;
 
         uint32_t sync;
         unsigned long currentFrame;

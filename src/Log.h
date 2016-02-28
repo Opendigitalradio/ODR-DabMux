@@ -39,6 +39,7 @@
 #include <stdexcept>
 #include <string>
 #include <map>
+#include <mutex>
 
 #define SYSLOG_IDENT "ODR-DabMux"
 #define SYSLOG_FACILITY LOG_LOCAL0
@@ -146,6 +147,8 @@ class Logger {
 
     private:
         std::list<LogBackend*> backends;
+
+        std::mutex m_cerr_mutex;
 };
 
 extern Logger etiLog;

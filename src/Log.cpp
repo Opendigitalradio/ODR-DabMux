@@ -74,7 +74,10 @@ void Logger::logstr(log_level_t level, std::string message)
         (*it)->log(level, message);
     }
 
-    std::cerr << levels_as_str[level] << " " << message << std::endl;
+    {
+        std::lock_guard<std::mutex> guard(m_cerr_mutex);
+        std::cerr << levels_as_str[level] << " " << message << std::endl;
+    }
 }
 
 

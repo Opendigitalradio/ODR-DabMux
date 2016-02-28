@@ -167,7 +167,7 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 void DabMultiplexer::prepare()
 {
     parse_ptree(m_pt, ensemble, m_rc);
-    m_use_new_fig_carousel = m_pt.get("general.new_fig_carousel", false);
+    m_use_new_fig_carousel = m_pt.get("general.new_fig_carousel", true);
 
     this->enrol_at(m_rc);
     ensemble->enrol_at(m_rc);

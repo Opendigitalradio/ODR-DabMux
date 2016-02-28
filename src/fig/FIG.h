@@ -47,7 +47,12 @@ class FIGRuntimeInformation {
         bool factumAnalyzer;
 };
 
-// Recommended FIG rates according to ETSI TR 101 496-2 Table 3.6.1
+/* Recommended FIG rates according to ETSI TR 101 496-2 Table 3.6.1
+ * Keep in mind that this specification was not updated since DAB+ came out.
+ * The rates that are recommended there cannot be satisfied with a well filled
+ * DAB+ multiplex, and this is the reason the rates have to be reduced compared
+ * to this recommendation.
+ */
 enum class FIG_rate {
     FIG0_0, /* Special repetition rate for FIG0/0, EN 300 401 Clause 6.4
         In any 96 ms period, the FIG 0/0 should be transmitted in a fixed time

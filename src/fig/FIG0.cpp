@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2015, 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of FIG0
@@ -67,8 +67,37 @@ FillStatus FIG0_0::fill(uint8_t *buf, size_t max_size)
 
 FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
     m_rti(rti),
-    m_initialised(false)
+    m_initialised(false),
+    m_watermarkSize(0),
+    m_watermarkPos(0)
 {
+    uint8_t buffer[sizeof(m_watermarkData) / 2];
+    snprintf((char*)buffer, sizeof(buffer),
+            "%s %s, %s %s",
+            PACKAGE_NAME,
+#if defined(GITVERSION)
+            GITVERSION,
+#else
+            PACKAGE_VERSION,
+#endif
+            __DATE__, __TIME__);
+
+    memset(m_watermarkData, 0, sizeof(m_watermarkData));
+    m_watermarkData[0] = 0x55; // Sync
+    m_watermarkData[1] = 0x55;
+    m_watermarkSize = 16;
+    for (unsigned i = 0; i < strlen((char*)buffer); ++i) {
+        for (int j = 0; j < 8; ++j) {
+            uint8_t bit = (buffer[m_watermarkPos >> 3] >> (7 - (m_watermarkPos & 0x07))) & 1;
+            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
+            ++m_watermarkSize;
+            bit = 1;
+            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
+            ++m_watermarkSize;
+            ++m_watermarkPos;
+        }
+    }
+    m_watermarkPos = 0;
 }
 
 FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
@@ -76,23 +105,43 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
     FillStatus fs;
     size_t remaining = max_size;
 
+    const int watermark_bit = (m_watermarkData[m_watermarkPos >> 3] >>
+            (7 - (m_watermarkPos & 0x07))) & 1;
+
+    const bool iterate_forward = (watermark_bit == 1);
+
+    etiLog.level(debug) << "FIG0/1 forward " << iterate_forward;
+
     if (not m_initialised) {
-        subchannelFIG0_1 = m_rti->ensemble->subchannels.end();
         m_initialised = true;
+        etiLog.level(debug) << "FIG0/1 init";
+
+        subchannels = m_rti->ensemble->subchannels;
+
+        if (not iterate_forward) {
+            std::reverse(subchannels.begin(), subchannels.end());
+        }
+        subchannelFIG0_1 = subchannels.begin();
     }
 
     if (max_size < 6) {
         return fs;
     }
 
-    auto ensemble = m_rti->ensemble;
-
     FIGtype0_1 *figtype0_1 = NULL;
+
+    etiLog.level(debug) << "FIG0/1 start at " <<
+        std::distance(subchannels.begin(), subchannelFIG0_1) <<
+        " uid " << (*subchannelFIG0_1)->uid;
 
     // Rotate through the subchannels until there is no more
     // space in the FIG0/1
-    for (; subchannelFIG0_1 != ensemble->subchannels.end();
-            ++subchannelFIG0_1) {
+    for (; subchannelFIG0_1 != subchannels.end(); ++subchannelFIG0_1 ) {
+
+        etiLog.level(debug) << "FIG0/1 insert " <<
+            std::distance(subchannels.begin(), subchannelFIG0_1) <<
+            " uid " << (*subchannelFIG0_1)->uid;
+
         dabProtection* protection = &(*subchannelFIG0_1)->protection;
 
         if (figtype0_1 == NULL) {
@@ -162,10 +211,19 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
         }
     }
 
-    if (subchannelFIG0_1 == ensemble->subchannels.end()) {
-        subchannelFIG0_1 = ensemble->subchannels.begin();
+    if (subchannelFIG0_1 == subchannels.end()) {
+        m_initialised = false;
         fs.complete_fig_transmitted = true;
+
+        m_watermarkPos++;
+        if (m_watermarkPos == m_watermarkSize) {
+            m_watermarkPos = 0;
+        }
+
+        etiLog.level(debug) << "FIG0/1 done, new watermark pos " << m_watermarkPos;
     }
+
+    etiLog.level(debug) << "FIG0/1 quit, wrote " << max_size - remaining;
 
     fs.num_bytes_written = max_size - remaining;
     return fs;
@@ -633,37 +691,8 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
 //=========== FIG 0/10 ===========
 
 FIG0_10::FIG0_10(FIGRuntimeInformation *rti) :
-    m_rti(rti),
-    m_watermarkSize(0),
-    m_watermarkPos(0)
+    m_rti(rti)
 {
-    uint8_t buffer[sizeof(m_watermarkData) / 2];
-    snprintf((char*)buffer, sizeof(buffer),
-            "%s %s, compiled at %s, %s",
-            PACKAGE_NAME,
-#if defined(GITVERSION)
-            GITVERSION,
-#else
-            PACKAGE_VERSION,
-#endif
-            __DATE__, __TIME__);
-
-    memset(m_watermarkData, 0, sizeof(m_watermarkData));
-    m_watermarkData[0] = 0x55; // Sync
-    m_watermarkData[1] = 0x55;
-    m_watermarkSize = 16;
-    for (unsigned i = 0; i < strlen((char*)buffer); ++i) {
-        for (int j = 0; j < 8; ++j) {
-            uint8_t bit = (buffer[m_watermarkPos >> 3] >> (7 - (m_watermarkPos & 0x07))) & 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            bit = 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            ++m_watermarkPos;
-        }
-    }
-    m_watermarkPos = 0;
 }
 
 FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
@@ -697,11 +726,7 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
                 timeData->tm_mon + 1,
                 timeData->tm_mday));
     fig0_10->LSI = 0;
-    fig0_10->ConfInd = (m_watermarkData[m_watermarkPos >> 3] >>
-            (7 - (m_watermarkPos & 0x07))) & 1;
-    if (++m_watermarkPos == m_watermarkSize) {
-        m_watermarkPos = 0;
-    }
+    fig0_10->ConfInd = 1;
     fig0_10->UTC = 0;
     fig0_10->setHours(timeData->tm_hour);
     fig0_10->Minutes = timeData->tm_min;

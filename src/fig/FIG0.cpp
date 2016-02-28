@@ -110,11 +110,8 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
 
     const bool iterate_forward = (watermark_bit == 1);
 
-    etiLog.level(debug) << "FIG0/1 forward " << iterate_forward;
-
     if (not m_initialised) {
         m_initialised = true;
-        etiLog.level(debug) << "FIG0/1 init";
 
         subchannels = m_rti->ensemble->subchannels;
 
@@ -130,17 +127,9 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
 
     FIGtype0_1 *figtype0_1 = NULL;
 
-    etiLog.level(debug) << "FIG0/1 start at " <<
-        std::distance(subchannels.begin(), subchannelFIG0_1) <<
-        " uid " << (*subchannelFIG0_1)->uid;
-
     // Rotate through the subchannels until there is no more
     // space in the FIG0/1
     for (; subchannelFIG0_1 != subchannels.end(); ++subchannelFIG0_1 ) {
-
-        etiLog.level(debug) << "FIG0/1 insert " <<
-            std::distance(subchannels.begin(), subchannelFIG0_1) <<
-            " uid " << (*subchannelFIG0_1)->uid;
 
         dabProtection* protection = &(*subchannelFIG0_1)->protection;
 
@@ -219,11 +208,7 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
         if (m_watermarkPos == m_watermarkSize) {
             m_watermarkPos = 0;
         }
-
-        etiLog.level(debug) << "FIG0/1 done, new watermark pos " << m_watermarkPos;
     }
-
-    etiLog.level(debug) << "FIG0/1 quit, wrote " << max_size - remaining;
 
     fs.num_bytes_written = max_size - remaining;
     return fs;

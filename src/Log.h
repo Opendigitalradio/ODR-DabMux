@@ -52,7 +52,6 @@ static const std::string levels_as_str[] =
 /** Abstract class all backends must inherit from */
 class LogBackend {
     public:
-        virtual ~LogBackend() {}
         virtual void log(log_level_t level, std::string message) = 0;
         virtual std::string get_name() = 0;
 };
@@ -116,7 +115,7 @@ class LogToFile : public LogBackend {
                 {"DEBUG", "INFO", "WARN", "ERROR", "ALERT", "EMERG"};
 
             // fprintf is thread-safe
-            fprintf(log_file, "ODR-DabMux: %s: %s\n",
+            fprintf(log_file, SYSLOG_IDENT ": %s: %s\n",
                     log_level_text[(size_t)level], message.c_str());
             fflush(log_file);
         }

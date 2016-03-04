@@ -115,52 +115,84 @@ RSBlock PFT::Protect(AFPacket af_packet)
 
 vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
 {
-    RSBlock rs_block = Protect(af_packet);
+    const bool enable_RS = (m_m > 0);
+
+    if (enable_RS) {
+        RSBlock rs_block = Protect(af_packet);
 
 #if 0
-    fprintf(stderr, "  af_packet (%zu):", af_packet.size());
-    for (size_t i = 0; i < af_packet.size(); i++) {
-        fprintf(stderr, "%02x ", af_packet[i]);
-    }
-    fprintf(stderr, "\n");
+        fprintf(stderr, "  af_packet (%zu):", af_packet.size());
+        for (size_t i = 0; i < af_packet.size(); i++) {
+            fprintf(stderr, "%02x ", af_packet[i]);
+        }
+        fprintf(stderr, "\n");
 
-    fprintf(stderr, "  rs_block (%zu):", rs_block.size());
-    for (size_t i = 0; i < rs_block.size(); i++) {
-        fprintf(stderr, "%02x ", rs_block[i]);
-    }
-    fprintf(stderr, "\n");
+        fprintf(stderr, "  rs_block (%zu):", rs_block.size());
+        for (size_t i = 0; i < rs_block.size(); i++) {
+            fprintf(stderr, "%02x ", rs_block[i]);
+        }
+        fprintf(stderr, "\n");
 #endif
 
-    // TS 102 821 7.2.2: s_max = MIN(floor(c*p/(m+1)), MTU - h))
-    const size_t max_payload_size = ( m_num_chunks * ParityBytes ) / (m_m + 1);
+        // TS 102 821 7.2.2: s_max = MIN(floor(c*p/(m+1)), MTU - h))
+        const size_t max_payload_size = ( m_num_chunks * ParityBytes ) / (m_m + 1);
 
-    // Calculate fragment count and size
-    // TS 102 821 7.2.2: ceil((l + c*p + z) / s_max)
-    // l + c*p + z = length of RS block
-    const size_t num_fragments = CEIL_DIV(rs_block.size(), max_payload_size);
+        // Calculate fragment count and size
+        // TS 102 821 7.2.2: ceil((l + c*p + z) / s_max)
+        // l + c*p + z = length of RS block
+        const size_t num_fragments = CEIL_DIV(rs_block.size(), max_payload_size);
 
-    // TS 102 821 7.2.2: ceil((l + c*p + z) / f)
-    const size_t fragment_size = CEIL_DIV(rs_block.size(), num_fragments);
+        // TS 102 821 7.2.2: ceil((l + c*p + z) / f)
+        const size_t fragment_size = CEIL_DIV(rs_block.size(), num_fragments);
 
-    if (m_verbose)
-        fprintf(stderr, "  PnF fragment_size %zu, num frag %zu\n",
-                fragment_size, num_fragments);
+        if (m_verbose)
+            fprintf(stderr, "  PnF fragment_size %zu, num frag %zu\n",
+                    fragment_size, num_fragments);
 
-    vector< vector<uint8_t> > fragments(num_fragments);
+        vector< vector<uint8_t> > fragments(num_fragments);
 
-    for (size_t i = 0; i < num_fragments; i++) {
-        fragments[i].resize(fragment_size);
-        for (size_t j = 0; j < fragment_size; j++) {
-            if (j*num_fragments + i > rs_block.size()) {
-                fragments[i][j] = 0;
-            }
-            else {
-                fragments[i][j] = rs_block[j*num_fragments + i];
+        for (size_t i = 0; i < num_fragments; i++) {
+            fragments[i].resize(fragment_size);
+            for (size_t j = 0; j < fragment_size; j++) {
+                if (j*num_fragments + i > rs_block.size()) {
+                    fragments[i][j] = 0;
+                }
+                else {
+                    fragments[i][j] = rs_block[j*num_fragments + i];
+                }
             }
         }
-    }
 
-    return fragments;
+        return fragments;
+    }
+    else { // No RS, only fragmentation
+        // TS 102 821 7.2.2: s_max = MTU - h
+        const size_t max_payload_size = 1000; // TODO define properly
+
+        // Calculate fragment count and size
+        // TS 102 821 7.2.2: ceil((l + c*p + z) / s_max)
+        // l + c*p + z = length of AF packet
+        const size_t num_fragments = CEIL_DIV(af_packet.size(), max_payload_size);
+
+        // TS 102 821 7.2.2: ceil((l + c*p + z) / f)
+        const size_t fragment_size = CEIL_DIV(af_packet.size(), num_fragments);
+        vector< vector<uint8_t> > fragments(num_fragments);
+
+        for (size_t i = 0; i < num_fragments; i++) {
+            //fragments[i].reserve(fragment_size);
+
+            for (size_t j = 0; j < fragment_size; j++) {
+                if (i*fragment_size + j > af_packet.size()) {
+                    break;
+                }
+                else {
+                    fragments[i].push_back(af_packet[i*fragment_size + j]);
+                }
+            }
+        }
+
+        return fragments;
+    }
 }
 
 std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
@@ -168,7 +200,7 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     vector< vector<uint8_t> > fragments = ProtectAndFragment(af_packet);
     vector< vector<uint8_t> > pft_fragments; // These contain PF headers
 
-    const bool enable_RS = true;
+    const bool enable_RS = (m_m > 0);
     const bool enable_transport = true;
 
     unsigned int findex = 0;
@@ -178,11 +210,13 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     // calculate size of chunk:
     // TS 102 821 7.2.2: k = ceil(l / c)
     // chunk_len does not include the 48 bytes of protection.
-    const size_t chunk_len = CEIL_DIV(af_packet.size(), m_num_chunks);
+    const size_t chunk_len = enable_RS ?
+        CEIL_DIV(af_packet.size(), m_num_chunks) : 0;
 
     // The last RS chunk is zero padded
     // TS 102 821 7.2.2: z = c*k - l
-    const size_t zero_pad = m_num_chunks * chunk_len - af_packet.size();
+    const size_t zero_pad = enable_RS ?
+        m_num_chunks * chunk_len - af_packet.size() : 0;
 
     for (size_t i = 0; i < fragments.size(); i++) {
         const vector<uint8_t>& fragment = fragments[i];

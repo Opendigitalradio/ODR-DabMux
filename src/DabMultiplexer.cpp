@@ -215,11 +215,11 @@ void DabMultiplexer::prepare()
      */
     gettimeofday(&mnsc_time, NULL);
 
+#if HAVE_OUTPUT_EDI
     if (clock_gettime(CLOCK_REALTIME, &edi_time)) {
         throw std::runtime_error("Setting eti_time with clock_gettime failed");
     }
 
-#if HAVE_OUTPUT_EDI
     // Try to load offset once
 
     bool tist_enabled = m_pt.get("general.tist", false);
@@ -1751,6 +1751,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.atstf = 1;
     edi_tagDETI.utco = 0;
     edi_tagDETI.seconds = 0;
+#if HAVE_OUTPUT_EDI
     try {
         bool tist_enabled = m_pt.get("general.tist", false);
 
@@ -1763,6 +1764,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     catch (std::runtime_error& e) {
         etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
     }
+#endif
 
 
     /* Coding of the TIST, according to ETS 300 799 Annex C

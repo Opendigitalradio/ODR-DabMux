@@ -82,7 +82,6 @@ typedef DWORD32 uint32_t;
 #   include <sys/times.h>
 #   include <sys/resource.h>
 
-#   include <net/if_packet.h>
 #endif
 
 #include <time.h>

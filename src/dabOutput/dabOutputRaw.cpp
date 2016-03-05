@@ -23,6 +23,12 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
+#if defined(HAVE_OUTPUT_RAW)
+
 #include <cstdio>
 #include <cstring>
 #include "dabOutput.h"
@@ -389,4 +395,6 @@ int DabOutputRaw::Close()
 
     return -1;
 }
+
+#endif // defined(HAVE_OUTPUT_RAW)
 

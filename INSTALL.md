@@ -49,6 +49,15 @@ that did not yet make its way into a release, you can clone the
 * Bootstrap autotools: <pre>% ./bootstrap.sh</pre>
 * Then use ./configure as above
 
+Develop on OSX
+==============
+
+If you want to develop on OSX platform install the necessary build tools
+with brew
+
+    brew install automake boost
+
+raw, edi and udp output are not available.
 
 Advanced install procedure:
 ===========================

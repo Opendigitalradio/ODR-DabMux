@@ -34,7 +34,9 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <sys/timex.h>
+#if SUPPORT_SETTING_CLOCK_TAI
+#  include <sys/timex.h>
+#endif
 #ifdef HAVE_CURL
 #  include <curl/curl.h>
 #endif
@@ -56,6 +58,7 @@ ClockTAI::ClockTAI()
 
 int ClockTAI::get_offset()
 {
+#if ENABLE_OUTPUT_EDI
     struct timespec time_now;
 
     int err = clock_gettime(CLOCK_REALTIME, &time_now);
@@ -81,6 +84,7 @@ int ClockTAI::get_offset()
         etiLog.level(info) << "Updated TAI-UTC offset to " << m_offset << "s.";
     }
 
+#endif // ENABLE_OUTPUT_EDI
     return m_offset;
 }
 
@@ -225,4 +229,6 @@ void debug_tai_clk()
     printf("adjtimex: %d, tai %d\n", err, timex_request.tai);
 }
 #endif
+
+
 

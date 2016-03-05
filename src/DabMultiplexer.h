@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -48,6 +48,7 @@
 #include "ClockTAI.h"
 #include <exception>
 #include <vector>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <memory>
@@ -101,7 +102,7 @@ class DabMultiplexer : public RemoteControllable {
         unsigned timestamp;
         bool MNSC_increment_time;
         struct timeval mnsc_time;
-        struct timespec edi_time;
+        std::chrono::system_clock::time_point edi_time;
 
         edi_configuration_t edi_conf;
 

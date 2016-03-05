@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    SIMUL throttling output. It guarantees correct frame generation rate
@@ -90,3 +90,4 @@ int DabOutputSimul::Write(void* buffer, int size)
 
     return size;
 }
+

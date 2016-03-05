@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -30,7 +30,6 @@
 #include "fig/FIG.h"
 
 using namespace std;
-using namespace boost;
 
 static const unsigned char Padding_FIB[] = {
     0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -216,9 +215,7 @@ void DabMultiplexer::prepare()
     gettimeofday(&mnsc_time, NULL);
 
 #if HAVE_OUTPUT_EDI
-    if (clock_gettime(CLOCK_REALTIME, &edi_time)) {
-        throw std::runtime_error("Setting eti_time with clock_gettime failed");
-    }
+    edi_time = chrono::system_clock::now();
 
     // Try to load offset once
 
@@ -1788,7 +1785,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         MNSC_increment_time = true;
 
         // Immediately update edi time
-        edi_time.tv_sec++;
+        edi_time += chrono::seconds(1);
     }
 
 

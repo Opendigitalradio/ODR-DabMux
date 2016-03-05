@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    EDI output.
@@ -129,6 +129,12 @@ std::vector<uint8_t> TagDETI::Assemble()
     std::cerr << "              length " << taglength / 8 << std::endl;
     */
     return packet;
+}
+
+void TagDETI::set_seconds(std::chrono::system_clock::time_point t)
+{
+    std::time_t posix_timestamp_1_jan_2000 = 946684800;
+    seconds = std::chrono::system_clock::to_time_t(t) - posix_timestamp_1_jan_2000;
 }
 
 

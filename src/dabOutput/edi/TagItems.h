@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    EDI output.
@@ -30,6 +30,7 @@
 #include "config.h"
 #include "Eti.h"
 #include <vector>
+#include <chrono>
 #include <string>
 #include <stdint.h>
 
@@ -98,12 +99,7 @@ class TagDETI : public TagItem
          */
         uint32_t seconds;
 
-        void set_seconds(struct timespec tv)
-        {
-            time_t posix_timestamp_1_jan_2000 = 946684800;
-            seconds = tv.tv_sec - posix_timestamp_1_jan_2000;
-        }
-
+        void set_seconds(std::chrono::system_clock::time_point t);
 
         /* TSTA: Shall be the 24 least significant bits of the Time Stamp
          * (TIST) field from the STI-D(LI) Frame. The full definition for the

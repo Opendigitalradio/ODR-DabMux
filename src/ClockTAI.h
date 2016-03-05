@@ -37,9 +37,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sstream>
-#include <time.h>
+#include <chrono>
 
-// EDI needs to know UTC-TAI, but doesn't need the CLOCK_TAI to be set
+// EDI needs to know UTC-TAI, but doesn't need the CLOCK_TAI to be set.
+// We can keep this code, maybe for future use
 #define SUPPORT_SETTING_CLOCK_TAI 0
 
 /* Loads, parses and represents TAI-UTC offset information from the USNO bulletin */
@@ -65,7 +66,7 @@ class ClockTAI {
 
         int m_offset;
         std::stringstream m_bulletin;
-        struct timespec m_bulletin_download_time;
+        std::chrono::system_clock::time_point m_bulletin_download_time;
 
         // Load bulletin into m_bulletin, return 0 on success
         int download_tai_utc_bulletin(const char* url);

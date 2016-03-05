@@ -52,22 +52,14 @@
 ClockTAI::ClockTAI()
 {
     m_offset = 0;
-    m_bulletin_download_time.tv_nsec = 0;
-    m_bulletin_download_time.tv_sec = 0;
 }
 
 int ClockTAI::get_offset()
 {
-#if ENABLE_OUTPUT_EDI
-    struct timespec time_now;
+    auto time_now = std::chrono::system_clock::now();
 
-    int err = clock_gettime(CLOCK_REALTIME, &time_now);
-    if (err) {
-        throw std::runtime_error("ClockTAI::get_offset() clock_gettime failed");
-    }
-
-    if (time_now.tv_sec - m_bulletin_download_time.tv_sec >
-            3600 * 24 * 31) {
+    if (time_now - m_bulletin_download_time >
+            std::chrono::seconds(3600 * 24 * 31)) {
         // Refresh if it's older than one month. Leap seconds are
         // announced several months in advance
 
@@ -84,7 +76,6 @@ int ClockTAI::get_offset()
         etiLog.level(info) << "Updated TAI-UTC offset to " << m_offset << "s.";
     }
 
-#endif // ENABLE_OUTPUT_EDI
     return m_offset;
 }
 
@@ -183,11 +174,7 @@ int ClockTAI::download_tai_utc_bulletin(const char* url)
         }
         else {
             // Save the download time of the bulletin
-            int err = clock_gettime(CLOCK_REALTIME, &m_bulletin_download_time);
-            if (err) {
-                perror("REALTIME clock_gettime failed");
-                r = 1;
-            }
+            m_bulletin_download_time = std::chrono::system_clock::now();
         }
 
         /* always cleanup */
@@ -229,6 +216,4 @@ void debug_tai_clk()
     printf("adjtimex: %d, tai %d\n", err, timex_request.tai);
 }
 #endif
-
-
 

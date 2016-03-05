@@ -36,7 +36,9 @@
 #include <stdexcept>
 #include <signal.h>
 #include <vector>
+#include <chrono>
 #include <memory>
+
 #ifdef _WIN32
 #   include <io.h>
 #   ifdef __MINGW32__
@@ -305,7 +307,7 @@ class DabOutputSimul : public DabOutput
 #ifdef _WIN32
         DWORD startTime_;
 #else
-        struct timespec startTime_;
+        std::chrono::steady_clock::time_point startTime_;
 #endif
 };
 

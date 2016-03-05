@@ -119,6 +119,7 @@ zmqinput_keygen_SOURCES  = zmqinput-keygen.c
 zmqinput_keygen_LDADD    = $(ZMQ_LIBS)
 zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS)
 
+if HAVE_OUTPUT_RAW_TEST
 odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
                            dabOutput/dabOutput.h \
                            dabOutput/dabOutputRaw.cpp \
@@ -127,4 +128,4 @@ odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 odr_zmq2farsync_CXXFLAGS = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
-
+endif

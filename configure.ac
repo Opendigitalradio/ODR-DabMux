@@ -214,6 +214,9 @@ AM_CONDITIONAL([HAVE_ZEROMQ_TEST],
 # Link against cURL
 AM_CONDITIONAL([HAVE_CURL_TEST],
 			   [test "x$enable_output_edi" = "xyes"])
+# Do not build odr-zmq2farsync if no RAW output
+AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],
+			   [test "x$enable_output_raw" = "xyes"])
 
 
 # Formats

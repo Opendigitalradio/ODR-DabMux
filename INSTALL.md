@@ -18,6 +18,7 @@ Install libfec
 
     % git clone https://github.com/Opendigitalradio/ka9q-fec.git
     % cd ka9q-fec
+    % ./bootstrap
     % ./configure                           # Run the configure script
     % make                                  # Build the library
     [as root]

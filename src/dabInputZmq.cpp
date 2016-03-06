@@ -376,7 +376,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
     }
 
 
-    if (datalen)
+    if (datalen == framesize)
     {
         if (m_frame_buffer.size() > m_config.buffer_size) {
             etiLog.level(warn) <<
@@ -398,7 +398,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
     else {
         etiLog.level(error) <<
             "inputZMQ " << m_name <<
-            " wrong data size: recv'd " << msg.size() << " Bytes" <<
+            " verify bitrate: recv'd " << msg.size() << " B" <<
             ", need " << framesize << ".";
         messageReceived = false;
     }
@@ -479,7 +479,7 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
         else {
             etiLog.level(error) <<
                 "inputZMQ " << m_name <<
-                " wrong data size: recv'd " << msg.size() <<
+                " verify bitrate: recv'd " << msg.size() << " B" <<
                 ", need " << 5*framesize << ".";
 
             datalen = 0;

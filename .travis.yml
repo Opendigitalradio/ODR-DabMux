@@ -13,7 +13,6 @@ addons: &addons
       - libcurl4-openssl-dev
 
 compiler:
-  - gcc
   - clang
 
 script:

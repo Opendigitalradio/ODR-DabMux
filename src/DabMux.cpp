@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -29,11 +29,11 @@
 #   include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <cstdio>
-#include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>

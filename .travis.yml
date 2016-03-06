@@ -29,6 +29,14 @@ script:
     popd
   - |
     ./bootstrap.sh
-    ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
+    CC=clang CXX=clang++ ./configure --disable-output-edi --disable-output-zeromq --disable-input-zeromq
+    make
+  - |
+    ./bootstrap.sh
+    CC=clang CXX=clang++ ./configure
+    make
+  - |
+    ./bootstrap.sh
+    CC=clang CXX=clang++ ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
     make
 

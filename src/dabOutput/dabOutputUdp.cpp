@@ -43,7 +43,6 @@
 #   include <sys/types.h>
 #   include <sys/socket.h>
 #   include <sys/ioctl.h>
-#   include <net/if_packet.h>
 #   include <net/if_arp.h>
 #endif
 

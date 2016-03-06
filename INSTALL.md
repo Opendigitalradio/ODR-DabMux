@@ -49,15 +49,24 @@ that did not yet make its way into a release, you can clone the
 * Bootstrap autotools: <pre>% ./bootstrap.sh</pre>
 * Then use ./configure as above
 
-Develop on OSX
-==============
+Develop on OSX and FreeBSD
+==========================
 
 If you want to develop on OSX platform install the necessary build tools
 with brew
 
     brew install automake boost
 
-raw, edi and udp output are not available.
+On FreeBSD, pkg installs all dependencies to /usr/local, but the build
+tools will not search there by default. Set the following environment variables
+before calling ./configure
+
+    LDFLAGS="-L/usr/local/lib"
+    CFLAGS="-I/usr/local/include"
+    CXXFLAGS="-I/usr/local/include"
+
+
+In both cases, raw output is not available.
 
 Advanced install procedure:
 ===========================

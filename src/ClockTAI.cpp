@@ -43,7 +43,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
-#include <regex>
+#include <boost/regex.hpp>
 
 /* Last line from bulletin, example:
  2015 JUL  1 =JD 2457204.5  TAI-UTC=  36.0       S + (MJD - 41317.) X 0.0      S
@@ -99,7 +99,7 @@ int ClockTAI::update_local_tai_clock(int offset)
 
 int ClockTAI::parse_tai_offset()
 {
-    std::regex regex_offset("TAI-UTC= *([0-9.]+)");
+    boost::regex regex_offset("TAI-UTC= *([0-9.]+)");
 
     int tai_utc_offset = 0;
 
@@ -108,9 +108,9 @@ int ClockTAI::parse_tai_offset()
     for (std::string line; std::getline(m_bulletin, line); ) {
         linecount++;
         auto words_begin =
-            std::sregex_token_iterator(
+            boost::sregex_token_iterator(
                     line.begin(), line.end(), regex_offset, 1);
-        auto words_end = std::sregex_token_iterator();
+        auto words_end = boost::sregex_token_iterator();
 
         for (auto w = words_begin; w != words_end; ++w) {
             std::string s(*w);

@@ -52,7 +52,7 @@ endif
 odr_dabmux_CFLAGS   =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_CXXFLAGS =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) $(CURL_LIBS) \
-					 -lpthread -lboost_thread -lboost_system
+					 -lpthread -lboost_thread -lboost_system -lboost_regex
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 DabMultiplexer.cpp DabMultiplexer.h \
                      dabInput.h dabInput.cpp \

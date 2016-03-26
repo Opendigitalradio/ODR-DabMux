@@ -1,6 +1,18 @@
 This file contains information about the changes done to
 the ODR-DabMux in this repository
 
+2016-03-26: Matthias P. Braendli <matthias@mpb.li>
+	(v0.9.0):
+		Enable new carousel by default.
+		Integrate munin script improvements.
+		EDI bugfix when many CU are used.
+		EDI: add support for PFT with FEC=0 (only fragmentation).
+		EDI: backward-incompatible configuration change.
+		EDI: transmit timestamp with TAI vs UTC correction (experimental).
+		Get compilation working under FreeBSD and OSX.
+		Add ability to specify source and TTL for UDP output.
+		Split example.mux into a simple and a more advanced example.
+
 2015-11-27: Matthias P. Braendli <matthias@mpb.li>
 	(v0.8.1):
 		Fix compilation with test input.

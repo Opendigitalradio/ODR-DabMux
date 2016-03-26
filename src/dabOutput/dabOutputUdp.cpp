@@ -61,7 +61,7 @@ int DabOutputUdp::Open(const char* name)
     smatch what;
     if (regex_match(uri_without_proto, what, re_url, match_default)) {
         string address = what[1];
-        etiLog.level(debug) << "***** UDP ADDR " << address;
+
         if (this->packet_->getAddress().setAddress(address.c_str()) == -1) {
             etiLog.level(error) << "can't set address " <<
                address <<  "(" << inetErrDesc << ": " << inetErrMsg << ")";
@@ -70,7 +70,6 @@ int DabOutputUdp::Open(const char* name)
 
         string port_str = what[2];
         long port = std::strtol(port_str.c_str(), nullptr, 0);
-        etiLog.level(debug) << "***** UDP PORT " << port_str << " -> " << port;
 
         if ((port <= 0) || (port >= 65536)) {
             etiLog.level(error) <<
@@ -87,11 +86,10 @@ int DabOutputUdp::Open(const char* name)
         }
 
         string query_params = what[3];
-        etiLog.level(debug) << "***** UDP Q " << query_params;
         smatch query_what;
         if (regex_match(query_params, query_what, re_query, match_default)) {
             string src = query_what[1];
-            etiLog.level(debug) << "***** UDP Q SRC " << src;
+
             int err = socket_->setMulticastSource(src.c_str());
             if (err) {
                 etiLog.level(error) << "UDP output socket set source failed!";
@@ -99,11 +97,9 @@ int DabOutputUdp::Open(const char* name)
             }
 
             string ttl_str = query_what[2];
-            etiLog.level(debug) << "***** UDP Q TTL " << ttl_str;
 
             if (not ttl_str.empty()) {
                 long ttl = std::strtol(ttl_str.c_str(), nullptr, 0);
-                etiLog.level(debug) << "***** UDP Q TTL# " << ttl;
                 if ((ttl <= 0) || (ttl >= 255)) {
                     etiLog.level(error) << "Invalid TTL setting in " <<
                         uri_without_proto;

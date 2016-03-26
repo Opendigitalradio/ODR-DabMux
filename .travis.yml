@@ -4,6 +4,8 @@ dist: trusty
 
 addons: &addons
   apt:
+    sources: &sources
+      - ubuntu-toolchain-r-test
     packages: &packages
       - libzmq3-dev
       - libzmq3
@@ -11,9 +13,10 @@ addons: &addons
       - libtool
       - libboost1.55-all-dev
       - libcurl4-openssl-dev
+      - gcc-5
 
 compiler:
-  - clang
+  - gcc
 
 script:
   - |
@@ -28,14 +31,14 @@ script:
     popd
   - |
     ./bootstrap.sh
-    CC=clang CXX=clang++ ./configure --disable-output-edi --disable-output-zeromq --disable-input-zeromq
+    CC=gcc-5 CXX=g++-5 ./configure --disable-output-edi --disable-output-zeromq --disable-input-zeromq
     make
   - |
     ./bootstrap.sh
-    CC=clang CXX=clang++ ./configure
+    CC=gcc-5 CXX=g++-5 ./configure
     make
   - |
     ./bootstrap.sh
-    CC=clang CXX=clang++ ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
+    CC=gcc-5 CXX=g++-5 ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
     make
 

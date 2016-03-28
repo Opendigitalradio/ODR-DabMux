@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2015, 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -66,7 +66,12 @@ class FIG0_1 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
+        std::vector<dabSubchannel*>           subchannels;
         std::vector<dabSubchannel*>::iterator subchannelFIG0_1;
+
+        uint8_t m_watermarkData[128];
+        size_t  m_watermarkSize;
+        size_t  m_watermarkPos;
 };
 
 // FIG type 0/2, MCI, Service Organization, one instance of
@@ -102,6 +107,8 @@ class FIG0_3 : public IFIG
 
     private:
         FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<DabComponent*>::iterator componentFIG0_3;
 };
 
 // FIG type 0/8
@@ -157,10 +164,6 @@ class FIG0_10 : public IFIG
 
     private:
         FIGRuntimeInformation *m_rti;
-
-        uint8_t m_watermarkData[128];
-        size_t  m_watermarkSize;
-        size_t  m_watermarkPos;
 };
 
 // FIG type 0/13

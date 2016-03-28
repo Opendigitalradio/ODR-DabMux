@@ -30,7 +30,11 @@ FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
 if HAVE_ZEROMQ_TEST
-bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen odr-zmq2farsync
+bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen
+
+if HAVE_OUTPUT_RAW_TEST
+bin_PROGRAMS+=odr-zmq2farsync
+endif
 
 ZMQ_LIBS    =-lzmq
 else
@@ -39,9 +43,16 @@ bin_PROGRAMS=odr-dabmux odr-bridgetest
 ZMQ_LIBS    =
 endif
 
+if HAVE_CURL_TEST
+CURL_LIBS    =-lcurl
+else
+CURL_LIBS    =
+endif
+
 odr_dabmux_CFLAGS   =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_CXXFLAGS =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
-odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) -lpthread -lboost_thread -lboost_system
+odr_dabmux_LDADD    =$(FEC_LIBS) $(ZMQ_LIBS) $(CURL_LIBS) \
+					 -lpthread -lboost_thread -lboost_system -lboost_regex
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 DabMultiplexer.cpp DabMultiplexer.h \
                      dabInput.h dabInput.cpp \
@@ -76,32 +87,33 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      dabOutput/edi/TagItems.cpp dabOutput/edi/TagItems.h \
                      dabOutput/edi/TagPacket.cpp dabOutput/edi/TagPacket.h \
                      dabOutput/edi/PFT.cpp dabOutput/edi/PFT.h \
-                     bridge.h bridge.c \
-                     utils.cpp utils.h \
-                     MuxElements.cpp MuxElements.h \
-                     RemoteControl.cpp RemoteControl.h \
-                     ParserCmdline.cpp ParserCmdline.h \
+                     ClockTAI.h ClockTAI.cpp \
                      ConfigParser.cpp ConfigParser.h \
-                     Eti.h Eti.cpp \
-                     Log.h Log.cpp \
-                     UdpSocket.h UdpSocket.cpp \
-                     InetAddress.h InetAddress.cpp \
-                     prbs.h prbs.c \
-                     crc.h crc.c \
-                     dabUtils.h dabUtils.cpp \
-                     PcDebug.h \
                      Dmb.h Dmb.cpp \
+                     Eti.h Eti.cpp \
+                     InetAddress.h InetAddress.cpp \
                      Interleaver.h Interleaver.cpp \
-                     ReedSolomon.h ReedSolomon.cpp \
-                     mpeg.h mpeg.c \
+                     Log.h Log.cpp \
                      ManagementServer.h ManagementServer.cpp \
+                     MuxElements.cpp MuxElements.h \
+                     ParserCmdline.cpp ParserCmdline.h \
+                     PcDebug.h \
+                     ReedSolomon.h ReedSolomon.cpp \
+                     RemoteControl.cpp RemoteControl.h \
                      TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp \
-                     zmq.hpp \
+                     UdpSocket.h UdpSocket.cpp \
+                     bridge.h bridge.c \
+                     crc.h crc.c \
+                     dabUtils.h dabUtils.cpp \
+                     fig/FIG.h fig/FIG.cpp \
                      fig/FIG0.cpp fig/FIG0.h \
                      fig/FIG1.cpp fig/FIG1.h \
                      fig/FIGCarousel.cpp fig/FIGCarousel.h \
-                     fig/FIG.h
+                     mpeg.h mpeg.c \
+                     prbs.h prbs.c \
+                     utils.cpp utils.h \
+                     zmq.hpp
 
 odr_bridgetest_CFLAGS   =-DBRIDGE_TEST
 odr_bridgetest_SOURCES  =bridge.c \
@@ -119,4 +131,3 @@ odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 odr_zmq2farsync_CXXFLAGS = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
-

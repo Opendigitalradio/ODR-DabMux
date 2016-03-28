@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -29,11 +29,11 @@
 #   include "config.h"
 #endif
 
-#include <boost/shared_ptr.hpp>
+#include <stdlib.h>
+#include <memory>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <cstdio>
-#include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -82,7 +82,6 @@ typedef DWORD32 uint32_t;
 #   include <sys/times.h>
 #   include <sys/resource.h>
 
-#   include <net/if_packet.h>
 #endif
 
 #include <time.h>
@@ -219,7 +218,7 @@ int main(int argc, char *argv[])
     int returnCode = 0;
 
     ptree pt;
-    std::vector<boost::shared_ptr<DabOutput> > outputs;
+    std::vector<std::shared_ptr<DabOutput> > outputs;
 
     try {
         if (argc == 2) { // Assume the only argument is a config file
@@ -276,15 +275,13 @@ int main(int argc, char *argv[])
         /************** READ REMOTE CONTROL PARAMETERS *************/
         int telnetport = pt.get<int>("remotecontrol.telnetport", 0);
 
-        boost::shared_ptr<BaseRemoteController> rc;
+        std::shared_ptr<BaseRemoteController> rc;
 
         if (telnetport != 0) {
-            rc = boost::shared_ptr<RemoteControllerTelnet>(
-                    new RemoteControllerTelnet(telnetport));
+            rc = std::make_shared<RemoteControllerTelnet>(telnetport);
         }
         else {
-            rc = boost::shared_ptr<RemoteControllerDummy>(
-                    new RemoteControllerDummy());
+            rc = std::make_shared<RemoteControllerDummy>();
         }
 
         DabMultiplexer mux(rc, pt);
@@ -320,14 +317,18 @@ int main(int argc, char *argv[])
             if (outputuid == "edi") {
 #if HAVE_OUTPUT_EDI
                 ptree pt_edi = pt_outputs.get_child("edi");
+                for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
+                    edi_destination_t dest;
+                    dest.dest_addr   = pt_edi_dest.second.get<string>("destination");
+                    dest.ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
 
-                edi_conf.enabled             = true;
+                    dest.source_addr = pt_edi_dest.second.get<string>("source", "");
+                    dest.source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
 
-                edi_conf.dest_addr           = pt_edi.get<string>("destination");
+                    edi_conf.destinations.push_back(dest);
+                }
+
                 edi_conf.dest_port           = pt_edi.get<unsigned int>("port");
-                edi_conf.source_addr         = pt_edi.get<string>("source", "");
-                edi_conf.source_port         = pt_edi.get<unsigned int>("sourceport");
-                edi_conf.ttl                 = pt_edi.get<unsigned int>("ttl", 1);
 
                 edi_conf.dump                = pt_edi.get<bool>("dump");
                 edi_conf.enable_pft          = pt_edi.get<bool>("enable_pft");
@@ -412,7 +413,7 @@ int main(int argc, char *argv[])
                     return -1;
                 }
 
-                boost::shared_ptr<DabOutput> dabout(output);
+                std::shared_ptr<DabOutput> dabout(output);
                 outputs.push_back(dabout);
 
             }
@@ -431,14 +432,17 @@ int main(int argc, char *argv[])
         printOutputs(outputs);
 
 #if HAVE_OUTPUT_EDI
-        if (edi_conf.enabled) {
-            etiLog.level(info) << "EDI to " << edi_conf.dest_addr << ":" << edi_conf.dest_port;
-            if (not edi_conf.source_addr.empty()) {
-                etiLog.level(info) << " source      " << edi_conf.source_addr;
-                etiLog.level(info) << " ttl         " << edi_conf.ttl;
-            }
-            etiLog.level(info) << " source port " << edi_conf.source_port;
+        if (edi_conf.enabled()) {
+            etiLog.level(info) << "EDI";
             etiLog.level(info) << " verbose     " << edi_conf.verbose;
+            for (auto& edi_dest : edi_conf.destinations) {
+                etiLog.level(info) << " to " << edi_dest.dest_addr << ":" << edi_conf.dest_port;
+                if (not edi_dest.source_addr.empty()) {
+                    etiLog.level(info) << "  source      " << edi_dest.source_addr;
+                    etiLog.level(info) << "  ttl         " << edi_dest.ttl;
+                }
+                etiLog.level(info) << "  source port " << edi_dest.source_port;
+            }
         }
 #endif
 

@@ -3,14 +3,9 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
-    The Configuration parser sets up the ensemble according
-     to the configuration given in a boost property tree, which
-     is directly derived from a config file.
-
-     The format of the configuration is given in doc/example.mux
    */
 /*
    This file is part of ODR-DabMux.
@@ -28,25 +23,27 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __CONFIG_PARSER_H_
-#define __CONFIG_PARSER_H_
 
-#include <vector>
-#include <string>
-#include "MuxElements.h"
-#include "DabMux.h"
-#include <boost/property_tree/ptree.hpp>
-#include <memory>
+#include "FIG.h"
 
-void parse_ptree(boost::property_tree::ptree& pt,
-        std::shared_ptr<dabEnsemble> ensemble,
-        std::shared_ptr<BaseRemoteController> rc);
+namespace FIC {
 
-void setup_subchannel_from_ptree(dabSubchannel* subchan,
-        boost::property_tree::ptree &pt,
-        std::shared_ptr<dabEnsemble> ensemble,
-        std::string subchanuid,
-        std::shared_ptr<BaseRemoteController> rc);
+int rate_increment_ms(FIG_rate rate)
+{
+    switch (rate) {
+        /* All these values are multiples of 24, so that it is easier to reason
+         * about the behaviour when considering ETI frames of 24ms duration
+         */
+        case FIG_rate::FIG0_0:    return 96;        // Is a special case
+        case FIG_rate::A:         return 240;
+        case FIG_rate::A_B:       return 480;
+        case FIG_rate::B:         return 2400;
+        case FIG_rate::C:         return 24000;
+        case FIG_rate::D:         return 30000;
+        case FIG_rate::E:         return 120000;
+    }
+    return 1000; //some default value, shouldn't be used
+}
 
-#endif
+} // namespace FIC
 

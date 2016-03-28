@@ -34,7 +34,7 @@
 #include "fig/FIG1.h"
 #include <list>
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "MuxElements.h"
 
 namespace FIC {
@@ -58,7 +58,7 @@ enum class FIBAllocation {
 
 class FIGCarousel {
     public:
-        FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble);
+        FIGCarousel(std::shared_ptr<dabEnsemble> ensemble);
 
         void update(unsigned long currentFrame, time_t dabTime);
 

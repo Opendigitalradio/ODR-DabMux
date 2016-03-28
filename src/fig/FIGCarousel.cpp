@@ -31,6 +31,7 @@
 #include "fig/FIGCarousel.h"
 #include <boost/format.hpp>
 #include <iostream>
+#include <memory>
 #include <deque>
 
 #define CAROUSELDEBUG 0
@@ -43,7 +44,7 @@ void FIGCarouselElement::reduce_deadline()
     deadline -= 24; //ms
 
     if (deadline < 0) {
-        etiLog.level(warn) << "Could not respect repetition rate for FIG " <<
+        etiLog.level(debug) << "Could not respect repetition rate for FIG " <<
             fig->name() << " (" << deadline << "ms late)";
     }
 }
@@ -56,7 +57,7 @@ void FIGCarouselElement::increase_deadline()
 
 /**************** FIGCarousel *****************/
 
-FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
+FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_rti(ensemble),
     m_fig0_0(&m_rti),
     m_fig0_1(&m_rti),
@@ -84,14 +85,13 @@ FIGCarousel::FIGCarousel(boost::shared_ptr<dabEnsemble> ensemble) :
      * and pushed for support for receivers that only could
      * decode FIB0.
      *
-     * If repetition rate cannot be maintained with this allocation,
-     * we should drop the requirement and allocate all FIGs except 0/0
-     * to FIB_ANY
+     * In order to alleviate repetition rate issues,
+     * this requirement has been dropped.
      */
     load_and_allocate(m_fig0_0, FIBAllocation::FIB0);
-    load_and_allocate(m_fig0_1, FIBAllocation::FIB0);
-    load_and_allocate(m_fig0_2, FIBAllocation::FIB0);
-    load_and_allocate(m_fig0_3, FIBAllocation::FIB0);
+    load_and_allocate(m_fig0_1, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_2, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_3, FIBAllocation::FIB_ANY);
 
     load_and_allocate(m_fig0_17, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_8, FIBAllocation::FIB_ANY);
@@ -158,10 +158,6 @@ size_t FIGCarousel::write_fibs(
         auto& fig = fib_fig.second;
         for (auto& fig_el : fig) {
             fig_el.reduce_deadline();
-#if CAROUSELDEBUG
-            std::cerr << " * " << fig_el.fig->name() <<
-                " d:" << fig_el.deadline << std::endl;
-#endif
         }
     }
 
@@ -231,6 +227,15 @@ size_t FIGCarousel::carousel(
             return left->deadline < right->deadline;
             });
 
+#if CAROUSELDEBUG
+    std::cerr << " ************** FIGs" << std::endl;
+    for (auto& f : sorted_figs) {
+        std::cerr << " FIG" << f->fig->figtype() << "/" <<
+            f->fig->figextension() << " deadline " <<
+            f->deadline << std::endl;
+    }
+#endif
+
     /* Data structure to carry FIB */
     size_t available_size = bufsize;
 
@@ -250,8 +255,10 @@ size_t FIGCarousel::carousel(
                 pbuf += written;
 
 #if CAROUSELDEBUG
-                std::cerr << " ****** FIG0/0(special) wrote\t" << written << " bytes"
-                    << std::endl;
+                if (written) {
+                    std::cerr << " ****** FIG0/0(special) wrote\t" << written << " bytes"
+                        << std::endl;
+                }
 
                 if (    (*fig0_0)->fig->figtype() != 0 or
                         (*fig0_0)->fig->figextension() != 0 or
@@ -302,10 +309,15 @@ size_t FIGCarousel::carousel(
             pbuf += written;
         }
 #if CAROUSELDEBUG
-        std::cerr << " ****** FIG" << fig_el->fig->figtype() << "/" <<
-            fig_el->fig->figextension() << " wrote\t" << written <<
-            " bytes" << (status.complete_fig_transmitted ? ", complete" :
-            ", incomplete") << std::endl;
+        if (written) {
+            std::cerr <<
+                " ** FIB" << fib <<
+                " FIG" << fig_el->fig->figtype() << "/" <<
+                fig_el->fig->figextension() <<
+                " wrote\t" << written << " bytes" <<
+                (status.complete_fig_transmitted ? ", complete" : ", incomplete") <<
+                std::endl;
+        }
 #endif
 
         if (status.complete_fig_transmitted) {

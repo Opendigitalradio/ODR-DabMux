@@ -68,13 +68,14 @@ void Logger::logstr(log_level_t level, std::string message)
         message.resize(message.length()-1);
     }
 
-    for (std::list<LogBackend*>::iterator it = backends.begin();
-            it != backends.end();
-            ++it) {
-        (*it)->log(level, message);
+    for (auto &backend : backends) {
+        backend->log(level, message);
     }
 
-    std::cerr << levels_as_str[level] << " " << message << std::endl;
+    {
+        std::lock_guard<std::mutex> guard(m_cerr_mutex);
+        std::cerr << levels_as_str[level] << " " << message << std::endl;
+    }
 }
 
 
@@ -82,3 +83,4 @@ LogLine Logger::level(log_level_t level)
 {
     return LogLine(this, level);
 }
+

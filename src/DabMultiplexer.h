@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -45,11 +45,13 @@
 #include "MuxElements.h"
 #include "RemoteControl.h"
 #include "Eti.h"
+#include "ClockTAI.h"
 #include <exception>
 #include <vector>
+#include <chrono>
 #include <memory>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/property_tree/ptree.hpp>
 
 class MuxInitException : public std::exception
@@ -66,13 +68,14 @@ class MuxInitException : public std::exception
 
 class DabMultiplexer : public RemoteControllable {
     public:
-        DabMultiplexer(boost::shared_ptr<BaseRemoteController> rc,
-               boost::property_tree::ptree pt);
+        DabMultiplexer(
+                std::shared_ptr<BaseRemoteController> rc,
+                boost::property_tree::ptree pt);
         void prepare(void);
 
         unsigned long getCurrentFrame() { return currentFrame; }
 
-        void mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outputs);
+        void mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs);
 
         void print_info(void);
 
@@ -88,25 +91,20 @@ class DabMultiplexer : public RemoteControllable {
         virtual const std::string get_parameter(const std::string& parameter) const;
 
     private:
-        void prepare_watermark(void);
         void prepare_subchannels(void);
         void prepare_services_components(void);
         void prepare_data_inputs(void);
         void reconfigure(void);
 
         boost::property_tree::ptree m_pt;
-        boost::shared_ptr<BaseRemoteController> m_rc;
+        std::shared_ptr<BaseRemoteController> m_rc;
 
         unsigned timestamp;
         bool MNSC_increment_time;
         struct timeval mnsc_time;
+        std::chrono::system_clock::time_point edi_time;
 
         edi_configuration_t edi_conf;
-
-
-        uint8_t m_watermarkData[128];
-        size_t  m_watermarkSize;
-        size_t  m_watermarkPos;
 
         uint32_t sync;
         unsigned long currentFrame;
@@ -128,15 +126,16 @@ class DabMultiplexer : public RemoteControllable {
 
         std::vector<dabSubchannel*>::iterator subchannelFIG0_1;
 
-        boost::shared_ptr<dabEnsemble> ensemble;
+        std::shared_ptr<dabEnsemble> ensemble;
 
         // Multiplex reconfiguration requires two sets of configurations
         boost::property_tree::ptree m_pt_next;
-        boost::shared_ptr<dabEnsemble> ensemble_next;
+        std::shared_ptr<dabEnsemble> ensemble_next;
+
+        ClockTAI m_clock_tai;
 
 #if HAVE_OUTPUT_EDI
         std::ofstream edi_debug_file;
-        UdpSocket edi_output;
 
         // The TagPacket will then be placed into an AFPacket
         AFPacketiser edi_afPacketiser;

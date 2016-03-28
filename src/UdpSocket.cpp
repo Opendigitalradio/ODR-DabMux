@@ -287,7 +287,7 @@ int UdpSocket::joinGroup(char* groupname)
 #else
   group.imr_address.s_addr = htons(INADDR_ANY);;
   group.imr_ifindex = 0;
-  if (setsockopt(listenSocket, SOL_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group))
+  if (setsockopt(listenSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group))
       == SOCKET_ERROR) {
     setInetError("Can't join multicast group");
   }

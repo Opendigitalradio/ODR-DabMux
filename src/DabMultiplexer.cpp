@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -24,13 +24,12 @@
 */
 
 #include <set>
+#include <memory>
 #include "DabMultiplexer.h"
 #include "ConfigParser.h"
-#include <boost/make_shared.hpp>
 #include "fig/FIG.h"
 
 using namespace std;
-using namespace boost;
 
 static const unsigned char Padding_FIB[] = {
     0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -76,56 +75,27 @@ const unsigned short BitRateTable[64] = {
 };
 
 DabMultiplexer::DabMultiplexer(
-        boost::shared_ptr<BaseRemoteController> rc,
+        std::shared_ptr<BaseRemoteController> rc,
         boost::property_tree::ptree pt) :
     RemoteControllable("mux"),
     m_pt(pt),
     m_rc(rc),
     timestamp(0),
     MNSC_increment_time(false),
-    m_watermarkSize(0),
-    m_watermarkPos(0),
     sync(0x49C5F8),
     currentFrame(0),
     insertFIG(0),
     rotateFIB(0),
-    ensemble(boost::make_shared<dabEnsemble>()),
+    ensemble(std::make_shared<dabEnsemble>()),
     fig_carousel(ensemble)
 {
-    prepare_watermark();
-
     RC_ADD_PARAMETER(carousel,
             "Set to 1 to use the new carousel");
 }
 
-void DabMultiplexer::prepare_watermark()
-{
-    uint8_t buffer[sizeof(m_watermarkData) / 2];
-    snprintf((char*)buffer, sizeof(buffer),
-            "%s %s, compiled at %s, %s",
-            PACKAGE_NAME, PACKAGE_VERSION, __DATE__, __TIME__);
-
-    memset(m_watermarkData, 0, sizeof(m_watermarkData));
-    m_watermarkData[0] = 0x55; // Sync
-    m_watermarkData[1] = 0x55;
-    m_watermarkSize = 16;
-    for (unsigned i = 0; i < strlen((char*)buffer); ++i) {
-        for (int j = 0; j < 8; ++j) {
-            uint8_t bit = (buffer[m_watermarkPos >> 3] >> (7 - (m_watermarkPos & 0x07))) & 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            bit = 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            ++m_watermarkPos;
-        }
-    }
-    m_watermarkPos = 0;
-}
-
 void DabMultiplexer::update_config(boost::property_tree::ptree pt)
 {
-    ensemble_next = boost::make_shared<dabEnsemble>();
+    ensemble_next = std::make_shared<dabEnsemble>();
 
     m_pt_next = pt;
 
@@ -150,25 +120,30 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
         edi_debug_file.open("./edi.debug");
     }
 
-    if (edi_conf.enabled) {
-        int err = edi_output.create(edi_conf.source_port);
+    if (edi_conf.enabled()) {
+        for (auto& edi_destination : edi_conf.destinations) {
+            auto edi_output = std::make_shared<UdpSocket>();
+            int err = edi_output->create(edi_destination.source_port);
 
-        if (err) {
-            etiLog.level(error) << "EDI socket creation failed!";
-            throw MuxInitException();
-        }
-
-        if (not edi_conf.source_addr.empty()) {
-            err = edi_output.setMulticastSource(edi_conf.source_addr.c_str());
             if (err) {
-                etiLog.level(error) << "EDI socket set source failed!";
+                etiLog.level(error) << "EDI socket creation failed!";
                 throw MuxInitException();
             }
-            err = edi_output.setMulticastTTL(edi_conf.ttl);
-            if (err) {
-                etiLog.level(error) << "EDI socket set TTL failed!";
-                throw MuxInitException();
+
+            if (not edi_destination.source_addr.empty()) {
+                err = edi_output->setMulticastSource(edi_destination.source_addr.c_str());
+                if (err) {
+                    etiLog.level(error) << "EDI socket set source failed!";
+                    throw MuxInitException();
+                }
+                err = edi_output->setMulticastTTL(edi_destination.ttl);
+                if (err) {
+                    etiLog.level(error) << "EDI socket set TTL failed!";
+                    throw MuxInitException();
+                }
             }
+
+            edi_destination.socket = edi_output;
         }
     }
 
@@ -191,7 +166,7 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 void DabMultiplexer::prepare()
 {
     parse_ptree(m_pt, ensemble, m_rc);
-    m_use_new_fig_carousel = m_pt.get("general.new_fig_carousel", false);
+    m_use_new_fig_carousel = m_pt.get("general.new_fig_carousel", true);
 
     this->enrol_at(m_rc);
     ensemble->enrol_at(m_rc);
@@ -238,6 +213,32 @@ void DabMultiplexer::prepare()
      * synchronisation is preserved.
      */
     gettimeofday(&mnsc_time, NULL);
+
+#if HAVE_OUTPUT_EDI
+    edi_time = chrono::system_clock::now();
+
+    // Try to load offset once
+
+    bool tist_enabled = m_pt.get("general.tist", false);
+
+    if (tist_enabled and edi_conf.enabled()) {
+        try {
+            m_clock_tai.get_offset();
+        }
+        catch (std::runtime_error& e) {
+            const char* err_msg =
+                "Could not initialise TAI clock properly required by "
+                "EDI with timestamp. Do you have a working internet "
+                "connection?";
+
+            etiLog.level(error) << err_msg;
+            throw e;
+        }
+    }
+#endif
+
+    // Shift ms by 14 to Timestamp level 2, see below in Section TIST
+    timestamp = (mnsc_time.tv_usec / 1000) << 14;
 }
 
 
@@ -422,7 +423,7 @@ void DabMultiplexer::prepare_data_inputs()
 }
 
 /*  Each call creates one ETI frame */
-void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outputs)
+void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs)
 {
     int cur;
     time_t date;
@@ -439,15 +440,10 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     TagDETI edi_tagDETI;
     TagStarPTR edi_tagStarPtr;
-    list<TagESTn> edi_subchannels;
-    map<dabSubchannel*, TagESTn*> edi_subchannelToTag;
+    map<dabSubchannel*, TagESTn> edi_subchannelToTag;
 
     // The above Tag Items will be assembled into a TAG Packet
     TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
-
-    edi_tagDETI.atstf = 1;
-    edi_tagDETI.utco = 0;
-    edi_tagDETI.seconds = 0;
 
     date = getDabTime();
 
@@ -547,16 +543,17 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         sstc->STL_high = getSizeDWord(*subchannel) / 256;
         sstc->STL_low = getSizeDWord(*subchannel) % 256;
 
-        TagESTn tag_ESTn(edi_stream_id++);
+        TagESTn tag_ESTn;
+        tag_ESTn.id = edi_stream_id++;
         tag_ESTn.scid = (*subchannel)->id;
         tag_ESTn.sad = (*subchannel)->startAddress;
         tag_ESTn.tpl = sstc->TPL;
         tag_ESTn.rfa = 0; // two bits
         tag_ESTn.mst_length = getSizeByte(*subchannel) / 8;
+        tag_ESTn.mst_data = nullptr;
         assert(getSizeByte(*subchannel) % 8 == 0);
 
-        edi_subchannels.push_back(tag_ESTn);
-        edi_subchannelToTag[*subchannel] = &edi_subchannels.back();
+        edi_subchannelToTag[*subchannel] = tag_ESTn;
         index += 4;
     }
 
@@ -1487,11 +1484,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
                             timeData->tm_mon + 1,
                             timeData->tm_mday));
                 fig0_10->LSI = 0;
-                fig0_10->ConfInd = (m_watermarkData[m_watermarkPos >> 3] >>
-                        (7 - (m_watermarkPos & 0x07))) & 1;
-                if (++m_watermarkPos == m_watermarkSize) {
-                    m_watermarkPos = 0;
-                }
+                fig0_10->ConfInd = 1;
                 fig0_10->UTC = 0;
                 fig0_10->setHours(timeData->tm_hour);
                 fig0_10->Minutes = timeData->tm_min;
@@ -1693,7 +1686,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
 
-        TagESTn* tag = edi_subchannelToTag[*subchannel];
+        TagESTn& tag = edi_subchannelToTag[*subchannel];
 
         int sizeSubchannel = getSizeByte(*subchannel);
         int result = (*subchannel)->input->readFrame(
@@ -1706,7 +1699,7 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         }
 
         // save pointer to Audio or Data Stream into correct TagESTn for EDI
-        tag->mst_data = &etiFrame[index];
+        tag.mst_data = &etiFrame[index];
 
         index += sizeSubchannel;
     }
@@ -1745,20 +1738,54 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
     bool enableTist = m_pt.get("general.tist", false);
     if (enableTist) {
         tist->TIST = htonl(timestamp) | 0xff;
+        edi_tagDETI.tsta = timestamp & 0xffffff;
     }
     else {
         tist->TIST = htonl(0xffffff) | 0xff;
+        edi_tagDETI.tsta = 0xffffff;
     }
 
-    edi_tagDETI.tsta = tist->TIST;
+    edi_tagDETI.atstf = 1;
+    edi_tagDETI.utco = 0;
+    edi_tagDETI.seconds = 0;
+#if HAVE_OUTPUT_EDI
+    try {
+        bool tist_enabled = m_pt.get("general.tist", false);
 
-    timestamp += 3 << 17;
-    if (timestamp > 0xf9ffff)
+        if (tist_enabled and edi_conf.enabled()) {
+            edi_tagDETI.set_utco(m_clock_tai.get_offset());
+            edi_tagDETI.set_seconds(edi_time);
+        }
+
+    }
+    catch (std::runtime_error& e) {
+        etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
+    }
+#endif
+
+
+    /* Coding of the TIST, according to ETS 300 799 Annex C
+
+    Bit number      b0(MSb)..b6     b7..b9   b10..b17   b18..b20   b21..b23(LSb)
+    Bit number      b23(MSb)..b17   b16..b14 b13..b6    b5..b3     b2..b0(LSb)
+    as uint32_t
+    Width           7               3        8          3          3
+    Timestamp level 1               2        3          4          5
+    Valid range     [0..124], 127   [0..7]   [0..255]   [0..7]     [0..7]
+    Approximate     8 ms            1 ms     3,91 us    488 ns     61 ns
+    time resolution
+    */
+
+    timestamp += 24 << 14; // Shift 24ms by 14 to Timestamp level 2
+    if (timestamp > 0xf9FFff)
     {
-        timestamp -= 0xfa0000;
+        timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second
 
-        // Also update MNSC time for next frame
+        // Also update MNSC time for next time FP==0
         MNSC_increment_time = true;
+
+        // Immediately update edi time
+        edi_time += chrono::seconds(1);
     }
 
 
@@ -1787,13 +1814,13 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
      ***********   Finalise and send EDI   ********************************
      **********************************************************************/
 
-    if (edi_conf.enabled) {
+    if (edi_conf.enabled()) {
         // put tags *ptr, DETI and all subchannels into one TagPacket
         edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
         edi_tagpacket.tag_items.push_back(&edi_tagDETI);
 
-        for (auto& tag : edi_subchannels) {
-            edi_tagpacket.tag_items.push_back(&tag);
+        for (auto& tag : edi_subchannelToTag) {
+            edi_tagpacket.tag_items.push_back(&tag.second);
         }
 
         // Assemble into one AF Packet
@@ -1806,12 +1833,13 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
 
             // Send over ethernet
             for (const auto& edi_frag : edi_fragments) {
+                for (auto& dest : edi_conf.destinations) {
+                    InetAddress addr;
+                    addr.setAddress(dest.dest_addr.c_str());
+                    addr.setPort(edi_conf.dest_port);
 
-                InetAddress addr;
-                addr.setAddress(edi_conf.dest_addr.c_str());
-                addr.setPort(edi_conf.dest_port);
-
-                edi_output.send(edi_frag, addr);
+                    dest.socket->send(edi_frag, addr);
+                }
 
                 if (edi_conf.dump) {
                     std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
@@ -1826,12 +1854,13 @@ void DabMultiplexer::mux_frame(std::vector<boost::shared_ptr<DabOutput> >& outpu
         }
         else {
             // Send over ethernet
+            for (auto& dest : edi_conf.destinations) {
+                InetAddress addr;
+                addr.setAddress(dest.dest_addr.c_str());
+                addr.setPort(edi_conf.dest_port);
 
-            InetAddress addr;
-            addr.setAddress(edi_conf.dest_addr.c_str());
-            addr.setPort(edi_conf.dest_port);
-
-            edi_output.send(edi_afpacket, addr);
+                dest.socket->send(edi_afpacket, addr);
+            }
 
             if (edi_conf.dump) {
                 std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);

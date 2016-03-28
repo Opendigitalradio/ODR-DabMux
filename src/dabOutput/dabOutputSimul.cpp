@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    SIMUL throttling output. It guarantees correct frame generation rate
@@ -28,6 +28,8 @@
 #include <cstdio>
 #include <fcntl.h>
 #include <limits.h>
+#include <chrono>
+#include <thread>
 #ifdef _WIN32
 #   include <io.h>
 #   ifdef __MINGW32__
@@ -49,7 +51,7 @@ int DabOutputSimul::Open(const char* name)
 #ifdef _WIN32
     startTime_ = GetTickCount();
 #else
-    clock_gettime(CLOCK_MONOTONIC, &startTime_);
+    startTime_ = std::chrono::steady_clock::now();
 #endif
 
     return 0;
@@ -57,11 +59,10 @@ int DabOutputSimul::Open(const char* name)
 
 int DabOutputSimul::Write(void* buffer, int size)
 {
+#ifdef _WIN32
     unsigned long current;
     unsigned long start;
     unsigned long waiting;
-
-#ifdef _WIN32
     current = GetTickCount();
     start = this->startTime_;
     if (current < start) {
@@ -75,21 +76,18 @@ int DabOutputSimul::Write(void* buffer, int size)
     }
     this->startTime_ += 24;
 #else
-    struct timespec curTime;
-    clock_gettime(CLOCK_MONOTONIC, &curTime);
-    current = (1000000000ul * curTime.tv_sec) + curTime.tv_nsec;
-    start = (1000000000ul * this->startTime_.tv_sec) + this->startTime_.tv_nsec;
-    waiting = 24000000ul - (current - start);
-    if ((current - start) < 24000000ul) {
-        usleep(waiting / 1000);
+    auto curTime = std::chrono::steady_clock::now();
+
+    auto diff = curTime - startTime_;
+    auto waiting = std::chrono::milliseconds(24) - diff;
+
+    if (diff < std::chrono::milliseconds(24)) {
+            std::this_thread::sleep_for(waiting);
     }
 
-    this->startTime_.tv_nsec += 24000000;
-    if (this->startTime_.tv_nsec >= 1000000000) {
-        this->startTime_.tv_nsec -= 1000000000;
-        ++this->startTime_.tv_sec;
-    }
+    startTime_ += std::chrono::milliseconds(24);
 #endif
 
     return size;
 }
+

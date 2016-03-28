@@ -23,8 +23,16 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
+#if defined(HAVE_OUTPUT_UDP)
 
 #include <cstring>
+#include <cstdlib>
+#include <boost/regex.hpp>
+#include <string>
 #include <cstdio>
 #include <limits.h>
 #include "dabOutput.h"
@@ -38,64 +46,87 @@
 #   include <sys/types.h>
 #   include <sys/socket.h>
 #   include <sys/ioctl.h>
-#   include <net/if_packet.h>
 #   include <net/if_arp.h>
 #endif
 
 int DabOutputUdp::Open(const char* name)
 {
-    // we are going to modify it
-    char* hostport = strdup(name); // the name is actually an tuple host:port
+    using namespace std;
+    using namespace boost;
 
-    char* address;
-    long port;
-    address = strchr(hostport, ':');
-    if (address == NULL) {
-        etiLog.log(error,
-                "\"%s\" is an invalid format for UDP address: "
-                "should be [address]:port - > aborting\n",
-                hostport);
-        goto udp_open_fail;
-    }
+    const string uri_without_proto(name);
 
-    // terminate string hostport after the host, and advance address to the port number
-    *(address++) = 0;
+    regex re_url("([^:]+):([0-9]+)(.*)");
+    regex re_query("[?](?:src=([^,]+))(?:,ttl=([0-9]+))?");
+    smatch what;
+    if (regex_match(uri_without_proto, what, re_url, match_default)) {
+        string address = what[1];
 
-    port = strtol(address, (char **)NULL, 10);
-    if ((port == LONG_MIN) || (port == LONG_MAX)) {
-        etiLog.log(error,
-                "can't convert port number in UDP address %s\n", address);
-        goto udp_open_fail;
-    }
-    if (port == 0) {
-        etiLog.log(error,
-                "can't use port number 0 in UDP address\n");
-        goto udp_open_fail;
-    }
-    address = hostport;
-    if (strlen(address) > 0) {
-        if (this->packet_->getAddress().setAddress(address) == -1) {
-            etiLog.log(error, "can't set address %s (%s: %s) "
-                    "-> aborting\n", address, inetErrDesc, inetErrMsg);
-            goto udp_open_fail;
+        if (this->packet_->getAddress().setAddress(address.c_str()) == -1) {
+            etiLog.level(error) << "can't set address " <<
+               address <<  "(" << inetErrDesc << ": " << inetErrMsg << ")";
+            return -1;
+        }
+
+        string port_str = what[2];
+        long port = std::strtol(port_str.c_str(), nullptr, 0);
+
+        if ((port <= 0) || (port >= 65536)) {
+            etiLog.level(error) <<
+                "can't convert port number in UDP address " << uri_without_proto;
+            return -1;
+        }
+
+        this->packet_->getAddress().setPort(port);
+
+        if (this->socket_->create() == -1) {
+            etiLog.level(error) << "can't create UDP socket (" <<
+                inetErrDesc << ": " << inetErrMsg << ")";
+            return -1;
+        }
+
+        string query_params = what[3];
+        smatch query_what;
+        if (regex_match(query_params, query_what, re_query, match_default)) {
+            string src = query_what[1];
+
+            int err = socket_->setMulticastSource(src.c_str());
+            if (err) {
+                etiLog.level(error) << "UDP output socket set source failed!";
+                return -1;
+            }
+
+            string ttl_str = query_what[2];
+
+            if (not ttl_str.empty()) {
+                long ttl = std::strtol(ttl_str.c_str(), nullptr, 0);
+                if ((ttl <= 0) || (ttl >= 255)) {
+                    etiLog.level(error) << "Invalid TTL setting in " <<
+                        uri_without_proto;
+                    return -1;
+                }
+
+                err = socket_->setMulticastTTL(ttl);
+                if (err) {
+                    etiLog.level(error) << "UDP output socket set TTL failed!";
+                    return -1;
+                }
+            }
+        }
+        else if (not query_params.empty()) {
+            etiLog.level(error) << "UDP output: could not parse parameters " <<
+                query_params;
+            return -1;
         }
     }
-    this->packet_->getAddress().setPort(port);
-
-    if (this->socket_->create() == -1) {
-        etiLog.log(error, "can't create UDP socket (%s: %s) "
-                "-> aborting\n)", inetErrDesc, inetErrMsg);
-        goto udp_open_fail;
+    else {
+        etiLog.level(error) << uri_without_proto <<
+            " is an invalid format for UDP address: "
+            "expected ADDRESS:PORT[?src=SOURCE,ttl=TTL]";
+        return -1;
     }
 
-    //sprintf(hostport, "%s:%i", this->packet_->getAddress().getHostAddress(),
-    //        this->packet_->getAddress().getPort());
     return 0;
-
-udp_open_fail:
-    // strdup forces us to free
-    free(hostport);
-    return -1;
 }
 
 
@@ -105,3 +136,5 @@ int DabOutputUdp::Write(void* buffer, int size)
     this->packet_->addData(buffer, size);
     return this->socket_->send(*this->packet_);
 }
+#endif // defined(HAVE_OUTPUT_UDP)
+

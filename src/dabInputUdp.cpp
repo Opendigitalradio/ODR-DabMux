@@ -70,12 +70,19 @@ int dabInputUdpOpen(void* args, const char* inputName)
     long port;
     dabInputUdpData* input = (dabInputUdpData*)args;
 
-    address = strdup(inputName);
+    // Skip the udp:// part if it is present
+    if (strncmp(inputName, "udp://", 6) == 0) {
+        address = strdup(inputName + 6);
+    }
+    else {
+        address = strdup(inputName);
+    }
+
     ptr = strchr(address, ':');
     if (ptr == NULL) {
         etiLog.log(error,
                 "\"%s\" is an invalid format for udp address: "
-                "should be [address]:port - > aborting\n", address);
+                "should be [udp://][address]:port - > aborting\n", address);
         returnCode = -1;
         goto udpopen_ptr_null_out;
     }

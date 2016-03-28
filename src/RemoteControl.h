@@ -31,6 +31,7 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
 #include <atomic>
 #include <iostream>
@@ -105,7 +106,7 @@ class RemoteControllable {
             controller.enrol(this);
         }
 
-        virtual void enrol_at(boost::shared_ptr<BaseRemoteController> controller) {
+        virtual void enrol_at(std::shared_ptr<BaseRemoteController> controller) {
             controller->enrol(this);
         }
 

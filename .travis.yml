@@ -1,0 +1,45 @@
+language: c++
+sudo: required
+dist: trusty
+
+addons: &addons
+  apt:
+    sources: &sources
+      - ubuntu-toolchain-r-test
+    packages: &packages
+      - libzmq3-dev
+      - libzmq3
+      - automake
+      - libtool
+      - libboost1.55-all-dev
+      - libcurl4-openssl-dev
+      - gcc-5
+      - g++-5
+
+compiler:
+  - gcc
+
+script:
+  - |
+    pushd /tmp
+    git clone https://github.com/Opendigitalradio/ka9q-fec.git
+    cd ka9q-fec
+    mkdir build
+    cd build
+    cmake ..
+    make
+    sudo make install
+    popd
+  - |
+    ./bootstrap.sh
+    CC=gcc-5 CXX=g++-5 ./configure --disable-output-edi --disable-output-zeromq --disable-input-zeromq
+    make
+  - |
+    ./bootstrap.sh
+    CC=gcc-5 CXX=g++-5 ./configure
+    make
+  - |
+    ./bootstrap.sh
+    CC=gcc-5 CXX=g++-5 ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
+    make
+

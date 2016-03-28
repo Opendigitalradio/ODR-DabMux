@@ -17,7 +17,7 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [0.8.1], [matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux], [0.9.0], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])
@@ -201,11 +201,22 @@ AC_ARG_ENABLE([output_edi],
         [AS_HELP_STRING([--disable-output-edi], [Disable EDI output])],
         [], [enable_output_edi=yes])
 AS_IF([test "x$enable_output_edi" = "xyes"],
+       AC_CHECK_LIB(curl, curl_easy_init, [true], [AC_MSG_ERROR([cURL is required for EDI output])]))
+AS_IF([test "x$enable_output_edi" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_EDI, [1], [Define if EDI output is enabled])])
+AS_IF([test "x$enable_output_edi" = "xyes"],
+        [AC_DEFINE(HAVE_CURL, [1], [Define if cURL is available])])
 
 # Link against lzmq
 AM_CONDITIONAL([HAVE_ZEROMQ_TEST],
 			   [test "x$enable_output_zeromq" = "xyes" -o "x$enable_input_zeromq" = "xyes"])
+
+# Link against cURL
+AM_CONDITIONAL([HAVE_CURL_TEST],
+			   [test "x$enable_output_edi" = "xyes"])
+# Do not build odr-zmq2farsync if no RAW output
+AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],
+			   [test "x$enable_output_raw" = "xyes"])
 
 
 # Formats

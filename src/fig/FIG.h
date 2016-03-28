@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    */
@@ -27,7 +27,7 @@
 #ifndef __FIG_H_
 #define __FIG_H_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "MuxElements.h"
 
 namespace FIC {
@@ -36,18 +36,23 @@ namespace FIC {
 
 class FIGRuntimeInformation {
     public:
-        FIGRuntimeInformation(boost::shared_ptr<dabEnsemble> e) :
+        FIGRuntimeInformation(std::shared_ptr<dabEnsemble> e) :
             currentFrame(0),
             ensemble(e),
             factumAnalyzer(false) {}
 
         time_t date;
         unsigned long currentFrame;
-        boost::shared_ptr<dabEnsemble> ensemble;
+        std::shared_ptr<dabEnsemble> ensemble;
         bool factumAnalyzer;
 };
 
-// Recommended FIG rates according to ETSI TR 101 496-2 Table 3.6.1
+/* Recommended FIG rates according to ETSI TR 101 496-2 Table 3.6.1
+ * Keep in mind that this specification was not updated since DAB+ came out.
+ * The rates that are recommended there cannot be satisfied with a well filled
+ * DAB+ multiplex, and this is the reason the rates have to be reduced compared
+ * to this recommendation.
+ */
 enum class FIG_rate {
     FIG0_0, /* Special repetition rate for FIG0/0, EN 300 401 Clause 6.4
         In any 96 ms period, the FIG 0/0 should be transmitted in a fixed time
@@ -66,19 +71,7 @@ enum class FIG_rate {
 };
 
 /* Helper function to calculate the deadline for the next transmission, in milliseconds */
-inline int rate_increment_ms(FIG_rate rate)
-{
-    switch (rate) {
-        case FIG_rate::FIG0_0:    return 96;        // Is a special case
-        case FIG_rate::A:         return 100;
-        case FIG_rate::A_B:       return 200;
-        case FIG_rate::B:         return 1000;
-        case FIG_rate::C:         return 10000;
-        case FIG_rate::D:         return 30000;
-        case FIG_rate::E:         return 120000;
-    }
-    return 1000; //some default value, shouldn't be used
-}
+int rate_increment_ms(FIG_rate rate);
 
 /* The fill function of each FIG shall return a status telling
  * the carousel how many bytes have been written, and if the complete

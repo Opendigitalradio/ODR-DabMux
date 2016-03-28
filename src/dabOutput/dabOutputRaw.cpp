@@ -23,6 +23,12 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
+#if defined(HAVE_OUTPUT_RAW)
+
 #include <cstdio>
 #include <cstring>
 #include "dabOutput.h"
@@ -340,7 +346,7 @@ int DabOutputRaw::Write(void* buffer, int size)
     } else {
         int ret = send(this->socket_, this->buffer_, 6144, 0);
         if (ret != 6144) {
-            fprintf(stderr, "%i/6144 bytes written\n", ret);
+            etiLog.log(info, "%i/6144 bytes written", ret);
             goto RAW_WRITE_ERROR;
         }
     }
@@ -389,4 +395,6 @@ int DabOutputRaw::Close()
 
     return -1;
 }
+
+#endif // defined(HAVE_OUTPUT_RAW)
 

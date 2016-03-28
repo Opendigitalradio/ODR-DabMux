@@ -233,7 +233,12 @@ class dabSubchannel
 public:
     dabSubchannel(std::string& uid) :
             uid(uid),
-            id(0)
+            input(),
+            id(0),
+            type(subchannel_type_t::Audio),
+            startAddress(0),
+            bitrate(0),
+            protection()
     {
     }
 
@@ -356,7 +361,7 @@ class DabService : public RemoteControllable
         uint16_t ASu;
         std::vector<uint8_t> clusters;
 
-        subchannel_type_t getType(boost::shared_ptr<dabEnsemble> ensemble);
+        subchannel_type_t getType(std::shared_ptr<dabEnsemble> ensemble);
         unsigned char nbComponent(std::vector<DabComponent*>& components);
 
         DabLabel label;

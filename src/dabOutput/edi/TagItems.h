@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    EDI output.
@@ -30,6 +30,7 @@
 #include "config.h"
 #include "Eti.h"
 #include <vector>
+#include <chrono>
 #include <string>
 #include <stdint.h>
 
@@ -74,8 +75,38 @@ class TagDETI : public TagItem
 
         // ATST (optional)
         bool atstf; // presence of atst data
+
+        /* UTCO: Offset (in seconds) between UTC and the Seconds value. The
+         * value is expressed as an unsigned 8-bit quantity. As of February
+         * 2009, the value shall be 2 and shall change as a result of each
+         * modification of the number of leap seconds, as proscribed by
+         * International Earth Rotation and Reference Systems Service (IERS).
+         *
+         * According to Annex F
+         *  EDI = TAI - 32s (constant)
+         *  EDI = UTC + UTCO
+         * we derive
+         *  UTCO = TAI-UTC - 32
+         * where the TAI-UTC offset is given by the USNO bulletin using
+         * the ClockTAI module.
+         */
         uint8_t utco;
+
+        void set_utco(int tai_utc_offset) { utco = tai_utc_offset - 32; }
+
+        /* The number of SI seconds since 2000-01-01 T 00:00:00 UTC as an
+         * unsigned 32-bit quantity
+         */
         uint32_t seconds;
+
+        void set_seconds(std::chrono::system_clock::time_point t);
+
+        /* TSTA: Shall be the 24 least significant bits of the Time Stamp
+         * (TIST) field from the STI-D(LI) Frame. The full definition for the
+         * STI TIST can be found in annex B of EN 300 797 [4]. The most
+         * significant 8 bits of the TIST field of the incoming STI-D(LI)
+         * frame, if required, may be carried in the RFAD field.
+         */
         uint32_t tsta;
 
         // the FIC (optional)
@@ -94,22 +125,19 @@ class TagDETI : public TagItem
 class TagESTn : public TagItem
 {
     public:
-        TagESTn(uint8_t id) : id_(id) {} ;
-
         std::vector<uint8_t> Assemble();
 
         // SSTCn
-        uint8_t scid;
-        uint8_t sad;
-        uint8_t tpl;
-        uint8_t rfa;
+        uint8_t  scid;
+        uint16_t sad;
+        uint8_t  tpl;
+        uint8_t  rfa;
 
         // Pointer to MSTn data
         uint8_t* mst_data;
         size_t mst_length; // STLn * 8 bytes
 
-    private:
-        uint8_t id_;
+        uint8_t id;
 };
 
 // ETSI TS 102 821, 5.2.2.2 Dummy padding

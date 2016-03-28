@@ -71,9 +71,10 @@ int readkey(string& keyfile, char* key)
     if (fd < 0)
         return fd;
     int ret = read(fd, key, CURVE_KEYLEN);
-    if (ret < 0)
-        return ret;
     close(fd);
+    if (ret < 0) {
+        return ret;
+    }
 
     /* It needs to be zero-terminated */
     key[CURVE_KEYLEN] = '\0';
@@ -375,7 +376,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
     }
 
 
-    if (datalen)
+    if (datalen == framesize)
     {
         if (m_frame_buffer.size() > m_config.buffer_size) {
             etiLog.level(warn) <<
@@ -397,7 +398,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
     else {
         etiLog.level(error) <<
             "inputZMQ " << m_name <<
-            " wrong data size: recv'd " << msg.size() << " Bytes" <<
+            " verify bitrate: recv'd " << msg.size() << " B" <<
             ", need " << framesize << ".";
         messageReceived = false;
     }
@@ -478,7 +479,7 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
         else {
             etiLog.level(error) <<
                 "inputZMQ " << m_name <<
-                " wrong data size: recv'd " << msg.size() <<
+                " verify bitrate: recv'd " << msg.size() << " B" <<
                 ", need " << 5*framesize << ".";
 
             datalen = 0;

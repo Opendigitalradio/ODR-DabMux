@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    EDI output.
@@ -33,6 +33,7 @@
 #include <iostream>
 #include <string>
 #include <stdint.h>
+#include <stdexcept>
 
 std::vector<uint8_t> TagStarPTR::Assemble()
 {
@@ -130,6 +131,12 @@ std::vector<uint8_t> TagDETI::Assemble()
     return packet;
 }
 
+void TagDETI::set_seconds(std::chrono::system_clock::time_point t)
+{
+    std::time_t posix_timestamp_1_jan_2000 = 946684800;
+    seconds = std::chrono::system_clock::to_time_t(t) - posix_timestamp_1_jan_2000;
+}
+
 
 std::vector<uint8_t> TagESTn::Assemble()
 {
@@ -137,7 +144,7 @@ std::vector<uint8_t> TagESTn::Assemble()
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
     packet.reserve(mst_length*8 + 16);
 
-    packet.push_back(id_);
+    packet.push_back(id);
 
     // Placeholder for length
     packet.push_back(0);
@@ -145,6 +152,17 @@ std::vector<uint8_t> TagESTn::Assemble()
     packet.push_back(0);
     packet.push_back(0);
 
+    if (tpl > 0x3F) {
+        throw std::runtime_error("TagESTn: invalid TPL value");
+    }
+
+    if (sad > 0x3FF) {
+        throw std::runtime_error("TagESTn: invalid SAD value");
+    }
+
+    if (scid > 0x3F) {
+        throw std::runtime_error("TagESTn: invalid SCID value");
+    }
 
     uint32_t sstc = (scid << 18) | (sad << 8) | (tpl << 2) | rfa;
     packet.push_back((sstc >> 16) & 0xFF);

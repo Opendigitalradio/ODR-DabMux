@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2015, 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of FIG0
@@ -67,8 +67,37 @@ FillStatus FIG0_0::fill(uint8_t *buf, size_t max_size)
 
 FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
     m_rti(rti),
-    m_initialised(false)
+    m_initialised(false),
+    m_watermarkSize(0),
+    m_watermarkPos(0)
 {
+    uint8_t buffer[sizeof(m_watermarkData) / 2];
+    snprintf((char*)buffer, sizeof(buffer),
+            "%s %s, %s %s",
+            PACKAGE_NAME,
+#if defined(GITVERSION)
+            GITVERSION,
+#else
+            PACKAGE_VERSION,
+#endif
+            __DATE__, __TIME__);
+
+    memset(m_watermarkData, 0, sizeof(m_watermarkData));
+    m_watermarkData[0] = 0x55; // Sync
+    m_watermarkData[1] = 0x55;
+    m_watermarkSize = 16;
+    for (unsigned i = 0; i < strlen((char*)buffer); ++i) {
+        for (int j = 0; j < 8; ++j) {
+            uint8_t bit = (buffer[m_watermarkPos >> 3] >> (7 - (m_watermarkPos & 0x07))) & 1;
+            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
+            ++m_watermarkSize;
+            bit = 1;
+            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
+            ++m_watermarkSize;
+            ++m_watermarkPos;
+        }
+    }
+    m_watermarkPos = 0;
 }
 
 FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
@@ -76,23 +105,32 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
     FillStatus fs;
     size_t remaining = max_size;
 
+    const int watermark_bit = (m_watermarkData[m_watermarkPos >> 3] >>
+            (7 - (m_watermarkPos & 0x07))) & 1;
+
+    const bool iterate_forward = (watermark_bit == 1);
+
     if (not m_initialised) {
-        subchannelFIG0_1 = m_rti->ensemble->subchannels.end();
         m_initialised = true;
+
+        subchannels = m_rti->ensemble->subchannels;
+
+        if (not iterate_forward) {
+            std::reverse(subchannels.begin(), subchannels.end());
+        }
+        subchannelFIG0_1 = subchannels.begin();
     }
 
     if (max_size < 6) {
         return fs;
     }
 
-    auto ensemble = m_rti->ensemble;
-
     FIGtype0_1 *figtype0_1 = NULL;
 
     // Rotate through the subchannels until there is no more
     // space in the FIG0/1
-    for (; subchannelFIG0_1 != ensemble->subchannels.end();
-            ++subchannelFIG0_1) {
+    for (; subchannelFIG0_1 != subchannels.end(); ++subchannelFIG0_1 ) {
+
         dabProtection* protection = &(*subchannelFIG0_1)->protection;
 
         if (figtype0_1 == NULL) {
@@ -162,9 +200,14 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
         }
     }
 
-    if (subchannelFIG0_1 == ensemble->subchannels.end()) {
-        subchannelFIG0_1 = ensemble->subchannels.begin();
+    if (subchannelFIG0_1 == subchannels.end()) {
+        m_initialised = false;
         fs.complete_fig_transmitted = true;
+
+        m_watermarkPos++;
+        if (m_watermarkPos == m_watermarkSize) {
+            m_watermarkPos = 0;
+        }
     }
 
     fs.num_bytes_written = max_size - remaining;
@@ -342,7 +385,8 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 //=========== FIG 0/3 ===========
 
 FIG0_3::FIG0_3(FIGRuntimeInformation *rti) :
-    m_rti(rti)
+    m_rti(rti),
+    m_initialised(false)
 {
 }
 
@@ -352,26 +396,36 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
     ssize_t remaining = max_size;
     auto ensemble = m_rti->ensemble;
 
+    if (not m_initialised) {
+        componentFIG0_3 = m_rti->ensemble->components.end();
+        m_initialised = true;
+    }
+
     FIGtype0_3_header *fig0_3_header = NULL;
     FIGtype0_3_data *fig0_3_data = NULL;
 
-    // TODO: implement component carousel
-    for (auto& component : ensemble->components) {
+    for (; componentFIG0_3 != ensemble->components.end();
+            ++componentFIG0_3) {
         auto subchannel = getSubchannel(ensemble->subchannels,
-                component->subchId);
+                (*componentFIG0_3)->subchId);
 
         if (subchannel == ensemble->subchannels.end()) {
             etiLog.log(error,
                     "Subchannel %i does not exist for component "
                     "of service %i\n",
-                    component->subchId, component->serviceId);
+                    (*componentFIG0_3)->subchId, (*componentFIG0_3)->serviceId);
             throw MuxInitException();
         }
 
         if ((*subchannel)->type != subchannel_type_t::Packet)
             continue;
 
+        const int required_size = 5 + (m_rti->factumAnalyzer ? 2 : 0);
+
         if (fig0_3_header == NULL) {
+            if (remaining < 2 + required_size) {
+                break;
+            }
             fig0_3_header = (FIGtype0_3_header*)buf;
             fig0_3_header->FIGtypeNumber = 0;
             fig0_3_header->Length = 1;
@@ -383,21 +437,24 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
+        else if (remaining < required_size) {
+            break;
+        }
 
         /*  Warning: When bit SCCA_flag is unset(0), the multiplexer
          *  R&S does not send the SCCA field. But, in the Factum ETI
          *  analyzer, if this field is not there, it is an error.
          */
         fig0_3_data = (FIGtype0_3_data*)buf;
-        fig0_3_data->setSCId(component->packet.id);
+        fig0_3_data->setSCId((*componentFIG0_3)->packet.id);
         fig0_3_data->rfa = 0;
         fig0_3_data->SCCA_flag = 0;
         // if 0, datagroups are used
-        fig0_3_data->DG_flag = !component->packet.datagroup;
+        fig0_3_data->DG_flag = !(*componentFIG0_3)->packet.datagroup;
         fig0_3_data->rfu = 0;
-        fig0_3_data->DSCTy = component->type;
+        fig0_3_data->DSCTy = (*componentFIG0_3)->type;
         fig0_3_data->SubChId = (*subchannel)->id;
-        fig0_3_data->setPacketAddress(component->packet.address);
+        fig0_3_data->setPacketAddress((*componentFIG0_3)->packet.address);
         if (m_rti->factumAnalyzer) {
             fig0_3_data->SCCA = 0;
         }
@@ -410,17 +467,14 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
+    }
 
-        if (remaining < 0) {
-            etiLog.level(error) <<
-                    "can't add FIG 0/3 to FIB, "
-                    "too many packet services";
-            throw MuxInitException();
-        }
+    if (componentFIG0_3 == ensemble->components.end()) {
+        componentFIG0_3 = ensemble->components.begin();
+        fs.complete_fig_transmitted = true;
     }
 
     fs.num_bytes_written = max_size - remaining;
-    fs.complete_fig_transmitted = true;
     return fs;
 }
 
@@ -622,37 +676,8 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
 //=========== FIG 0/10 ===========
 
 FIG0_10::FIG0_10(FIGRuntimeInformation *rti) :
-    m_rti(rti),
-    m_watermarkSize(0),
-    m_watermarkPos(0)
+    m_rti(rti)
 {
-    uint8_t buffer[sizeof(m_watermarkData) / 2];
-    snprintf((char*)buffer, sizeof(buffer),
-            "%s %s, compiled at %s, %s",
-            PACKAGE_NAME,
-#if defined(GITVERSION)
-            GITVERSION,
-#else
-            PACKAGE_VERSION,
-#endif
-            __DATE__, __TIME__);
-
-    memset(m_watermarkData, 0, sizeof(m_watermarkData));
-    m_watermarkData[0] = 0x55; // Sync
-    m_watermarkData[1] = 0x55;
-    m_watermarkSize = 16;
-    for (unsigned i = 0; i < strlen((char*)buffer); ++i) {
-        for (int j = 0; j < 8; ++j) {
-            uint8_t bit = (buffer[m_watermarkPos >> 3] >> (7 - (m_watermarkPos & 0x07))) & 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            bit = 1;
-            m_watermarkData[m_watermarkSize >> 3] |= bit << (7 - (m_watermarkSize & 0x07));
-            ++m_watermarkSize;
-            ++m_watermarkPos;
-        }
-    }
-    m_watermarkPos = 0;
 }
 
 FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
@@ -686,11 +711,7 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
                 timeData->tm_mon + 1,
                 timeData->tm_mday));
     fig0_10->LSI = 0;
-    fig0_10->ConfInd = (m_watermarkData[m_watermarkPos >> 3] >>
-            (7 - (m_watermarkPos & 0x07))) & 1;
-    if (++m_watermarkPos == m_watermarkSize) {
-        m_watermarkPos = 0;
-    }
+    fig0_10->ConfInd = 1;
     fig0_10->UTC = 0;
     fig0_10->setHours(timeData->tm_hour);
     fig0_10->Minutes = timeData->tm_min;

@@ -4,6 +4,8 @@
 .*.swp
 .directory
 
+src/odr-zmq2farsync
+src/zmqinput-keygen
 src/odr-bridgetest
 src/odr-dabmux
 src/dabOutput/.deps/
@@ -23,6 +25,8 @@ src/Makefile
 stamp-h1
 config.h.in~
 config.h.in
+.deps
+.dirstamp
 
 cscope.out
 ctags

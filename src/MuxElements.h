@@ -32,12 +32,26 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <exception>
 #include <algorithm>
 #include <stdint.h>
 #include "dabOutput/dabOutput.h"
 #include "dabInput.h"
 #include "RemoteControl.h"
 #include "Eti.h"
+
+class MuxInitException : public std::exception
+{
+    public:
+        MuxInitException(const std::string m = "ODR-DabMux initialisation error")
+            throw()
+            : msg(m) {}
+        ~MuxInitException(void) throw() {}
+        const char* what() const throw() { return msg.c_str(); }
+    private:
+        std::string msg;
+};
+
 
 enum class subchannel_type_t {
     Audio = 0,

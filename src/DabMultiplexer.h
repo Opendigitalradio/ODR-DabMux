@@ -119,7 +119,7 @@ class DabMultiplexer : public RemoteControllable {
 };
 
 // DAB Mode
-#define DEFAULT_DAB_MODE    2
+#define DEFAULT_DAB_MODE    1
 
 // Taille de la trame de donnee, sous-canal 3, nb de paquets de 64bits,
 // STL3 * 8 = x kbytes par trame ETI

@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -218,47 +218,6 @@ void ManagementServer::serverThread()
     m_fault = true;
 }
 
-bool ManagementServer::handle_setptree(
-        zmq::message_t& zmq_message, std::stringstream& answer)
-{
-    try {
-        if (zmq_message.more()) {
-            zmq::message_t zmq_new_ptree;
-            m_zmq_sock.recv(&zmq_new_ptree);
-            std::string new_ptree(
-                    (char*)zmq_new_ptree.data(), zmq_new_ptree.size()
-                    );
-
-            etiLog.level(info) << "Received ptree " << new_ptree;
-
-#if (BOOST_VERSION / 100000 == 1) && (BOOST_VERSION / 100 % 1000 >= 55)
-            boost::unique_lock<boost::mutex> lock(m_configmutex);
-            m_pt.clear();
-
-            std::stringstream json_stream;
-            json_stream << new_ptree;
-            boost::property_tree::json_parser::read_json(json_stream, m_pt);
-
-            m_retrieve_pending = true;
-            answer << "OK";
-
-            return true;
-#else
-#  warning "Boost version too old, ptree loading through ManagementServer disabled"
-#endif
-        }
-        else {
-            etiLog.level(error) <<
-                "MGMT: setptree command is missing data.";
-        }
-    }
-    catch (std::exception& e) {
-        etiLog.level(error) <<
-            "MGMT: setptree error." << e.what();
-    }
-    return false;
-}
-
 void ManagementServer::handle_message(zmq::message_t& zmq_message)
 {
     std::stringstream answer;
@@ -288,16 +247,8 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         else if (data == "state") {
             answer << getStateJSON();
         }
-        else if (data == "setptree") {
-            handle_setptree(zmq_message, answer);
-        }
         else if (data == "getptree") {
             boost::unique_lock<boost::mutex> lock(m_configmutex);
-            m_pending = true;
-
-            while (m_pending && !m_retrieve_pending) {
-                m_condition.wait(lock);
-            }
             boost::property_tree::json_parser::write_json(answer, m_pt);
         }
         else {
@@ -315,30 +266,11 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
     }
 }
 
-bool ManagementServer::retrieve_new_ptree(boost::property_tree::ptree& pt)
-{
-    boost::unique_lock<boost::mutex> lock(m_configmutex);
-
-    if (m_retrieve_pending)
-    {
-        pt = m_pt;
-
-        m_retrieve_pending = false;
-        m_condition.notify_one();
-        return true;
-    }
-
-    return false;
-}
-
 void ManagementServer::update_ptree(const boost::property_tree::ptree& pt)
 {
     if (m_running) {
         boost::unique_lock<boost::mutex> lock(m_configmutex);
         m_pt = pt;
-        m_pending = false;
-
-        m_condition.notify_one();
     }
 }
 

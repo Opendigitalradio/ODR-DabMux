@@ -66,8 +66,6 @@ class DabMultiplexer : public RemoteControllable {
 
         void print_info(void);
 
-        void update_config(boost::property_tree::ptree pt);
-
         void set_edi_config(const edi_configuration_t& new_edi_conf);
 
         /* Remote control */
@@ -81,7 +79,6 @@ class DabMultiplexer : public RemoteControllable {
         void prepare_subchannels(void);
         void prepare_services_components(void);
         void prepare_data_inputs(void);
-        void reconfigure(void);
 
         boost::property_tree::ptree m_pt;
         std::shared_ptr<BaseRemoteController> m_rc;
@@ -97,10 +94,6 @@ class DabMultiplexer : public RemoteControllable {
         unsigned long currentFrame;
 
         std::shared_ptr<dabEnsemble> ensemble;
-
-        // Multiplex reconfiguration requires two sets of configurations
-        boost::property_tree::ptree m_pt_next;
-        std::shared_ptr<dabEnsemble> ensemble_next;
 
         ClockTAI m_clock_tai;
 

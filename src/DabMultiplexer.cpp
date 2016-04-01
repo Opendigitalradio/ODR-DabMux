@@ -83,20 +83,6 @@ DabMultiplexer::DabMultiplexer(
             "Set to 1 to use the new carousel");
 }
 
-void DabMultiplexer::update_config(boost::property_tree::ptree pt)
-{
-    ensemble_next = std::make_shared<dabEnsemble>();
-
-    m_pt_next = pt;
-
-    reconfigure();
-}
-
-void DabMultiplexer::reconfigure()
-{
-    parse_ptree(m_pt_next, ensemble_next, m_rc);
-}
-
 void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 {
     edi_conf = new_edi_conf;

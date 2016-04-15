@@ -256,6 +256,8 @@ public:
     {
     }
 
+    unsigned short getSizeCu(void) const;
+
     std::string uid;
 
     std::string inputUri;
@@ -409,8 +411,6 @@ std::vector<DabComponent*>::iterator getComponent(
 std::vector<std::shared_ptr<DabService> >::iterator getService(
         DabComponent* component,
         std::vector<std::shared_ptr<DabService> >& services);
-
-unsigned short getSizeCu(dabSubchannel* subchannel);
 
 unsigned short getSizeDWord(dabSubchannel* subchannel);
 

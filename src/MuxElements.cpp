@@ -515,29 +515,26 @@ const string dabEnsemble::get_parameter(const string& parameter) const
     return ss.str();
 }
 
-unsigned short getSizeCu(dabSubchannel* subchannel)
+unsigned short dabSubchannel::getSizeCu() const
 {
-    if (subchannel->protection.form == UEP) {
-        return Sub_Channel_SizeTable[subchannel->
-            protection.uep.tableIndex];
+    if (protection.form == UEP) {
+        return Sub_Channel_SizeTable[protection.uep.tableIndex];
     }
-    else if (subchannel->protection.form == EEP) {
-        dabProtectionEEP* protection =
-            &subchannel->protection.eep;
-        switch (protection->profile) {
+    else if (protection.form == EEP) {
+        switch (protection.eep.profile) {
         case EEP_A:
-            switch (subchannel->protection.level) {
+            switch (protection.level) {
             case 0:
-                return (subchannel->bitrate * 12) >> 3;
+                return (bitrate * 12) >> 3;
                 break;
             case 1:
-                return subchannel->bitrate;
+                return bitrate;
                 break;
             case 2:
-                return (subchannel->bitrate * 6) >> 3;
+                return (bitrate * 6) >> 3;
                 break;
             case 3:
-                return (subchannel->bitrate >> 1);
+                return (bitrate >> 1);
                 break;
             default: // Should not happens
                 etiLog.log(error, "Bad protection level on "
@@ -546,18 +543,18 @@ unsigned short getSizeCu(dabSubchannel* subchannel)
             }
             break;
         case EEP_B:
-            switch (subchannel->protection.level) {
+            switch (protection.level) {
             case 0:
-                return (subchannel->bitrate * 27) >> 5;
+                return (bitrate * 27) >> 5;
                 break;
             case 1:
-                return (subchannel->bitrate * 21) >> 5;
+                return (bitrate * 21) >> 5;
                 break;
             case 2:
-                return (subchannel->bitrate * 18) >> 5;
+                return (bitrate * 18) >> 5;
                 break;
             case 3:
-                return (subchannel->bitrate * 15) >> 5;
+                return (bitrate * 15) >> 5;
                 break;
             default: // Should not happens
                 etiLog.log(error,

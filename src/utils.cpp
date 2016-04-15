@@ -528,7 +528,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
         etiLog.log(info, " SAD:        %u",
                 (*subchannel)->startAddress);
         etiLog.log(info, " size (CU):  %i",
-                getSizeCu(*subchannel));
+                (*subchannel)->getSizeCu());
         ++index;
     }
 }

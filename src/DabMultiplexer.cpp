@@ -158,7 +158,7 @@ void DabMultiplexer::prepare()
     vector<dabSubchannel*>::iterator subchannel =
         ensemble->subchannels.end() - 1;
 
-    if ((*subchannel)->startAddress + getSizeCu((*subchannel)) > 864) {
+    if ((*subchannel)->startAddress + (*subchannel)->getSizeCu() > 864) {
         etiLog.log(error, "Total size in CU exceeds 864\n");
         printSubchannels(ensemble->subchannels);
         throw MuxInitException();
@@ -314,7 +314,7 @@ void DabMultiplexer::prepare_data_inputs()
             (*subchannel)->startAddress = 0;
         } else {
             (*subchannel)->startAddress = (*(subchannel - 1))->startAddress +
-                getSizeCu(*(subchannel - 1));
+                (*subchannel - 1)->getSizeCu();
         }
         if ((*subchannel)->input->open((*subchannel)->inputUri) == -1) {
             perror((*subchannel)->inputUri.c_str());

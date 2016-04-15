@@ -208,9 +208,9 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
                 protection->level;
 
             fig0_1subchLong1->Sub_ChannelSize_high =
-                getSizeCu(*subchannelFIG0_1) / 256;
+                (*subchannelFIG0_1)->getSizeCu() / 256;
             fig0_1subchLong1->Sub_ChannelSize_low =
-                getSizeCu(*subchannelFIG0_1) % 256;
+                (*subchannelFIG0_1)->getSizeCu() % 256;
 
             buf += 4;
             remaining -= 4;

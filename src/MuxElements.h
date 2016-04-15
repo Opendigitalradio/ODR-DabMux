@@ -280,15 +280,6 @@ public:
 };
 
 
-class SubchannelId : public std::binary_function <DabSubchannel*, int, bool> {
-public:
-    bool operator()(const DabSubchannel* subchannel, const int id) const {
-        return subchannel->id == id;
-    }
-};
-
-
-
 
 struct dabAudioComponent {
     dabAudioComponent() :

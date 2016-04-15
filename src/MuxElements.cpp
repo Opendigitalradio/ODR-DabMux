@@ -207,7 +207,7 @@ vector<DabSubchannel*>::iterator getSubchannel(
     return find_if(
             subchannels.begin(),
             subchannels.end(),
-            bind2nd(SubchannelId(), id)
+            [&](const DabSubchannel* s){ return s->id == id; }
             );
 }
 

@@ -219,37 +219,89 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
 
 FIG0_2::FIG0_2(FIGRuntimeInformation *rti) :
     m_rti(rti),
-    m_initialised(false)
+    m_initialised(false),
+    m_inserting_audio_not_data(false)
 {
 }
 
 FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 {
+#define FIG0_2_TRACE discard
+    using namespace std;
+
     FillStatus fs;
     FIGtype0_2 *fig0_2 = NULL;
     int cur = 0;
     ssize_t remaining = max_size;
 
-    if (not m_initialised) {
-        serviceFIG0_2 = m_rti->ensemble->services.end();
-        m_initialised = true;
+    const auto ensemble = m_rti->ensemble;
+
+    etiLog.level(FIG0_2_TRACE) << "FIG0_2::fill init " << (m_initialised ? 1 : 0) <<
+        " ********************************";
+
+    for (const auto& s : ensemble->services) {
+        // Exclude Fidc type services, TODO unsupported
+        auto type = s->getType(ensemble);
+        if (type == subchannel_type_t::Fidc) {
+            throw invalid_argument("FIG0/2 does not support FIDC");
+        }
     }
 
-    auto ensemble = m_rti->ensemble;
+    if (not m_initialised) {
+        m_audio_services.clear();
+        copy_if(ensemble->services.begin(),
+                ensemble->services.end(),
+                back_inserter(m_audio_services),
+                [&](shared_ptr<DabService>& s) {
+                    auto type = s->getType(ensemble);
+                    return type == subchannel_type_t::Audio;
+                } );
+
+        m_data_services.clear();
+        copy_if(ensemble->services.begin(),
+                ensemble->services.end(),
+                back_inserter(m_data_services),
+                [&](shared_ptr<DabService>& s) {
+                    auto type = s->getType(ensemble);
+                    return type == subchannel_type_t::Packet or
+                           type == subchannel_type_t::DataDmb;
+                } );
+
+        m_initialised = true;
+        m_inserting_audio_not_data = !m_inserting_audio_not_data;
+
+        if (m_inserting_audio_not_data) {
+            serviceFIG0_2 = m_audio_services.begin();
+        }
+        else {
+            serviceFIG0_2 = m_data_services.begin();
+        }
+
+        etiLog.level(FIG0_2_TRACE) << "FIG0_2::fill we have " <<
+            m_audio_services.size() << " audio and " <<
+            m_data_services.size() << " data services. Inserting " <<
+            (m_inserting_audio_not_data ? "AUDIO" : "DATA");
+    }
+
+    const auto last_service = m_inserting_audio_not_data ?
+            m_audio_services.end() : m_data_services.end();
 
     // Rotate through the subchannels until there is no more
     // space
-    for (; serviceFIG0_2 != ensemble->services.end();
-            ++serviceFIG0_2) {
+    for (; serviceFIG0_2 != last_service; ++serviceFIG0_2) {
+        const auto type = (*serviceFIG0_2)->getType(ensemble);
+
+        etiLog.log(FIG0_2_TRACE, "FIG0_2::fill  loop SId=%04x %s/%s",
+                (*serviceFIG0_2)->id,
+                m_inserting_audio_not_data ? "AUDIO" : "DATA",
+                type == subchannel_type_t::Audio ? "Audio" :
+                type == subchannel_type_t::Packet ? "Packet" :
+                type == subchannel_type_t::DataDmb ? "DataDmb" :
+                type == subchannel_type_t::Fidc ? "Fidc" : "?");
 
         // filter out services which have no components
         if ((*serviceFIG0_2)->nbComponent(ensemble->components) == 0) {
-            continue;
-        }
-
-        // Exclude Fidc type services, TODO why ?
-        auto type = (*serviceFIG0_2)->getType(ensemble);
-        if (type == subchannel_type_t::Fidc) {
+            etiLog.level(FIG0_2_TRACE) << "FIG0_2::fill  no components ";
             continue;
         }
 
@@ -260,7 +312,10 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             5 + 2 * (*serviceFIG0_2)->nbComponent(ensemble->components);
 
         if (fig0_2 == NULL) {
+            etiLog.level(FIG0_2_TRACE) << "FIG0_2::fill  header";
             if (remaining < 2 + required_size) {
+                etiLog.level(FIG0_2_TRACE) << "FIG0_2::fill  header no place" <<
+                    " rem=" << remaining << " req=" << 2 + required_size;
                 break;
             }
             fig0_2 = (FIGtype0_2 *)buf;
@@ -275,6 +330,8 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             remaining -= 2;
         }
         else if (remaining < required_size) {
+            etiLog.level(FIG0_2_TRACE) << "FIG0_2::fill  no place" <<
+                " rem=" << remaining << " req=" << required_size;
             break;
         }
 
@@ -289,6 +346,9 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             buf += 3;
             fig0_2->Length += 3;
             remaining -= 3;
+
+            etiLog.log(FIG0_2_TRACE, "FIG0_2::fill  audio SId=%04x",
+               (*serviceFIG0_2)->id);
         }
         else {
             auto fig0_2serviceData = (FIGtype0_2_Service_data*)buf;
@@ -301,6 +361,9 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             buf += 5;
             fig0_2->Length += 5;
             remaining -= 5;
+
+            etiLog.log(FIG0_2_TRACE, "FIG0_2::fill  data SId=%04x",
+               (*serviceFIG0_2)->id);
         }
 
         int curCpnt = 0;
@@ -314,6 +377,9 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             ) {
             auto subchannel = getSubchannel(
                     ensemble->subchannels, (*component)->subchId);
+
+            etiLog.log(FIG0_2_TRACE, "FIG0_2::fill     comp sub=%04x srv=%04x",
+                (*component)->subchId, (*component)->serviceId);
 
             if (subchannel == ensemble->subchannels.end()) {
                 etiLog.log(error,
@@ -369,13 +435,20 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
                 throw MuxInitException();
             }
             ++curCpnt;
+
+            etiLog.log(FIG0_2_TRACE, "FIG0_2::fill     comp length=%d",
+                    fig0_2->Length);
         }
     }
 
-    if (serviceFIG0_2 == ensemble->services.end()) {
-        serviceFIG0_2 = ensemble->services.begin();
-        fs.complete_fig_transmitted = true;
+    if (serviceFIG0_2 == last_service) {
+        etiLog.log(FIG0_2_TRACE, "FIG0_2::loop reached last");
+        m_initialised = false;
+        fs.complete_fig_transmitted = !m_inserting_audio_not_data;
     }
+
+    etiLog.log(FIG0_2_TRACE, "FIG0_2::loop end complete=%d",
+            fs.complete_fig_transmitted ? 1 : 0);
 
     fs.num_bytes_written = max_size - remaining;
     return fs;

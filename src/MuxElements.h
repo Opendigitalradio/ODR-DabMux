@@ -168,7 +168,7 @@ class DabLabel
 class DabService;
 class DabComponent;
 
-class dabSubchannel;
+class DabSubchannel;
 class dabEnsemble : public RemoteControllable {
     public:
         dabEnsemble()
@@ -201,7 +201,7 @@ class dabEnsemble : public RemoteControllable {
 
         std::vector<std::shared_ptr<DabService> > services;
         std::vector<DabComponent*> components;
-        std::vector<dabSubchannel*> subchannels;
+        std::vector<DabSubchannel*> subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
 };
@@ -242,10 +242,10 @@ struct dabProtection {
     };
 };
 
-class dabSubchannel
+class DabSubchannel
 {
 public:
-    dabSubchannel(std::string& uid) :
+    DabSubchannel(std::string& uid) :
             uid(uid),
             input(),
             id(0),
@@ -280,9 +280,9 @@ public:
 };
 
 
-class SubchannelId : public std::binary_function <dabSubchannel*, int, bool> {
+class SubchannelId : public std::binary_function <DabSubchannel*, int, bool> {
 public:
-    bool operator()(const dabSubchannel* subchannel, const int id) const {
+    bool operator()(const DabSubchannel* subchannel, const int id) const {
         return subchannel->id == id;
     }
 };
@@ -343,7 +343,7 @@ class DabComponent : public RemoteControllable
         dabFidcComponent fidc;
         dabPacketComponent packet;
 
-        bool isPacketComponent(std::vector<dabSubchannel*>& subchannels) const;
+        bool isPacketComponent(std::vector<DabSubchannel*>& subchannels) const;
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -406,8 +406,8 @@ class DabService : public RemoteControllable
         DabService(const DabService& other);
 };
 
-std::vector<dabSubchannel*>::iterator getSubchannel(
-        std::vector<dabSubchannel*>& subchannels, int id);
+std::vector<DabSubchannel*>::iterator getSubchannel(
+        std::vector<DabSubchannel*>& subchannels, int id);
 
 std::vector<DabComponent*>::iterator getComponent(
         std::vector<DabComponent*>& components,

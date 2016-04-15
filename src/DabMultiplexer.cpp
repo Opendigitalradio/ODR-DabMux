@@ -155,7 +155,7 @@ void DabMultiplexer::prepare()
         throw MuxInitException();
     }
 
-    vector<dabSubchannel*>::iterator subchannel =
+    vector<DabSubchannel*>::iterator subchannel =
         ensemble->subchannels.end() - 1;
 
     if ((*subchannel)->startAddress + (*subchannel)->getSizeCu() > 864) {
@@ -223,7 +223,7 @@ void DabMultiplexer::prepare_services_components()
     dabProtection* protection = NULL;
 
     vector<DabComponent*>::iterator component;
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
 
     for (auto service : ensemble->services) {
         if (ids.find(service->id) != ids.end()) {
@@ -303,7 +303,7 @@ void DabMultiplexer::prepare_services_components()
 void DabMultiplexer::prepare_data_inputs()
 {
     dabProtection* protection = NULL;
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
 
     // Prepare and check the data inputs
     for (subchannel = ensemble->subchannels.begin();
@@ -372,7 +372,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     vector<std::shared_ptr<DabService> >::iterator service;
     vector<DabComponent*>::iterator component;
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
 
     // FIC Length, DAB Mode I, II, IV -> FICL = 24, DAB Mode III -> FICL = 32
     unsigned FICL  = (ensemble->mode == 3 ? 32 : 24);
@@ -380,7 +380,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     TagDETI edi_tagDETI;
     TagStarPTR edi_tagStarPtr;
-    map<dabSubchannel*, TagESTn> edi_subchannelToTag;
+    map<DabSubchannel*, TagESTn> edi_subchannelToTag;
 
     // The above Tag Items will be assembled into a TAG Packet
     TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);

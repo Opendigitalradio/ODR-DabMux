@@ -57,7 +57,7 @@ void printServices(const std::vector<std::shared_ptr<DabService> >& services);
 
 void printComponents(std::vector<DabComponent*>& components);
 
-void printSubchannels(std::vector<dabSubchannel*>& subchannels);
+void printSubchannels(std::vector<DabSubchannel*>& subchannels);
 
 /* Print information about the whole ensemble */
 void printEnsemble(const std::shared_ptr<dabEnsemble> ensemble);

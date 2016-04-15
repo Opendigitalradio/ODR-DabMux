@@ -479,9 +479,9 @@ void printComponent(DabComponent* component)
     }
 }
 
-void printSubchannels(vector<dabSubchannel*>& subchannels)
+void printSubchannels(vector<DabSubchannel*>& subchannels)
 {
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
     int index = 0;
 
     for (subchannel = subchannels.begin(); subchannel != subchannels.end();

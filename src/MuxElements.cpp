@@ -201,8 +201,8 @@ void DabLabel::writeLabel(uint8_t* buf) const
     }
 }
 
-vector<dabSubchannel*>::iterator getSubchannel(
-        vector<dabSubchannel*>& subchannels, int id)
+vector<DabSubchannel*>::iterator getSubchannel(
+        vector<DabSubchannel*>& subchannels, int id)
 {
     return find_if(
             subchannels.begin(),
@@ -254,7 +254,7 @@ std::vector<std::shared_ptr<DabService> >::iterator getService(
     throw std::runtime_error("Service not included in any component");
 }
 
-bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels) const
+bool DabComponent::isPacketComponent(vector<DabSubchannel*>& subchannels) const
 {
     if (subchId > 63) {
         etiLog.log(error,
@@ -337,7 +337,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 
 subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble) const
 {
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
@@ -515,7 +515,7 @@ const string dabEnsemble::get_parameter(const string& parameter) const
     return ss.str();
 }
 
-unsigned short dabSubchannel::getSizeCu() const
+unsigned short DabSubchannel::getSizeCu() const
 {
     if (protection.form == UEP) {
         return Sub_Channel_SizeTable[protection.uep.tableIndex];
@@ -570,17 +570,17 @@ unsigned short dabSubchannel::getSizeCu() const
     return 0;
 }
 
-unsigned short dabSubchannel::getSizeByte(void) const
+unsigned short DabSubchannel::getSizeByte(void) const
 {
     return bitrate * 3;
 }
 
-unsigned short dabSubchannel::getSizeWord(void) const
+unsigned short DabSubchannel::getSizeWord(void) const
 {
     return (bitrate * 3) >> 2;
 }
 
-unsigned short dabSubchannel::getSizeDWord(void) const
+unsigned short DabSubchannel::getSizeDWord(void) const
 {
     return (bitrate * 3) >> 3;
 }

@@ -102,8 +102,13 @@ FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
 
 FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
 {
+#define FIG0_1_TRACE discard
+
     FillStatus fs;
     size_t remaining = max_size;
+
+    etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill initialised=" <<
+        (m_initialised ? 1 : 0);
 
     const int watermark_bit = (m_watermarkData[m_watermarkPos >> 3] >>
             (7 - (m_watermarkPos & 0x07))) & 1;
@@ -130,12 +135,19 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
     // Rotate through the subchannels until there is no more
     // space in the FIG0/1
     for (; subchannelFIG0_1 != subchannels.end(); ++subchannelFIG0_1 ) {
+        size_t subch_iter_ix = std::distance(subchannels.begin(), subchannelFIG0_1);
+
+        etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill loop ix=" << subch_iter_ix;
 
         dabProtection* protection = &(*subchannelFIG0_1)->protection;
 
         if (figtype0_1 == NULL) {
+            etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill header " <<
+                 (protection->form == UEP ? "UEP " : "EEP ") << remaining;
+
             if ( (protection->form == UEP && remaining < 2 + 3) ||
                  (protection->form == EEP && remaining < 2 + 4) ) {
+                etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill no space for header";
                 break;
             }
 
@@ -152,6 +164,8 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
         }
         else if ( (protection->form == UEP && remaining < 3) ||
              (protection->form == EEP && remaining < 4) ) {
+            etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill no space for fig " <<
+                 (protection->form == UEP ? "UEP " : "EEP ") << remaining;
             break;
         }
 
@@ -173,6 +187,10 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
             buf += 3;
             remaining -= 3;
             figtype0_1->Length += 3;
+
+            etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill insert UEP id=" <<
+               (int)fig0_1subchShort->SubChId << " rem=" << remaining
+               << " ix=" << subch_iter_ix;
         }
         else if (protection->form == EEP) {
             FIG_01_SubChannel_LongF *fig0_1subchLong1 =
@@ -197,10 +215,20 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
             buf += 4;
             remaining -= 4;
             figtype0_1->Length += 4;
+
+            etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill insert EEP id=" <<
+               (int)fig0_1subchLong1->SubChId << " rem=" << remaining
+               << " ix=" << subch_iter_ix;
         }
     }
 
+    size_t subch_iter_ix = std::distance(subchannels.begin(), subchannelFIG0_1);
+
+    etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill loop out, rem=" << remaining
+        << " ix=" << subch_iter_ix;
+
     if (subchannelFIG0_1 == subchannels.end()) {
+        etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill completed, rem=" << remaining;
         m_initialised = false;
         fs.complete_fig_transmitted = true;
 
@@ -211,6 +239,7 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
     }
 
     fs.num_bytes_written = max_size - remaining;
+    etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill wrote " << fs.num_bytes_written;
     return fs;
 }
 

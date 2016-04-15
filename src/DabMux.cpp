@@ -477,7 +477,10 @@ int main(int argc, char *argv[])
                 mgmt_server.update_ptree(pt);
             }
         }
-        etiLog.level(info) << "Goodbye";
+
+        if (limit) {
+            etiLog.level(info) << "Max number of ETI frames reached: " << currentFrame;
+        }
     }
     catch (const MuxInitException& except) {
         etiLog.level(error) << "Multiplex initialisation aborted: " <<

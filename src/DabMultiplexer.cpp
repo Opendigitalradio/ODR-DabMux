@@ -314,7 +314,7 @@ void DabMultiplexer::prepare_data_inputs()
             (*subchannel)->startAddress = 0;
         } else {
             (*subchannel)->startAddress = (*(subchannel - 1))->startAddress +
-                (*subchannel - 1)->getSizeCu();
+                (*(subchannel - 1))->getSizeCu();
         }
         if ((*subchannel)->input->open((*subchannel)->inputUri) == -1) {
             perror((*subchannel)->inputUri.c_str());

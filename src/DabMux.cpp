@@ -485,12 +485,15 @@ int main(int argc, char *argv[])
     catch (const MuxInitException& except) {
         etiLog.level(error) << "Multiplex initialisation aborted: " <<
             except.what();
+        returnCode = 1;
     }
     catch (const std::invalid_argument& except) {
         etiLog.level(error) << "Caught invalid argument : " << except.what();
+        returnCode = 1;
     }
     catch (const std::runtime_error& except) {
         etiLog.level(error) << "Caught runtime error : " << except.what();
+        returnCode = 2;
     }
 
     etiLog.log(debug, "exiting...\n");
@@ -500,7 +503,7 @@ int main(int argc, char *argv[])
 
     UdpSocket::clean();
 
-    if (returnCode < 0) {
+    if (returnCode != 0) {
         etiLog.log(emerg, "...aborting\n");
     } else {
         etiLog.log(debug, "...done\n");

@@ -148,30 +148,30 @@ void signalHandler(int signum)
 #else
     etiLog.log(debug, "\npid: %i, ppid: %i\n", getpid(), getppid());
 #endif
-    etiLog.log(debug, "Signal handler called with signal ");
+#define SIG_MSG "Signal received: "
     switch (signum) {
 #ifndef _WIN32
     case SIGHUP:
-        etiLog.log(debug, "SIGHUP\n");
+        etiLog.log(debug, SIG_MSG "SIGHUP\n");
         break;
     case SIGQUIT:
-        etiLog.log(debug, "SIGQUIT\n");
+        etiLog.log(debug, SIG_MSG "SIGQUIT\n");
         break;
     case SIGPIPE:
-        etiLog.log(debug, "SIGPIPE\n");
+        etiLog.log(debug, SIG_MSG "SIGPIPE\n");
         return;
         break;
 #endif
     case SIGINT:
-        etiLog.log(debug, "SIGINT\n");
+        etiLog.log(debug, SIG_MSG "SIGINT\n");
         break;
     case SIGTERM:
-        etiLog.log(debug, "SIGTERM\n");
+        etiLog.log(debug, SIG_MSG "SIGTERM\n");
         etiLog.log(debug, "Exiting software\n");
         exit(0);
         break;
     default:
-        etiLog.log(debug, "number %i\n", signum);
+        etiLog.log(debug, SIG_MSG "number %i\n", signum);
     }
 #ifndef _WIN32
     killpg(0, SIGPIPE);

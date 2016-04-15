@@ -331,7 +331,7 @@ class DabComponent : public RemoteControllable
         dabFidcComponent fidc;
         dabPacketComponent packet;
 
-        bool isPacketComponent(std::vector<dabSubchannel*>& subchannels);
+        bool isPacketComponent(std::vector<dabSubchannel*>& subchannels) const;
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -365,7 +365,6 @@ class DabService : public RemoteControllable
         uint32_t id;
         unsigned char pty;
         unsigned char language;
-        bool program;
 
         /* ASu (Announcement support) flags: this 16-bit flag field shall
          * specify the type(s) of announcements by which it is possible to
@@ -375,8 +374,9 @@ class DabService : public RemoteControllable
         uint16_t ASu;
         std::vector<uint8_t> clusters;
 
-        subchannel_type_t getType(std::shared_ptr<dabEnsemble> ensemble);
-        unsigned char nbComponent(std::vector<DabComponent*>& components);
+        subchannel_type_t getType(std::shared_ptr<dabEnsemble> ensemble) const;
+        bool isProgramme(std::shared_ptr<dabEnsemble> ensemble) const;
+        unsigned char nbComponent(std::vector<DabComponent*>& components) const;
 
         DabLabel label;
 

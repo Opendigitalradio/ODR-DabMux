@@ -242,23 +242,6 @@ void DabMultiplexer::prepare_services_components()
             throw MuxInitException();
         }
 
-        // Adjust service type from this first component
-        switch (service->getType(ensemble)) {
-            case subchannel_type_t::Audio: // Audio
-                service->program = true;
-                break;
-            case subchannel_type_t::DataDmb:
-            case subchannel_type_t::Fidc:
-            case subchannel_type_t::Packet:
-                service->program = false;
-                break;
-            default:
-                etiLog.log(error,
-                        "Error, unknown service type: %u\n",
-                        service->getType(ensemble));
-                throw MuxInitException();
-        }
-
         service->enrol_at(m_rc);
 
         // Adjust components type for DAB+

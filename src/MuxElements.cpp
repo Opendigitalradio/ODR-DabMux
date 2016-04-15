@@ -254,7 +254,7 @@ std::vector<std::shared_ptr<DabService> >::iterator getService(
     throw std::runtime_error("Service not included in any component");
 }
 
-bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
+bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels) const
 {
     if (subchId > 63) {
         etiLog.log(error,
@@ -335,8 +335,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 
 }
 
-
-subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble)
+subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble) const
 {
     vector<dabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =
@@ -353,7 +352,30 @@ subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble)
     return (*subchannel)->type;
 }
 
-unsigned char DabService::nbComponent(vector<DabComponent*>& components)
+bool DabService::isProgramme(std::shared_ptr<dabEnsemble> ensemble) const
+{
+    bool ret = false;
+    switch (getType(ensemble)) {
+        case subchannel_type_t::Audio: // Audio
+            ret = true;
+            break;
+        case subchannel_type_t::DataDmb:
+        case subchannel_type_t::Fidc:
+        case subchannel_type_t::Packet:
+            ret = false;
+            break;
+        default:
+            etiLog.log(error,
+                    "Error, unknown service type: %u\n",
+                    getType(ensemble));
+            throw std::runtime_error("DabService::isProgramme unknown service type");
+    }
+
+    return ret;
+}
+
+
+unsigned char DabService::nbComponent(vector<DabComponent*>& components) const
 {
     int nb = 0;
     vector<DabComponent*>::iterator current;

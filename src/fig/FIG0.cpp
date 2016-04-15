@@ -282,8 +282,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
                 ensemble->services.end(),
                 back_inserter(m_audio_services),
                 [&](shared_ptr<DabService>& s) {
-                    auto type = s->getType(ensemble);
-                    return type == subchannel_type_t::Audio;
+                    return s->isProgramme(ensemble);
                 } );
 
         m_data_services.clear();
@@ -291,9 +290,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
                 ensemble->services.end(),
                 back_inserter(m_data_services),
                 [&](shared_ptr<DabService>& s) {
-                    auto type = s->getType(ensemble);
-                    return type == subchannel_type_t::Packet or
-                           type == subchannel_type_t::DataDmb;
+                    return not s->isProgramme(ensemble);
                 } );
 
         m_initialised = true;
@@ -319,6 +316,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
     // space
     for (; serviceFIG0_2 != last_service; ++serviceFIG0_2) {
         const auto type = (*serviceFIG0_2)->getType(ensemble);
+        const auto isProgramme = (*serviceFIG0_2)->isProgramme(ensemble);
 
         etiLog.log(FIG0_2_TRACE, "FIG0_2::fill  loop SId=%04x %s/%s",
                 (*serviceFIG0_2)->id,
@@ -336,7 +334,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 
         ++cur;
 
-        const int required_size = (type == subchannel_type_t::Audio) ?
+        const int required_size = isProgramme ?
             3 + 2 * (*serviceFIG0_2)->nbComponent(ensemble->components) :
             5 + 2 * (*serviceFIG0_2)->nbComponent(ensemble->components);
 
@@ -353,7 +351,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             fig0_2->Length = 1;
             fig0_2->CN = 0;
             fig0_2->OE = 0;
-            fig0_2->PD = (type == subchannel_type_t::Audio) ? 0 : 1;
+            fig0_2->PD = isProgramme ? 0 : 1;
             fig0_2->Extension = 2;
             buf += 2;
             remaining -= 2;
@@ -619,7 +617,7 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
             throw MuxInitException();
         }
 
-        if (m_transmit_programme and (*service)->program) {
+        if (m_transmit_programme and (*service)->isProgramme(ensemble)) {
             const int required_size =
                 ((*subchannel)->type == subchannel_type_t::Packet ? 5 : 4);
 
@@ -678,7 +676,8 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
                 remaining -= 2;
             }
         }
-        else if (!m_transmit_programme and !(*service)->program) { // Data
+        else if (!m_transmit_programme and !(*service)->isProgramme(ensemble)) {
+            // Data
             const int required_size =
                 ((*subchannel)->type == subchannel_type_t::Packet ? 7 : 6);
 

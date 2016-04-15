@@ -451,7 +451,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
         // Add STLsbch
-        FLtmp += getSizeWord(*subchannel);
+        FLtmp += (*subchannel)->getSizeWord();
     }
 
     fc->setFrameLength(FLtmp);
@@ -480,8 +480,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
 
         // Sub-channel Stream Length, multiple of 64 bits
-        sstc->STL_high = getSizeDWord(*subchannel) / 256;
-        sstc->STL_low = getSizeDWord(*subchannel) % 256;
+        sstc->STL_high = (*subchannel)->getSizeDWord() / 256;
+        sstc->STL_low = (*subchannel)->getSizeDWord() % 256;
 
         TagESTn tag_ESTn;
         tag_ESTn.id = edi_stream_id++;
@@ -489,9 +489,9 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         tag_ESTn.sad = (*subchannel)->startAddress;
         tag_ESTn.tpl = sstc->TPL;
         tag_ESTn.rfa = 0; // two bits
-        tag_ESTn.mst_length = getSizeByte(*subchannel) / 8;
+        tag_ESTn.mst_length = (*subchannel)->getSizeByte() / 8;
         tag_ESTn.mst_data = nullptr;
-        assert(getSizeByte(*subchannel) % 8 == 0);
+        assert((*subchannel)->getSizeByte() % 8 == 0);
 
         edi_subchannelToTag[*subchannel] = tag_ESTn;
         index += 4;
@@ -577,7 +577,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
         TagESTn& tag = edi_subchannelToTag[*subchannel];
 
-        int sizeSubchannel = getSizeByte(*subchannel);
+        int sizeSubchannel = (*subchannel)->getSizeByte();
         int result = (*subchannel)->input->readFrame(
                 &etiFrame[index], sizeSubchannel);
 
@@ -598,7 +598,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     for (subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
-        index += getSizeByte(*subchannel);
+        index += (*subchannel)->getSizeByte();
     }
 
     /******* Section EOF **************************************************/

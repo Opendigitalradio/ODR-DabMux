@@ -570,20 +570,19 @@ unsigned short dabSubchannel::getSizeCu() const
     return 0;
 }
 
-unsigned short getSizeDWord(dabSubchannel* subchannel)
+unsigned short dabSubchannel::getSizeByte(void) const
 {
-    return (subchannel->bitrate * 3) >> 3;
+    return bitrate * 3;
 }
 
-unsigned short getSizeByte(dabSubchannel* subchannel)
+unsigned short dabSubchannel::getSizeWord(void) const
 {
-    return subchannel->bitrate * 3;
+    return (bitrate * 3) >> 2;
 }
 
-
-unsigned short getSizeWord(dabSubchannel* subchannel)
+unsigned short dabSubchannel::getSizeDWord(void) const
 {
-    return (subchannel->bitrate * 3) >> 2;
+    return (bitrate * 3) >> 3;
 }
 
 

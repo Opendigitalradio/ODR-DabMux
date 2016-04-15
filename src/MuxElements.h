@@ -256,7 +256,17 @@ public:
     {
     }
 
+    // Calculate subchannel size in number of CU
     unsigned short getSizeCu(void) const;
+
+    // Calculate subchannel size in number of bytes
+    unsigned short getSizeByte(void) const;
+
+    // Calculate subchannel size in number of uint32_t
+    unsigned short getSizeWord(void) const;
+
+    // Calculate subchannel size in number of uint64_t
+    unsigned short getSizeDWord(void) const;
 
     std::string uid;
 
@@ -411,12 +421,6 @@ std::vector<DabComponent*>::iterator getComponent(
 std::vector<std::shared_ptr<DabService> >::iterator getService(
         DabComponent* component,
         std::vector<std::shared_ptr<DabService> >& services);
-
-unsigned short getSizeDWord(dabSubchannel* subchannel);
-
-unsigned short getSizeByte(dabSubchannel* subchannel);
-
-unsigned short getSizeWord(dabSubchannel* subchannel);
 
 #endif
 

@@ -92,6 +92,7 @@ subchannels {
         inputfile "funk.mp2"
         bitrate 128
         id 10
+        protection 3
     }
     sub-ri {
         ; This is our DAB+ programme, using a ZeroMQ
@@ -101,6 +102,7 @@ subchannels {
         inputfile "tcp://*:9000"
         bitrate 96
         id 1
+        protection 3
 
         ; ZMQ specific options, mandatory:
 

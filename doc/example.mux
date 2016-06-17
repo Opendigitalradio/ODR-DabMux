@@ -26,7 +26,7 @@ general {
 
     ; boolean fields can accept either false or true as values:
 
-    ; Enable logging to syslog
+    ; Set to true to enable logging to syslog
     syslog false
 
     ; Enable timestamp definition necessary for SFN
@@ -77,10 +77,12 @@ services {
     ; Each service has it's own unique identifier, that is
     ; used throughout the configuration file and for the RC.
     srv-fu {
+        id 0x8daa
         label "Funk"
         ; you can define a shortlabel too.
     }
     srv-ri {
+        id 0x8dab
         label "Rick"
     }
 }

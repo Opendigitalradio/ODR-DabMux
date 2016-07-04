@@ -51,7 +51,7 @@ void printUsageConfigfile(char *name, FILE* out = stderr);
 /* The following four utility functions display a
  * description of all outputs, services, components
  * resp. subchannels*/
-void printOutputs(std::vector<std::shared_ptr<DabOutput> >& outputs);
+void printOutputs(const std::vector<std::shared_ptr<DabOutput> >& outputs);
 
 void printServices(const std::vector<std::shared_ptr<DabService> >& services);
 

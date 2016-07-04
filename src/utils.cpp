@@ -354,7 +354,7 @@ void printUsage(char *name, FILE* out)
 }
 #endif
 
-void printOutputs(vector<shared_ptr<DabOutput> >& outputs)
+void printOutputs(const vector<shared_ptr<DabOutput> >& outputs)
 {
     int index = 0;
 

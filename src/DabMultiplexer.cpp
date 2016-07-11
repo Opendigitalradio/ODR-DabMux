@@ -260,7 +260,15 @@ void DabMultiplexer::prepare_services_components()
                 case subchannel_type_t::Audio:
                     {
                         if (protection->form == EEP) {
-                            (*component)->type = 0x3f;  // DAB+
+                            /* According to ETSI TS 102 563 Clause 7.1 FIC signalling:
+                             *
+                             * "AAC audio services are signalled in the same way
+                             * as Layer II audio services with the exception
+                             * that the ASCTy carried in FIG 0/2 (see EN 300
+                             * 401, clause 6.3.1) is set to the value
+                             * 1 1 1 1 1 1."
+                             */
+                            (*component)->type = 0x3f;
                         }
                     }
                     break;

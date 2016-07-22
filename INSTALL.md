@@ -4,11 +4,9 @@ Required dependencies:
 * libfec from Phil Karn, with compatibility patch:
 [ka9q-fec](https://github.com/Opendigitalradio/ka9q-fec)
 * Boost 1.48 or later
-* Optional ZeroMQ 4 from [http://www.zeromq.org](http://www.zeromq.org).
+* ZeroMQ 4 from [http://www.zeromq.org](http://www.zeromq.org).
   Please prefer the zeromq from your distribution, but mind that some distributions
   ship ZeroMQ 2, which is not enough.
-
-Use the --disable-output-zeromq ./configure option if you don't have ZeroMQ.
 
 Simple install procedure using tarball release:
 ===============================================

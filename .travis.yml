@@ -32,7 +32,7 @@ script:
     popd
   - |
     ./bootstrap.sh
-    CC=gcc-5 CXX=g++-5 ./configure --disable-output-edi --disable-output-zeromq --disable-input-zeromq
+    CC=gcc-5 CXX=g++-5 ./configure --disable-output-edi
     make
   - |
     ./bootstrap.sh

@@ -29,7 +29,6 @@ endif
 FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
-if HAVE_ZEROMQ_TEST
 bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen
 
 if HAVE_OUTPUT_RAW_TEST
@@ -37,11 +36,6 @@ bin_PROGRAMS+=odr-zmq2farsync
 endif
 
 ZMQ_LIBS    =-lzmq
-else
-bin_PROGRAMS=odr-dabmux odr-bridgetest
-
-ZMQ_LIBS    =
-endif
 
 if HAVE_CURL_TEST
 CURL_LIBS    =-lcurl

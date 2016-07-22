@@ -70,6 +70,9 @@ int ClockTAI::get_offset()
             m_offset = parse_tai_offset();
         }
         else {
+            // Try again in 1 hour
+            m_bulletin_download_time += std::chrono::hours(1);
+
             throw std::runtime_error("Could not fetch TAI-UTC offset");
         }
 

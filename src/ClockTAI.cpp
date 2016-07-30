@@ -25,6 +25,13 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/* This file downloads the TAI-UTC bulletin from the USNO servers, parses
+ * it so that correct time can be communicated in EDI timestamps.
+ *
+ * This file contains self-test code that can be executed by running
+ * g++ -g -Wall -DTEST -DHAVE_CURL -std=c++11 -lcurl -lboost_regex ClockTAI.cpp Log.cpp -o taitest && ./taitest
+ */
+
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
@@ -32,6 +39,7 @@
 #include "ClockTAI.h"
 #include "Log.h"
 
+#include <time.h>
 #include <stdio.h>
 #include <errno.h>
 #if SUPPORT_SETTING_CLOCK_TAI
@@ -45,8 +53,9 @@
 #include <algorithm>
 #include <boost/regex.hpp>
 
-/* Last line from bulletin, example:
+/* Last two lines from bulletin, example:
  2015 JUL  1 =JD 2457204.5  TAI-UTC=  36.0       S + (MJD - 41317.) X 0.0      S
+ 2017 JAN  1 =JD 2457754.5  TAI-UTC=  37.0       S + (MJD - 41317.) X 0.0
  */
 
 ClockTAI::ClockTAI()
@@ -102,24 +111,82 @@ int ClockTAI::update_local_tai_clock(int offset)
 
 int ClockTAI::parse_tai_offset()
 {
-    boost::regex regex_offset("TAI-UTC= *([0-9.]+)");
+    boost::regex regex_bulletin("([0-9]{4}) ([A-Z]{3}) +([0-9]+) =JD +[0-9.]+ +TAI-UTC= *([0-9.]+)");
+    /*      regex groups:       Year       Month       Day      Julian date            Offset */
+
+    const std::array<std::string,12> months{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+
+    /* I'm not certain about the format they would use if the day is a two-digit number. Will they keep
+     * two spaces after the month? The regex should be resilient enough in that case.
+     */
+
+    time_t now = time(nullptr);
+    struct tm *utc_time_now = gmtime(&now);
+
+    const int year = utc_time_now->tm_year + 1900;
+    const int month = utc_time_now->tm_mon; // January is 0
+    if (month < 0 or month > 11) {
+        throw std::runtime_error("Invalid value for month");
+    }
+    const int day = utc_time_now->tm_mday;
+
 
     int tai_utc_offset = 0;
 
     int linecount = 0;
 
+    /* We cannot just take the last line, because it might
+     * be in the future, announcing an upcoming leap second.
+     *
+     * So we need to look at the current date, and compare it
+     * with the date of the leap second.
+     */
     for (std::string line; std::getline(m_bulletin, line); ) {
         linecount++;
-        auto words_begin =
-            boost::sregex_token_iterator(
-                    line.begin(), line.end(), regex_offset, 1);
-        auto words_end = boost::sregex_token_iterator();
 
-        for (auto w = words_begin; w != words_end; ++w) {
-            std::string s(*w);
-            tai_utc_offset = std::atoi(s.c_str());
+        boost::smatch bulletin_entry;
+
+        bool is_match = boost::regex_search(line, bulletin_entry, regex_bulletin);
+        if (is_match) {
+
+            if (bulletin_entry.size() != 5) {
+                throw std::runtime_error("Incorrect number of matched TAI bulletin entries");
+            }
+            const std::string bulletin_year(bulletin_entry[1]);
+            const std::string bulletin_month_name(bulletin_entry[2]);
+            const std::string bulletin_day(bulletin_entry[3]);
+            const std::string bulletin_offset(bulletin_entry[4]);
+
+            const auto match = std::find(months.begin(), months.end(), bulletin_month_name);
+            if (match == months.end()) {
+                std::stringstream s;
+                s << "Month " << bulletin_month_name << " not in array!";
+                std::runtime_error(s.str());
+            }
+
+            if (    (std::atoi(bulletin_year.c_str()) < year) or
+
+                    (std::atoi(bulletin_year.c_str()) == year and
+                     std::distance(months.begin(), match) < month) or
+
+                    (std::atoi(bulletin_year.c_str()) == year and
+                     std::distance(months.begin(), match) == month and
+                     std::atoi(bulletin_day.c_str()) < day) ) {
+                tai_utc_offset = std::atoi(bulletin_offset.c_str());
+            }
+#if TEST
+            else {
+                std::cerr << "Ignoring offset " << bulletin_offset << " at date "
+                    << bulletin_year << " " << bulletin_month_name << " " <<
+                    bulletin_day << " in the future" << std::endl;
+            }
+#endif
         }
-
+#if TEST
+        else {
+            std::cerr << "No match for line " << line << std::endl;
+        }
+#endif
     }
 
     if (linecount == 0) {
@@ -219,6 +286,24 @@ void debug_tai_clk()
     }
 
     printf("adjtimex: %d, tai %d\n", err, timex_request.tai);
+}
+#endif
+
+#if TEST
+int main(int argc, char **argv)
+{
+    using namespace std;
+
+    ClockTAI tai;
+
+    try {
+        cerr << "Offset is " << tai.get_offset() << endl;
+    }
+    catch (std::exception &e) {
+        cerr << "Exception " << e.what() << endl;
+    }
+
+    return 0;
 }
 #endif
 

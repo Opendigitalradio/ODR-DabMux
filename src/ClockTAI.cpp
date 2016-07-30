@@ -183,6 +183,8 @@ int ClockTAI::download_tai_utc_bulletin(const char* url)
         /* always cleanup */
         curl_easy_cleanup(curl);
     }
+#else
+    throw std::runtime_error("Cannot download TAI Clock information without cURL");
 #endif // HAVE_CURL
     return r;
 }

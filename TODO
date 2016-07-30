@@ -1,0 +1,56 @@
+This TODO file lists ideas and features for future developments. They are
+more or less ordered according to their benefit, but that is subjective
+to some degree.
+
+Unless written, no activity has been started on the topics.
+
+
+EDI/STI-D Input
+---------------
+Add support for EDI input, so that third-party encoders can be interfaced
+to the multiplexer. Relevant spec: ETSI TS 102 693
+
+It would be beneficial to write and EDI decoding library that can be re-used in
+ODR-DabMod to add EDI input there too.
+
+Initial work started in http://git.mpb.li/git/odr-edilib/
+
+Explicit Service Linking
+------------------------
+At the moment there is no support to signal explicit service linking.
+Implementing this needs a definition of how it should look like in the
+configuration file and in the remote control, and adding new FIGs to signal the
+necessary information.
+
+
+Inputs for packet data
+----------------------
+It is currently unclear what input formats and sources work for packet data,
+and which ones would make sense to add.
+
+Also, there is no documentation on the possibilites of packet data.
+
+
+Clarify usage of PTy
+--------------------
+We currently transmit dynamic PTy in FIG0/17 since it can be changed in
+through the remote control. Some receivers might not display the dynamic
+PTy, but only the static PTy. Clarify if we need to add both PTy variants
+to the configuration and the code.o
+
+
+Refactor inputs
+---------------
+The input code is written in very C-like OOP, with structures of function
+pointers that do dynamic dispatch. Refactoring this to proper classes and
+documenting it properly will simplify the addition of new input formats,
+facilitate runtime configurability and clarify the usages of the inputs.
+
+
+Communicate Leap Seconds
+------------------------
+Actually, we're supposed to say in FIG0/10 when there is a UTC leap second
+upcoming, but since that's not trivial to find out because the POSIX time
+concept is totally unaware of that, this is not done. We need to know for EDI
+TIST, and the ClockTAI class can get the information from the Internet, but it
+is not used in FIG0/10.

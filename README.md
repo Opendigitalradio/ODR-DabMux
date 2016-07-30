@@ -21,6 +21,7 @@ Features of ODR-DabMux:
 - Monitoring using munin tool
 - Includes a Telnet and ZMQ Remote Control for setting/getting parameters
 - EDI output
+- Support for FarSync TE1 cards (G.703)
 - Something that will one day become a nice GUI for configuration,
   see gui/README.md
 
@@ -43,11 +44,14 @@ Licence
 
 See the files LICENCE and COPYING
 
-Contact
-=======
+Contributions and Contact
+=========================
 
-You can reach users and developers through the CRC-mmbTools
-google group.
+Contributions to this tool are welcome, you can reach users and developers
+through the CRC-mmbTools google group.
+
+There is a list of ideas and thoughts about new possible features and improvements
+in the TODO file.
 
 Developed by:
 
@@ -56,6 +60,4 @@ Matthias P. Braendli *matthias [at] mpb [dot] li*
 Pascal Charest *pascal [dot] charest [at] crc [dot] ca*
 
 - http://opendigitalradio.org/
-- http://mmbtools.crc.ca/
-- http://mpb.li/
 

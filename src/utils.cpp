@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013, 2014, 2015 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
 */
 /*
    This file is part of ODR-DabMux.
@@ -31,20 +31,26 @@
 
 using namespace std;
 
-time_t getDabTime()
+static time_t dab_time_seconds = 0;
+static int dab_time_millis = 0;
+
+void update_dab_time()
 {
-    static time_t oldTime = 0;
-    static int offset = 0;
-    if (oldTime == 0) {
-        oldTime = time(NULL);
+    if (dab_time_seconds == 0) {
+        dab_time_seconds = time(NULL);
     } else {
-        offset+= 24;
-        if (offset >= 1000) {
-            offset -= 1000;
-            ++oldTime;
+        dab_time_millis+= 24;
+        if (dab_time_millis >= 1000) {
+            dab_time_millis -= 1000;
+            ++dab_time_seconds;
         }
     }
-    return oldTime;
+}
+
+void get_dab_time(time_t *time, uint32_t *millis)
+{
+    *time = dab_time_seconds;
+    *millis = dab_time_millis;
 }
 
 

@@ -374,7 +374,6 @@ void DabMultiplexer::prepare_data_inputs()
 /*  Each call creates one ETI frame */
 void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs)
 {
-    time_t date;
     unsigned char etiFrame[6144];
     unsigned short index = 0;
 
@@ -393,7 +392,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     // The above Tag Items will be assembled into a TAG Packet
     TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
 
-    date = getDabTime();
+    update_dab_time();
 
     // Initialise the ETI frame
     memset(etiFrame, 0, 6144);
@@ -571,7 +570,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.fic_length = FICL * 4;
 
     // Insert all FIBs
-    fig_carousel.update(currentFrame, date);
+    fig_carousel.update(currentFrame);
     const bool fib3_present = ensemble->mode == 3;
     index += fig_carousel.write_fibs(&etiFrame[index], currentFrame % 4, fib3_present);
 

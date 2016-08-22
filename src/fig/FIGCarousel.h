@@ -60,7 +60,7 @@ class FIGCarousel {
     public:
         FIGCarousel(std::shared_ptr<dabEnsemble> ensemble);
 
-        void update(unsigned long currentFrame, time_t dabTime);
+        void update(unsigned long currentFrame);
 
         void allocate_fig_to_fib(int figtype, int extension, FIBAllocation fib);
 

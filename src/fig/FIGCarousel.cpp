@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -116,10 +116,9 @@ void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
     allocate_fig_to_fib(type, extension, fib);
 }
 
-void FIGCarousel::update(unsigned long currentFrame, time_t dabTime)
+void FIGCarousel::update(unsigned long currentFrame)
 {
     m_rti.currentFrame = currentFrame;
-    m_rti.date = dabTime;
 }
 
 void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, FIBAllocation fib)

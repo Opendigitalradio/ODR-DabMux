@@ -3,11 +3,12 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Includes modifications
-   2012, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
    This file contains a set of utility functions that are used to show
-   useful information to the user.
+   useful information to the user, and handles time and date for the
+   the signalling.
    */
 /*
    This file is part of ODR-DabMux.
@@ -32,7 +33,9 @@
 #include <memory>
 #include "MuxElements.h"
 
-time_t getDabTime();
+/* Must be called once per ETI frame to update the time */
+void update_dab_time(void);
+void get_dab_time(time_t *time, uint32_t *millis);
 
 /* Shows the introductory header on program start */
 void header_message();

@@ -27,6 +27,7 @@
 
 #include "fig/FIG0.h"
 #include "dabUtils.h"
+#include "utils.h"
 
 namespace FIC {
 
@@ -817,16 +818,16 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
     auto ensemble = m_rti->ensemble;
     size_t remaining = max_size;
 
-    if (remaining < 6) {
+    if (remaining < 8) {
         fs.num_bytes_written = 0;
         return fs;
     }
 
     //Time and country identifier
-    auto fig0_10 = (FIGtype0_10 *)buf;
+    auto fig0_10 = (FIGtype0_10_LongForm*)buf;
 
     fig0_10->FIGtypeNumber = 0;
-    fig0_10->Length = 5;
+    fig0_10->Length = 7;
     fig0_10->CN = 0;
     fig0_10->OE = 0;
     fig0_10->PD = 0;
@@ -835,7 +836,10 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
     remaining -= 2;
 
     tm* timeData;
-    timeData = gmtime(&m_rti->date);
+    time_t dab_time_seconds = 0;
+    uint32_t dab_time_millis = 0;
+    get_dab_time(&dab_time_seconds, &dab_time_millis);
+    timeData = gmtime(&dab_time_seconds);
 
     fig0_10->RFU = 0;
     fig0_10->setMJD(gregorian2mjd(timeData->tm_year + 1900,
@@ -843,11 +847,13 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
                 timeData->tm_mday));
     fig0_10->LSI = 0;
     fig0_10->ConfInd = 1;
-    fig0_10->UTC = 0;
+    fig0_10->UTC = 1;
     fig0_10->setHours(timeData->tm_hour);
     fig0_10->Minutes = timeData->tm_min;
-    buf += 4;
-    remaining -= 4;
+    fig0_10->Seconds = timeData->tm_sec;
+    fig0_10->setMilliseconds(dab_time_millis);
+    buf += 6;
+    remaining -= 6;
 
     fs.num_bytes_written = max_size - remaining;
     fs.complete_fig_transmitted = true;

@@ -701,10 +701,6 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
     }
 
-#ifdef DUMP_BRIDGE
-    dumpBytes(dumpData, sizeSubChannel, stderr);
-#endif // DUMP_BRIDGE
-
 #if HAVE_OUTPUT_EDI
     /********************************************************************** 
      ***********   Finalise and send EDI   ********************************

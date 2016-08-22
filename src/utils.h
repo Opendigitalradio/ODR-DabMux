@@ -37,6 +37,17 @@
 void update_dab_time(void);
 void get_dab_time(time_t *time, uint32_t *millis);
 
+/* Convert a date and time into the modified Julian date
+ * used in FIG 0/10
+ *
+ * Year is four digit format.
+ * Months are Jan=1, Feb=2, etc.
+ * First day of the month is 1, as usual.
+ *
+ * Returns corresponding MJD
+ */
+uint32_t gregorian2mjd(int year, int month, int day);
+
 /* Shows the introductory header on program start */
 void header_message();
 

@@ -54,6 +54,21 @@ void get_dab_time(time_t *time, uint32_t *millis)
 }
 
 
+uint32_t gregorian2mjd(int year, int month, int day)
+{
+    //This is the algorithm for the JD, just substract 2400000.5 for MJD
+    year += 8000;
+    if(month < 3) {
+        year--;
+        month += 12;
+    }
+    uint32_t JD =
+        (year * 365) + (year / 4) - (year / 100) + (year / 400) - 1200820
+        + ((month * 153 + 3) / 5) - 92 + (day - 1);
+
+    return (uint32_t)(JD - 2400000.5); //truncation, loss of data OK!
+}
+
 /* We use fprintf here because this doesn't have
  * to go to the log.
  * But all information below must go into the log.

@@ -90,14 +90,44 @@ example:
     > set comp-fb label Programme1,Programme
     comp-fb short label Programme is too long (max 8 characters)
 
+Announcements
+-------------
+Announcements can be triggered by the remote control in two ways. For a
+specific announcement, its active parameter can be toggled which will
+immediately signal it accordingly. Or the start time or stop time can be set to
+trigger signalling changes in the future.
 
-TODO
-====
+Direct setting:
+    > set my_announcement active 1
+    ok
 
-In addition to adding more configurable features to the RC, it will
-be necessary to add the ability to set several parameters at once,
-atomically.
+Deferred setting:
 
-That's already somewhat of an issue with the labels. (How do you set a label
-that contains a comma ? Right now you cannot.)
+The "start_in" and a "stop_in" parameters both accept a value in milliseconds.
+They can either be set, and when you read them back you will see the timeout go
+down to zero; or they can be "not set" if you never set them or if the timeout
+expired. It is also possible to set both "start_in" and "stop_in" to trigger
+both a start and stop in the future.
+
+The timeout expiry will then influence the "active" parameter internally, ensuring
+that the "active" parameter always represents the current state of the
+signalling.
+
+    > set my_announcement start_in 10000
+    ok
+
+    > show my_announcement
+    active: 0
+    start_in: 7313
+    stop_in: Not set
+
+    > show my_announcement
+    active: 0
+    start_in: 1244
+    stop_in: Not set
+
+    > show my_announcement
+    active: 1
+    start_in: Not set
+    stop_in: Not set
 

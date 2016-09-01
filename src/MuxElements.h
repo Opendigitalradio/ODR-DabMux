@@ -3,8 +3,10 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    This file defines all data structures used in DabMux to represent
    and save ensemble data.
@@ -34,6 +36,8 @@
 #include <functional>
 #include <exception>
 #include <algorithm>
+#include <chrono>
+#include <boost/optional.hpp>
 #include <stdint.h>
 #include "dabOutput/dabOutput.h"
 #include "dabInput.h"
@@ -85,7 +89,15 @@ class AnnouncementCluster : public RemoteControllable {
             RemoteControllable(name),
             m_active(false)
         {
-            RC_ADD_PARAMETER(active, "Signal this announcement");
+            RC_ADD_PARAMETER(active, "Signal this announcement [0 or 1]");
+
+            /* This supports deferred start/stop to allow the user
+             * to compensate for audio encoding delay
+             */
+            RC_ADD_PARAMETER(start_in,
+                    "Start signalling this announcement after a delay [ms]");
+            RC_ADD_PARAMETER(stop_in,
+                    "Stop signalling this announcement after a delay [ms]");
         }
 
         uint8_t cluster_id;
@@ -94,10 +106,22 @@ class AnnouncementCluster : public RemoteControllable {
 
         std::string tostring(void) const;
 
-        bool is_active(void) const { return m_active; };
+        /* Check if the activation/deactivation timeout occurred,
+         * and return of if the Announcement is active
+         */
+        bool is_active(void);
 
     private:
         bool m_active;
+
+        boost::optional<
+            std::chrono::time_point<
+                std::chrono::steady_clock> > m_deferred_start_time;
+
+        boost::optional<
+            std::chrono::time_point<
+                std::chrono::steady_clock> > m_deferred_stop_time;
+
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,

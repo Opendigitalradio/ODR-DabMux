@@ -3,8 +3,10 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -53,12 +55,47 @@ std::string AnnouncementCluster::tostring() const
     ss << ", flags 0x" << boost::format("%04x") % flags;
     ss << ", subchannel " << subchanneluid;
     if (m_active) {
-        ss << " *";
+        ss << " active ";
+    }
+
+    if (m_deferred_start_time) {
+        ss << " start pending";
+    }
+
+    if (m_deferred_stop_time) {
+        ss << " stop pending";
     }
 
     ss << " )";
 
     return ss.str();
+}
+
+bool AnnouncementCluster::is_active(void)
+{
+    if (m_deferred_start_time)
+    {
+        const auto now = std::chrono::steady_clock::now();
+
+        if (*m_deferred_start_time <= now) {
+            m_active = true;
+
+            m_deferred_start_time = boost::none;
+        }
+    }
+
+    if (m_deferred_stop_time)
+    {
+        const auto now = std::chrono::steady_clock::now();
+
+        if (*m_deferred_stop_time <= now) {
+            m_active = false;
+
+            m_deferred_stop_time = boost::none;
+        }
+    }
+
+    return m_active;
 }
 
 void AnnouncementCluster::set_parameter(const string& parameter,
@@ -68,6 +105,26 @@ void AnnouncementCluster::set_parameter(const string& parameter,
         stringstream ss;
         ss << value;
         ss >> m_active;
+    }
+    else if (parameter == "start_in") {
+        stringstream ss;
+        ss << value;
+
+        int start_in_ms;
+        ss >> start_in_ms;
+
+        using namespace std::chrono;
+        m_deferred_start_time = steady_clock::now() + milliseconds(start_in_ms);
+    }
+    else if (parameter == "stop_in") {
+        stringstream ss;
+        ss << value;
+
+        int stop_in_ms;
+        ss >> stop_in_ms;
+
+        using namespace std::chrono;
+        m_deferred_stop_time = steady_clock::now() + milliseconds(stop_in_ms);
     }
     else {
         stringstream ss;
@@ -79,9 +136,29 @@ void AnnouncementCluster::set_parameter(const string& parameter,
 
 const string AnnouncementCluster::get_parameter(const string& parameter) const
 {
+    using namespace std::chrono;
+
     stringstream ss;
     if (parameter == "active") {
         ss << m_active;
+    }
+    else if (parameter == "start_in") {
+        if (m_deferred_start_time) {
+            const auto diff = *m_deferred_start_time - steady_clock::now();
+            ss << duration_cast<milliseconds>(diff).count();
+        }
+        else {
+            ss << "Not set";
+        }
+    }
+    else if (parameter == "stop_in") {
+        if (m_deferred_stop_time) {
+            const auto diff = *m_deferred_stop_time - steady_clock::now();
+            ss << duration_cast<milliseconds>(diff).count();
+        }
+        else {
+            ss << "Not set";
+        }
     }
     else {
         ss << "Parameter '" << parameter <<

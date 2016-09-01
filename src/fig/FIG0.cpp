@@ -1196,7 +1196,7 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
 
     const int length_0_19 = 4;
     fs.complete_fig_transmitted = true;
-    for (const auto& cluster : allclusters) {
+    for (auto& cluster : allclusters) {
 
         if (fig0 == NULL) {
             if (remaining < 2 + length_0_19) {

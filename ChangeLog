@@ -1,6 +1,13 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2016-09-02: Matthias P. Braendli <matthias@mpb.li>
+	(v1.1.0):
+		Switch FIG0/10 to long form, the latest draft spec marks the
+		short form as legacy.
+		Add RC support for deferred triggering of announcements, see
+		doc/remote_control.txt
+
 2016-07-30: Matthias P. Braendli <matthias@mpb.li>
 	(v1.0.0):
 		Remove old carousel.

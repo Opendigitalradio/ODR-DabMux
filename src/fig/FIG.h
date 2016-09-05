@@ -41,7 +41,6 @@ class FIGRuntimeInformation {
             ensemble(e),
             factumAnalyzer(false) {}
 
-        time_t date;
         unsigned long currentFrame;
         std::shared_ptr<dabEnsemble> ensemble;
         bool factumAnalyzer;

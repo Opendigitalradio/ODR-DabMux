@@ -385,12 +385,12 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
 
     /******************** READ SUBCHAN PARAMETERS **************/
-    map<string, dabSubchannel*> allsubchans;
+    map<string, DabSubchannel*> allsubchans;
 
     ptree pt_subchans = pt.get_child("subchannels");
     for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
-        dabSubchannel* subchan = new dabSubchannel(subchanuid);
+        DabSubchannel* subchan = new DabSubchannel(subchanuid);
 
         ensemble->subchannels.push_back(subchan);
 
@@ -441,7 +441,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
             throw runtime_error(ss.str());
         }
 
-        dabSubchannel* subchannel;
+        DabSubchannel* subchannel;
         try {
             string subchan_uid = pt_comp.get<string>("subchannel");
             if (allsubchans.count(subchan_uid) != 1) {
@@ -553,7 +553,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
 }
 
-void setup_subchannel_from_ptree(dabSubchannel* subchan,
+void setup_subchannel_from_ptree(DabSubchannel* subchan,
         boost::property_tree::ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         string subchanuid,
@@ -909,7 +909,7 @@ void setup_subchannel_from_ptree(dabSubchannel* subchan,
     }
     catch (ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel
-            vector<dabSubchannel*>::iterator subchannel = getSubchannel(ensemble->subchannels, i);
+            vector<DabSubchannel*>::iterator subchannel = getSubchannel(ensemble->subchannels, i);
             if (subchannel == ensemble->subchannels.end()) {
                 subchannel = ensemble->subchannels.end() - 1;
                 subchan->id = i;

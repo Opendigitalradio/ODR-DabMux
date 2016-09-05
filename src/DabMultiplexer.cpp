@@ -31,14 +31,6 @@
 
 using namespace std;
 
-static const unsigned char Padding_FIB[] = {
-    0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
-
 // Protection levels and bitrates for UEP.
 const unsigned char ProtectionLevelTable[64] = {
     4, 3, 2, 1, 0,
@@ -84,27 +76,11 @@ DabMultiplexer::DabMultiplexer(
     MNSC_increment_time(false),
     sync(0x49C5F8),
     currentFrame(0),
-    insertFIG(0),
-    rotateFIB(0),
     ensemble(std::make_shared<dabEnsemble>()),
     fig_carousel(ensemble)
 {
     RC_ADD_PARAMETER(carousel,
             "Set to 1 to use the new carousel");
-}
-
-void DabMultiplexer::update_config(boost::property_tree::ptree pt)
-{
-    ensemble_next = std::make_shared<dabEnsemble>();
-
-    m_pt_next = pt;
-
-    reconfigure();
-}
-
-void DabMultiplexer::reconfigure()
-{
-    parse_ptree(m_pt_next, ensemble_next, m_rc);
 }
 
 void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
@@ -166,7 +142,6 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 void DabMultiplexer::prepare()
 {
     parse_ptree(m_pt, ensemble, m_rc);
-    m_use_new_fig_carousel = m_pt.get("general.new_fig_carousel", true);
 
     this->enrol_at(m_rc);
     ensemble->enrol_at(m_rc);
@@ -180,31 +155,14 @@ void DabMultiplexer::prepare()
         throw MuxInitException();
     }
 
-    vector<dabSubchannel*>::iterator subchannel =
+    vector<DabSubchannel*>::iterator subchannel =
         ensemble->subchannels.end() - 1;
 
-    if ((*subchannel)->startAddress + getSizeCu((*subchannel)) > 864) {
+    if ((*subchannel)->startAddress + (*subchannel)->getSizeCu() > 864) {
         etiLog.log(error, "Total size in CU exceeds 864\n");
         printSubchannels(ensemble->subchannels);
         throw MuxInitException();
     }
-
-    /* These iterators are used to fill the respective FIG.
-     * It is necessary to cycle through all the FIGs that have
-     * to be transmitted because they do not fit in a single
-     * FIB.
-     *
-     * ETSI EN 300 799 Clauses 5.2 and 8.1
-     */
-    serviceProgFIG0_2 = ensemble->services.end();
-    serviceDataFIG0_2 = ensemble->services.end();
-    componentProgFIG0_8 = ensemble->components.end();
-    componentDataFIG0_8 = ensemble->components.end();
-    componentFIG0_13 = ensemble->components.end();
-    transmitFIG0_13programme = false;
-    serviceFIG0_17 = ensemble->services.end();
-    subchannelFIG0_1 = ensemble->subchannels.end();
-
 
     /* TODO:
      * In a SFN, when reconfiguring the ensemble, the multiplexer
@@ -265,7 +223,7 @@ void DabMultiplexer::prepare_services_components()
     dabProtection* protection = NULL;
 
     vector<DabComponent*>::iterator component;
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
 
     for (auto service : ensemble->services) {
         if (ids.find(service->id) != ids.end()) {
@@ -282,23 +240,6 @@ void DabMultiplexer::prepare_services_components()
                     "Service id 0x%x (%u) includes no component!\n",
                     service->id, service->id);
             throw MuxInitException();
-        }
-
-        // Adjust service type from this first component
-        switch (service->getType(ensemble)) {
-            case subchannel_type_t::Audio: // Audio
-                service->program = true;
-                break;
-            case subchannel_type_t::DataDmb:
-            case subchannel_type_t::Fidc:
-            case subchannel_type_t::Packet:
-                service->program = false;
-                break;
-            default:
-                etiLog.log(error,
-                        "Error, unknown service type: %u\n",
-                        service->getType(ensemble));
-                throw MuxInitException();
         }
 
         service->enrol_at(m_rc);
@@ -319,7 +260,15 @@ void DabMultiplexer::prepare_services_components()
                 case subchannel_type_t::Audio:
                     {
                         if (protection->form == EEP) {
-                            (*component)->type = 0x3f;  // DAB+
+                            /* According to ETSI TS 102 563 Clause 7.1 FIC signalling:
+                             *
+                             * "AAC audio services are signalled in the same way
+                             * as Layer II audio services with the exception
+                             * that the ASCTy carried in FIG 0/2 (see EN 300
+                             * 401, clause 6.3.1) is set to the value
+                             * 1 1 1 1 1 1."
+                             */
+                            (*component)->type = 0x3f;
                         }
                     }
                     break;
@@ -362,7 +311,7 @@ void DabMultiplexer::prepare_services_components()
 void DabMultiplexer::prepare_data_inputs()
 {
     dabProtection* protection = NULL;
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
 
     // Prepare and check the data inputs
     for (subchannel = ensemble->subchannels.begin();
@@ -373,7 +322,7 @@ void DabMultiplexer::prepare_data_inputs()
             (*subchannel)->startAddress = 0;
         } else {
             (*subchannel)->startAddress = (*(subchannel - 1))->startAddress +
-                getSizeCu(*(subchannel - 1));
+                (*(subchannel - 1))->getSizeCu();
         }
         if ((*subchannel)->input->open((*subchannel)->inputUri) == -1) {
             perror((*subchannel)->inputUri.c_str());
@@ -425,14 +374,12 @@ void DabMultiplexer::prepare_data_inputs()
 /*  Each call creates one ETI frame */
 void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs)
 {
-    int cur;
-    time_t date;
     unsigned char etiFrame[6144];
     unsigned short index = 0;
 
     vector<std::shared_ptr<DabService> >::iterator service;
     vector<DabComponent*>::iterator component;
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
 
     // FIC Length, DAB Mode I, II, IV -> FICL = 24, DAB Mode III -> FICL = 32
     unsigned FICL  = (ensemble->mode == 3 ? 32 : 24);
@@ -440,12 +387,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     TagDETI edi_tagDETI;
     TagStarPTR edi_tagStarPtr;
-    map<dabSubchannel*, TagESTn> edi_subchannelToTag;
+    map<DabSubchannel*, TagESTn> edi_subchannelToTag;
 
     // The above Tag Items will be assembled into a TAG Packet
     TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
 
-    date = getDabTime();
+    update_dab_time();
 
     // Initialise the ETI frame
     memset(etiFrame, 0, 6144);
@@ -511,7 +458,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
         // Add STLsbch
-        FLtmp += getSizeWord(*subchannel);
+        FLtmp += (*subchannel)->getSizeWord();
     }
 
     fc->setFrameLength(FLtmp);
@@ -540,8 +487,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
 
         // Sub-channel Stream Length, multiple of 64 bits
-        sstc->STL_high = getSizeDWord(*subchannel) / 256;
-        sstc->STL_low = getSizeDWord(*subchannel) % 256;
+        sstc->STL_high = (*subchannel)->getSizeDWord() / 256;
+        sstc->STL_low = (*subchannel)->getSizeDWord() % 256;
 
         TagESTn tag_ESTn;
         tag_ESTn.id = edi_stream_id++;
@@ -549,9 +496,9 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         tag_ESTn.sad = (*subchannel)->startAddress;
         tag_ESTn.tpl = sstc->TPL;
         tag_ESTn.rfa = 0; // two bits
-        tag_ESTn.mst_length = getSizeByte(*subchannel) / 8;
+        tag_ESTn.mst_length = (*subchannel)->getSizeByte() / 8;
         tag_ESTn.mst_data = nullptr;
-        assert(getSizeByte(*subchannel) % 8 == 0);
+        assert((*subchannel)->getSizeByte() % 8 == 0);
 
         edi_subchannelToTag[*subchannel] = tag_ESTn;
         index += 4;
@@ -622,1061 +569,10 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.fic_data = &etiFrame[index];
     edi_tagDETI.fic_length = FICL * 4;
 
-    // FIC Insertion
-    FIGtype0* fig0;
-    FIGtype0_0 *fig0_0;
-    FIGtype0_1 *figtype0_1;
-
-    FIG_01_SubChannel_ShortF *fig0_1subchShort;
-    FIG_01_SubChannel_LongF *fig0_1subchLong1;
-
-    FIGtype0_2 *fig0_2;
-
-    FIGtype0_2_Service *fig0_2serviceAudio;
-    FIGtype0_2_Service_data *fig0_2serviceData;
-    FIGtype0_2_audio_component* audio_description;
-    FIGtype0_2_data_component* data_description;
-    FIGtype0_2_packet_component* packet_description;
-
-    FIGtype0_3_header *fig0_3_header;
-    FIGtype0_3_data *fig0_3_data;
-    FIGtype0_9 *fig0_9;
-    FIGtype0_10 *fig0_10;
-    FIGtype0_17_programme *programme;
-
-    FIGtype1_0 *fig1_0;
-    FIGtype1_1 *fig1_1;
-    FIGtype1_5 *fig1_5;
-
-    tm* timeData;
-
     // Insert all FIBs
-    if (m_use_new_fig_carousel) {
-        fig_carousel.update(currentFrame, date);
-        const bool fib3_present = ensemble->mode == 3;
-        index += fig_carousel.write_fibs(&etiFrame[index], currentFrame % 4, fib3_present);
-    }
-    else {
-        unsigned char figSize = 0;
-        // FIB 0 Insertion
-        switch (insertFIG) {
-
-            case 0:
-            case 4:
-            case 8:
-            case 12:
-                // FIG type 0/0, Multiplex Configuration Info (MCI),
-                //  Ensemble information
-                fig0_0 = (FIGtype0_0 *) & etiFrame[index];
-
-                fig0_0->FIGtypeNumber = 0;
-                fig0_0->Length = 5;
-                fig0_0->CN = 0;
-                fig0_0->OE = 0;
-                fig0_0->PD = 0;
-                fig0_0->Extension = 0;
-
-                fig0_0->EId = htons(ensemble->id);
-                fig0_0->Change = 0;
-                fig0_0->Al = 0;
-                fig0_0->CIFcnt_hight = (currentFrame / 250) % 20;
-                fig0_0->CIFcnt_low = (currentFrame % 250);
-                index = index + 6;
-                figSize += 6;
-
-                break;
-
-            case 1:
-            case 6:
-            case 10:
-            case 13:
-                // FIG type 0/1, MIC, Sub-Channel Organization,
-                // one instance of the part for each subchannel
-                figtype0_1 = (FIGtype0_1 *) & etiFrame[index];
-
-                figtype0_1->FIGtypeNumber = 0;
-                figtype0_1->Length = 1;
-                figtype0_1->CN = 0;
-                figtype0_1->OE = 0;
-                figtype0_1->PD = 0;
-                figtype0_1->Extension = 1;
-                index = index + 2;
-                figSize += 2;
-
-                // Rotate through the subchannels until there is no more
-                // space in the FIG0/1
-                if (subchannelFIG0_1 == ensemble->subchannels.end()) {
-                    subchannelFIG0_1 = ensemble->subchannels.begin();
-                }
-
-                for (; subchannelFIG0_1 != ensemble->subchannels.end();
-                        ++subchannelFIG0_1) {
-                    dabProtection* protection = &(*subchannelFIG0_1)->protection;
-
-                    if ( (protection->form == UEP && figSize > 27) ||
-                            (protection->form == EEP && figSize > 26) ) {
-                        break;
-                    }
-
-                    if (protection->form == UEP) {
-                        fig0_1subchShort =
-                            (FIG_01_SubChannel_ShortF*) &etiFrame[index];
-                        fig0_1subchShort->SubChId = (*subchannelFIG0_1)->id;
-
-                        fig0_1subchShort->StartAdress_high =
-                            (*subchannelFIG0_1)->startAddress / 256;
-                        fig0_1subchShort->StartAdress_low =
-                            (*subchannelFIG0_1)->startAddress % 256;
-
-                        fig0_1subchShort->Short_Long_form = 0;
-                        fig0_1subchShort->TableSwitch = 0;
-                        fig0_1subchShort->TableIndex =
-                            protection->uep.tableIndex;
-
-                        index = index + 3;
-                        figSize += 3;
-                        figtype0_1->Length += 3;
-                    }
-                    else if (protection->form == EEP) {
-                        fig0_1subchLong1 =
-                            (FIG_01_SubChannel_LongF*) &etiFrame[index];
-                        fig0_1subchLong1->SubChId = (*subchannelFIG0_1)->id;
-
-                        fig0_1subchLong1->StartAdress_high =
-                            (*subchannelFIG0_1)->startAddress / 256;
-                        fig0_1subchLong1->StartAdress_low =
-                            (*subchannelFIG0_1)->startAddress % 256;
-
-                        fig0_1subchLong1->Short_Long_form = 1;
-                        fig0_1subchLong1->Option = protection->eep.GetOption();
-                        fig0_1subchLong1->ProtectionLevel =
-                            protection->level;
-
-                        fig0_1subchLong1->Sub_ChannelSize_high =
-                            getSizeCu(*subchannelFIG0_1) / 256;
-                        fig0_1subchLong1->Sub_ChannelSize_low =
-                            getSizeCu(*subchannelFIG0_1) % 256;
-
-                        index = index + 4;
-                        figSize += 4;
-                        figtype0_1->Length += 4;
-                    }
-                }
-                break;
-
-            case 2:
-            case 9:
-            case 11:
-            case 14:
-                // FIG type 0/2, MCI, Service Organization, one instance of
-                // FIGtype0_2_Service for each subchannel
-                fig0_2 = NULL;
-                cur = 0;
-
-                // Rotate through the subchannels until there is no more
-                // space in the FIG0/1
-                if (serviceProgFIG0_2 == ensemble->services.end()) {
-                    serviceProgFIG0_2 = ensemble->services.begin();
-                }
-
-                for (; serviceProgFIG0_2 != ensemble->services.end();
-                        ++serviceProgFIG0_2) {
-                    if (!(*serviceProgFIG0_2)->nbComponent(ensemble->components)) {
-                        continue;
-                    }
-
-                    if ((*serviceProgFIG0_2)->getType(ensemble) != subchannel_type_t::Audio) {
-                        continue;
-                    }
-
-                    ++cur;
-
-                    if (fig0_2 == NULL) {
-                        fig0_2 = (FIGtype0_2 *) & etiFrame[index];
-
-                        fig0_2->FIGtypeNumber = 0;
-                        fig0_2->Length = 1;
-                        fig0_2->CN = 0;
-                        fig0_2->OE = 0;
-                        fig0_2->PD = 0;
-                        fig0_2->Extension = 2;
-                        index = index + 2;
-                        figSize += 2;
-                    }
-
-                    if (figSize + 3
-                            + (*serviceProgFIG0_2)->nbComponent(ensemble->components)
-                            * 2 > 30) {
-                        break;
-                    }
-
-                    fig0_2serviceAudio = (FIGtype0_2_Service*) &etiFrame[index];
-
-                    fig0_2serviceAudio->SId = htons((*serviceProgFIG0_2)->id);
-                    fig0_2serviceAudio->Local_flag = 0;
-                    fig0_2serviceAudio->CAId = 0;
-                    fig0_2serviceAudio->NbServiceComp =
-                        (*serviceProgFIG0_2)->nbComponent(ensemble->components);
-                    index += 3;
-                    fig0_2->Length += 3;
-                    figSize += 3;
-
-                    int curCpnt = 0;
-                    for (component = getComponent(ensemble->components,
-                                (*serviceProgFIG0_2)->id);
-                            component != ensemble->components.end();
-                            component = getComponent(ensemble->components,
-                                (*serviceProgFIG0_2)->id, component)) {
-                        subchannel = getSubchannel(ensemble->subchannels,
-                                (*component)->subchId);
-
-                        if (subchannel == ensemble->subchannels.end()) {
-                            etiLog.log(error,
-                                    "Subchannel %i does not exist for component "
-                                    "of service %i\n",
-                                    (*component)->subchId, (*component)->serviceId);
-                            throw MuxInitException();
-                        }
-
-                        switch ((*subchannel)->type) {
-                            case subchannel_type_t::Audio:
-                                audio_description =
-                                    (FIGtype0_2_audio_component*)&etiFrame[index];
-                                audio_description->TMid    = 0;
-                                audio_description->ASCTy   = (*component)->type;
-                                audio_description->SubChId = (*subchannel)->id;
-                                audio_description->PS      = ((curCpnt == 0) ? 1 : 0);
-                                audio_description->CA_flag = 0;
-                                break;
-                            case subchannel_type_t::DataDmb:
-                                data_description =
-                                    (FIGtype0_2_data_component*)&etiFrame[index];
-                                data_description->TMid    = 1;
-                                data_description->DSCTy   = (*component)->type;
-                                data_description->SubChId = (*subchannel)->id;
-                                data_description->PS      = ((curCpnt == 0) ? 1 : 0);
-                                data_description->CA_flag = 0;
-                                break;
-                            case subchannel_type_t::Packet:
-                                packet_description =
-                                    (FIGtype0_2_packet_component*)&etiFrame[index];
-                                packet_description->TMid    = 3;
-                                packet_description->setSCId((*component)->packet.id);
-                                packet_description->PS      = ((curCpnt == 0) ? 1 : 0);
-                                packet_description->CA_flag = 0;
-                                break;
-                            default:
-                                etiLog.log(error,
-                                        "Component type not supported\n");
-                                throw MuxInitException();
-                        }
-                        index += 2;
-                        fig0_2->Length += 2;
-                        figSize += 2;
-                        if (figSize > 30) {
-                            etiLog.log(error,
-                                    "Sorry, no space left in FIG 0/2 to insert "
-                                    "component %i of program service %i.\n",
-                                    curCpnt, cur);
-                            throw MuxInitException();
-                        }
-                        ++curCpnt;
-                    }
-                }
-                break;
-
-            case 3:
-                fig0_2 = NULL;
-                cur = 0;
-
-                if (serviceDataFIG0_2 == ensemble->services.end()) {
-                    serviceDataFIG0_2 = ensemble->services.begin();
-                }
-                for (; serviceDataFIG0_2 != ensemble->services.end();
-                        ++serviceDataFIG0_2) {
-                    if (!(*serviceDataFIG0_2)->nbComponent(ensemble->components)) {
-                        continue;
-                    }
-
-                    auto type = (*serviceDataFIG0_2)->getType(ensemble);
-                    if (    type == subchannel_type_t::Audio ||
-                            type == subchannel_type_t::Fidc  ) {
-                        continue;
-                    }
-
-                    ++cur;
-
-                    if (fig0_2 == NULL) {
-                        fig0_2 = (FIGtype0_2 *) & etiFrame[index];
-
-                        fig0_2->FIGtypeNumber = 0;
-                        fig0_2->Length = 1;
-                        fig0_2->CN = 0;
-                        fig0_2->OE = 0;
-                        fig0_2->PD = 1;
-                        fig0_2->Extension = 2;
-                        index = index + 2;
-                        figSize += 2;
-                    }
-
-                    if (figSize + 5
-                            + (*serviceDataFIG0_2)->nbComponent(ensemble->components)
-                            * 2 > 30) {
-                        break;
-                    }
-
-                    fig0_2serviceData =
-                        (FIGtype0_2_Service_data*) &etiFrame[index];
-
-                    fig0_2serviceData->SId = htonl((*serviceDataFIG0_2)->id);
-                    fig0_2serviceData->Local_flag = 0;
-                    fig0_2serviceData->CAId = 0;
-                    fig0_2serviceData->NbServiceComp =
-                        (*serviceDataFIG0_2)->nbComponent(ensemble->components);
-                    fig0_2->Length += 5;
-                    index += 5;
-                    figSize += 5;
-
-                    int curCpnt = 0;
-                    for (component = getComponent(ensemble->components,
-                                (*serviceDataFIG0_2)->id);
-                            component != ensemble->components.end();
-                            component = getComponent(ensemble->components,
-                                (*serviceDataFIG0_2)->id, component)) {
-                        subchannel = getSubchannel(ensemble->subchannels,
-                                (*component)->subchId);
-                        if (subchannel == ensemble->subchannels.end()) {
-                            etiLog.log(error,
-                                    "Subchannel %i does not exist for component "
-                                    "of service %i\n",
-                                    (*component)->subchId, (*component)->serviceId);
-                            throw MuxInitException();
-                        }
-
-                        switch ((*subchannel)->type) {
-                            case subchannel_type_t::Audio:
-                                audio_description =
-                                    (FIGtype0_2_audio_component*)&etiFrame[index];
-                                audio_description->TMid = 0;
-                                audio_description->ASCTy = (*component)->type;
-                                audio_description->SubChId = (*subchannel)->id;
-                                audio_description->PS = ((curCpnt == 0) ? 1 : 0);
-                                audio_description->CA_flag = 0;
-                                break;
-                            case subchannel_type_t::DataDmb:
-                                data_description =
-                                    (FIGtype0_2_data_component*)&etiFrame[index];
-                                data_description->TMid = 1;
-                                data_description->DSCTy = (*component)->type;
-                                data_description->SubChId = (*subchannel)->id;
-                                data_description->PS = ((curCpnt == 0) ? 1 : 0);
-                                data_description->CA_flag = 0;
-                                break;
-                            case subchannel_type_t::Packet:
-                                packet_description =
-                                    (FIGtype0_2_packet_component*)&etiFrame[index];
-                                packet_description->TMid = 3;
-                                packet_description->setSCId((*component)->packet.id);
-                                packet_description->PS = ((curCpnt == 0) ? 1 : 0);
-                                packet_description->CA_flag = 0;
-                                break;
-                            default:
-                                etiLog.log(error,
-                                        "Component type not supported\n");
-                                throw MuxInitException();
-                        }
-                        index += 2;
-                        fig0_2->Length += 2;
-                        figSize += 2;
-                        if (figSize > 30) {
-                            etiLog.log(error,
-                                    "Sorry, no place left in FIG 0/2 to insert "
-                                    "component %i of data service %i.\n",
-                                    curCpnt, cur);
-                            throw MuxInitException();
-                        }
-                        ++curCpnt;
-                    }
-                }
-                break;
-
-            case 5:
-                fig0_3_header = NULL;
-
-                for (component = ensemble->components.begin();
-                        component != ensemble->components.end();
-                        ++component) {
-                    subchannel = getSubchannel(ensemble->subchannels,
-                            (*component)->subchId);
-
-                    if (subchannel == ensemble->subchannels.end()) {
-                        etiLog.log(error,
-                                "Subchannel %i does not exist for component "
-                                "of service %i\n",
-                                (*component)->subchId, (*component)->serviceId);
-                        throw MuxInitException();
-                    }
-
-                    if ((*subchannel)->type != subchannel_type_t::Packet)
-                        continue;
-
-                    if (fig0_3_header == NULL) {
-                        fig0_3_header = (FIGtype0_3_header*)&etiFrame[index];
-                        fig0_3_header->FIGtypeNumber = 0;
-                        fig0_3_header->Length = 1;
-                        fig0_3_header->CN = 0;
-                        fig0_3_header->OE = 0;
-                        fig0_3_header->PD = 0;
-                        fig0_3_header->Extension = 3;
-
-                        index += 2;
-                        figSize += 2;
-                    }
-
-                    bool factumAnalyzer = m_pt.get("general.writescca", false);
-
-                    /*  Warning: When bit SCCA_flag is unset(0), the multiplexer
-                     *  R&S does not send the SCCA field. But, in the Factum ETI
-                     *  analyzer, if this field is not there, it is an error.
-                     */
-                    fig0_3_data = (FIGtype0_3_data*)&etiFrame[index];
-                    fig0_3_data->setSCId((*component)->packet.id);
-                    fig0_3_data->rfa = 0;
-                    fig0_3_data->SCCA_flag = 0;
-                    // if 0, datagroups are used
-                    fig0_3_data->DG_flag = !(*component)->packet.datagroup;
-                    fig0_3_data->rfu = 0;
-                    fig0_3_data->DSCTy = (*component)->type;
-                    fig0_3_data->SubChId = (*subchannel)->id;
-                    fig0_3_data->setPacketAddress((*component)->packet.address);
-                    if (factumAnalyzer) {
-                        fig0_3_data->SCCA = 0;
-                    }
-
-                    fig0_3_header->Length += 5;
-                    index += 5;
-                    figSize += 5;
-                    if (factumAnalyzer) {
-                        fig0_3_header->Length += 2;
-                        index += 2;
-                        figSize += 2;
-                    }
-
-                    if (figSize > 30) {
-                        etiLog.log(error,
-                                "can't add to Fic Fig 0/3, "
-                                "too much packet service\n");
-                        throw MuxInitException();
-                    }
-                }
-                break;
-
-            case 7:
-                fig0 = NULL;
-                if (serviceFIG0_17 == ensemble->services.end()) {
-                    serviceFIG0_17 = ensemble->services.begin();
-                }
-                for (; serviceFIG0_17 != ensemble->services.end();
-                        ++serviceFIG0_17) {
-
-                    if (    (*serviceFIG0_17)->pty == 0 &&
-                            (*serviceFIG0_17)->language == 0) {
-                        continue;
-                    }
-
-                    if (fig0 == NULL) {
-                        fig0 = (FIGtype0*)&etiFrame[index];
-                        fig0->FIGtypeNumber = 0;
-                        fig0->Length = 1;
-                        fig0->CN = 0;
-                        fig0->OE = 0;
-                        fig0->PD = 0;
-                        fig0->Extension = 17;
-                        index += 2;
-                        figSize += 2;
-                    }
-
-                    if ((*serviceFIG0_17)->language == 0) {
-                        if (figSize + 4 > 30) {
-                            break;
-                        }
-                    }
-                    else {
-                        if (figSize + 5 > 30) {
-                            break;
-                        }
-                    }
-
-                    programme =
-                        (FIGtype0_17_programme*)&etiFrame[index];
-                    programme->SId = htons((*serviceFIG0_17)->id);
-                    programme->SD = 1;
-                    programme->PS = 0;
-                    programme->L = (*serviceFIG0_17)->language != 0;
-                    programme->CC = 0;
-                    programme->Rfa = 0;
-                    programme->NFC = 0;
-                    if ((*serviceFIG0_17)->language == 0) {
-                        etiFrame[index + 3] = (*serviceFIG0_17)->pty;
-                        fig0->Length += 4;
-                        index += 4;
-                        figSize += 4;
-                    }
-                    else {
-                        etiFrame[index + 3] = (*serviceFIG0_17)->language;
-                        etiFrame[index + 4] = (*serviceFIG0_17)->pty;
-                        fig0->Length += 5;
-                        index += 5;
-                        figSize += 5;
-                    }
-                }
-                break;
-        }
-
-        if (figSize > 30) {
-            etiLog.log(error,
-                    "FIB0 overload (%i > 30)\n", figSize);
-            throw MuxInitException();
-        }
-
-        memcpy(&etiFrame[index], Padding_FIB, 30 - figSize);
-        index += 30 - figSize;
-
-        CRCtmp = 0xffff;
-        CRCtmp = crc16(CRCtmp, &etiFrame[(index - 30)], 30);
-        CRCtmp ^= 0xffff;
-        etiFrame[index++] = ((char *) &CRCtmp)[1];
-        etiFrame[index++] = ((char *) &CRCtmp)[0];
-
-        figSize = 0;
-        // FIB 1 insertion
-        switch (rotateFIB) {
-            case 0:     // FIG 0/8 program
-                fig0 = NULL;
-
-                if (componentProgFIG0_8 == ensemble->components.end()) {
-                    componentProgFIG0_8 = ensemble->components.begin();
-                }
-                for (; componentProgFIG0_8 != ensemble->components.end();
-                        ++componentProgFIG0_8) {
-                    service = getService(*componentProgFIG0_8,
-                            ensemble->services);
-                    subchannel = getSubchannel(ensemble->subchannels,
-                            (*componentProgFIG0_8)->subchId);
-                    if (subchannel == ensemble->subchannels.end()) {
-                        etiLog.log(error,
-                                "Subchannel %i does not exist for component "
-                                "of service %i\n",
-                                (*componentProgFIG0_8)->subchId,
-                                (*componentProgFIG0_8)->serviceId);
-                        throw MuxInitException();
-                    }
-
-                    if (!(*service)->program)
-                        continue;
-
-                    if (fig0 == NULL) {
-                        fig0 = (FIGtype0*)&etiFrame[index];
-                        fig0->FIGtypeNumber = 0;
-                        fig0->Length = 1;
-                        fig0->CN = 0;
-                        fig0->OE = 0;
-                        fig0->PD = 0;
-                        fig0->Extension = 8;
-                        index += 2;
-                        figSize += 2;
-                    }
-
-                    if ((*subchannel)->type == subchannel_type_t::Packet) {
-                        // Data packet
-
-                        if (figSize > 30 - 5) {
-                            break;
-                        }
-                        etiFrame[index] =
-                            ((*componentProgFIG0_8)->serviceId >> 8) & 0xFF;
-                        etiFrame[index+1] =
-                            ((*componentProgFIG0_8)->serviceId) & 0xFF;
-                        fig0->Length += 2;
-                        index += 2;
-                        figSize += 2;
-
-                        FIGtype0_8_long* definition =
-                            (FIGtype0_8_long*)&etiFrame[index];
-                        memset(definition, 0, 3);
-                        definition->ext = 0;    // no rfa
-                        definition->SCIdS = (*componentProgFIG0_8)->SCIdS;
-                        definition->LS = 1;
-                        definition->setSCId((*componentProgFIG0_8)->packet.id);
-                        fig0->Length += 3;
-                        index += 3;             // 8 minus rfa
-                        figSize += 3;
-                    }
-                    else {    // Audio, data stream or FIDC
-                        if (figSize > 30 - 4) {
-                            break;
-                        }
-                        etiFrame[index] =
-                            ((*componentProgFIG0_8)->serviceId >> 8) & 0xFF;
-                        etiFrame[index+1] =
-                            ((*componentProgFIG0_8)->serviceId) & 0xFF;
-
-                        fig0->Length += 2;
-                        index += 2;
-                        figSize += 2;
-
-                        FIGtype0_8_short* definition =
-                            (FIGtype0_8_short*)&etiFrame[index];
-                        memset(definition, 0, 2);
-                        definition->ext = 0;    // no rfa
-                        definition->SCIdS = (*componentProgFIG0_8)->SCIdS;
-                        definition->LS = 0;
-                        definition->MscFic = 0;
-                        definition->Id = (*componentProgFIG0_8)->subchId;
-                        fig0->Length += 2;
-                        index += 2;             // 4 minus rfa
-                        figSize += 2;
-                    }
-                }
-                break;
-
-            case 1:     // FIG 0/8 data
-                fig0 = NULL;
-
-                if (componentDataFIG0_8 == ensemble->components.end()) {
-                    componentDataFIG0_8 = ensemble->components.begin();
-                }
-                for (; componentDataFIG0_8 != ensemble->components.end();
-                        ++componentDataFIG0_8) {
-                    service = getService(*componentDataFIG0_8,
-                            ensemble->services);
-
-                    subchannel = getSubchannel(ensemble->subchannels,
-                            (*componentDataFIG0_8)->subchId);
-
-                    if (subchannel == ensemble->subchannels.end()) {
-                        etiLog.log(error,
-                                "Subchannel %i does not exist for component "
-                                "of service %i\n",
-                                (*componentDataFIG0_8)->subchId,
-                                (*componentDataFIG0_8)->serviceId);
-                        throw MuxInitException();
-                    }
-
-                    if ((*service)->program)
-                        continue;
-
-                    if (fig0 == NULL) {
-                        fig0 = (FIGtype0*)&etiFrame[index];
-                        fig0->FIGtypeNumber = 0;
-                        fig0->Length = 1;
-                        fig0->CN = 0;
-                        fig0->OE = 0;
-                        fig0->PD = 1;
-                        fig0->Extension = 8;
-                        index += 2;
-                        figSize += 2;
-                    }
-
-                    if ((*subchannel)->type == subchannel_type_t::Packet) {
-                        // Data packet
-
-                        if (figSize > 30 - 7) {
-                            break;
-                        }
-                        etiFrame[index] =
-                            ((*componentDataFIG0_8)->serviceId >> 8) & 0xFF;
-                        etiFrame[index+1] =
-                            ((*componentDataFIG0_8)->serviceId) & 0xFF;
-                        fig0->Length += 4;
-                        index += 4;
-                        figSize += 4;
-
-                        FIGtype0_8_long* definition =
-                            (FIGtype0_8_long*)&etiFrame[index];
-                        memset(definition, 0, 3);
-                        definition->ext = 0;    // no rfa
-                        definition->SCIdS = (*componentDataFIG0_8)->SCIdS;
-                        definition->LS = 1;
-                        definition->setSCId((*componentDataFIG0_8)->packet.id);
-                        fig0->Length += 3;
-                        index += 3;             // 8 minus rfa
-                        figSize += 3;
-                    }
-                    else {    // Audio, data stream or FIDC
-                        if (figSize > 30 - 6) {
-                            break;
-                        }
-                        etiFrame[index] =
-                            ((*componentDataFIG0_8)->serviceId >> 8) & 0xFF;
-                        etiFrame[index+1] =
-                            ((*componentDataFIG0_8)->serviceId) & 0xFF;
-                        fig0->Length += 4;
-                        index += 4;
-                        figSize += 4;
-
-                        FIGtype0_8_short* definition =
-                            (FIGtype0_8_short*)&etiFrame[index];
-                        memset(definition, 0, 2);
-                        definition->ext = 0;    // no rfa
-                        definition->SCIdS = (*componentDataFIG0_8)->SCIdS;
-                        definition->LS = 0;
-                        definition->MscFic = 0;
-                        definition->Id = (*componentDataFIG0_8)->subchId;
-                        fig0->Length += 2;
-                        index += 2;             // 4 minus rfa
-                        figSize += 2;
-                    }
-                }
-                break;
-
-            case 3:
-                // FIG type 1/0, Service Information (SI), Ensemble Label
-                fig1_0 = (FIGtype1_0 *) & etiFrame[index];
-
-                fig1_0->Length = 21;
-                fig1_0->FIGtypeNumber = 1;
-                fig1_0->Extension = 0;
-                fig1_0->OE = 0;
-                fig1_0->Charset = 0;
-                fig1_0->EId = htons(ensemble->id);
-                index = index + 4;
-
-                ensemble->label.writeLabel(&etiFrame[index]);
-                index = index + 16;
-
-                etiFrame[index++] = ensemble->label.flag() >> 8;
-                etiFrame[index++] = ensemble->label.flag() & 0xFF;
-
-                figSize += 22;
-                break;
-
-            case 5:
-            case 6:
-                // FIG 0 / 13
-                fig0 = NULL;
-
-                if (componentFIG0_13 == ensemble->components.end()) {
-                    componentFIG0_13 = ensemble->components.begin();
-
-                    transmitFIG0_13programme = !transmitFIG0_13programme;
-                    // Alternate between data and and programme FIG0/13,
-                    // do not mix fig0 with PD=0 with extension 13 stuff
-                    // that actually needs PD=1, and vice versa
-                }
-
-                for (; componentFIG0_13 != ensemble->components.end();
-                        ++componentFIG0_13) {
-
-                    subchannel = getSubchannel(ensemble->subchannels,
-                            (*componentFIG0_13)->subchId);
-
-                    if (subchannel == ensemble->subchannels.end()) {
-                        etiLog.log(error,
-                                "Subchannel %i does not exist for component "
-                                "of service %i\n",
-                                (*componentFIG0_13)->subchId,
-                                (*componentFIG0_13)->serviceId);
-                        throw MuxInitException();
-                    }
-
-                    if (    transmitFIG0_13programme &&
-                            (*subchannel)->type == subchannel_type_t::Audio &&
-                            (*componentFIG0_13)->audio.uaType != 0xffff) {
-                        if (fig0 == NULL) {
-                            fig0 = (FIGtype0*)&etiFrame[index];
-                            fig0->FIGtypeNumber = 0;
-                            fig0->Length = 1;
-                            fig0->CN = 0;
-                            fig0->OE = 0;
-                            fig0->PD = 0;
-                            fig0->Extension = 13;
-                            index += 2;
-                            figSize += 2;
-                        }
-
-                        if (figSize > 30 - (3+4+11)) {
-                            break;
-                        }
-
-                        FIG0_13_shortAppInfo* info =
-                            (FIG0_13_shortAppInfo*)&etiFrame[index];
-                        info->SId = htonl((*componentFIG0_13)->serviceId) >> 16;
-                        info->SCIdS = (*componentFIG0_13)->SCIdS;
-                        info->No = 1;
-                        index += 3;
-                        figSize += 3;
-                        fig0->Length += 3;
-
-                        FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
-                        app->setType((*componentFIG0_13)->audio.uaType);
-                        app->length = 2;
-                        app->xpad = htons(0x0c3c);
-                        /* xpad meaning
-                           CA        = 0
-                           CAOrg     = 0
-                           Rfu       = 0
-                           AppTy(5)  = 12 (MOT, start of X-PAD data group)
-                           DG        = 0 (MSC data groups used)
-                           Rfu       = 0
-                           DSCTy(6)  = 60 (MOT)
-                           */
-
-                        index += 2 + app->length;
-                        figSize += 2 + app->length;
-                        fig0->Length += 2 + app->length;
-                    }
-                    else if (!transmitFIG0_13programme &&
-                            (*subchannel)->type == subchannel_type_t::Packet &&
-                            (*componentFIG0_13)->packet.appType != 0xffff) {
-
-                        if (fig0 == NULL) {
-                            fig0 = (FIGtype0*)&etiFrame[index];
-                            fig0->FIGtypeNumber = 0;
-                            fig0->Length = 1;
-                            fig0->CN = 0;
-                            fig0->OE = 0;
-                            fig0->PD = 1;
-                            fig0->Extension = 13;
-                            index += 2;
-                            figSize += 2;
-                        }
-
-                        if (figSize > 30 - (5+2)) {
-                            break;
-                        }
-
-                        FIG0_13_longAppInfo* info =
-                            (FIG0_13_longAppInfo*)&etiFrame[index];
-                        info->SId = htonl((*componentFIG0_13)->serviceId);
-                        info->SCIdS = (*componentFIG0_13)->SCIdS;
-                        info->No = 1;
-                        index += 5;
-                        figSize += 5;
-                        fig0->Length += 5;
-
-                        FIG0_13_app* app = (FIG0_13_app*)&etiFrame[index];
-                        app->setType((*componentFIG0_13)->packet.appType);
-                        app->length = 0;
-                        index += 2;
-                        figSize += 2;
-                        fig0->Length += 2;
-                    }
-                }
-                break;
-
-            case 7:
-                //Time and country identifier
-                fig0_10 = (FIGtype0_10 *) & etiFrame[index];
-
-                fig0_10->FIGtypeNumber = 0;
-                fig0_10->Length = 5;
-                fig0_10->CN = 0;
-                fig0_10->OE = 0;
-                fig0_10->PD = 0;
-                fig0_10->Extension = 10;
-                index = index + 2;
-
-                timeData = gmtime(&date);
-
-                fig0_10->RFU = 0;
-                fig0_10->setMJD(gregorian2mjd(timeData->tm_year + 1900,
-                            timeData->tm_mon + 1,
-                            timeData->tm_mday));
-                fig0_10->LSI = 0;
-                fig0_10->ConfInd = 1;
-                fig0_10->UTC = 0;
-                fig0_10->setHours(timeData->tm_hour);
-                fig0_10->Minutes = timeData->tm_min;
-                index = index + 4;
-                figSize += 6;
-
-                fig0_9 = (FIGtype0_9*)&etiFrame[index];
-                fig0_9->FIGtypeNumber = 0;
-                fig0_9->Length = 4;
-                fig0_9->CN = 0;
-                fig0_9->OE = 0;
-                fig0_9->PD = 0;
-                fig0_9->Extension = 9;
-
-                fig0_9->ext = 0;
-                fig0_9->lto = 0; // Unique LTO for ensemble
-
-                if (ensemble->lto_auto) {
-                    time_t now = time(NULL);
-                    struct tm* ltime = localtime(&now);
-                    time_t now2 = timegm(ltime);
-                    ensemble->lto = (now2 - now) / 1800;
-                }
-
-                if (ensemble->lto >= 0) {
-                    fig0_9->ensembleLto = ensemble->lto;
-                }
-                else {
-                    /* Convert to 1-complement representation */
-                    fig0_9->ensembleLto = (-ensemble->lto) | (1<<5);
-                }
-
-                fig0_9->ensembleEcc = ensemble->ecc;
-                fig0_9->tableId = ensemble->international_table;
-                index += 5;
-                figSize += 5;
-
-                break;
-        }
-
-        if (figSize > 30) {
-            etiLog.log(error,
-                    "FIB1 overload (%i > 30)\n", figSize);
-            throw MuxInitException();
-        }
-
-        memcpy(&etiFrame[index], Padding_FIB, 30 - figSize);
-        index += 30 - figSize;
-
-        CRCtmp = 0xffff;
-        CRCtmp = crc16(CRCtmp, &etiFrame[(index - 30)], 30);
-        CRCtmp ^= 0xffff;
-        etiFrame[index++] = ((char *) &CRCtmp)[1];
-        etiFrame[index++] = ((char *) &CRCtmp)[0];
-
-
-        figSize = 0;
-        // FIB 2 insertion
-        if (rotateFIB < ensemble->services.size()) {
-            service = ensemble->services.begin() + rotateFIB;
-
-            // FIG type 1/1, SI, Service label, one instance per subchannel
-            if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
-                fig1_1 = (FIGtype1_1 *) & etiFrame[index];
-
-                fig1_1->FIGtypeNumber = 1;
-                fig1_1->Length = 21;
-                fig1_1->Charset = 0;
-                fig1_1->OE = 0;
-                fig1_1->Extension = 1;
-
-                fig1_1->Sld = htons((*service)->id);
-                index += 4;
-                figSize += 4;
-            }
-            else {
-                fig1_5 = (FIGtype1_5 *) & etiFrame[index];
-                fig1_5->FIGtypeNumber = 1;
-                fig1_5->Length = 23;
-                fig1_5->Charset = 0;
-                fig1_5->OE = 0;
-                fig1_5->Extension = 5;
-
-                fig1_5->SId = htonl((*service)->id);
-                index += 6;
-                figSize += 6;
-            }
-            (*service)->label.writeLabel(&etiFrame[index]);
-            index += 16;
-            figSize += 16;
-            etiFrame[index++] = (*service)->label.flag() >> 8;
-            etiFrame[index++] = (*service)->label.flag() & 0xFF;
-            figSize += 2;
-        }
-        else if (rotateFIB <
-                ensemble->services.size() + ensemble->components.size()) {
-            component = ensemble->components.begin() +
-                (rotateFIB - ensemble->services.size());
-
-            service = getService(*component, ensemble->services);
-
-            subchannel =
-                getSubchannel(ensemble->subchannels, (*component)->subchId);
-
-            if (not (*component)->label.long_label().empty() ) {
-                if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
-                    // Programme
-                    FIGtype1_4_programme *fig1_4;
-                    fig1_4 = (FIGtype1_4_programme*)&etiFrame[index];
-
-                    fig1_4->FIGtypeNumber = 1;
-                    fig1_4->Length = 22;
-                    fig1_4->Charset = 0;
-                    fig1_4->OE = 0;
-                    fig1_4->Extension = 4;
-                    fig1_4->PD = 0;
-                    fig1_4->rfa = 0;
-                    fig1_4->SCIdS = (*component)->SCIdS;
-
-                    fig1_4->SId = htons((*service)->id);
-                    index += 5;
-                    figSize += 5;
-                }
-                else {    // Data
-                    FIGtype1_4_data *fig1_4;
-                    fig1_4 = (FIGtype1_4_data *) & etiFrame[index];
-                    fig1_4->FIGtypeNumber = 1;
-                    fig1_4->Length = 24;
-                    fig1_4->Charset = 0;
-                    fig1_4->OE = 0;
-                    fig1_4->Extension = 4;
-                    fig1_4->PD = 1;
-                    fig1_4->rfa = 0;
-                    fig1_4->SCIdS = (*component)->SCIdS;
-
-                    fig1_4->SId = htonl((*service)->id);
-                    index += 7;
-                    figSize += 7;
-                }
-                (*component)->label.writeLabel(&etiFrame[index]);
-                index += 16;
-                figSize += 16;
-
-                etiFrame[index++] = (*component)->label.flag() >> 8;
-                etiFrame[index++] = (*component)->label.flag() & 0xFF;
-                figSize += 2;
-            }
-        }
-
-        if (figSize > 30) {
-            etiLog.log(error,
-                    "FIB2 overload (%i > 30)\n", figSize);
-            throw MuxInitException();
-        }
-        memcpy(&etiFrame[index], Padding_FIB, 30 - figSize);
-        index += 30 - figSize;
-
-        CRCtmp = 0xffff;
-        CRCtmp = crc16(CRCtmp, &etiFrame[(index - 30)], 30);
-        CRCtmp ^= 0xffff;
-        etiFrame[index++] = ((char *) &CRCtmp)[1];
-        etiFrame[index++] = ((char *) &CRCtmp)[0];
-
-        /* ETSI EN 300 799 Table 2:
-         * Only TM3 has a FIB count to CIF count that is
-         * not 3 to 1.
-         */
-        if (ensemble->mode == 3) {
-            memcpy(&etiFrame[index], Padding_FIB, 30);
-            /* Fill FIB3 with padding */
-            index += 30;
-
-            CRCtmp = 0xffff;
-            CRCtmp = crc16(CRCtmp, &etiFrame[(index - 30)], 30);
-            CRCtmp ^= 0xffff;
-            etiFrame[index++] = ((char *) &CRCtmp)[1];
-            etiFrame[index++] = ((char *) &CRCtmp)[0];
-        }
-
-        if (ensemble->services.size() > 30) {
-            etiLog.log(error,
-                    "Sorry, but this software currently can't write "
-                    "Service Label of more than 30 services.\n");
-            throw MuxInitException();
-        }
-
-        // counter for FIG 0/0
-        insertFIG = (insertFIG + 1) % 16;
-
-        // We rotate through the FIBs every 30 frames
-        rotateFIB = (rotateFIB + 1) % 30;
-    }
+    fig_carousel.update(currentFrame);
+    const bool fib3_present = ensemble->mode == 3;
+    index += fig_carousel.write_fibs(&etiFrame[index], currentFrame % 4, fib3_present);
 
     /**********************************************************************
      ******  Input Data Reading *******************************************
@@ -1688,7 +584,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
         TagESTn& tag = edi_subchannelToTag[*subchannel];
 
-        int sizeSubchannel = getSizeByte(*subchannel);
+        int sizeSubchannel = (*subchannel)->getSizeByte();
         int result = (*subchannel)->input->readFrame(
                 &etiFrame[index], sizeSubchannel);
 
@@ -1709,7 +605,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     for (subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
-        index += getSizeByte(*subchannel);
+        index += (*subchannel)->getSizeByte();
     }
 
     /******* Section EOF **************************************************/
@@ -1804,10 +700,6 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
                 output->get_info();
         }
     }
-
-#ifdef DUMP_BRIDGE
-    dumpBytes(dumpData, sizeSubChannel, stderr);
-#endif // DUMP_BRIDGE
 
 #if HAVE_OUTPUT_EDI
     /********************************************************************** 
@@ -1910,10 +802,7 @@ void DabMultiplexer::print_info(void)
 void DabMultiplexer::set_parameter(const std::string& parameter,
                const std::string& value)
 {
-    if (parameter == "carousel") {
-        std::stringstream ss;
-        ss << value;
-        ss >> m_use_new_fig_carousel;
+    if (0) {
     }
     else {
         stringstream ss;
@@ -1927,8 +816,7 @@ void DabMultiplexer::set_parameter(const std::string& parameter,
 const std::string DabMultiplexer::get_parameter(const std::string& parameter) const
 {
     stringstream ss;
-    if (parameter == "carousel") {
-        ss << m_use_new_fig_carousel;
+    if (0) {
     }
     else {
         ss << "Parameter '" << parameter <<

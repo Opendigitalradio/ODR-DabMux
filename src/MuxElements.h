@@ -3,8 +3,10 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    This file defines all data structures used in DabMux to represent
    and save ensemble data.
@@ -32,12 +34,28 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <exception>
 #include <algorithm>
+#include <chrono>
+#include <boost/optional.hpp>
 #include <stdint.h>
 #include "dabOutput/dabOutput.h"
 #include "dabInput.h"
 #include "RemoteControl.h"
 #include "Eti.h"
+
+class MuxInitException : public std::exception
+{
+    public:
+        MuxInitException(const std::string m = "ODR-DabMux initialisation error")
+            throw()
+            : msg(m) {}
+        ~MuxInitException(void) throw() {}
+        const char* what() const throw() { return msg.c_str(); }
+    private:
+        std::string msg;
+};
+
 
 enum class subchannel_type_t {
     Audio = 0,
@@ -71,7 +89,15 @@ class AnnouncementCluster : public RemoteControllable {
             RemoteControllable(name),
             m_active(false)
         {
-            RC_ADD_PARAMETER(active, "Signal this announcement");
+            RC_ADD_PARAMETER(active, "Signal this announcement [0 or 1]");
+
+            /* This supports deferred start/stop to allow the user
+             * to compensate for audio encoding delay
+             */
+            RC_ADD_PARAMETER(start_in,
+                    "Start signalling this announcement after a delay [ms]");
+            RC_ADD_PARAMETER(stop_in,
+                    "Stop signalling this announcement after a delay [ms]");
         }
 
         uint8_t cluster_id;
@@ -80,10 +106,22 @@ class AnnouncementCluster : public RemoteControllable {
 
         std::string tostring(void) const;
 
-        bool is_active(void) const { return m_active; };
+        /* Check if the activation/deactivation timeout occurred,
+         * and return of if the Announcement is active
+         */
+        bool is_active(void);
 
     private:
         bool m_active;
+
+        boost::optional<
+            std::chrono::time_point<
+                std::chrono::steady_clock> > m_deferred_start_time;
+
+        boost::optional<
+            std::chrono::time_point<
+                std::chrono::steady_clock> > m_deferred_stop_time;
+
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -154,7 +192,7 @@ class DabLabel
 class DabService;
 class DabComponent;
 
-class dabSubchannel;
+class DabSubchannel;
 class dabEnsemble : public RemoteControllable {
     public:
         dabEnsemble()
@@ -187,7 +225,7 @@ class dabEnsemble : public RemoteControllable {
 
         std::vector<std::shared_ptr<DabService> > services;
         std::vector<DabComponent*> components;
-        std::vector<dabSubchannel*> subchannels;
+        std::vector<DabSubchannel*> subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
 };
@@ -228,10 +266,10 @@ struct dabProtection {
     };
 };
 
-class dabSubchannel
+class DabSubchannel
 {
 public:
-    dabSubchannel(std::string& uid) :
+    DabSubchannel(std::string& uid) :
             uid(uid),
             input(),
             id(0),
@@ -241,6 +279,18 @@ public:
             protection()
     {
     }
+
+    // Calculate subchannel size in number of CU
+    unsigned short getSizeCu(void) const;
+
+    // Calculate subchannel size in number of bytes
+    unsigned short getSizeByte(void) const;
+
+    // Calculate subchannel size in number of uint32_t
+    unsigned short getSizeWord(void) const;
+
+    // Calculate subchannel size in number of uint64_t
+    unsigned short getSizeDWord(void) const;
 
     std::string uid;
 
@@ -252,15 +302,6 @@ public:
     uint16_t bitrate;
     dabProtection protection;
 };
-
-
-class SubchannelId : public std::binary_function <dabSubchannel*, int, bool> {
-public:
-    bool operator()(const dabSubchannel* subchannel, const int id) const {
-        return subchannel->id == id;
-    }
-};
-
 
 
 
@@ -317,7 +358,7 @@ class DabComponent : public RemoteControllable
         dabFidcComponent fidc;
         dabPacketComponent packet;
 
-        bool isPacketComponent(std::vector<dabSubchannel*>& subchannels);
+        bool isPacketComponent(std::vector<DabSubchannel*>& subchannels) const;
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -351,7 +392,6 @@ class DabService : public RemoteControllable
         uint32_t id;
         unsigned char pty;
         unsigned char language;
-        bool program;
 
         /* ASu (Announcement support) flags: this 16-bit flag field shall
          * specify the type(s) of announcements by which it is possible to
@@ -361,8 +401,9 @@ class DabService : public RemoteControllable
         uint16_t ASu;
         std::vector<uint8_t> clusters;
 
-        subchannel_type_t getType(std::shared_ptr<dabEnsemble> ensemble);
-        unsigned char nbComponent(std::vector<DabComponent*>& components);
+        subchannel_type_t getType(std::shared_ptr<dabEnsemble> ensemble) const;
+        bool isProgramme(std::shared_ptr<dabEnsemble> ensemble) const;
+        unsigned char nbComponent(std::vector<DabComponent*>& components) const;
 
         DabLabel label;
 
@@ -380,8 +421,8 @@ class DabService : public RemoteControllable
         DabService(const DabService& other);
 };
 
-std::vector<dabSubchannel*>::iterator getSubchannel(
-        std::vector<dabSubchannel*>& subchannels, int id);
+std::vector<DabSubchannel*>::iterator getSubchannel(
+        std::vector<DabSubchannel*>& subchannels, int id);
 
 std::vector<DabComponent*>::iterator getComponent(
         std::vector<DabComponent*>& components,
@@ -395,14 +436,6 @@ std::vector<DabComponent*>::iterator getComponent(
 std::vector<std::shared_ptr<DabService> >::iterator getService(
         DabComponent* component,
         std::vector<std::shared_ptr<DabService> >& services);
-
-unsigned short getSizeCu(dabSubchannel* subchannel);
-
-unsigned short getSizeDWord(dabSubchannel* subchannel);
-
-unsigned short getSizeByte(dabSubchannel* subchannel);
-
-unsigned short getSizeWord(dabSubchannel* subchannel);
 
 #endif
 

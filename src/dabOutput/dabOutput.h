@@ -99,7 +99,7 @@ class DabOutput
 
         virtual ~DabOutput() {}
 
-        virtual std::string get_info() = 0;
+        virtual std::string get_info() const = 0;
 };
 
 // ----- used in File and Fifo outputs
@@ -122,18 +122,20 @@ class DabOutputFile : public DabOutput
 
         DabOutputFile(const DabOutputFile& other)
         {
+            filename_ = other.filename_;
             file_ = other.file_;
             nbFrames_ = other.nbFrames_;
             type_ = other.type_;
         }
 
         ~DabOutputFile() {}
+        const DabOutputFile& operator=(const DabOutputFile& other) = delete;
 
         int Open(const char* filename);
         int Write(void* buffer, int size);
         int Close();
 
-        std::string get_info() {
+        std::string get_info() const {
             return "file://" + filename_;
         }
 
@@ -154,7 +156,7 @@ class DabOutputFifo : public DabOutputFile
 
         int Write(void* buffer, int size);
 
-        std::string get_info() {
+        std::string get_info() const {
             return "fifo://" + filename_;
         }
 
@@ -195,7 +197,7 @@ class DabOutputRaw : public DabOutput
         int Write(void* buffer, int size);
         int Close();
 
-        std::string get_info() {
+        std::string get_info() const {
             return "raw://" + filename_;
         }
     private:
@@ -234,7 +236,7 @@ class DabOutputUdp : public DabOutput
         int Write(void* buffer, int size);
         int Close() { return 0; }
 
-        std::string get_info() {
+        std::string get_info() const {
             return "udp://" + uri_;
         }
     private:
@@ -271,7 +273,7 @@ class DabOutputTcp : public DabOutput
         int Write(void* buffer, int size);
         int Close();
 
-        std::string get_info() {
+        std::string get_info() const {
             return "tcp://" + uri_;
         }
 
@@ -299,7 +301,7 @@ class DabOutputSimul : public DabOutput
         int Write(void* buffer, int size);
         int Close() { return 0; }
 
-        std::string get_info() {
+        std::string get_info() const {
             return "simul://" + name_;
         }
     private:
@@ -376,7 +378,7 @@ class DabOutputZMQ : public DabOutput
             zmq_pub_sock_.close();
         }
 
-        std::string get_info() {
+        std::string get_info() const {
             return "zmq: " + zmq_proto_ + "://" + endpoint_;
         }
 

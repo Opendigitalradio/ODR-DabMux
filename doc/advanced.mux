@@ -39,11 +39,6 @@ general {
     ; If the port is zero, or the line commented, the server
     ; is not started.
     managementport 12720
-
-    ; FIG Carousel
-    ; Set this to true to use the new FIG carousel implementation,
-    ; which makes better usage of the FIB space.
-    new_fig_carousel true
 }
 
 remotecontrol {
@@ -96,6 +91,7 @@ services {
     ; Each service has it's own unique identifier, that is
     ; used throughout the configuration file and for the RC.
     srv-fu {
+        id 0x8daa
         label "Funk"
         shortlabel "Fu"
         pty 0
@@ -122,10 +118,12 @@ services {
         }
     }
     srv-lu {
+        id 0x8dab
         label "Luschtig"
         ; pty, language, shortlabel and id can be omitted, and will take default values
     }
     srv-ri {
+        id 0x8dac
         label "rick"
     }
 

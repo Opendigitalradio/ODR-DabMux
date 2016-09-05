@@ -3,8 +3,10 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -53,12 +55,47 @@ std::string AnnouncementCluster::tostring() const
     ss << ", flags 0x" << boost::format("%04x") % flags;
     ss << ", subchannel " << subchanneluid;
     if (m_active) {
-        ss << " *";
+        ss << " active ";
+    }
+
+    if (m_deferred_start_time) {
+        ss << " start pending";
+    }
+
+    if (m_deferred_stop_time) {
+        ss << " stop pending";
     }
 
     ss << " )";
 
     return ss.str();
+}
+
+bool AnnouncementCluster::is_active(void)
+{
+    if (m_deferred_start_time)
+    {
+        const auto now = std::chrono::steady_clock::now();
+
+        if (*m_deferred_start_time <= now) {
+            m_active = true;
+
+            m_deferred_start_time = boost::none;
+        }
+    }
+
+    if (m_deferred_stop_time)
+    {
+        const auto now = std::chrono::steady_clock::now();
+
+        if (*m_deferred_stop_time <= now) {
+            m_active = false;
+
+            m_deferred_stop_time = boost::none;
+        }
+    }
+
+    return m_active;
 }
 
 void AnnouncementCluster::set_parameter(const string& parameter,
@@ -68,6 +105,26 @@ void AnnouncementCluster::set_parameter(const string& parameter,
         stringstream ss;
         ss << value;
         ss >> m_active;
+    }
+    else if (parameter == "start_in") {
+        stringstream ss;
+        ss << value;
+
+        int start_in_ms;
+        ss >> start_in_ms;
+
+        using namespace std::chrono;
+        m_deferred_start_time = steady_clock::now() + milliseconds(start_in_ms);
+    }
+    else if (parameter == "stop_in") {
+        stringstream ss;
+        ss << value;
+
+        int stop_in_ms;
+        ss >> stop_in_ms;
+
+        using namespace std::chrono;
+        m_deferred_stop_time = steady_clock::now() + milliseconds(stop_in_ms);
     }
     else {
         stringstream ss;
@@ -79,9 +136,29 @@ void AnnouncementCluster::set_parameter(const string& parameter,
 
 const string AnnouncementCluster::get_parameter(const string& parameter) const
 {
+    using namespace std::chrono;
+
     stringstream ss;
     if (parameter == "active") {
         ss << m_active;
+    }
+    else if (parameter == "start_in") {
+        if (m_deferred_start_time) {
+            const auto diff = *m_deferred_start_time - steady_clock::now();
+            ss << duration_cast<milliseconds>(diff).count();
+        }
+        else {
+            ss << "Not set";
+        }
+    }
+    else if (parameter == "stop_in") {
+        if (m_deferred_stop_time) {
+            const auto diff = *m_deferred_stop_time - steady_clock::now();
+            ss << duration_cast<milliseconds>(diff).count();
+        }
+        else {
+            ss << "Not set";
+        }
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -201,13 +278,13 @@ void DabLabel::writeLabel(uint8_t* buf) const
     }
 }
 
-vector<dabSubchannel*>::iterator getSubchannel(
-        vector<dabSubchannel*>& subchannels, int id)
+vector<DabSubchannel*>::iterator getSubchannel(
+        vector<DabSubchannel*>& subchannels, int id)
 {
     return find_if(
             subchannels.begin(),
             subchannels.end(),
-            bind2nd(SubchannelId(), id)
+            [&](const DabSubchannel* s){ return s->id == id; }
             );
 }
 
@@ -254,7 +331,7 @@ std::vector<std::shared_ptr<DabService> >::iterator getService(
     throw std::runtime_error("Service not included in any component");
 }
 
-bool DabComponent::isPacketComponent(vector<dabSubchannel*>& subchannels)
+bool DabComponent::isPacketComponent(vector<DabSubchannel*>& subchannels) const
 {
     if (subchId > 63) {
         etiLog.log(error,
@@ -335,10 +412,9 @@ const string DabComponent::get_parameter(const string& parameter) const
 
 }
 
-
-subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble)
+subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble) const
 {
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
     vector<DabComponent*>::iterator component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
@@ -353,7 +429,30 @@ subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble)
     return (*subchannel)->type;
 }
 
-unsigned char DabService::nbComponent(vector<DabComponent*>& components)
+bool DabService::isProgramme(std::shared_ptr<dabEnsemble> ensemble) const
+{
+    bool ret = false;
+    switch (getType(ensemble)) {
+        case subchannel_type_t::Audio: // Audio
+            ret = true;
+            break;
+        case subchannel_type_t::DataDmb:
+        case subchannel_type_t::Fidc:
+        case subchannel_type_t::Packet:
+            ret = false;
+            break;
+        default:
+            etiLog.log(error,
+                    "Error, unknown service type: %u\n",
+                    getType(ensemble));
+            throw std::runtime_error("DabService::isProgramme unknown service type");
+    }
+
+    return ret;
+}
+
+
+unsigned char DabService::nbComponent(vector<DabComponent*>& components) const
 {
     int nb = 0;
     vector<DabComponent*>::iterator current;
@@ -493,29 +592,26 @@ const string dabEnsemble::get_parameter(const string& parameter) const
     return ss.str();
 }
 
-unsigned short getSizeCu(dabSubchannel* subchannel)
+unsigned short DabSubchannel::getSizeCu() const
 {
-    if (subchannel->protection.form == UEP) {
-        return Sub_Channel_SizeTable[subchannel->
-            protection.uep.tableIndex];
+    if (protection.form == UEP) {
+        return Sub_Channel_SizeTable[protection.uep.tableIndex];
     }
-    else if (subchannel->protection.form == EEP) {
-        dabProtectionEEP* protection =
-            &subchannel->protection.eep;
-        switch (protection->profile) {
+    else if (protection.form == EEP) {
+        switch (protection.eep.profile) {
         case EEP_A:
-            switch (subchannel->protection.level) {
+            switch (protection.level) {
             case 0:
-                return (subchannel->bitrate * 12) >> 3;
+                return (bitrate * 12) >> 3;
                 break;
             case 1:
-                return subchannel->bitrate;
+                return bitrate;
                 break;
             case 2:
-                return (subchannel->bitrate * 6) >> 3;
+                return (bitrate * 6) >> 3;
                 break;
             case 3:
-                return (subchannel->bitrate >> 1);
+                return (bitrate >> 1);
                 break;
             default: // Should not happens
                 etiLog.log(error, "Bad protection level on "
@@ -524,18 +620,18 @@ unsigned short getSizeCu(dabSubchannel* subchannel)
             }
             break;
         case EEP_B:
-            switch (subchannel->protection.level) {
+            switch (protection.level) {
             case 0:
-                return (subchannel->bitrate * 27) >> 5;
+                return (bitrate * 27) >> 5;
                 break;
             case 1:
-                return (subchannel->bitrate * 21) >> 5;
+                return (bitrate * 21) >> 5;
                 break;
             case 2:
-                return (subchannel->bitrate * 18) >> 5;
+                return (bitrate * 18) >> 5;
                 break;
             case 3:
-                return (subchannel->bitrate * 15) >> 5;
+                return (bitrate * 15) >> 5;
                 break;
             default: // Should not happens
                 etiLog.log(error,
@@ -551,20 +647,19 @@ unsigned short getSizeCu(dabSubchannel* subchannel)
     return 0;
 }
 
-unsigned short getSizeDWord(dabSubchannel* subchannel)
+unsigned short DabSubchannel::getSizeByte(void) const
 {
-    return (subchannel->bitrate * 3) >> 3;
+    return bitrate * 3;
 }
 
-unsigned short getSizeByte(dabSubchannel* subchannel)
+unsigned short DabSubchannel::getSizeWord(void) const
 {
-    return subchannel->bitrate * 3;
+    return (bitrate * 3) >> 2;
 }
 
-
-unsigned short getSizeWord(dabSubchannel* subchannel)
+unsigned short DabSubchannel::getSizeDWord(void) const
 {
-    return (subchannel->bitrate * 3) >> 2;
+    return (bitrate * 3) >> 3;
 }
 
 

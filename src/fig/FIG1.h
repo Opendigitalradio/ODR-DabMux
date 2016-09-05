@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -103,7 +103,73 @@ class FIG1_5 : public IFIG
         std::vector<std::shared_ptr<DabService> >::iterator service;
 };
 
-}
-#endif // __FIG1_H_
+#ifdef _WIN32
+#   pragma pack(push)
+#endif
 
+struct FIGtype1_0 {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:3;
+    uint8_t OE:1;
+    uint8_t Charset:4;
+
+    uint16_t EId;
+} PACKED;
+
+
+struct FIGtype1_1 {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:3;
+    uint8_t OE:1;
+    uint8_t Charset:4;
+
+    uint16_t Sld;
+} PACKED;
+
+
+struct FIGtype1_5 {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:3;
+    uint8_t OE:1;
+    uint8_t Charset:4;
+    uint32_t SId;
+} PACKED;
+
+
+struct FIGtype1_4_programme {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:3;
+    uint8_t OE:1;
+    uint8_t Charset:4;
+    uint8_t SCIdS:4;
+    uint8_t rfa:3;
+    uint8_t PD:1;
+    uint16_t SId;
+} PACKED;
+
+
+struct FIGtype1_4_data {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:3;
+    uint8_t OE:1;
+    uint8_t Charset:4;
+    uint8_t SCIdS:4;
+    uint8_t rfa:3;
+    uint8_t PD:1;
+    uint32_t SId;
+} PACKED;
+
+
+#ifdef _WIN32
+#   pragma pack(pop)
+#endif
+
+} // namespace FIC
+
+#endif // __FIG1_H_
 

@@ -54,8 +54,6 @@ void RemoteControllerTelnet::restart()
 // thread.
 void RemoteControllerTelnet::restart_thread(long)
 {
-    etiLog.level(warn) << "RC: Restart Telnet server";
-
     m_running = false;
     m_io_service.stop();
 
@@ -151,7 +149,7 @@ void RemoteControllerTelnet::process(long)
 
         // Add an accept call to the service.  This will prevent io_service::run()
         // from returning.
-        etiLog.level(warn) << "RC: Waiting on connection";
+        etiLog.level(info) << "RC: Waiting for connection on port " << m_port;
         acceptor.async_accept(*socket,
                 boost::bind(&RemoteControllerTelnet::handle_accept,
                     this,
@@ -163,7 +161,7 @@ void RemoteControllerTelnet::process(long)
         m_io_service.run();
     }
 
-    etiLog.level(warn) << "RC: Leaving";
+    etiLog.level(info) << "RC: Leaving";
     m_fault = true;
 }
 

@@ -29,7 +29,6 @@ endif
 FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
-if HAVE_ZEROMQ_TEST
 bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen
 
 if HAVE_OUTPUT_RAW_TEST
@@ -37,11 +36,6 @@ bin_PROGRAMS+=odr-zmq2farsync
 endif
 
 ZMQ_LIBS    =-lzmq
-else
-bin_PROGRAMS=odr-dabmux odr-bridgetest
-
-ZMQ_LIBS    =
-endif
 
 if HAVE_CURL_TEST
 CURL_LIBS    =-lcurl
@@ -105,7 +99,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      UdpSocket.h UdpSocket.cpp \
                      bridge.h bridge.c \
                      crc.h crc.c \
-                     dabUtils.h dabUtils.cpp \
                      fig/FIG.h fig/FIG.cpp \
                      fig/FIG0.cpp fig/FIG0.h \
                      fig/FIG1.cpp fig/FIG1.h \

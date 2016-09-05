@@ -17,7 +17,7 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [0.9.0], [matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux], [1.1.0], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])
@@ -118,14 +118,6 @@ AC_ARG_ENABLE([input_file],
         [], [enable_input_file=yes])
 AS_IF([test "x$enable_input_file" = "xyes"],
         [AC_DEFINE(HAVE_INPUT_FILE, [1], [Define if FILE input is enabled])])
-# ZeroMQ
-AC_ARG_ENABLE([input_zeromq],
-        [AS_HELP_STRING([--disable-input-zeromq], [Disable ZeroMQ input])],
-        [], [enable_input_zeromq=yes])
-AS_IF([test "x$enable_input_zeromq" = "xyes"],
-        [AC_CHECK_LIB(zmq, zmq_init, [] , AC_MSG_ERROR(ZeroMQ libzmq is required))])
-AS_IF([test "x$enable_input_zeromq" = "xyes"],
-       AC_DEFINE(HAVE_INPUT_ZEROMQ, [1], [Define if ZEROMQ input is enabled]))
 
 # PRBS
 AC_ARG_ENABLE([input_prbs],
@@ -188,14 +180,7 @@ AC_ARG_ENABLE([output_simul],
         [], [enable_output_simul=yes])
 AS_IF([test "x$enable_output_simul" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_SIMUL, [1], [Define if SIMUL output is enabled])])
-# ZeroMQ message queue output
-AC_ARG_ENABLE([output_zeromq],
-        [AS_HELP_STRING([--disable-output-zeromq], [Disable ZeroMQ output])],
-        [], [enable_output_zeromq=yes])
-AS_IF([test "x$enable_output_zeromq" = "xyes"],
-       AC_CHECK_LIB(zmq, zmq_init, [true], [AC_MSG_ERROR([ZeroMQ libzmq is required])]))
-AS_IF([test "x$enable_output_zeromq" = "xyes"],
-       AC_DEFINE(HAVE_OUTPUT_ZEROMQ, [1], [Define if ZeroMQ output is enabled]))
+
 # EDI
 AC_ARG_ENABLE([output_edi],
         [AS_HELP_STRING([--disable-output-edi], [Disable EDI output])],
@@ -207,9 +192,11 @@ AS_IF([test "x$enable_output_edi" = "xyes"],
 AS_IF([test "x$enable_output_edi" = "xyes"],
         [AC_DEFINE(HAVE_CURL, [1], [Define if cURL is available])])
 
-# Link against lzmq
-AM_CONDITIONAL([HAVE_ZEROMQ_TEST],
-			   [test "x$enable_output_zeromq" = "xyes" -o "x$enable_input_zeromq" = "xyes"])
+# ZeroMQ
+AC_CHECK_LIB(zmq, zmq_init, [] , AC_MSG_ERROR(ZeroMQ libzmq is required))
+
+AC_DEFINE([HAVE_INPUT_ZEROMQ], [1], [Define if ZeroMQ input is enabled])
+AC_DEFINE([HAVE_OUTPUT_ZEROMQ], [1], [Define if ZeroMQ output is enabled])
 
 # Link against cURL
 AM_CONDITIONAL([HAVE_CURL_TEST],
@@ -275,10 +262,12 @@ AC_OUTPUT
 echo
 echo "***********************************************"
 echo
+echo ZeroMQ input, output and management server enabled.
+echo
 echo "Inputs:"
 enabled=""
 disabled=""
-for output in prbs test slip udp fifo file zeromq
+for output in prbs test slip udp fifo file
 do
     eval var=\$enable_input_$output
     AS_IF([test "x$var" = "xyes"],
@@ -306,7 +295,7 @@ echo
 echo "Outputs:"
 enabled=""
 disabled=""
-for output in file fifo udp tcp raw simul zeromq edi
+for output in file fifo udp tcp raw simul edi
 do
     eval var=\$enable_output_$output
     AS_IF([test "x$var" = "xyes"],

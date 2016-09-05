@@ -38,6 +38,10 @@ void Logger::register_backend(LogBackend* backend) {
 
 void Logger::log(log_level_t level, const char* fmt, ...)
 {
+    if (level == discard) {
+        return;
+    }
+
     int size = 100;
     std::string str;
     va_list ap;
@@ -61,6 +65,10 @@ void Logger::log(log_level_t level, const char* fmt, ...)
 
 void Logger::logstr(log_level_t level, std::string message)
 {
+    if (level == discard) {
+        return;
+    }
+
     /* Remove a potential trailing newline.
      * It doesn't look good in syslog
      */

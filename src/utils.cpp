@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013, 2014, 2015 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
 */
 /*
    This file is part of ODR-DabMux.
@@ -31,22 +31,43 @@
 
 using namespace std;
 
-time_t getDabTime()
+static time_t dab_time_seconds = 0;
+static int dab_time_millis = 0;
+
+void update_dab_time()
 {
-    static time_t oldTime = 0;
-    static int offset = 0;
-    if (oldTime == 0) {
-        oldTime = time(NULL);
+    if (dab_time_seconds == 0) {
+        dab_time_seconds = time(NULL);
     } else {
-        offset+= 24;
-        if (offset >= 1000) {
-            offset -= 1000;
-            ++oldTime;
+        dab_time_millis+= 24;
+        if (dab_time_millis >= 1000) {
+            dab_time_millis -= 1000;
+            ++dab_time_seconds;
         }
     }
-    return oldTime;
 }
 
+void get_dab_time(time_t *time, uint32_t *millis)
+{
+    *time = dab_time_seconds;
+    *millis = dab_time_millis;
+}
+
+
+uint32_t gregorian2mjd(int year, int month, int day)
+{
+    //This is the algorithm for the JD, just substract 2400000.5 for MJD
+    year += 8000;
+    if(month < 3) {
+        year--;
+        month += 12;
+    }
+    uint32_t JD =
+        (year * 365) + (year / 4) - (year / 100) + (year / 400) - 1200820
+        + ((month * 153 + 3) / 5) - 92 + (day - 1);
+
+    return (uint32_t)(JD - 2400000.5); //truncation, loss of data OK!
+}
 
 /* We use fprintf here because this doesn't have
  * to go to the log.
@@ -354,7 +375,7 @@ void printUsage(char *name, FILE* out)
 }
 #endif
 
-void printOutputs(vector<shared_ptr<DabOutput> >& outputs)
+void printOutputs(const vector<shared_ptr<DabOutput> >& outputs)
 {
     int index = 0;
 
@@ -479,9 +500,9 @@ void printComponent(DabComponent* component)
     }
 }
 
-void printSubchannels(vector<dabSubchannel*>& subchannels)
+void printSubchannels(vector<DabSubchannel*>& subchannels)
 {
-    vector<dabSubchannel*>::iterator subchannel;
+    vector<DabSubchannel*>::iterator subchannel;
     int index = 0;
 
     for (subchannel = subchannels.begin(); subchannel != subchannels.end();
@@ -528,7 +549,7 @@ void printSubchannels(vector<dabSubchannel*>& subchannels)
         etiLog.log(info, " SAD:        %u",
                 (*subchannel)->startAddress);
         etiLog.log(info, " size (CU):  %i",
-                getSizeCu(*subchannel));
+                (*subchannel)->getSizeCu());
         ++index;
     }
 }

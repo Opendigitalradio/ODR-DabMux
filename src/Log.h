@@ -44,10 +44,10 @@
 #define SYSLOG_IDENT "ODR-DabMux"
 #define SYSLOG_FACILITY LOG_LOCAL0
 
-enum log_level_t {debug = 0, info, warn, error, alert, emerg};
+enum log_level_t {debug = 0, info, warn, error, alert, emerg, discard};
 
 static const std::string levels_as_str[] =
-    { "     ", "     ", "WARN ", "ERROR", "ALERT", "EMERG"} ;
+    { "     ", "     ", "WARN ", "ERROR", "ALERT", "EMERG", "-----"} ;
 
 /** Abstract class all backends must inherit from */
 class LogBackend {
@@ -166,13 +166,17 @@ class LogLine {
         // Push the new element into the stringstream
         template <typename T>
         LogLine& operator<<(T s) {
-            os << s;
+            if (level_ != discard) {
+                os << s;
+            }
             return *this;
         }
 
         ~LogLine()
         {
-            logger_->logstr(level_, os.str());
+            if (level_ != discard) {
+                logger_->logstr(level_, os.str());
+            }
         }
 
     private:

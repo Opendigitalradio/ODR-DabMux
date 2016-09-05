@@ -168,7 +168,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
             m_enable_input(true),
             m_config(config),
             m_stats(m_name),
-            m_prebuf_current(0) {
+            m_prebuf_current(config.prebuffering) {
                 RC_ADD_PARAMETER(enable,
                         "If the input is enabled. Set to zero to empty the buffer.");
 

@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -318,14 +318,12 @@ class ManagementServer
             m_zmq_context(),
             m_zmq_sock(m_zmq_context, ZMQ_REP),
             m_running(false),
-            m_fault(false),
-            m_pending(false) { }
+            m_fault(false) { }
 
         ~ManagementServer()
         {
             m_running = false;
             m_fault = false;
-            m_pending = false;
 
             // TODO notify
             m_thread.join();
@@ -342,9 +340,6 @@ class ManagementServer
         /* Un-/Register a statistics data source */
         void registerInput(InputStat* is);
         void unregisterInput(std::string id);
-
-        /* Ask if there is a configuration request pending */
-        bool request_pending() { return m_pending; }
 
         /* Load a ptree given by the management server.
          *
@@ -372,7 +367,6 @@ class ManagementServer
 
         void serverThread(void);
         void handle_message(zmq::message_t& zmq_message);
-        bool handle_setptree(zmq::message_t& zmq_message, std::stringstream& answer);
 
         bool isInputRegistered(std::string& id);
 
@@ -410,11 +404,7 @@ class ManagementServer
         mutable boost::mutex m_statsmutex;
 
         /******** Configuration Data *******/
-        bool m_pending;
-        bool m_retrieve_pending;
-        boost::condition_variable m_condition;
         mutable boost::mutex m_configmutex;
-
         boost::property_tree::ptree m_pt;
 };
 

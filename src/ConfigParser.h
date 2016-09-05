@@ -42,7 +42,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble,
         std::shared_ptr<BaseRemoteController> rc);
 
-void setup_subchannel_from_ptree(dabSubchannel* subchan,
+void setup_subchannel_from_ptree(DabSubchannel* subchan,
         boost::property_tree::ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         std::string subchanuid,

@@ -48,6 +48,7 @@
 #ifdef HAVE_CURL
 #  include <curl/curl.h>
 #endif
+#include <array>
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -114,7 +115,7 @@ int ClockTAI::parse_tai_offset()
     boost::regex regex_bulletin("([0-9]{4}) ([A-Z]{3}) +([0-9]+) =JD +[0-9.]+ +TAI-UTC= *([0-9.]+)");
     /*      regex groups:       Year       Month       Day      Julian date            Offset */
 
-    const std::array<std::string,12> months{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+    const std::array<std::string, 12> months{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
 
     /* I'm not certain about the format they would use if the day is a two-digit number. Will they keep
      * two spaces after the month? The regex should be resilient enough in that case.

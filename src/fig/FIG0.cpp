@@ -980,19 +980,19 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
 
             FIG0_13_app* app = (FIG0_13_app*)buf;
             app->setType((*componentFIG0_13)->packet.appType);
-   			if (app->typeLow == FIG0_13_APPTYPE_EPG) {
-				app->length = 2;
-				app->xpad = htons(0x0100);
-				/* xpad used to hold two bytes of EPG profile information
-				01 = basic profile
-				00 = list terminator */
-			}
-			else {
-				app->length = 0;
-			}
-			buf += 2 + app->length;
-			remaining -= 2 + app->length;
-			fig0->Length += 2 + app->length;
+            if (app->typeLow == FIG0_13_APPTYPE_EPG) {
+                app->length = 2;
+                app->xpad = htons(0x0100);
+                /* xpad used to hold two bytes of EPG profile information
+                   01 = basic profile
+                   00 = list terminator */
+            }
+            else {
+                app->length = 0;
+            }
+            buf += 2 + app->length;
+            remaining -= 2 + app->length;
+            fig0->Length += 2 + app->length;
         }
     }
 

@@ -276,25 +276,21 @@ components {
         ; FIG 0/13 is only transmitted when figtype is defined.
         ; The -d option on the command line is:
         ;datagroup (true|false)
-        ; and defaults to false. You should normally set 
-		;datagroup true
-		; if your packet mode channel is tranferrng an MOT application such
-		; as EPG or Slideshow.
+        ; and defaults to false. You should normally set
+        ;datagroup true
+        ; if your packet mode subchannel is tranferring an MOT application such
+        ; as EPG or Slideshow.
     }
 
     comp-lu {
         service srv-lu
         subchannel sub-lu
-		
-		datagroup true
         figtype 0x2
     }
 
     comp-ri {
         service srv-ri
         subchannel sub-ri
-
-		datagroup true
         figtype 0x2
     }
 }

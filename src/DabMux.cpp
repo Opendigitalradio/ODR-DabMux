@@ -105,7 +105,6 @@ typedef DWORD32 uint32_t;
 #include "dabInputEnhancedFifo.h"
 #include "dabInputUdp.h"
 #include "dabInputBridgeUdp.h"
-#include "dabInputSlip.h"
 #include "dabInputTest.h"
 #include "dabInputPrbs.h"
 #include "dabInputRawFile.h"
@@ -499,8 +498,6 @@ int main(int argc, char *argv[])
     fflush(stderr);
 
     outputs.clear();
-
-    UdpSocket::clean();
 
     if (returnCode != 0) {
         etiLog.log(emerg, "...aborting\n");

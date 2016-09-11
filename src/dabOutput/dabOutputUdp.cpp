@@ -2,8 +2,10 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    UDP output
    */
@@ -79,12 +81,6 @@ int DabOutputUdp::Open(const char* name)
 
         this->packet_->getAddress().setPort(port);
 
-        if (this->socket_->create() == -1) {
-            etiLog.level(error) << "can't create UDP socket (" <<
-                inetErrDesc << ": " << inetErrMsg << ")";
-            return -1;
-        }
-
         string query_params = what[3];
         smatch query_what;
         if (regex_match(query_params, query_what, re_query, match_default)) {
@@ -132,7 +128,7 @@ int DabOutputUdp::Open(const char* name)
 
 int DabOutputUdp::Write(void* buffer, int size)
 {
-    this->packet_->setLength(0);
+    this->packet_->setSize(0);
     this->packet_->addData(buffer, size);
     return this->socket_->send(*this->packet_);
 }

@@ -76,18 +76,18 @@ int dabInputBridgeUdpRead(dabInputOperations* ops, void* args, void* buffer, int
     stats->frameRecords[stats->frameCount].curSize = 0;
     stats->frameRecords[stats->frameCount].maxSize = size;
 
-    if (input->udpData->packet->getLength() == 0) {
+    if (input->udpData->packet->getSize() == 0) {
         input->udpData->socket->receive(*input->udpData->packet);
     }
     while ((nbBytes = writePacket(input->udpData->packet->getData(),
-                    input->udpData->packet->getLength(), buffer, size,
+                    input->udpData->packet->getSize(), buffer, size,
                     input->info))
             != 0) {
         stats->frameRecords[stats->frameCount].curSize = nbBytes;
         input->udpData->socket->receive(*input->udpData->packet);
     }
 
-    if (input->udpData->packet->getLength() != 0) {
+    if (input->udpData->packet->getSize() != 0) {
         stats->frameRecords[stats->frameCount].curSize = size;
     }
 

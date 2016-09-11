@@ -2,7 +2,9 @@
    Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the
    Queen in Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2015 Matthias P. Braendli
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
     http://www.opendigitalradio.org
    */
 /*
@@ -30,23 +32,16 @@
 #endif
 
 #include "InetAddress.h"
-#ifdef _WIN32
-# include <winsock.h>
-# define socklen_t        int
-# define reuseopt_t       char
-#else
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <unistd.h>
-# include <netdb.h>
-# include <arpa/inet.h>
-# include <pthread.h>
-# define SOCKET           int
-# define INVALID_SOCKET   -1
-# define SOCKET_ERROR     -1
-# define reuseopt_t       int
-#endif
-//#define INVALID_PORT      -1
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#define SOCKET           int
+#define INVALID_SOCKET   -1
+#define SOCKET_ERROR     -1
+#define reuseopt_t       int
 
 #include <stdlib.h>
 #include <iostream>
@@ -62,77 +57,111 @@ class UdpPacket;
  *  Each packet sent or received on a datagram socket is individually
  *  addressed and routed. Multiple packets sent from one machine to another may
  *  be routed differently, and may arrive in any order.
- *  @author Pascal Charest pascal.charest@crc.ca
  */
-class UdpSocket {
- public:
-  UdpSocket();
-  UdpSocket(int port, char *name = NULL);
-  ~UdpSocket();
-  UdpSocket(const UdpSocket& other) = delete;
-  const UdpSocket& operator=(const UdpSocket& other) = delete;
+class UdpSocket
+{
+    public:
+        /** Create a new socket that will not be bound to any port. To be used
+         * for data output.
+         */
+        UdpSocket();
+        /** Create a new socket.
+         *  @param port The port number on which the socket will be bound
+         */
+        UdpSocket(int port);
+        /** Create a new socket.
+         *  @param port The port number on which the socket will be bound
+         *  @param name The IP address on which the socket will be bound.
+         *              It is used to bind the socket on a specific interface if
+         *              the computer have many NICs.
+         */
+        UdpSocket(int port, const std::string& name);
+        ~UdpSocket();
+        UdpSocket(const UdpSocket& other) = delete;
+        const UdpSocket& operator=(const UdpSocket& other) = delete;
 
-  static int init();
-  static int clean();
+        /** Send an UDP packet.
+         *  @param packet The UDP packet to be sent. It includes the data and the
+         *                destination address
+         *  return 0 if ok, -1 if error
+         */
+        int send(UdpPacket& packet);
 
-  int create(int port = 0, char *name = NULL);
+        /** Send an UDP packet
+         *
+         *  return 0 if ok, -1 if error
+         */
+        int send(const std::vector<uint8_t>& data, InetAddress destination);
 
-  int send(UdpPacket &packet);
-  int send(const std::vector<uint8_t> data);
-  int send(std::vector<uint8_t> data, InetAddress destination);
-  int receive(UdpPacket &packet);
-  int joinGroup(char* groupname);
-  int setMulticastSource(const char* source_addr);
-  int setMulticastTTL(int ttl);
-  /**
-   *  Connects the socket on a specific address. Only data from this address
-   *  will be received.
-   *  @param addr The address to connect the socket
-   *  @warning Not implemented yet.
-   */
-  void connect(InetAddress &addr);
-  int setBlocking(bool block);
+        /** Receive an UDP packet.
+         *  @param packet The packet that will receive the data. The address will be set
+         *                to the source address.
+         *  @return 0 if ok, -1 if error
+         */
+        int receive(UdpPacket& packet);
 
- protected:
-  /// The address on which the socket is binded.
-  InetAddress address;
-  /// The low-level socket used by system functions.
-  SOCKET listenSocket;
+        int joinGroup(char* groupname);
+        int setMulticastSource(const char* source_addr);
+        int setMulticastTTL(int ttl);
+
+        /** Set blocking mode. By default, the socket is blocking.
+         *  @return 0  if ok
+         *          -1 if error
+         */
+        int setBlocking(bool block);
+
+    protected:
+        int init_sock(int port, const std::string& name);
+
+        /// The address on which the socket is bound.
+        InetAddress address;
+        /// The low-level socket used by system functions.
+        SOCKET listenSocket;
 };
 
-/**
- *  This class represents a UDP packet. 
+/** This class represents a UDP packet.
  *
- *  UDP packets are used to implement a connectionless packet delivery service.
- *  Each message is routed from one machine to another based solely on
- *  information contained within that packet. Multiple packets sent from one
- *  machine to another might be routed differently, and might arrive in any order. 
- *  @author Pascal Charest pascal.charest@crc.ca
+ *  A UDP packet contains a payload (sequence of bytes) and an address. For
+ *  outgoing packets, the address is the destination address. For incoming
+ *  packets, the address tells the user from what source the packet arrived from.
  */
-class UdpPacket {
- public:
-  UdpPacket(unsigned int initSize = 1024);
-  UdpPacket(const UdpPacket& packet) = delete;
-  const UdpPacket& operator=(const UdpPacket&) = delete;
-  UdpPacket(const UdpPacket&& packet) = delete;
-  const UdpPacket& operator=(const UdpPacket&&) = delete;
-  ~UdpPacket();
+class UdpPacket
+{
+    public:
+        /** Construct an empty UDP packet.
+         */
+        UdpPacket();
+        UdpPacket(size_t initSize);
+        UdpPacket(const UdpPacket& packet) = delete;
+        const UdpPacket& operator=(const UdpPacket&) = delete;
+        UdpPacket(const UdpPacket&& packet) = delete;
+        const UdpPacket& operator=(const UdpPacket&&) = delete;
 
-  char *getData();
-  void addData(const void *data, unsigned size);
-  unsigned long getLength();
-  unsigned long getSize();
-  unsigned long getOffset();
-  void setLength(unsigned long len);
-  void setOffset(unsigned long val);
-  void setSize(unsigned newSize);
-  InetAddress &getAddress();
-  
- private:
-  char *dataBuf;
-  unsigned long length, size, offset;
-  InetAddress address;
+        /** Give the pointer to data.
+         *  @return The pointer
+         */
+        uint8_t* getData(void);
+
+        /** Append some data at the end of data buffer and adjust size.
+         *  @param data Pointer to the data to add
+         *  @param size Size in bytes of new data
+         */
+        void addData(const void *data, size_t size);
+
+        size_t getSize(void);
+
+        /** Changes size of the data buffer size. Keeps data intact unless
+         *  truncated.
+         */
+        void setSize(size_t newSize);
+
+        /** Returns the UDP address of the packet.
+         */
+        InetAddress getAddress(void);
+
+    private:
+        std::vector<uint8_t> m_buffer;
+        InetAddress address;
 };
 
 #endif // _UDPSOCKET
-

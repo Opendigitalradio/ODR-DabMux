@@ -1,6 +1,11 @@
 /*
    Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the
    Queen in Right of Canada (Communications Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -26,33 +31,17 @@
 #   include "config.h"
 #endif
 
-// General libraries
 #include <stdlib.h>
-// Linux librairies
-#ifndef _WIN32
-// # include <sys/types.h>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <unistd.h>
-# include <netdb.h>
-# include <arpa/inet.h>
-# include <pthread.h>
-# define SOCKET                  int
-# define INVALID_SOCKET  -1
-# define closesocket             ::close
-// Windows librairies
-#else
-#   include <winsock.h>
-#   ifdef _MSC_VER
-#       pragma comment(lib, "wsock32.lib")
-#   elif defined(__BORLANDC__)
-#       pragma(lib, "mswsock.lib")
-#   endif
-#   ifndef IN_MULTICAST
-#       define IN_MULTICAST(a)  ((((unsigned long) (a)) & 0xf0000000) == 0xe0000000)
-#   endif
-#endif
-// General definitions
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#include <string>
+
+#define SOCKET                  int
+#define INVALID_SOCKET          -1
 #define INVALID_PORT            -1
 
 
@@ -79,7 +68,7 @@ class InetAddress {
   sockaddr *getAddress();
   const char *getHostAddress();
   int getPort();
-  int setAddress(const char *name);
+  int setAddress(const std::string& name);
   void setPort(int port);
   bool isMulticastAddress();
 

@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef HAVE_FORMAT_DMB
 
 struct dabInputDmbFileData {
     FILE* file;
@@ -62,7 +63,6 @@ int dabInputDmbFileInit(void** args)
     input->dmb = new Dmb();
     *args = input;
 
-    UdpSocket::init();
     return 0;
 }
 
@@ -159,3 +159,4 @@ int dabInputDmbFileClean(void** args)
 }
 
 
+#endif //HAVE_FORMAT_DMB

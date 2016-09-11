@@ -1,6 +1,11 @@
 /*
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -27,71 +32,73 @@
 #endif
 
 #include "InetAddress.h"
-#ifdef _WIN32
-# include <winsock.h>
-# define socklen_t        int
-# define reuseopt_t       char
-#else
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <unistd.h>
-# include <netdb.h>
-# include <arpa/inet.h>
-# include <pthread.h>
-# define SOCKET           int
-# define INVALID_SOCKET   -1
-# define SOCKET_ERROR     -1
-# define reuseopt_t       int
-#endif
-//#define INVALID_PORT      -1
-
-//# include "SocketSelector.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#define SOCKET           int
+#define INVALID_SOCKET   -1
+#define SOCKET_ERROR     -1
+#define reuseopt_t       int
 
 #include <iostream>
+#include <string>
 
 /**
- *  This class represents a socket for sending and receiving UDP packets.
- *
- *  A UDP socket is the sending or receiving point for a packet delivery service.
- *  Each packet sent or received on a datagram socket is individually
- *  addressed and routed. Multiple packets sent from one machine to another may
- *  be routed differently, and may arrive in any order. 
- *  @author Pascal Charest pascal.charest@crc.ca
+ *  This class represents a TCP socket.
  */
-class TcpSocket {
- friend class SocketSelector;
- public:
-  TcpSocket();
-  TcpSocket(int port, char *name = NULL);
-  ~TcpSocket();
+class TcpSocket
+{
+    public:
+        /** Create a new socket that does nothing */
+        TcpSocket();
 
-  static int init();
-  static int clean();
+        /** Create a new socket listening for incoming connections.
+         *  @param port The port number on which the socket will listen.
+         *  @param name The IP address on which the socket will be bound.
+         *              It is used to bind the socket on a specific interface if
+         *              the computer have many NICs.
+         */
+        TcpSocket(int port, const std::string& name);
+        ~TcpSocket();
+        TcpSocket(TcpSocket&& other);
+        TcpSocket& operator=(TcpSocket&& other);
 
-  int create(int port = 0, char *name = NULL);
-  int close();
+        int close();
 
-  int write(const void* data, int size);
-  int read(void* data, int size);
-  int telnetRead(void* data, int size);
-  /**
-   *  Connects the socket on a specific address. Only data from this address
-   *  will be received.
-   *  @param addr The address to connect the socket
-   *  @warning Not implemented yet.
-   */
-  int setDestination(InetAddress &addr);
-  InetAddress getAddress();
-  void setSocket(SOCKET socket, InetAddress &addr);
-  char* GetLine(int fd);
-  
-  int PeekCount();
+        /** Send data over the TCP connection.
+         *  @param data The buffer that will be sent.
+         *  @param size Number of bytes to send.
+         *  return number of bytes sent or -1 if error
+         */
+        ssize_t send(const void* data, size_t size);
 
- protected:
-  /// The address on which the socket is binded.
-  InetAddress address;
-  /// The low-level socket used by system functions.
-  SOCKET listenSocket;
+        /** Receive data from the socket.
+         *  @param data The buffer that will receive data.
+         *  @param size The buffer size.
+         *  @return number of bytes received or -1 (SOCKET_ERROR) if error
+         */
+        ssize_t recv(void* data, size_t size);
+
+        void listen(void);
+        TcpSocket accept(void);
+
+        /** Retrieve address this socket is bound to */
+        InetAddress getOwnAddress() const;
+        InetAddress getRemoteAddress() const;
+
+    private:
+        TcpSocket(SOCKET sock, InetAddress own, InetAddress remote);
+        TcpSocket(const TcpSocket& other) = delete;
+        TcpSocket& operator=(const TcpSocket& other) = delete;
+
+        /// The address on which the socket is bound.
+        InetAddress m_own_address;
+        InetAddress m_remote_address;
+        /// The low-level socket used by system functions.
+        SOCKET m_sock;
 };
 
 #endif // _TCPSOCKET

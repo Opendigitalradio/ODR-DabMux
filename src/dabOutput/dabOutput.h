@@ -2,13 +2,13 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
-    http://opendigitalradio.org
+    http://www.opendigitalradio.org
 
    An object-oriented version of the output channels.
-   */
+*/
 /*
    This file is part of ODR-DabMux.
 
@@ -30,7 +30,6 @@
 #define __DAB_OUTPUT_H
 
 #include "UdpSocket.h"
-#include "TcpServer.h"
 #include "Log.h"
 #include "string.h"
 #include <stdexcept>
@@ -39,20 +38,11 @@
 #include <chrono>
 #include <memory>
 
-#ifdef _WIN32
-#   include <io.h>
-#   ifdef __MINGW32__
-#       define FS_DECLARE_CFG_ARRAYS
-#       include <winioctl.h>
-#   endif
-#   include <sdci.h>
-#else
-#   include <unistd.h>
-#   include <sys/time.h>
-#   ifndef O_BINARY
-#       define O_BINARY 0
-#   endif // O_BINARY
-#endif
+#include <unistd.h>
+#include <sys/time.h>
+#ifndef O_BINARY
+# define O_BINARY 0
+#endif // O_BINARY
 #ifdef HAVE_OUTPUT_ZEROMQ
 #  include "zmq.hpp"
 #endif
@@ -168,21 +158,15 @@ class DabOutputRaw : public DabOutput
     public:
         DabOutputRaw()
         {
-#ifdef _WIN32
-            socket_ = INVALID_HANDLE_VALUE;
-#else
             socket_ = -1;
             isCyclades_ = false;
-#endif
             buffer_ = new unsigned char[6144];
         }
 
         DabOutputRaw(const DabOutputRaw& other)
         {
             socket_ = other.socket_;
-#ifndef _WIN32
             isCyclades_ = other.isCyclades_;
-#endif
             buffer_ = new unsigned char[6144];
             memcpy(buffer_, other.buffer_, 6144);
         }
@@ -202,12 +186,8 @@ class DabOutputRaw : public DabOutput
         }
     private:
         std::string filename_;
-#ifdef _WIN32
-        HANDLE socket_;
-#else
         int socket_;
         bool isCyclades_;
-#endif
         unsigned char* buffer_;
 };
 
@@ -216,16 +196,9 @@ class DabOutputUdp : public DabOutput
 {
     public:
         DabOutputUdp() {
-            UdpSocket::init();
             packet_ = new UdpPacket(6144);
             socket_ = new UdpSocket();
         }
-
-        // make sure we don't copy this output around
-        // the UdpPacket and UdpSocket do not support
-        // copying either
-        DabOutputUdp(const DabOutputUdp& other);
-        DabOutputUdp operator=(const DabOutputUdp& other);
 
         ~DabOutputUdp() {
             delete socket_;
@@ -240,34 +213,26 @@ class DabOutputUdp : public DabOutput
             return "udp://" + uri_;
         }
     private:
+        // make sure we don't copy this output around
+        // the UdpPacket and UdpSocket do not support
+        // copying either
+        DabOutputUdp(const DabOutputUdp& other) = delete;
+        DabOutputUdp operator=(const DabOutputUdp& other) = delete;
+
         std::string uri_;
         UdpSocket* socket_;
         UdpPacket* packet_;
 };
 
 // -------------- TCP ------------------
+class TCPDataDispatcher;
 class DabOutputTcp : public DabOutput
 {
     public:
-        DabOutputTcp()
-        {
-            TcpSocket::init();
-            server = new TcpServer();
-            client = NULL;
-        }
-
-        DabOutputTcp(const DabOutputTcp& other);
-        DabOutputTcp operator=(const DabOutputTcp& other);
-
-        ~DabOutputTcp() {
-
-#ifdef _WIN32
-            CloseHandle(this->thread_);
-#endif
-
-            delete this->server;
-            delete this->client;
-        }
+        DabOutputTcp() {}
+        DabOutputTcp(const DabOutputTcp& other) = delete;
+        const DabOutputTcp& operator=(const DabOutputTcp& other) = delete;
+        ~DabOutputTcp();
 
         int Open(const char* name);
         int Write(void* buffer, int size);
@@ -277,11 +242,10 @@ class DabOutputTcp : public DabOutput
             return "tcp://" + uri_;
         }
 
-        TcpServer* server;
-        TcpSocket* client;
     private:
         std::string uri_;
-        pthread_t thread_;
+
+        TCPDataDispatcher* dispatcher_;
 };
 
 // -------------- Simul ------------------
@@ -306,11 +270,7 @@ class DabOutputSimul : public DabOutput
         }
     private:
         std::string name_;
-#ifdef _WIN32
-        DWORD startTime_;
-#else
         std::chrono::steady_clock::time_point startTime_;
-#endif
 };
 
 #if defined(HAVE_OUTPUT_ZEROMQ)

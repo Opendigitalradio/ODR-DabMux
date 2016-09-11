@@ -46,6 +46,7 @@ pointers that do dynamic dispatch. Refactoring this to proper classes and
 documenting it properly will simplify the addition of new input formats,
 facilitate runtime configurability and clarify the usages of the inputs.
 
+Also, all inputs using UDP are now broken.
 
 Communicate Leap Seconds
 ------------------------

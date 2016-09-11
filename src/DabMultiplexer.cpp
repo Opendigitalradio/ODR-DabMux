@@ -98,16 +98,10 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 
     if (edi_conf.enabled()) {
         for (auto& edi_destination : edi_conf.destinations) {
-            auto edi_output = std::make_shared<UdpSocket>();
-            int err = edi_output->create(edi_destination.source_port);
-
-            if (err) {
-                etiLog.level(error) << "EDI socket creation failed!";
-                throw MuxInitException();
-            }
+            auto edi_output = std::make_shared<UdpSocket>(edi_destination.source_port);
 
             if (not edi_destination.source_addr.empty()) {
-                err = edi_output->setMulticastSource(edi_destination.source_addr.c_str());
+                int err = edi_output->setMulticastSource(edi_destination.source_addr.c_str());
                 if (err) {
                     etiLog.level(error) << "EDI socket set source failed!";
                     throw MuxInitException();

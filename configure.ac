@@ -131,12 +131,6 @@ AC_ARG_ENABLE([input_test],
         [], [enable_input_test=no])
 AS_IF([test "x$enable_input_test" = "xyes"],
         [AC_DEFINE(HAVE_INPUT_TEST, [1], [Define if TEST input is enabled])])
-# SLIP
-AC_ARG_ENABLE([input_slip],
-        [AS_HELP_STRING([--enable-input-slip], [Enable SLIP input])],
-        [], [enable_input_slip=no])
-AS_IF([test "x$enable_input_slip" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_SLIP, [1], [Define if SLIP input is enabled])])
 # UDP
 AC_ARG_ENABLE([input_udp],
         [AS_HELP_STRING([--enable-input-udp], [Enable UDP input])],
@@ -267,7 +261,7 @@ echo
 echo "Inputs:"
 enabled=""
 disabled=""
-for output in prbs test slip udp fifo file
+for output in prbs test udp fifo file
 do
     eval var=\$enable_input_$output
     AS_IF([test "x$var" = "xyes"],

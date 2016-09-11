@@ -65,7 +65,6 @@ int dabInputDmbUdpInit(void** args)
     input->dmb = new Dmb();
     *args = input;
 
-    UdpSocket::init();
     return 0;
 }
 

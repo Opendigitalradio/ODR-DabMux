@@ -61,7 +61,6 @@
 #include "dabInputEnhancedFifo.h"
 #include "dabInputUdp.h"
 #include "dabInputBridgeUdp.h"
-#include "dabInputSlip.h"
 #include "dabInputTest.h"
 #include "dabInputPrbs.h"
 #include "dabInputRawFile.h"
@@ -744,10 +743,6 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
         } else if (proto == "udp") {
             operations = dabInputBridgeUdpOperations;
 #endif // defined(HAVE_INPUT_UDP)
-#if defined(HAVE_INPUT_SLIP)
-        } else if (proto == "slip") {
-            operations = dabInputSlipOperations;
-#endif // defined(HAVE_INPUT_SLIP)
 #endif // defined(HAVE_FORMAT_BRIDGE)
         }
     } else if (type == "data") {

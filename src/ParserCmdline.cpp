@@ -284,10 +284,6 @@ bool parse_cmdline(char **argv,
                 } else if (strcmp((*subchannel)->inputProto, "udp") == 0) {
                     operations = dabInputBridgeUdpOperations;
 #endif // defined(HAVE_INPUT_UDP)
-#if defined(HAVE_INPUT_SLIP)
-                } else if (strcmp((*subchannel)->inputProto, "slip") == 0) {
-                    operations = dabInputSlipOperations;
-#endif // defined(HAVE_INPUT_SLIP)
 #endif // defined(HAVE_FORMAT_BRIDGE)
                 }
             } else if (c == 'D') {

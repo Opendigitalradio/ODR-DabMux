@@ -65,7 +65,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      dabInputPrbs.h dabInputPrbs.cpp \
                      dabInputRawFile.h dabInputRawFile.cpp \
                      dabInputRawFifo.h dabInputRawFifo.cpp \
-                     dabInputSlip.h dabInputSlip.cpp \
                      dabInputTest.h dabInputTest.cpp \
                      dabInputUdp.h dabInputUdp.cpp \
                      dabInputZmq.h dabInputZmq.cpp \
@@ -94,7 +93,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      PcDebug.h \
                      ReedSolomon.h ReedSolomon.cpp \
                      RemoteControl.cpp RemoteControl.h \
-                     TcpServer.h TcpServer.cpp \
                      TcpSocket.h TcpSocket.cpp \
                      UdpSocket.h UdpSocket.cpp \
                      bridge.h bridge.c \

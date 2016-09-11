@@ -27,6 +27,7 @@ config.h.in~
 config.h.in
 .deps
 .dirstamp
+*.plist
 
 cscope.out
 ctags

@@ -153,9 +153,17 @@ outputs {
     ; Output RAW ETI NI to standard output
     stdout "fifo:///dev/stdout?type=raw"
 
-    ; ZeroMQ output example
+    ; ZeroMQ output example 
+    ; This output does not back-pressure the multiplexer.
     ; Listen on all interfaces, on port 9100
     ;zmq  "zmq+tcp://*:9100"
+
+    ; Output ETI-over-TCP. This is like piping a RAW ETI NI data stream
+    ; into a TCP socket, except that the output can handle simultaneous
+    ; connections.
+    ; 0.0.0.0 means "listen on all interfaces"
+    ; This output does not back-pressure the multiplexer.
+    ;tcp "tcp://0.0.0.0:9200"
 
     ; Throttle output to real-time (one ETI frame every 24ms)
     ;throttle "simul://"
@@ -167,6 +175,7 @@ outputs {
     ; For an output to a pipe, the data consumer at the other end of the pipe
     ; will dictate the multiplexing rate to ODR-DabMux.
     ;
-    ; If you use the zmq output, you must also enable a simul:// output!
+    ; If you use the zmq+tcp:// or the tcp:// output,
+    ; you must also enable a simul:// output!
 }
 

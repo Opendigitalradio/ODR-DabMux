@@ -1,6 +1,11 @@
 /*
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -20,86 +25,72 @@
    */
 
 #include "TcpSocket.h"
+#include "Log.h"
 #include <iostream>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include <stdint.h>
 
-#ifdef _WIN32
-#else
-#   include <unistd.h>
-#endif
+using namespace std;
 
-#ifdef TRACE_ON
-# ifndef TRACE_CLASS
-#  define TRACE_CLASS(class, func) cout <<"-" <<(class) <<"\t(" <<this <<")::" <<(func) <<endl
-#  define TRACE_STATIC(class, func) cout <<"-" <<(class) <<"\t(static)::" <<(func) <<endl
-# endif
-#else
-# ifndef TRACE_CLASS
-#  define TRACE_CLASS(class, func)
-#  define TRACE_STATIC(class, func)
-# endif
-#endif
-
-
-/// Must be call once before doing any operation on sockets
-int TcpSocket::init()
-{
-#ifdef _WIN32
-  WSADATA wsaData;
-  WORD wVersionRequested = wVersionRequested = MAKEWORD( 2, 2 );
-  
-  int res = WSAStartup( wVersionRequested, &wsaData );
-  if (res) {
-    setInetError("Can't initialize winsock");
-    return -1;
-  }
-#endif
-  return 0;
-}
-
-
-/// Must be call once before leaving application
-int TcpSocket::clean()
-{
-#ifdef _WIN32
-  int res = WSACleanup();
-  if (res) {
-    setInetError("Can't initialize winsock");
-    return -1;
-  }
-#endif
-  return 0;
-}
-
-
-/**
- *  Two step constructor. Create must be called prior to use this
- *  socket.
- */
 TcpSocket::TcpSocket() :
-  listenSocket(INVALID_SOCKET)
+    m_sock(INVALID_SOCKET)
 {
-  TRACE_CLASS("TcpSocket", "TcpSocket()");
+    if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+        throw std::runtime_error("Can't create socket");
+    }
 }
 
-
-/**
- *  One step constructor.
- *  @param port The port number on which the socket will be bind
- *  @param name The IP address on which the socket will be bind.
- *              It is used to bind the socket on a specific interface if
- *              the computer have many NICs.
- */
-TcpSocket::TcpSocket(int port, char *name) :
-  listenSocket(INVALID_SOCKET)
+TcpSocket::TcpSocket(int port, const string& name) :
+    m_sock(INVALID_SOCKET)
 {
-  TRACE_CLASS("TcpSocket", "TcpSocket(int, char*)");
-  create(port, name);
+    if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+        throw std::runtime_error("Can't create socket");
+    }
+
+    reuseopt_t reuse = 1;
+    if (setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))
+            == SOCKET_ERROR) {
+        throw std::runtime_error("Can't reuse address");
+    }
+
+    m_own_address.setAddress(name);
+    m_own_address.setPort(port);
+
+    if (bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
+        ::close(m_sock);
+        m_sock = INVALID_SOCKET;
+        throw std::runtime_error("Can't bind socket");
+    }
 }
 
+TcpSocket::TcpSocket(SOCKET sock, InetAddress own, InetAddress remote) :
+    m_own_address(own),
+    m_remote_address(remote),
+    m_sock(sock) { }
+
+// The move constructors must ensure the moved-from
+// TcpSocket won't destroy our socket handle
+TcpSocket::TcpSocket(TcpSocket&& other)
+{
+    m_sock = other.m_sock;
+    other.m_sock = INVALID_SOCKET;
+
+    m_own_address = other.m_own_address;
+    m_remote_address = other.m_remote_address;
+}
+
+TcpSocket& TcpSocket::operator=(TcpSocket&& other)
+{
+    m_sock = other.m_sock;
+    other.m_sock = INVALID_SOCKET;
+
+    m_own_address = other.m_own_address;
+    m_remote_address = other.m_remote_address;
+    return *this;
+}
 
 /**
  *  Close the underlying socket.
@@ -108,259 +99,79 @@ TcpSocket::TcpSocket(int port, char *name) :
  */
 int TcpSocket::close()
 {
-    TRACE_CLASS("TcpSocket", "close()");
-    if (listenSocket != INVALID_SOCKET) {
-        int res = closesocket(listenSocket);
+    if (m_sock != INVALID_SOCKET) {
+        int res = ::close(m_sock);
         if (res != 0) {
             setInetError("Can't close socket");
             return -1;
         }
-        listenSocket = INVALID_SOCKET;
+        m_sock = INVALID_SOCKET;
     }
-    return 0;    
+    return 0;
 }
 
-
-/**
- *  Two step initializer. This function must be called after the constructor
- *  without argument as been called.
- *  @param port The port number on which the socket will be bind
- *  @param name The IP address on which the socket will be bind.
- *              It is used to bind the socket on a specific interface if
- *              the computer have many NICs.
- *  @return 0  if ok
- *          -1 if error
- */
-int TcpSocket::create(int port, char *name)
+TcpSocket::~TcpSocket()
 {
-  TRACE_CLASS("TcpSocket", "create(int, char*)");
-  if (listenSocket != INVALID_SOCKET)
-    closesocket(listenSocket);
-  address.setAddress(name);
-  address.setPort(port);
-  if ((listenSocket = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-    setInetError("Can't create socket");
-    return -1;
-  }
-  reuseopt_t reuse = 1;
-  if (setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))
-      == SOCKET_ERROR) {
-    setInetError("Can't reuse address");
-    return -1;
-  }
-  if (bind(listenSocket, address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
-    setInetError("Can't bind socket");
-    closesocket(listenSocket);
-    listenSocket = INVALID_SOCKET;
-    return -1;
-  }
-  return 0;
+    close();
 }
 
-
-/// Destructor
-TcpSocket::~TcpSocket() {
-  TRACE_CLASS("TcpSocket", "~TcpSocket()");
-  close();
-}
-
-
-/**
- *  Receive an telnet packet, i.e a TCP stream ending with carriage return.
- *  @param data The buffer that will receive data.
- *  @param size The buffer size.
- *  @return > 0 if ok, -1 (SOCKET_ERROR) if error
- */
-int TcpSocket::telnetRead(void* data, int size)
+ssize_t TcpSocket::recv(void* data, size_t size)
 {
-  TRACE_CLASS("TcpSocket", "read(void*, size)");
-  int ret;
-  
-  printf("selectCall\n");
-  
-  printf("readread 1\n");  
-  char *line=GetLine(listenSocket);
-  ret=strlen(line);
-  printf("readread 2\n");  
-  if (ret <= size)
-  {
-	strcpy((char*)data, line);	
-  }
-  else
-  {
-//	size_t n = size;
-	strcpy((char*)data, line);
-	ret = size;
-  }
-  printf("TELNET READ returned %d\n", ret);
-  return ret;  
-}
-
-/**
- *  Receive a TCP stream.
- *  @param data The buffer that will receive data.
- *  @param size The buffer size.
- *  @return > 0 if ok, -1 (SOCKET_ERROR) if error
- */
-int TcpSocket::read(void* data, int size)
-{
-  TRACE_CLASS("TcpSocket", "read(void*, size)");
- 
-  int ret = recv(listenSocket, (char*)data, size, 0);
-  if (ret == SOCKET_ERROR) {
-    setInetError("Can't receive TCP packet");
-    return -1;
-  }
-  return ret;  
-}
-
-
-#define MAX 512
-char* TcpSocket::GetLine(int fd)
-{
-  static char line[MAX];
-  static char netread[MAX] = "";
-  int n, len;
-  char *p;
-
-  len = strlen(netread);
-
-  /* look for \r\n in netread buffer */
-  p = strstr(netread, "\r\n");
-  if (p == NULL) {  
-    /* fill buff - no \r\n found */
-    //n = ::read(fd, (void*)(netread+len), (size_t)(MAX-len));
-    n = recv(fd, (netread+len), MAX-len, 0);
-    if (n == SOCKET_ERROR) {
-      setInetError("Can't receive TCP packet");
-      return NULL;
+    ssize_t ret = ::recv(m_sock, (char*)data, size, 0);
+    if (ret == SOCKET_ERROR) {
+        stringstream ss;
+        ss << "TCP Socket recv error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
     }
-    len += n;
-    netread[len] = '\0';
-    if (n>0)
-	    return GetLine(fd);
-  }
-  if (p!=NULL)
-  {
-	  *p = '\0';
-	  strcpy(line, netread);
-	  /* copy rest of buf down */
-	  memmove(netread, p+2, strlen(p+2)+1);  
-  }
-  return line;
+    return ret;
 }
 
 
-/**
- *  Send an TCP packet.
- *  @param data The buffer taht will be sent.
- *  @param size Number of bytes to send.
- *  return 0 if ok, -1 if error
- */
-int TcpSocket::write(const void* data, int size)
+ssize_t TcpSocket::send(const void* data, size_t size)
 {
-#ifdef DUMP
-  TRACE_CLASS("TcpSocket", "write(const void*, int)");
-#endif
+    /* Without MSG_NOSIGNAL the process would receive a SIGPIPE and die */
+    ssize_t ret = ::send(m_sock, (const char*)data, size, MSG_NOSIGNAL);
 
-  // ignore BROKENPIPE signal (we handle it instead)
-//  void* old_sigpipe = signal ( SIGPIPE, SIG_IGN );
-  // try to send data
-  int ret = send(listenSocket, (const char*)data, size, 0 /*MSG_NOSIGNAL*/	);
-  // restore the BROKENPIPE handling
-//  signal ( SIGPIPE,  (__sighandler_t)old_sigpipe );
-  if (ret == SOCKET_ERROR) {
-    setInetError("Can't send TCP packet");
-    return -1;
-  }
-  return ret;
+    if (ret == SOCKET_ERROR) {
+        stringstream ss;
+        ss << "TCP Socket send error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+    return ret;
 }
 
-
-int TcpSocket::setDestination(InetAddress &addr)
+void TcpSocket::listen()
 {
-  address = addr;
-  int ret = connect(listenSocket, addr.getAddress(), sizeof(*addr.getAddress()));
-  // A etre verifier: code de retour differend entre Linux et Windows
-  return ret;
+    if (::listen(m_sock, 1) == SOCKET_ERROR) {
+        stringstream ss;
+        ss << "TCP Socket listen error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
 }
 
-
-void TcpSocket::setSocket(SOCKET socket, InetAddress &addr)
+TcpSocket TcpSocket::accept()
 {
-  if (listenSocket != INVALID_SOCKET)
-    closesocket(listenSocket);
-  listenSocket = socket;
-  address = addr;
+    InetAddress remote_addr;
+    socklen_t addrLen = sizeof(sockaddr_in);
+
+    SOCKET socket = ::accept(m_sock, remote_addr.getAddress(), &addrLen);
+    if (socket == SOCKET_ERROR) {
+        stringstream ss;
+        ss << "TCP Socket accept error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+    else {
+        TcpSocket client(socket, m_own_address, remote_addr);
+        return client;
+    }
 }
 
-
-InetAddress TcpSocket::getAddress()
+InetAddress TcpSocket::getOwnAddress() const
 {
-  return address;
+    return m_own_address;
 }
 
-
-int TcpSocket::PeekCount()
+InetAddress TcpSocket::getRemoteAddress() const
 {
-	int count;
-	char tempBuffer[3];
-	int size=3;
-	
-	count = recv(listenSocket, tempBuffer, size, MSG_PEEK);
-	if (count == -1)
-	{
-		printf("ERROR WHEN PEEKING SOCKET\n");
-	}		
-	return count;
+    return m_remote_address;
 }
-
-/*
-WSAEINTR
-WSAEBADF
-WSAEACCES
-WSAEFAULT
-WSAEINVAL
-WSAEMFILE
-WSAEWOULDBLOCK
-WSAEINPROGRESS
-WSAEALREADY
-WSAENOTSOCK
-WSAEDESTADDRREQ
-WSAEMSGSIZE
-WSAEPROTOTYPE
-WSAENOPROTOOPT
-WSAEPROTONOSUPPORT
-WSAESOCKTNOSUPPORT
-WSAEOPNOTSUPP
-WSAEPFNOSUPPORT
-WSAEAFNOSUPPORT
-WSAEADDRINUSE
-WSAEADDRNOTAVAIL
-WSAENETDOWN
-WSAENETUNREACH
-WSAENETRESET
-WSAECONNABORTED
-WSAECONNRESET
-WSAENOBUFS
-WSAEISCONN
-WSAENOTCONN
-WSAESHUTDOWN
-WSAETOOMANYREFS
-WSAETIMEDOUT
-WSAECONNREFUSED
-WSAELOOP
-WSAENAMETOOLONG
-WSAEHOSTDOWN
-WSAEHOSTUNREACH
-WSAENOTEMPTY
-WSAEPROCLIM
-WSAEUSERS
-WSAEDQUOT
-WSAESTALE
-WSAEREMOTE
-WSAEDISCON
-WSASYSNOTREADY
-WSAVERNOTSUPPORTED
-WSANOTINITIALISED
-*/

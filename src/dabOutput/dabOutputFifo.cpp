@@ -27,7 +27,64 @@
 #include <cstring>
 #include <fcntl.h>
 #include <limits.h>
+#include <sys/types.h>  // mkfifo
+#include <sys/stat.h>   // mkfifo
 #include "dabOutput.h"
+
+int DabOutputFifo::Open(const char* filename)
+{
+    char* token = strchr((char*)filename, '?');
+    if (token != NULL) {
+        *(token++) = 0;
+        char* nextPair;
+        char* key;
+        char* value;
+        // Go through all the &stuff=foo pairs
+        // Only the key "type" is supported
+        do {
+            nextPair = strchr(token, '&');
+            if (nextPair != NULL) {
+                *nextPair = 0;
+            }
+            key = token;
+            value = strchr(token, '=');
+            if (value != NULL) {
+                *(value++) = 0;
+                if (strcmp(key, "type") == 0) {
+                    if (strcmp(value, "raw") == 0) {
+                        this->type_ = ETI_FILE_TYPE_RAW;
+                        break;
+                    } else if (strcmp(value, "framed") == 0) {
+                        this->type_ = ETI_FILE_TYPE_FRAMED;
+                        break;
+                    } else if (strcmp(value, "streamed") == 0) {
+                        this->type_ = ETI_FILE_TYPE_STREAMED;
+                        break;
+                    } else {
+                        etiLog.log(error,
+                                "File type '%s' is not supported.\n", value);
+                        return -1;
+                    }
+                }
+                else {
+                    etiLog.log(warn, "Parameter '%s' unknown\n", key);
+                }
+            }
+        } while (nextPair != NULL);
+    }
+
+    this->file_ = mkfifo(filename, 0666);
+    if (this->file_ == -1) {
+        perror(filename);
+        return -2;
+    }
+    this->file_ = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
+    if (this->file_ == -1) {
+        perror(filename);
+        return -1;
+    }
+    return 0;
+}
 
 
 int DabOutputFifo::Write(void* buffer, int size)
@@ -71,4 +128,3 @@ FIFO_WRITE_ERROR:
     perror("Error while writting to file");
     return -1;
 }
-

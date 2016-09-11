@@ -95,6 +95,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      RemoteControl.cpp RemoteControl.h \
                      TcpSocket.h TcpSocket.cpp \
                      UdpSocket.h UdpSocket.cpp \
+					 ThreadsafeQueue.h \
                      bridge.h bridge.c \
                      crc.h crc.c \
                      fig/FIG.h fig/FIG.cpp \

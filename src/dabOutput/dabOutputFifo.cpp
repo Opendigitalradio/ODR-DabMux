@@ -74,10 +74,6 @@ int DabOutputFifo::Open(const char* filename)
     }
 
     this->file_ = mkfifo(filename, 0666);
-    if (this->file_ == -1) {
-        perror(filename);
-        return -2;
-    }
     this->file_ = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
     if (this->file_ == -1) {
         perror(filename);

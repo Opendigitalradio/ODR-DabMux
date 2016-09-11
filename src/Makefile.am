@@ -29,7 +29,7 @@ endif
 FEC_FLAGS   =
 FEC_LIBS    =-lfec
 
-bin_PROGRAMS=odr-dabmux odr-bridgetest zmqinput-keygen
+bin_PROGRAMS=odr-dabmux zmqinput-keygen
 
 if HAVE_OUTPUT_RAW_TEST
 bin_PROGRAMS+=odr-zmq2farsync
@@ -105,10 +105,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
                      prbs.h prbs.c \
                      utils.cpp utils.h \
                      zmq.hpp
-
-odr_bridgetest_CFLAGS   =-DBRIDGE_TEST
-odr_bridgetest_SOURCES  =bridge.c \
-                         crc.c crc.h
 
 zmqinput_keygen_SOURCES  = zmqinput-keygen.c
 zmqinput_keygen_LDADD    = $(ZMQ_LIBS)

@@ -48,6 +48,8 @@ facilitate runtime configurability and clarify the usages of the inputs.
 
 Also, all inputs using UDP are now broken.
 
+Find out what purpose the bridge input serves.
+
 Communicate Leap Seconds
 ------------------------
 Actually, we're supposed to say in FIG0/10 when there is a UTC leap second

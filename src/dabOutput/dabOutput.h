@@ -144,6 +144,7 @@ class DabOutputFifo : public DabOutputFile
         DabOutputFifo() : DabOutputFile() {}
         ~DabOutputFifo() {}
 
+        int Open(const char* filename);
         int Write(void* buffer, int size);
 
         std::string get_info() const {
@@ -365,4 +366,3 @@ class DabOutputZMQ : public DabOutput
 #endif
 
 #endif
-

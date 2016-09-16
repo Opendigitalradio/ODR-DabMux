@@ -96,7 +96,7 @@ void header_message()
     fprintf(stderr,
             "(Communications Research Centre Canada) All rights reserved.\n\n");
     fprintf(stderr,
-            "Copyright (C) 2013, 2014, 2015 Matthias P. Braendli\n");
+            "Copyright (C) 2016 Matthias P. Braendli\n");
     fprintf(stderr,
             "http://opendigitalradio.org\n\n");
 

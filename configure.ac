@@ -58,11 +58,7 @@ AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
 AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
 
-# we need to check for libm before checking for fec
 AC_CHECK_LIB([m], [sin])
-AC_SEARCH_LIBS([init_rs_char], [fec], [], [
-  AC_MSG_ERROR([unable to find libfec])
-])
 
 # Checks for header files.
 AC_MSG_CHECKING([for OS type])

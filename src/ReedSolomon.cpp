@@ -26,7 +26,7 @@
 #include <string.h>         // For memcpy
 
 extern "C" {
-#include <fec.h>
+#include "fec/fec.h"
 }
 #include <assert.h>
 #include <stdlib.h>

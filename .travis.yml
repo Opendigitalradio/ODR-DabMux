@@ -1,5 +1,5 @@
 language: c++
-sudo: required
+#sudo: required
 dist: trusty
 
 addons: &addons
@@ -20,16 +20,6 @@ compiler:
   - gcc
 
 script:
-  - |
-    pushd /tmp
-    git clone https://github.com/Opendigitalradio/ka9q-fec.git
-    cd ka9q-fec
-    mkdir build
-    cd build
-    cmake ..
-    make
-    sudo make install
-    popd
   - |
     ./bootstrap.sh
     CC=gcc-5 CXX=g++-5 ./configure --disable-output-edi

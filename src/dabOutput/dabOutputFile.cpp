@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    File output
@@ -23,6 +23,7 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
+#include <string>
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
@@ -31,49 +32,11 @@
 
 int DabOutputFile::Open(const char* filename)
 {
-    char* token = strchr((char*)filename, '?');
-    if (token != NULL) {
-        *(token++) = 0;
-        char* nextPair;
-        char* key;
-        char* value;
-        // Go through all the &stuff=foo pairs
-        // Only the key "type" is supported
-        do {
-            nextPair = strchr(token, '&');
-            if (nextPair != NULL) {
-                *nextPair = 0;
-            }
-            key = token;
-            value = strchr(token, '=');
-            if (value != NULL) {
-                *(value++) = 0;
-                if (strcmp(key, "type") == 0) {
-                    if (strcmp(value, "raw") == 0) {
-                        this->type_ = ETI_FILE_TYPE_RAW;
-                        break;
-                    } else if (strcmp(value, "framed") == 0) {
-                        this->type_ = ETI_FILE_TYPE_FRAMED;
-                        break;
-                    } else if (strcmp(value, "streamed") == 0) {
-                        this->type_ = ETI_FILE_TYPE_STREAMED;
-                        break;
-                    } else {
-                        etiLog.log(error,
-                                "File type '%s' is not supported.\n", value);
-                        return -1;
-                    }
-                }
-                else {
-                    etiLog.log(warn, "Parameter '%s' unknown\n", key);
-                }
-            }
-        } while (nextPair != NULL);
-    }
+    filename_ = SetEtiType(filename);
 
-    this->file_ = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
+    this->file_ = open(filename_.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
     if (this->file_ == -1) {
-        perror(filename);
+        perror(filename_.c_str());
         return -1;
     }
     return 0;
@@ -134,5 +97,54 @@ int DabOutputFile::Close()
     }
     perror("Can't close file");
     return -1;
+}
+
+std::string DabOutputFile::SetEtiType(const std::string& filename)
+{
+    size_t ix = filename.find('?');
+    const std::string filename_before_q = filename.substr(0, ix);
+
+    if (ix != std::string::npos) {
+
+        do {
+            const size_t ix_key = ix + 1;
+
+            const size_t ix_eq = filename.find('=', ix);
+            if (ix_eq == std::string::npos) {
+                // no equals sign, not a valid query. Return up to the question mark
+                break;
+            }
+
+            const size_t ix_val = ix_eq + 1;
+
+            const std::string key = filename.substr(ix_key, ix_eq - ix_key);
+
+            ix = filename.find('&', ix);
+            const size_t len_value = (ix == std::string::npos) ? std::string::npos : ix - ix_val;
+
+            if (key == "type") {
+                const std::string value = filename.substr(ix_val, len_value);
+
+                if (value == "raw") {
+                    this->type_ = ETI_FILE_TYPE_RAW;
+                    break;
+                } else if (value == "framed") {
+                    this->type_ = ETI_FILE_TYPE_FRAMED;
+                    break;
+                } else if (value == "streamed") {
+                    this->type_ = ETI_FILE_TYPE_STREAMED;
+                    break;
+                } else {
+                    std::stringstream ss;
+                    ss << "File type '" << value << "' is not supported.";
+                    throw std::runtime_error(ss.str());
+                }
+            }
+
+        }
+        while (ix != std::string::npos);
+    }
+
+    return filename_before_q;
 }
 

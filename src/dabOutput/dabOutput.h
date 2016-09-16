@@ -110,17 +110,6 @@ class DabOutputFile : public DabOutput
             type_ = ETI_FILE_TYPE_FRAMED;
         }
 
-        DabOutputFile(const DabOutputFile& other)
-        {
-            filename_ = other.filename_;
-            file_ = other.file_;
-            nbFrames_ = other.nbFrames_;
-            type_ = other.type_;
-        }
-
-        ~DabOutputFile() {}
-        const DabOutputFile& operator=(const DabOutputFile& other) = delete;
-
         int Open(const char* filename);
         int Write(void* buffer, int size);
         int Close();
@@ -130,6 +119,11 @@ class DabOutputFile : public DabOutput
         }
 
     protected:
+        /* Set ETI type according to filename, and return
+         * filename without the &type=foo part
+         */
+        std::string SetEtiType(const std::string& filename);
+
         std::string filename_;
         int file_;
         EtiFileType type_;
@@ -137,12 +131,10 @@ class DabOutputFile : public DabOutput
 };
 
 // ---------- FIFO output ------------
-// only write is different for the FIFO output
 class DabOutputFifo : public DabOutputFile
 {
     public:
         DabOutputFifo() : DabOutputFile() {}
-        ~DabOutputFifo() {}
 
         int Open(const char* filename);
         int Write(void* buffer, int size);
@@ -176,7 +168,7 @@ class DabOutputRaw : public DabOutput
             delete[] buffer_;
         }
 
-        const DabOutputRaw operator=(const DabOutputRaw& other);
+        const DabOutputRaw operator=(const DabOutputRaw& other) = delete;
 
         int Open(const char* name);
         int Write(void* buffer, int size);

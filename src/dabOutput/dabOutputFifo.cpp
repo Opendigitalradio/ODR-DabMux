@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
    http://mpb.li
 
    Fifo output is very similar to file, except it doesn't seek
@@ -27,56 +27,39 @@
 #include <cstring>
 #include <fcntl.h>
 #include <limits.h>
-#include <sys/types.h>  // mkfifo
-#include <sys/stat.h>   // mkfifo
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
 #include "dabOutput.h"
 
 int DabOutputFifo::Open(const char* filename)
 {
-    char* token = strchr((char*)filename, '?');
-    if (token != NULL) {
-        *(token++) = 0;
-        char* nextPair;
-        char* key;
-        char* value;
-        // Go through all the &stuff=foo pairs
-        // Only the key "type" is supported
-        do {
-            nextPair = strchr(token, '&');
-            if (nextPair != NULL) {
-                *nextPair = 0;
+    filename_ = SetEtiType(filename);
+
+    // Create the fifo if it does not already exist
+    struct stat s = {0};
+    int ret = stat(filename_.c_str(), &s);
+
+    if (ret == -1) {
+        if (errno == ENOENT) {
+            ret = mkfifo(filename_.c_str(), 0666);
+            if (ret == -1) {
+                etiLog.level(error) << "Could not create fifo " << filename_ << " : " <<
+                    strerror(errno);
+                return -1;
             }
-            key = token;
-            value = strchr(token, '=');
-            if (value != NULL) {
-                *(value++) = 0;
-                if (strcmp(key, "type") == 0) {
-                    if (strcmp(value, "raw") == 0) {
-                        this->type_ = ETI_FILE_TYPE_RAW;
-                        break;
-                    } else if (strcmp(value, "framed") == 0) {
-                        this->type_ = ETI_FILE_TYPE_FRAMED;
-                        break;
-                    } else if (strcmp(value, "streamed") == 0) {
-                        this->type_ = ETI_FILE_TYPE_STREAMED;
-                        break;
-                    } else {
-                        etiLog.log(error,
-                                "File type '%s' is not supported.\n", value);
-                        return -1;
-                    }
-                }
-                else {
-                    etiLog.log(warn, "Parameter '%s' unknown\n", key);
-                }
-            }
-        } while (nextPair != NULL);
+        }
+        else {
+            etiLog.level(error) << "Could not stat fifo " << filename_ << " : " <<
+                strerror(errno);
+            return -1;
+        }
     }
 
-    this->file_ = mkfifo(filename, 0666);
-    this->file_ = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
+    this->file_ = open(filename_.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
     if (this->file_ == -1) {
-        perror(filename);
+        perror(filename_.c_str());
         return -1;
     }
     return 0;

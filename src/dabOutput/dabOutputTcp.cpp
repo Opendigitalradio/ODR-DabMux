@@ -193,7 +193,14 @@ int DabOutputTcp::Open(const char* name)
 
     if (success) {
         dispatcher_ = new TCPDataDispatcher();
-        dispatcher_->start(port, address);
+        try {
+            dispatcher_->start(port, address);
+        }
+        catch (std::runtime_error& e) {
+            stringstream ss;
+            ss << "Caught error during socket open of TCP output " << name;
+            throw e;
+        }
     }
     else {
         stringstream ss;

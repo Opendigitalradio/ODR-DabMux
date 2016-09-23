@@ -421,7 +421,7 @@ struct FIGtype0_9 {
     uint8_t CN:1;
 
     uint8_t ensembleLto:6;
-    uint8_t lto:1;
+    uint8_t rfa1:1;
     uint8_t ext:1;
     uint8_t ensembleEcc;
     uint8_t tableId;

@@ -777,7 +777,7 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
     fig0_9->Extension = 9;
 
     fig0_9->ext = 0;
-    fig0_9->lto = 0; // Unique LTO for ensemble
+    fig0_9->rfa1 = 0; // Had a different meaning in EN 300 401 V1.4.1
 
     if (ensemble->lto_auto) {
         time_t now = time(NULL);
@@ -798,6 +798,8 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
     fig0_9->tableId = ensemble->international_table;
     buf += 5;
     remaining -= 5;
+
+    /* No extended field, no support for services with different ECC */
 
     fs.num_bytes_written = max_size - remaining;
     fs.complete_fig_transmitted = true;

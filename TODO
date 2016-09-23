@@ -57,3 +57,8 @@ upcoming, but since that's not trivial to find out because the POSIX time
 concept is totally unaware of that, this is not done. We need to know for EDI
 TIST, and the ClockTAI class can get the information from the Internet, but it
 is not used in FIG0/10.
+
+Add support for services with different ECC than ensemble
+---------------------------------------------------------
+FIG 0/9 can transmit an Extended field for this information. Needs change of
+configuration file, internal structures and FIG 0/9.

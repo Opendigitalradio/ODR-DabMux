@@ -1014,7 +1014,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
-//=========== FIG 0/17 ===========
+//=========== FIG 0/17 PTy ===========
 
 FIG0_17::FIG0_17(FIGRuntimeInformation *rti) :
     m_rti(rti),
@@ -1039,12 +1039,11 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
     for (; serviceFIG0_17 != ensemble->services.end();
             ++serviceFIG0_17) {
 
-        if (    (*serviceFIG0_17)->pty == 0 &&
-                (*serviceFIG0_17)->language == 0) {
+        if ((*serviceFIG0_17)->pty == 0) {
             continue;
         }
 
-        const int required_size = (*serviceFIG0_17)->language == 0 ? 4 : 5;
+        const int required_size = 4;
 
 
         if (fig0 == NULL) {
@@ -1065,27 +1064,19 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        auto programme = (FIGtype0_17_programme*)buf;
-        programme->SId = htons((*serviceFIG0_17)->id);
-        programme->SD = 1;
-        programme->PS = 0;
-        programme->L = (*serviceFIG0_17)->language != 0;
-        programme->CC = 0;
-        programme->Rfa = 0;
-        programme->NFC = 0;
-        if ((*serviceFIG0_17)->language == 0) {
-            buf[3] = (*serviceFIG0_17)->pty;
-            fig0->Length += 4;
-            buf += 4;
-            remaining -= 4;
-        }
-        else {
-            buf[3] = (*serviceFIG0_17)->language;
-            buf[4] = (*serviceFIG0_17)->pty;
-            fig0->Length += 5;
-            buf += 5;
-            remaining -= 5;
-        }
+        auto fig0_17 = (FIGtype0_17*)buf;
+        fig0_17->SId = htons((*serviceFIG0_17)->id);
+        fig0_17->SD = 1; // We only transmit dynamic PTy
+        fig0_17->rfa1 = 0;
+        fig0_17->rfu1 = 0;
+        fig0_17->rfa2_low = 0;
+        fig0_17->rfa2_high = 0;
+        fig0_17->rfu2 = 0;
+        fig0_17->IntCode = (*serviceFIG0_17)->pty;
+
+        fig0->Length += 4;
+        buf += 4;
+        remaining -= 4;
     }
 
     if (serviceFIG0_17 == ensemble->services.end()) {

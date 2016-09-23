@@ -282,6 +282,10 @@ components {
         ; as EPG or Slideshow.
     }
 
+    ; If a service is used in more than one component, the primary component has to
+    ; be placed above the secondary component(s) to ensure that the SCIdS field of FIG0/8
+    ; is zero for the primary service component. (New in EN 300 401 V2.1.1)
+
     comp-lu {
         service srv-lu
         subchannel sub-lu

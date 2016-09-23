@@ -501,8 +501,7 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
         m_initialised = true;
     }
 
-    FIGtype0_3_header *fig0_3_header = NULL;
-    FIGtype0_3_data *fig0_3_data = NULL;
+    FIGtype0 *fig0 = NULL;
 
     for (; componentFIG0_3 != ensemble->components.end();
             ++componentFIG0_3) {
@@ -522,17 +521,17 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
 
         const int required_size = 5 + (m_rti->factumAnalyzer ? 2 : 0);
 
-        if (fig0_3_header == NULL) {
+        if (fig0 == NULL) {
             if (remaining < 2 + required_size) {
                 break;
             }
-            fig0_3_header = (FIGtype0_3_header*)buf;
-            fig0_3_header->FIGtypeNumber = 0;
-            fig0_3_header->Length = 1;
-            fig0_3_header->CN = 0;
-            fig0_3_header->OE = 0;
-            fig0_3_header->PD = 0;
-            fig0_3_header->Extension = 3;
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 0;
+            fig0->OE = 0;
+            fig0->PD = 0;
+            fig0->Extension = 3;
 
             buf += 2;
             remaining -= 2;
@@ -545,25 +544,25 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
          *  R&S does not send the SCCA field. But, in the Factum ETI
          *  analyzer, if this field is not there, it is an error.
          */
-        fig0_3_data = (FIGtype0_3_data*)buf;
-        fig0_3_data->setSCId((*componentFIG0_3)->packet.id);
-        fig0_3_data->rfa = 0;
-        fig0_3_data->SCCA_flag = 0;
+        FIGtype0_3 *fig0_3 = (FIGtype0_3*)buf;
+        fig0_3->setSCId((*componentFIG0_3)->packet.id);
+        fig0_3->rfa = 0;
+        fig0_3->SCCA_flag = 0;
         // if 0, datagroups are used
-        fig0_3_data->DG_flag = !(*componentFIG0_3)->packet.datagroup;
-        fig0_3_data->rfu = 0;
-        fig0_3_data->DSCTy = (*componentFIG0_3)->type;
-        fig0_3_data->SubChId = (*subchannel)->id;
-        fig0_3_data->setPacketAddress((*componentFIG0_3)->packet.address);
+        fig0_3->DG_flag = !(*componentFIG0_3)->packet.datagroup;
+        fig0_3->rfu = 0;
+        fig0_3->DSCTy = (*componentFIG0_3)->type;
+        fig0_3->SubChId = (*subchannel)->id;
+        fig0_3->setPacketAddress((*componentFIG0_3)->packet.address);
         if (m_rti->factumAnalyzer) {
-            fig0_3_data->SCCA = 0;
+            fig0_3->SCCA = 0;
         }
 
-        fig0_3_header->Length += 5;
+        fig0->Length += 5;
         buf += 5;
         remaining -= 5;
         if (m_rti->factumAnalyzer) {
-            fig0_3_header->Length += 2;
+            fig0->Length += 2;
             buf += 2;
             remaining -= 2;
         }

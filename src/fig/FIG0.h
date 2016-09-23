@@ -345,21 +345,11 @@ struct FIGtype0_2_packet_component {
 } PACKED;
 
 
-struct FIGtype0_3_header {
-    uint8_t Length:5;
-    uint8_t FIGtypeNumber:3;
-    uint8_t Extension:5;
-    uint8_t PD:1;
-    uint8_t OE:1;
-    uint8_t CN:1;
-} PACKED;
-
-
 /* Warning: When bit SCCA_flag is unset(0), the multiplexer R&S does not send
  * the SCCA field. But, in the Factum ETI analyzer, if this field is not there,
  * it is an error.
  */
-struct FIGtype0_3_data {
+struct FIGtype0_3 {
     uint8_t SCId_high;
     uint8_t SCCA_flag:1;
     uint8_t rfa:3;

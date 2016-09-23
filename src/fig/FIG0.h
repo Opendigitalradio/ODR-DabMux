@@ -114,6 +114,28 @@ class FIG0_3 : public IFIG
         std::vector<DabComponent*>::iterator componentFIG0_3;
 };
 
+// FIG type 0/5
+// The service component language feature is used to signal a language
+// associated with a service component; the spoken language of an audio
+// component or the language of the content of a data component. This
+// information can be used for user selection or display. The feature is
+// encoded in Extension 5 of FIG type 0 (FIG 0/5).
+class FIG0_5 : public IFIG
+{
+    public:
+        FIG0_5(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 5; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<DabComponent*>::iterator componentFIG0_5;
+};
+
 // FIG type 0/8
 // The Extension 8 of FIG type 0 (FIG 0/8) provides information to link
 // together the service component description that is valid within the ensemble
@@ -371,6 +393,13 @@ struct FIGtype0_3 {
     }
 } PACKED;
 
+struct FIGtype0_5_short {
+    uint8_t SubChId:6;
+    uint8_t rfu:1;
+    uint8_t LS:1;
+
+    uint8_t language;
+} PACKED;
 
 struct FIGtype0_8_short {
     uint8_t SCIdS:4;

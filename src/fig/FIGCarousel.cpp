@@ -63,6 +63,7 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_1(&m_rti),
     m_fig0_2(&m_rti),
     m_fig0_3(&m_rti),
+    m_fig0_5(&m_rti),
     m_fig0_17(&m_rti),
     m_fig0_8(&m_rti),
     m_fig1_0(&m_rti),
@@ -76,7 +77,7 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_19(&m_rti)
 {
     /* Complete MCI except FIG0/8 should be in FIB0.
-     * EN 300 401 Clause 6.1
+     * EN 300 401 V1.4.1 Clause 6.1
      *
      * It seems that this has become a weak requirement
      * with time, because current receivers can cope with
@@ -85,18 +86,19 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
      * and pushed for support for receivers that only could
      * decode FIB0.
      *
-     * In order to alleviate repetition rate issues,
-     * this requirement has been dropped.
+     * V2.1.1 of the spec drops this requirement. Only FIG0/0 and
+     * FIG 0/7 have a defined location in the FIC.
      */
     load_and_allocate(m_fig0_0, FIBAllocation::FIB0);
     load_and_allocate(m_fig0_1, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_2, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_3, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_5, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_8, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_13, FIBAllocation::FIB_ANY);
 
     load_and_allocate(m_fig0_17, FIBAllocation::FIB_ANY);
-    load_and_allocate(m_fig0_8, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig1_0, FIBAllocation::FIB_ANY);
-    load_and_allocate(m_fig0_13, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_10, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_9, FIBAllocation::FIB_ANY);
 

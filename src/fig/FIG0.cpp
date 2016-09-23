@@ -577,6 +577,98 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 0/5 ===========
+
+FIG0_5::FIG0_5(FIGRuntimeInformation *rti) :
+    m_rti(rti),
+    m_initialised(false)
+{
+}
+
+FillStatus FIG0_5::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+    ssize_t remaining = max_size;
+    auto ensemble = m_rti->ensemble;
+
+    if (not m_initialised) {
+        componentFIG0_5 = m_rti->ensemble->components.end();
+        m_initialised = true;
+    }
+
+    FIGtype0* fig0 = NULL;
+
+    for (; componentFIG0_5 != ensemble->components.end();
+            ++componentFIG0_5) {
+
+        auto service = getService(*componentFIG0_5,
+                ensemble->services);
+        auto subchannel = getSubchannel(ensemble->subchannels,
+                (*componentFIG0_5)->subchId);
+
+        if (subchannel == ensemble->subchannels.end()) {
+            etiLog.log(error,
+                    "Subchannel %i does not exist for component "
+                    "of service %i\n",
+                    (*componentFIG0_5)->subchId,
+                    (*componentFIG0_5)->serviceId);
+            throw MuxInitException();
+        }
+
+        if ( (*service)->language == 0) {
+            etiLog.level(debug) << "FIG0_5  no lang";
+            continue;
+        }
+
+        etiLog.level(debug) << "FIG0_5 " << (*componentFIG0_5)->uid;
+
+        const int required_size = 2;
+
+        if (fig0 == NULL) {
+            if (remaining < 2 + required_size) {
+                etiLog.level(debug) << "FIG0_5  no space for header";
+                break;
+            }
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 0;
+            fig0->OE = 0;
+            fig0->PD = 0;
+            fig0->Extension = 5;
+
+            buf += 2;
+            remaining -= 2;
+        }
+        else if (remaining < required_size) {
+            etiLog.level(debug) << "FIG0_5  no space";
+            break;
+        }
+
+        FIGtype0_5_short *fig0_5 = (FIGtype0_5_short*)buf;
+
+        fig0_5->LS = 0;
+        fig0_5->rfu = 0;
+        fig0_5->SubChId = (*subchannel)->id;
+        fig0_5->language = (*service)->language;
+
+        fig0->Length += 2;
+        buf += 2;
+        remaining -= 2;
+    }
+
+    etiLog.level(debug) << "FIG0_5  out";
+
+    if (componentFIG0_5 == ensemble->components.end()) {
+        componentFIG0_5 = ensemble->components.begin();
+        fs.complete_fig_transmitted = true;
+        etiLog.level(debug) << "FIG0_5  complete";
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
 //=========== FIG 0/8 ===========
 
 FIG0_8::FIG0_8(FIGRuntimeInformation *rti) :

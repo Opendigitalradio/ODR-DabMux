@@ -507,6 +507,12 @@ void parse_ptree(boost::property_tree::ptree& pt,
                 abort();
         }
 
+        if (component->SCIdS == 0 and not component->label.long_label().empty()) {
+            etiLog.level(warn) << "Primary component " << component->uid <<
+                " has label set. Since V2.1.1 of the specification, only secondary"
+                " components are allowed to have labels.";
+        }
+
         if (figType != -1) {
             if (figType >= (1<<12)) {
                 stringstream ss;

@@ -145,6 +145,9 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
 
         auto service = getService(*component, ensemble->services);
 
+        /* We check in the config parser if the primary component has
+         * a label, which is forbidden since V2.1.1 */
+
         if (not (*component)->label.long_label().empty() ) {
             if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
 

@@ -616,17 +616,13 @@ FillStatus FIG0_5::fill(uint8_t *buf, size_t max_size)
         }
 
         if ( (*service)->language == 0) {
-            etiLog.level(debug) << "FIG0_5  no lang";
             continue;
         }
-
-        etiLog.level(debug) << "FIG0_5 " << (*componentFIG0_5)->uid;
 
         const int required_size = 2;
 
         if (fig0 == NULL) {
             if (remaining < 2 + required_size) {
-                etiLog.level(debug) << "FIG0_5  no space for header";
                 break;
             }
             fig0 = (FIGtype0*)buf;
@@ -641,7 +637,6 @@ FillStatus FIG0_5::fill(uint8_t *buf, size_t max_size)
             remaining -= 2;
         }
         else if (remaining < required_size) {
-            etiLog.level(debug) << "FIG0_5  no space";
             break;
         }
 
@@ -657,12 +652,9 @@ FillStatus FIG0_5::fill(uint8_t *buf, size_t max_size)
         remaining -= 2;
     }
 
-    etiLog.level(debug) << "FIG0_5  out";
-
     if (componentFIG0_5 == ensemble->components.end()) {
         componentFIG0_5 = ensemble->components.begin();
         fs.complete_fig_transmitted = true;
-        etiLog.level(debug) << "FIG0_5  complete";
     }
 
     fs.num_bytes_written = max_size - remaining;

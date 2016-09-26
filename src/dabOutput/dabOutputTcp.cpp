@@ -65,7 +65,7 @@ class TCPConnection
 
         ~TCPConnection() {
             m_running = false;
-            queue.notify();
+            m_sender_thread.interrupt();
             m_sender_thread.join();
         }
 

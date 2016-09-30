@@ -1,0 +1,136 @@
+; This is an example configuration file that illustrates
+; how to define service linking
+
+; More information about the usage of the tools is available
+; in the guide, which can be found on the
+; www.opendigitalradio.org website.
+;
+general {
+    dabmode 1
+    nbframes 0
+
+    syslog false
+    tist false
+    managementport 12720
+}
+
+remotecontrol {
+    telnetport 12721
+}
+
+; Service linking settings
+linking {
+    ; The sets section declares the linkage sets according to
+    ; TS 103 176 Clause 5.2.3 "Linkage sets". This information will
+    ; be encoded in FIG 0/6
+    sets {
+        ; Linkage Set Number is a 12-bit number that identifies the linkage set
+        ; in a country (requires coordination between multiplex operators in a country)
+        lsn 0xabc
+
+        ; whether this link is active or a "potential future link or de-activated link"
+        ; This field is also part of the remote control.
+        active true
+
+        ; Hard link means that all services carry the same programme, soft links means
+        ; that the programmes are related in some way.
+        hard true
+
+        ; Whether this linkage set affects only one country or several. Linkage sets that
+        ; include AMSS or DRM services need to have this set to true.
+        international false
+
+        ; Every linkage set has to contain a service from the current ensemble
+        keyservice srv-fu
+
+        ; List of services to be included
+        list {
+            ; Every service has a uid that can be used as a human-readable description
+
+            ; The first example is a link to a DAB service on another ensemble.
+            fu-on-my-friends-mux {
+                ; Possible options: dab, fm, drm, amss
+                type dab
+
+                ; if type is dab, the id is a DAB service ID
+                id 0x8daf
+
+                ; Since this link set has international false, we do not need to specify
+                ; the ECC. With internation true, the following would be needed
+                ;ecc 0xec
+            }
+
+            ; The second example is a link to an FM transmission
+            fu-on-fm {
+                ; Possible options: dab, fm, drm, amss
+                type fm
+
+                ; if type is fm, the id is a PI-code
+                id 0x1A2B
+
+                ; Also here, ECC declaration is not required
+            }
+        }
+    }
+}
+
+; For information about the ensemble, service, subchannels, components and outputs,
+; please see doc/example.mux and doc/advanced.mux
+ensemble {
+    id 0x4fff
+    ecc 0xec
+
+    local-time-offset auto
+    label "OpenDigitalRadio"
+    shortlabel "ODR"
+}
+
+services {
+    srv-fu {
+        id 0x8daa
+        label "Funk"
+    }
+    srv-ri {
+        id 0x8dab
+        label "Rick"
+    }
+}
+
+subchannels {
+    sub-fu {
+        type dabplus
+        inputfile "tcp://*:9000"
+        bitrate 96
+        id 1
+        protection 3
+        zmq-buffer 40
+        zmq-prebuffering 20
+    }
+    sub-ri {
+        type dabplus
+        inputfile "tcp://*:9000"
+        bitrate 96
+        id 2
+        protection 3
+        zmq-buffer 40
+        zmq-prebuffering 20
+    }
+}
+
+components {
+    comp-fu {
+        service srv-fu
+        subchannel sub-fu
+    }
+
+    comp-ri {
+        service srv-ri
+        subchannel sub-ri
+    }
+}
+
+outputs {
+    tcp "tcp://0.0.0.0:9200"
+    throttle "simul://"
+}
+

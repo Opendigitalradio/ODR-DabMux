@@ -152,6 +152,25 @@ struct FIGtype0_5_short {
     uint8_t language;
 } PACKED;
 
+struct FIGtype0_6 {
+    uint16_t IdListFlag:1;
+    uint16_t LA:1; // Linkage actuator
+    uint16_t SH:1; // 0=Soft link / 1=Hard link
+    uint16_t ILS:1; // 0=national / 1=international
+    uint16_t LSN:12; // Linkage Set Number
+} PACKED;
+
+#define FIG0_6_IDLQ_DAB 0x0
+#define FIG0_6_IDLQ_RDS 0x1
+#define FIG0_6_IDLQ_DRM_AMSS 0x3
+
+struct FIGtype0_6_header {
+    uint8_t rfu:1; // must be 0
+    uint8_t IdLQ:2; // Identifier List Qualifier, see above defines
+    uint8_t rfa:1; // must be 0
+    uint8_t num_ids:4; // number of Ids to follow in the list
+} PACKED;
+
 struct FIGtype0_8_short {
     uint8_t SCIdS:4;
     uint8_t rfa_1:3;

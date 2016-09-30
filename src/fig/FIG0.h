@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <map>
 #include <set>
+#include <vector>
 
 #include "fig/FIG.h"
 
@@ -133,6 +134,33 @@ class FIG0_5 : public IFIG
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         std::vector<DabComponent*>::iterator componentFIG0_5;
+};
+
+// FIG type 0/6
+// Service Linking
+//
+// This feature shall use the SIV signalling (see clause 5.2.2.1). The database
+// shall be divided by use of a database key.  Changes to the database shall be
+// signalled using the CEI. The first service in the list of services in each
+// part of the database, as divided by the database key, shall be a service
+// carried in the ensemble. This service is called the key service.
+//
+// The database key comprises the OE and P/D flags and the S/H, ILS, and LSN
+// fields.
+class FIG0_6 : public IFIG
+{
+    public:
+        FIG0_6(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::E; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 6; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::list<std::shared_ptr<LinkageSet> >::iterator linkageSetFIG0_6;
 };
 
 // FIG type 0/8

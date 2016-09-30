@@ -662,6 +662,75 @@ FillStatus FIG0_5::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
+//=========== FIG 0/6 ===========
+
+FIG0_6::FIG0_6(FIGRuntimeInformation *rti) :
+    m_rti(rti),
+    m_initialised(false)
+{
+}
+
+FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+    ssize_t remaining = max_size;
+    auto ensemble = m_rti->ensemble;
+
+    if (not m_initialised) {
+        linkageSetFIG0_6 = m_rti->ensemble->linkagesets.end();
+        m_initialised = true;
+    }
+
+    FIGtype0* fig0 = NULL;
+
+    for (; linkageSetFIG0_6 != ensemble->linkagesets.end();
+            ++linkageSetFIG0_6) {
+
+        const int required_size = 2;
+
+        if (fig0 == NULL) {
+            if (remaining < 2 + required_size) {
+                break;
+            }
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 0;
+            fig0->OE = 0;
+            fig0->PD = 0;
+            fig0->Extension = 5;
+
+            buf += 2;
+            remaining -= 2;
+        }
+        else if (remaining < required_size) {
+            break;
+        }
+
+        FIGtype0_6 *fig0_6 = (FIGtype0_6*)buf;
+
+        fig0_6->IdListFlag = 1;
+        fig0_6->LA = (*linkageSetFIG0_6)->active;
+        fig0_6->SH = (*linkageSetFIG0_6)->hard;
+        fig0_6->ILS = (*linkageSetFIG0_6)->international;
+        fig0_6->LSN = (*linkageSetFIG0_6)->lsn;
+
+#error "handle FIG insertion and CEI properly"
+
+        fig0->Length += 2;
+        buf += 2;
+        remaining -= 2;
+    }
+
+    if (linkageSetFIG0_6 == ensemble->linkagesets.end()) {
+        linkageSetFIG0_6 = ensemble->linkagesets.begin();
+        fs.complete_fig_transmitted = true;
+    }
+
+    fs.num_bytes_written = max_size - remaining;
+    return fs;
+}
+
 //=========== FIG 0/8 ===========
 
 FIG0_8::FIG0_8(FIGRuntimeInformation *rti) :

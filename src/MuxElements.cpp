@@ -672,6 +672,11 @@ LinkageSet::LinkageSet(string name, uint16_t lsn, bool hard, bool international)
     RC_ADD_PARAMETER(active, "Activate this linkage set [0 or 1]");
 }
 
+void LinkageSet::set_active(bool active)
+{
+    m_active = active;
+}
+
 void LinkageSet::set_parameter(const string& parameter, const string& value)
 {
     if (parameter == "active") {

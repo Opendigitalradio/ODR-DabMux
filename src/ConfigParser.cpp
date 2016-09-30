@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -140,6 +140,92 @@ uint16_t get_announcement_flag_from_ptree(
     }
 
     return flags;
+}
+
+// Parse the linkage section
+void parse_linkage(boost::property_tree::ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble,
+        std::shared_ptr<BaseRemoteController> rc
+        )
+{
+    using boost::property_tree::ptree;
+    using boost::property_tree::ptree_error;
+
+    auto pt_linking = pt.get_child_optional("linking");
+    if (pt_linking)
+    {
+        for (const auto& it : *pt_linking) {
+            const string setuid = it.first;
+            const ptree pt_set = it.second;
+
+            uint16_t lsn = hexparse(pt_set.get("lsn", "0"));
+            if (lsn == 0) {
+                etiLog.level(error) << "LSN for linking set " <<
+                    setuid << " invalid or missing";
+                throw runtime_error("Invalid service linking definition");
+            }
+
+            bool active = pt_set.get("active", false);
+            bool hard = pt_set.get("hard", true);
+            bool international = pt_set.get("international", false);
+
+            string service_uid = pt_set.get("keyservice", "");
+            if (service_uid.empty()) {
+                etiLog.level(error) << "Key Service for linking set " <<
+                    setuid << " invalid or missing";
+                throw runtime_error("Invalid service linking definition");
+            }
+
+            auto linkageset = make_shared<LinkageSet>(setuid, lsn, hard, international);
+            linkageset->set_active(active);
+
+            auto pt_list = pt_set.get_child_optional("list");
+            if (not pt_list) {
+                etiLog.level(error) << "list missing in linking set " <<
+                    setuid;
+                throw runtime_error("Invalid service linking definition");
+            }
+
+            for (const auto& it : *pt_list) {
+                const string linkuid = it.first;
+                const ptree pt_link = it.second;
+
+                ServiceLink link;
+
+                string link_type = pt_link.get("type", "");
+                if (link_type == "dab") link.type = ServiceLinkType::DAB;
+                else if (link_type == "fm") link.type = ServiceLinkType::FM;
+                else if (link_type == "drm") link.type = ServiceLinkType::DRM;
+                else if (link_type == "amss") link.type = ServiceLinkType::AMSS;
+                else {
+                    etiLog.level(error) << "Invalid type " << link_type <<
+                        " for link " << linkuid;
+                    throw runtime_error("Invalid service linking definition");
+                }
+
+                link.id = hexparse(pt_link.get("id", "0"));
+                if (link.id == 0) {
+                    etiLog.level(error) << "id for link " <<
+                        linkuid << " invalid or missing";
+                    throw runtime_error("Invalid service linking definition");
+                }
+
+                if (international) {
+                    link.ecc = hexparse(pt_link.get("ecc", "0"));
+                    if (link.ecc == 0) {
+                        etiLog.level(error) << "ecc for link " <<
+                            linkuid << " invalid or missing";
+                        throw runtime_error("Invalid service linking definition");
+                    }
+                }
+                else {
+                    link.ecc = 0;
+                }
+
+                linkageset->id_list.push_back(link);
+            }
+        }
+    }
 }
 
 void parse_ptree(boost::property_tree::ptree& pt,
@@ -556,6 +642,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
     }
 
+    parse_linkage(pt, ensemble, rc);
 }
 
 void setup_subchannel_from_ptree(DabSubchannel* subchan,

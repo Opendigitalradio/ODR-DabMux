@@ -423,7 +423,7 @@ class DabService : public RemoteControllable
         DabService(const DabService& other);
 };
 
-enum class ServiceLinkType {dab, fm, drm, amss};
+enum class ServiceLinkType {DAB, FM, DRM, AMSS};
 
 /* Represent one link inside a linkage set */
 struct ServiceLink {
@@ -438,7 +438,10 @@ struct ServiceLink {
  */
 class LinkageSet : public RemoteControllable {
     public:
-        LinkageSet(string name, uint16_t lsn, bool hard, bool international);
+        LinkageSet(std::string name, uint16_t lsn, bool hard, bool international);
+        void set_active(bool active);
+
+        std::list<ServiceLink> id_list;
 
     private:
         /* Linkage Set Number is a 12-bit number that identifies the linkage
@@ -452,7 +455,6 @@ class LinkageSet : public RemoteControllable {
         bool m_international;
 
         DabService *m_keyservice;
-        std::list<ServiceLink> id_list;
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,

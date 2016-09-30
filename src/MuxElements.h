@@ -438,7 +438,7 @@ struct ServiceLink {
  */
 class LinkageSet : public RemoteControllable {
     public:
-        LinkageSet(uint16_t lsn, bool hard, bool international);
+        LinkageSet(string name, uint16_t lsn, bool hard, bool international);
 
     private:
         /* Linkage Set Number is a 12-bit number that identifies the linkage

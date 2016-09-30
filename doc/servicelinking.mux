@@ -18,12 +18,12 @@ remotecontrol {
     telnetport 12721
 }
 
-; Service linking settings
+; Service linking sets
 linking {
-    ; The sets section declares the linkage sets according to
+    ; Every child section declares one linkage sets according to
     ; TS 103 176 Clause 5.2.3 "Linkage sets". This information will
     ; be encoded in FIG 0/6
-    sets {
+    set-fu {
         ; Linkage Set Number is a 12-bit number that identifies the linkage set
         ; in a country (requires coordination between multiplex operators in a country)
         lsn 0xabc

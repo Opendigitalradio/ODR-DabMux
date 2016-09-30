@@ -662,21 +662,8 @@ unsigned short DabSubchannel::getSizeDWord(void) const
     return (bitrate * 3) >> 3;
 }
 
-static string lsn_to_rc_name(uint16_t lsn)
-{
-    std::stringstream ss;
-    ss << "linkset" <<
-        std::uppercase <<
-        std::setfill('0') <<
-        std::setw(4) <<
-        std::hex <<
-        lsn;
-
-    return ss.str();
-}
-
-LinkageSet::LinkageSet(uint16_t lsn, bool hard, bool international) :
-    RemoteControllable(lsn_to_rc_name(lsn)),
+LinkageSet::LinkageSet(string name, uint16_t lsn, bool hard, bool international) :
+    RemoteControllable(name),
     m_lsn(lsn),
     m_active(false),
     m_hard(hard),

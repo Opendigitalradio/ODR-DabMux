@@ -26,37 +26,39 @@ linking {
     set-fu {
         ; Linkage Set Number is a 12-bit number that identifies the linkage set
         ; in a country (requires coordination between multiplex operators in a country)
+        ; (mandatory)
         lsn 0xabc
 
         ; whether this link is active or a "potential future link or de-activated link"
-        ; This field is also part of the remote control.
+        ; This field is also part of the remote control. (default false)
         active true
 
         ; Hard link means that all services carry the same programme, soft links means
-        ; that the programmes are related in some way.
+        ; that the programmes are related in some way. (default true)
         hard true
 
         ; Whether this linkage set affects only one country or several. Linkage sets that
-        ; include AMSS or DRM services need to have this set to true.
+        ; include AMSS or DRM services need to have this set to true. (default false)
         international false
 
-        ; Every linkage set has to contain a service from the current ensemble
+        ; Every linkage set has to contain a service from the current ensemble (mandatory)
         keyservice srv-fu
 
-        ; List of services to be included
+        ; List of services to be included (mandatory)
         list {
             ; Every service has a uid that can be used as a human-readable description
 
             ; The first example is a link to a DAB service on another ensemble.
             fu-on-my-friends-mux {
-                ; Possible options: dab, fm, drm, amss
+                ; Possible options: dab, fm, drm, amss (mandatory)
                 type dab
 
-                ; if type is dab, the id is a DAB service ID
+                ; if type is dab, the id is a DAB service ID (mandatory)
                 id 0x8daf
 
                 ; Since this link set has international false, we do not need to specify
                 ; the ECC. With internation true, the following would be needed
+                ; (mandatory if internation true)
                 ;ecc 0xec
             }
 

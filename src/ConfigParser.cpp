@@ -177,7 +177,8 @@ void parse_linkage(boost::property_tree::ptree& pt,
             }
 
             auto linkageset = make_shared<LinkageSet>(setuid, lsn, hard, international);
-            linkageset->set_active(active);
+            linkageset->active = active;
+            linkageset->keyservice = service_uid; // TODO check if it exists
 
             auto pt_list = pt_set.get_child_optional("list");
             if (not pt_list) {
@@ -224,6 +225,7 @@ void parse_linkage(boost::property_tree::ptree& pt,
 
                 linkageset->id_list.push_back(link);
             }
+            ensemble->linkagesets.push_back(linkageset);
         }
     }
 }

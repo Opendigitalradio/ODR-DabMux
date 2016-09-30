@@ -439,23 +439,22 @@ struct ServiceLink {
 class LinkageSet : public RemoteControllable {
     public:
         LinkageSet(std::string name, uint16_t lsn, bool hard, bool international);
-        void set_active(bool active);
 
         std::list<ServiceLink> id_list;
 
-    private:
         /* Linkage Set Number is a 12-bit number that identifies the linkage
          * set in a country (requires coordination between multiplex operators
          * in a country)
          */
-        uint16_t m_lsn;
+        uint16_t lsn;
 
-        bool m_active; // Remote-controllable
-        bool m_hard;
-        bool m_international;
+        bool active; // Remote-controllable
+        bool hard;
+        bool international;
 
-        DabService *m_keyservice;
+        std::string keyservice;
 
+    private:
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
                const std::string& value);

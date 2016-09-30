@@ -664,17 +664,12 @@ unsigned short DabSubchannel::getSizeDWord(void) const
 
 LinkageSet::LinkageSet(string name, uint16_t lsn, bool hard, bool international) :
     RemoteControllable(name),
-    m_lsn(lsn),
-    m_active(false),
-    m_hard(hard),
-    m_international(international)
+    lsn(lsn),
+    active(false),
+    hard(hard),
+    international(international)
 {
     RC_ADD_PARAMETER(active, "Activate this linkage set [0 or 1]");
-}
-
-void LinkageSet::set_active(bool active)
-{
-    m_active = active;
 }
 
 void LinkageSet::set_parameter(const string& parameter, const string& value)
@@ -682,7 +677,7 @@ void LinkageSet::set_parameter(const string& parameter, const string& value)
     if (parameter == "active") {
         stringstream ss;
         ss << value;
-        ss >> m_active;
+        ss >> active;
     }
     else {
         stringstream ss;
@@ -696,7 +691,7 @@ const string LinkageSet::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "active") {
-        ss << m_active;
+        ss << active;
     }
     else {
         ss << "Parameter '" << parameter <<

@@ -110,7 +110,7 @@ subchannels {
     }
     sub-ri {
         type dabplus
-        inputfile "tcp://*:9000"
+        inputfile "tcp://*:9001"
         bitrate 96
         id 2
         protection 3

@@ -662,4 +662,54 @@ unsigned short DabSubchannel::getSizeDWord(void) const
     return (bitrate * 3) >> 3;
 }
 
+static string lsn_to_rc_name(uint16_t lsn)
+{
+    std::stringstream ss;
+    ss << "linkset" <<
+        std::uppercase <<
+        std::setfill('0') <<
+        std::setw(4) <<
+        std::hex <<
+        lsn;
 
+    return ss.str();
+}
+
+LinkageSet::LinkageSet(uint16_t lsn, bool hard, bool international) :
+    RemoteControllable(lsn_to_rc_name(lsn)),
+    m_lsn(lsn),
+    m_active(false),
+    m_hard(hard),
+    m_international(international)
+{
+    RC_ADD_PARAMETER(active, "Activate this linkage set [0 or 1]");
+}
+
+void LinkageSet::set_parameter(const string& parameter, const string& value)
+{
+    if (parameter == "active") {
+        stringstream ss;
+        ss << value;
+        ss >> m_active;
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+const string LinkageSet::get_parameter(const string& parameter) const
+{
+    stringstream ss;
+    if (parameter == "active") {
+        ss << m_active;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
+}

@@ -191,8 +191,9 @@ class DabLabel
 
 class DabService;
 class DabComponent;
-
 class DabSubchannel;
+class LinkageSet;
+
 class dabEnsemble : public RemoteControllable {
     public:
         dabEnsemble()
@@ -228,6 +229,7 @@ class dabEnsemble : public RemoteControllable {
         std::vector<DabSubchannel*> subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
+        std::list<std::shared_ptr<LinkageSet> > linkagesets;
 };
 
 
@@ -419,6 +421,45 @@ class DabService : public RemoteControllable
     private:
         const DabService& operator=(const DabService& other);
         DabService(const DabService& other);
+};
+
+enum class ServiceLinkType {dab, fm, drm, amss};
+
+/* Represent one link inside a linkage set */
+struct ServiceLink {
+    ServiceLinkType type;
+    uint16_t id;
+    uint8_t ecc;
+};
+
+/* Represents a linkage set linkage sets according to
+ * TS 103 176 Clause 5.2.3 "Linkage sets". This information will
+ * be encoded in FIG 0/6.
+ */
+class LinkageSet : public RemoteControllable {
+    public:
+        LinkageSet(uint16_t lsn, bool hard, bool international);
+
+    private:
+        /* Linkage Set Number is a 12-bit number that identifies the linkage
+         * set in a country (requires coordination between multiplex operators
+         * in a country)
+         */
+        uint16_t m_lsn;
+
+        bool m_active; // Remote-controllable
+        bool m_hard;
+        bool m_international;
+
+        DabService *m_keyservice;
+        std::list<ServiceLink> id_list;
+
+        /* Remote control */
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const std::string get_parameter(const std::string& parameter) const;
 };
 
 std::vector<DabSubchannel*>::iterator getSubchannel(

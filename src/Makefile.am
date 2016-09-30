@@ -97,7 +97,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 bridge.h bridge.c \
 					 crc.h crc.c \
 					 fig/FIG.h fig/FIG.cpp \
-					 fig/FIG0.cpp fig/FIG0.h \
+					 fig/FIG0.cpp fig/FIG0.h fig/FIG0structs.h \
 					 fig/FIG1.cpp fig/FIG1.h \
 					 fig/FIGCarousel.cpp fig/FIGCarousel.h \
 					 mpeg.h mpeg.c \

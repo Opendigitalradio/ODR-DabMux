@@ -28,6 +28,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include "DabMux.h"
 #include "utils.h"
+#include "fig/FIG0structs.h"
 
 using namespace std;
 

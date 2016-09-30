@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015, 2016
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of FIG0
@@ -26,6 +26,7 @@
 */
 
 #include "fig/FIG0.h"
+#include "fig/FIG0structs.h"
 #include "utils.h"
 
 namespace FIC {

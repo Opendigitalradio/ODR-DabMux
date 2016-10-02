@@ -97,9 +97,22 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 bridge.h bridge.c \
 					 crc.h crc.c \
 					 fig/FIG.h fig/FIG.cpp \
-					 fig/FIG0.cpp fig/FIG0.h fig/FIG0structs.h \
+					 fig/FIG0.h fig/FIG0structs.h \
+					 fig/FIG0_0.cpp fig/FIG0_0.h \
+					 fig/FIG0_1.cpp fig/FIG0_1.h \
+					 fig/FIG0_2.cpp fig/FIG0_2.h \
+					 fig/FIG0_3.cpp fig/FIG0_3.h \
+					 fig/FIG0_5.cpp fig/FIG0_5.h \
+					 fig/FIG0_8.cpp fig/FIG0_8.h \
+					 fig/FIG0_9.cpp fig/FIG0_9.h \
+					 fig/FIG0_10.cpp fig/FIG0_10.h \
+					 fig/FIG0_13.cpp fig/FIG0_13.h \
+					 fig/FIG0_17.cpp fig/FIG0_17.h \
+					 fig/FIG0_18.cpp fig/FIG0_18.h \
+					 fig/FIG0_19.cpp fig/FIG0_19.h \
 					 fig/FIG1.cpp fig/FIG1.h \
 					 fig/FIGCarousel.cpp fig/FIGCarousel.h \
+					 fig/TransitionHandler.h \
 					 mpeg.h mpeg.c \
 					 prbs.h prbs.c \
 					 utils.cpp utils.h \

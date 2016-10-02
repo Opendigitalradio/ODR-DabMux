@@ -25,17 +25,33 @@
 
 #pragma once
 
-#include "fig/FIG0structs.h"
-#include "fig/FIG0_0.h"
-#include "fig/FIG0_1.h"
-#include "fig/FIG0_2.h"
-#include "fig/FIG0_3.h"
-#include "fig/FIG0_5.h"
-#include "fig/FIG0_8.h"
-#include "fig/FIG0_9.h"
-#include "fig/FIG0_10.h"
-#include "fig/FIG0_13.h"
-#include "fig/FIG0_17.h"
-#include "fig/FIG0_18.h"
-#include "fig/FIG0_19.h"
+#include <cstdint>
+#include <vector>
 
+#include "fig/FIG0structs.h"
+
+namespace FIC {
+
+// FIG type 0/5
+// The service component language feature is used to signal a language
+// associated with a service component; the spoken language of an audio
+// component or the language of the content of a data component. This
+// information can be used for user selection or display. The feature is
+// encoded in Extension 5 of FIG type 0 (FIG 0/5).
+class FIG0_5 : public IFIG
+{
+    public:
+        FIG0_5(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 5; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<DabComponent*>::iterator componentFIG0_5;
+};
+
+}

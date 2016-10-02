@@ -1258,24 +1258,27 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
 {
     using namespace std;
 
-    update_state();
+    auto ensemble = m_rti->ensemble;
+
+    // We are called every 24ms, and must timeout after 2s
+    const int timeout = 2000/24;
+
+    m_transition.update_state(timeout, ensemble->clusters);
 
     FillStatus fs;
     ssize_t remaining = max_size;
-
-    auto ensemble = m_rti->ensemble;
 
     FIGtype0* fig0 = NULL;
 
     // Combine all clusters into one list
     set<AnnouncementCluster*> allclusters;
-    for (const auto& cluster : m_new_announcements) {
+    for (const auto& cluster : m_transition.new_entries) {
         allclusters.insert(cluster.first.get());
     }
-    for (const auto& cluster : m_repeated_announcements) {
+    for (const auto& cluster : m_transition.repeated_entries) {
         allclusters.insert(cluster.get());
     }
-    for (const auto& cluster : m_disabled_announcements) {
+    for (const auto& cluster : m_transition.disabled_entries) {
         allclusters.insert(cluster.first.get());
     }
 
@@ -1341,86 +1344,59 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
-void FIG0_19::update_state()
+template<class T>
+void TransitionHandler<T>::update_state(int timeout, std::vector<std::shared_ptr<T> > all_entries)
 {
-    auto ensemble = m_rti->ensemble;
-
-    // We are called every 24ms, and must timeout after 2s
-    const int timeout = 2000/24;
-
-//#define DEBUG_FIG0_19
-#ifdef DEBUG_FIG0_19
-    etiLog.level(info) << " FIG0/19 new";
-    for (const auto& cluster : m_new_announcements) {
-        etiLog.level(info) << "  " << cluster.first->tostring()
-            << ": " << cluster.second;
-    }
-    etiLog.level(info) << " FIG0/19 repeated";
-    for (const auto& cluster : m_repeated_announcements) {
-        etiLog.level(info) << "  " << cluster->tostring();
-    }
-    etiLog.level(info) << " FIG0/19 disabled";
-    for (const auto& cluster : m_disabled_announcements) {
-        etiLog.level(info) << "  " << cluster.first->tostring()
-            << ": " << cluster.second;
-    }
-
-    etiLog.level(info) << " FIG0/19 in ensemble";
-#endif
-
-    for (const auto& cluster : ensemble->clusters) {
-#ifdef DEBUG_FIG0_19
-        etiLog.level(info) << "  " << cluster->tostring();
-#endif
-        if (cluster->is_active()) {
-            if (m_repeated_announcements.count(cluster) > 0) {
-                // We are currently announcing this cluster
+    for (const auto& entry : all_entries) {
+        if (entry->is_active()) {
+            if (repeated_entries.count(entry) > 0) {
+                // We are currently announcing this entry
                 continue;
             }
 
-            if (m_new_announcements.count(cluster) > 0) {
-                // We are currently announcing this cluster at a
+            if (new_entries.count(entry) > 0) {
+                // We are currently announcing this entry at a
                 // fast rate. Handle timeout:
-                m_new_announcements[cluster] -= 1;
-                if (m_new_announcements[cluster] <= 0) {
-                    m_repeated_announcements.insert(cluster);
-                    m_new_announcements.erase(cluster);
+                new_entries[entry] -= 1;
+                if (new_entries[entry] <= 0) {
+                    repeated_entries.insert(entry);
+                    new_entries.erase(entry);
                 }
                 continue;
             }
 
             // unlikely
-            if (m_disabled_announcements.count(cluster) > 0) {
-                m_new_announcements[cluster] = timeout;
-                m_disabled_announcements.erase(cluster);
+            if (disabled_entries.count(entry) > 0) {
+                new_entries[entry] = timeout;
+                disabled_entries.erase(entry);
                 continue;
             }
 
-            // It's a new announcement!
-            m_new_announcements[cluster] = timeout;
+            // It's a new entry!
+            new_entries[entry] = timeout;
         }
         else { // Not active
-            if (m_disabled_announcements.count(cluster) > 0) {
-                m_disabled_announcements[cluster] -= 1;
-                if (m_disabled_announcements[cluster] <= 0) {
-                    m_disabled_announcements.erase(cluster);
+            if (disabled_entries.count(entry) > 0) {
+                disabled_entries[entry] -= 1;
+                if (disabled_entries[entry] <= 0) {
+                    disabled_entries.erase(entry);
                 }
                 continue;
             }
 
-            if (m_repeated_announcements.count(cluster) > 0) {
-                // We are currently announcing this cluster
-                m_disabled_announcements[cluster] = timeout;
-                m_repeated_announcements.erase(cluster);
+            if (repeated_entries.count(entry) > 0) {
+                // We are currently announcing this entry
+                disabled_entries[entry] = timeout;
+                repeated_entries.erase(entry);
                 continue;
             }
 
             // unlikely
-            if (m_new_announcements.count(cluster) > 0) {
-                // We are currently announcing this cluster at a
+            if (new_entries.count(entry) > 0) {
+                // We are currently announcing this entry at a
                 // fast rate. We must stop announcing it
-                m_disabled_announcements[cluster] = timeout;
-                m_new_announcements.erase(cluster);
+                disabled_entries[entry] = timeout;
+                new_entries.erase(entry);
                 continue;
             }
         }
@@ -1429,8 +1405,8 @@ void FIG0_19::update_state()
 
 FIG_rate FIG0_19::repetition_rate(void)
 {
-    if (    m_new_announcements.size() > 0 or
-            m_disabled_announcements.size() ) {
+    if (    m_transition.new_entries.size() > 0 or
+            m_transition.disabled_entries.size() ) {
         return FIG_rate::A_B;
     }
     else {

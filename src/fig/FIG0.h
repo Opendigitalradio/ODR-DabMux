@@ -34,6 +34,34 @@
 
 namespace FIC {
 
+// Some FIGs need to adapt their rate or their contents depending
+// on if some data entries are stable or currently undergoing a
+// change. The TransitionHandler keeps track of which entries
+// are in what state.
+template<class T>
+class TransitionHandler {
+    public:
+        // update_state must be called once per ETI frame, and will
+        // move entries from new to repeated to disabled depending
+        // on their is_active() return value.
+        void update_state(int timeout, std::vector<std::shared_ptr<T> > all_entries);
+
+        // The FIG that needs the information about what state an entry is in
+        // can read from the following data structures. It shall not modify them.
+
+        /* Map to frame count */
+        std::map<
+            std::shared_ptr<T>,int> new_entries;
+
+        std::set<
+            std::shared_ptr<T> > repeated_entries;
+
+        /* Map to frame count */
+        std::map<
+            std::shared_ptr<T>,int> disabled_entries;
+};
+
+
 // FIG type 0/0, Multiplex Configuration Info (MCI),
 // Ensemble information
 class FIG0_0 : public IFIG
@@ -260,24 +288,7 @@ class FIG0_19 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
 
-        void update_state(void);
-
-        /* When a new announcement gets active, it is moved into the list
-         * of new announcements, and gets transmitted at a faster rate for
-         * two seconds.
-         * Same for recently disabled announcements.
-         */
-
-        /* Map of cluster to frame count */
-        std::map<
-            std::shared_ptr<AnnouncementCluster>,int> m_new_announcements;
-
-        std::set<
-            std::shared_ptr<AnnouncementCluster> > m_repeated_announcements;
-
-        /* Map of cluster to frame count */
-        std::map<
-            std::shared_ptr<AnnouncementCluster>,int> m_disabled_announcements;
+        TransitionHandler<AnnouncementCluster> m_transition;
 };
 
 #ifdef _WIN32

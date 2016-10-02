@@ -26,7 +26,7 @@
 #pragma once
 
 #include <cstdint>
-#include <list>
+#include <vector>
 #include <memory>
 
 #include "fig/FIG0structs.h"
@@ -58,7 +58,20 @@ class FIG0_6 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        std::list<std::shared_ptr<LinkageSet> >::iterator linkageSetFIG0_6;
+
+        /* Update the linkageSubsets */
+        void update(void);
+
+        /* A LinkageSet can contain links of different types
+         * (DAB, FM, DRM, AMSS), but the FIG needs to send
+         * different FIGs for each of those, because the IdLQ flag
+         * is common to a list.
+         *
+         * We reorganise all LinkageSets into subsets that have
+         * the same type.
+         */
+        std::list<LinkageSetData> linkageSubsets;
+        std::list<LinkageSetData>::iterator linkageSetFIG0_6;
 };
 
 // FIG0/6 needs a change indicator, which is a short-form FIG (i.e. without the list)
@@ -79,7 +92,7 @@ class FIG0_6_CEI : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        std::list<std::shared_ptr<LinkageSet> >::iterator linkageSetFIG0_6;
+        std::vector<std::shared_ptr<LinkageSet> >::iterator linkageSetFIG0_6;
 };
 
 }

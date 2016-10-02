@@ -40,21 +40,23 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
     ssize_t remaining = max_size;
     auto ensemble = m_rti->ensemble;
 
+    update();
+
     if (not m_initialised) {
-        linkageSetFIG0_6 = m_rti->ensemble->linkagesets.end();
+        linkageSetFIG0_6 = linkageSubsets.begin();
         m_initialised = true;
     }
 
     FIGtype0* fig0 = NULL;
 
-    for (; linkageSetFIG0_6 != ensemble->linkagesets.end();
+    for (; linkageSetFIG0_6 != linkageSubsets.end();
             ++linkageSetFIG0_6) {
 
         const bool PD = false;
-        const bool ILS = (*linkageSetFIG0_6)->international;
+        const bool ILS = linkageSetFIG0_6->international;
 
         // need to add key service to num_ids
-        const size_t num_ids = 1 + (*linkageSetFIG0_6)->id_list.size();
+        const size_t num_ids = 1 + linkageSetFIG0_6->id_list.size();
 
         const size_t headersize = sizeof(struct FIGtype0_6_header);
         const int required_size = sizeof(struct FIGtype0_6) +
@@ -84,10 +86,10 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         FIGtype0_6 *fig0_6 = (FIGtype0_6*)buf;
 
         fig0_6->IdListFlag = (num_ids > 0);
-        fig0_6->LA = (*linkageSetFIG0_6)->active;
-        fig0_6->SH = (*linkageSetFIG0_6)->hard;
+        fig0_6->LA = linkageSetFIG0_6->active;
+        fig0_6->SH = linkageSetFIG0_6->hard;
         fig0_6->ILS = ILS;
-        fig0_6->LSN = (*linkageSetFIG0_6)->lsn;
+        fig0_6->LSN = linkageSetFIG0_6->lsn;
 
         fig0->Length += sizeof(struct FIGtype0_6);
         buf += sizeof(struct FIGtype0_6);
@@ -98,7 +100,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
             header->rfu = 0;
             if (num_ids > 0x0F) {
                 etiLog.log(error, "Too large number of links for linkage set 0x%04x",
-                        (*linkageSetFIG0_6)->lsn);
+                        linkageSetFIG0_6->lsn);
                 throw MuxInitException();
             }
 
@@ -111,7 +113,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
             remaining -= headersize;
 
             // TODO insert key service first
-            const std::string keyserviceuid =(*linkageSetFIG0_6)->keyservice;
+            const std::string keyserviceuid = linkageSetFIG0_6->keyservice;
             const auto& keyservice = std::find_if(
                     ensemble->services.begin(),
                     ensemble->services.end(),
@@ -121,13 +123,13 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
 
             if (keyservice == ensemble->services.end()) {
                 etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
-                        keyserviceuid.c_str(), (*linkageSetFIG0_6)->lsn);
+                        keyserviceuid.c_str(), linkageSetFIG0_6->lsn);
                 throw MuxInitException();
             }
-            for (const auto& l : (*linkageSetFIG0_6)->id_list) {
+            for (const auto& l : linkageSetFIG0_6->id_list) {
                 if (l.type != ServiceLinkType::DAB) {
                     etiLog.log(error, "TODO only DAB links supported. (linkage set 0x%04x)",
-                            (*linkageSetFIG0_6)->lsn);
+                            linkageSetFIG0_6->lsn);
                     throw MuxInitException();
                 }
             }
@@ -139,7 +141,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 buf += 2;
                 remaining -= 2;
 
-                for (const auto& l : (*linkageSetFIG0_6)->id_list) {
+                for (const auto& l : linkageSetFIG0_6->id_list) {
                     buf[0] = l.id >> 8;
                     buf[1] = l.id & 0xFF;
                     fig0->Length += 2;
@@ -155,7 +157,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 buf += 3;
                 remaining -= 3;
 
-                for (const auto& l : (*linkageSetFIG0_6)->id_list) {
+                for (const auto& l : linkageSetFIG0_6->id_list) {
                     buf[0] = l.ecc;
                     buf[1] = l.id >> 8;
                     buf[2] = l.id & 0xFF;
@@ -174,7 +176,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 buf += 4;
                 remaining -= 4;
 
-                for (const auto& l : (*linkageSetFIG0_6)->id_list) {
+                for (const auto& l : linkageSetFIG0_6->id_list) {
                     buf[0] = l.id >> 24;
                     buf[1] = l.id >> 16;
                     buf[2] = l.id >> 8;
@@ -191,13 +193,38 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         remaining -= required_size;
     }
 
-    if (linkageSetFIG0_6 == ensemble->linkagesets.end()) {
-        linkageSetFIG0_6 = ensemble->linkagesets.begin();
+    if (linkageSetFIG0_6 == linkageSubsets.end()) {
+        linkageSetFIG0_6 = linkageSubsets.begin();
         fs.complete_fig_transmitted = true;
     }
 
     fs.num_bytes_written = max_size - remaining;
     return fs;
+}
+
+void FIG0_6::update()
+{
+    linkageSubsets.clear();
+
+    for (const auto& linkageset : m_rti->ensemble->linkagesets) {
+        const auto lsn = linkageset->data.lsn;
+
+        for (const auto& link : linkageset->data.id_list) {
+            const auto type = link.type;
+
+            const auto subset =
+                std::find_if(linkageSubsets.begin(), linkageSubsets.end(),
+                    [&](const LinkageSetData& l) {
+                        return not l.id_list.empty() and
+                            l.lsn == lsn and l.id_list.front().type == type;
+                    });
+
+            if (subset == linkageSubsets.end()) {
+                // A subset with that LSN and type does not exist yet
+                linkageSubsets.push_back( linkageset->data.filter_type(type) );
+            }
+        }
+    }
 }
 
 }

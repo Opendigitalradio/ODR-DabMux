@@ -556,15 +556,17 @@ static void printLinking(const shared_ptr<dabEnsemble> ensemble)
 {
     etiLog.log(info, " Linkage Sets");
     for (const auto& linkageset : ensemble->linkagesets) {
+        const auto& lsd = linkageset->data;
+
         etiLog.level(info) << "  set " << linkageset->get_rc_name();
-        etiLog.log(info,      "   LSN 0x%04x", linkageset->lsn);
-        etiLog.level(info) << "   active " << (linkageset->active ? "true" : "false");
-        etiLog.level(info) << "   " << (linkageset->hard ? "hard" : "soft");
-        etiLog.level(info) << "   international " << (linkageset->international ? "true" : "false");
-        etiLog.level(info) << "   key service " << linkageset->keyservice;
+        etiLog.log(info,      "   LSN 0x%04x", lsd.lsn);
+        etiLog.level(info) << "   active " << (lsd.active ? "true" : "false");
+        etiLog.level(info) << "   " << (lsd.hard ? "hard" : "soft");
+        etiLog.level(info) << "   international " << (lsd.international ? "true" : "false");
+        etiLog.level(info) << "   key service " << lsd.keyservice;
 
         etiLog.level(info) << "   ID list";
-        for (const auto& link : linkageset->id_list) {
+        for (const auto& link : lsd.id_list) {
             switch (link.type) {
                 case ServiceLinkType::DAB:
                     etiLog.level(info) << "    type DAB";
@@ -580,7 +582,7 @@ static void printLinking(const shared_ptr<dabEnsemble> ensemble)
                     break;
             }
             etiLog.log(info,      "    id 0x%04x", link.id);
-            if (linkageset->international) {
+            if (lsd.international) {
                 etiLog.log(info,      "    ecc 0x%04x", link.ecc);
             }
         }

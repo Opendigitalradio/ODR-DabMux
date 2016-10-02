@@ -432,6 +432,28 @@ struct ServiceLink {
     uint8_t ecc;
 };
 
+/* Keep the data out of LinkageSet to make it copyable */
+struct LinkageSetData {
+    std::list<ServiceLink> id_list;
+
+    /* Linkage Set Number is a 12-bit number that identifies the linkage
+     * set in a country (requires coordination between multiplex operators
+     * in a country)
+     */
+    uint16_t lsn;
+
+    bool active; // Remote-controllable
+    bool hard;
+    bool international;
+
+    std::string keyservice; // TODO replace by pointer to service
+
+    /* Return a LinkageSetData with id_list filtered to include
+     * only those links of a given type
+     */
+    LinkageSetData filter_type(ServiceLinkType type);
+};
+
 /* Represents a linkage set linkage sets according to
  * TS 103 176 Clause 5.2.3 "Linkage sets". This information will
  * be encoded in FIG 0/6.
@@ -440,20 +462,7 @@ class LinkageSet : public RemoteControllable {
     public:
         LinkageSet(std::string name, uint16_t lsn, bool hard, bool international);
 
-        std::list<ServiceLink> id_list;
-
-        /* Linkage Set Number is a 12-bit number that identifies the linkage
-         * set in a country (requires coordination between multiplex operators
-         * in a country)
-         */
-        uint16_t lsn;
-
-        bool active; // Remote-controllable
-        bool hard;
-        bool international;
-
-        std::string keyservice; // TODO replace by pointer to service
-
+        LinkageSetData data;
     private:
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,

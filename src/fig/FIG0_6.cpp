@@ -195,10 +195,6 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 }
             }
         }
-
-        fig0->Length += required_size;
-        buf += required_size;
-        remaining -= required_size;
     }
 
     if (linkageSetFIG0_6 == linkageSubsets.end()) {

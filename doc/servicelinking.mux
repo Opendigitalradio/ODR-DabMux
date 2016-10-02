@@ -7,7 +7,7 @@
 ;
 general {
     dabmode 1
-    nbframes 0
+    nbframes 10000
 
     syslog false
     tist false
@@ -132,7 +132,6 @@ components {
 }
 
 outputs {
-    tcp "tcp://0.0.0.0:9200"
-    throttle "simul://"
+    file "file://./test.eti?type=raw"
 }
 

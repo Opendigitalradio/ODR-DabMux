@@ -104,7 +104,22 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 throw MuxInitException();
             }
 
-            header->IdLQ = 0; // TODO not only DAB
+            // update() guarantees us that all entries in a linkage set
+            // have the same type
+            for (const auto& l : linkageSetFIG0_6->id_list) {
+                if (l.type != linkageSetFIG0_6->id_list.front().type) {
+                    etiLog.log(error, "INTERNAL ERROR: invalid linkage subset 0x%04x",
+                        linkageSetFIG0_6->lsn);
+                    throw std::runtime_error("INTERNAL ERROR");
+                }
+            }
+
+            switch (linkageSetFIG0_6->id_list.front().type) {
+                case ServiceLinkType::DAB: header->IdLQ  = FIG0_6_IDLQ_DAB; break;
+                case ServiceLinkType::FM: header->IdLQ   = FIG0_6_IDLQ_RDS; break;
+                case ServiceLinkType::DRM: header->IdLQ  = FIG0_6_IDLQ_DRM_AMSS; break;
+                case ServiceLinkType::AMSS: header->IdLQ = FIG0_6_IDLQ_DRM_AMSS; break;
+            }
             header->rfa = 0;
             header->num_ids = num_ids;
 
@@ -125,13 +140,6 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
                         keyserviceuid.c_str(), linkageSetFIG0_6->lsn);
                 throw MuxInitException();
-            }
-            for (const auto& l : linkageSetFIG0_6->id_list) {
-                if (l.type != ServiceLinkType::DAB) {
-                    etiLog.log(error, "TODO only DAB links supported. (linkage set 0x%04x)",
-                            linkageSetFIG0_6->lsn);
-                    throw MuxInitException();
-                }
             }
 
             if (not PD and not ILS) {

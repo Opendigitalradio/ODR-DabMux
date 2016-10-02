@@ -452,7 +452,7 @@ class LinkageSet : public RemoteControllable {
         bool hard;
         bool international;
 
-        std::string keyservice;
+        std::string keyservice; // TODO replace by pointer to service
 
     private:
         /* Remote control */

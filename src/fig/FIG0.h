@@ -29,6 +29,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <list>
 
 #include "fig/FIG.h"
 
@@ -153,6 +154,27 @@ class FIG0_6 : public IFIG
         FIG0_6(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate(void) { return FIG_rate::E; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 6; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::list<std::shared_ptr<LinkageSet> >::iterator linkageSetFIG0_6;
+};
+
+// FIG0/6 needs a change indicator, which is a short-form FIG (i.e. without the list)
+// and with C/N 1. Since this has another rate, it's implemented in another class.
+//
+// This is signalled once per second for a period of five seconds
+// (TS 103 176 5.2.4.3).
+class FIG0_6_CEI : public IFIG
+{
+    public:
+        FIG0_6_CEI(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
 
         virtual const int figtype(void) const { return 0; }
         virtual const int figextension(void) const { return 6; }

@@ -74,7 +74,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
             fig0->CN = 0;
             fig0->OE = 0;
             fig0->PD = PD;
-            fig0->Extension = 5;
+            fig0->Extension = 6;
 
             buf += 2;
             remaining -= 2;

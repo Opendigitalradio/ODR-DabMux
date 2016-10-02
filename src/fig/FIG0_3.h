@@ -25,18 +25,30 @@
 
 #pragma once
 
-#include "fig/FIG0structs.h"
-#include "fig/FIG0_0.h"
-#include "fig/FIG0_1.h"
-#include "fig/FIG0_2.h"
-#include "fig/FIG0_3.h"
-#include "fig/FIG0_5.h"
-#include "fig/FIG0_6.h"
-#include "fig/FIG0_8.h"
-#include "fig/FIG0_9.h"
-#include "fig/FIG0_10.h"
-#include "fig/FIG0_13.h"
-#include "fig/FIG0_17.h"
-#include "fig/FIG0_18.h"
-#include "fig/FIG0_19.h"
+#include <cstdint>
+#include <vector>
 
+#include "fig/FIG0structs.h"
+
+namespace FIC {
+
+// FIG type 0/3
+// The Extension 3 of FIG type 0 (FIG 0/3) gives additional information about
+// the service component description in packet mode.
+class FIG0_3 : public IFIG
+{
+    public:
+        FIG0_3(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 3; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<DabComponent*>::iterator componentFIG0_3;
+};
+
+}

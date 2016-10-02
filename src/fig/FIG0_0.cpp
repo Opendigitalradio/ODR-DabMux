@@ -23,20 +23,42 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include "fig/FIG0structs.h"
 #include "fig/FIG0_0.h"
-#include "fig/FIG0_1.h"
-#include "fig/FIG0_2.h"
-#include "fig/FIG0_3.h"
-#include "fig/FIG0_5.h"
-#include "fig/FIG0_6.h"
-#include "fig/FIG0_8.h"
-#include "fig/FIG0_9.h"
-#include "fig/FIG0_10.h"
-#include "fig/FIG0_13.h"
-#include "fig/FIG0_17.h"
-#include "fig/FIG0_18.h"
-#include "fig/FIG0_19.h"
+#include "utils.h"
+
+namespace FIC {
+
+//=========== FIG 0/0 ===========
+
+FillStatus FIG0_0::fill(uint8_t *buf, size_t max_size)
+{
+    FillStatus fs;
+
+    if (max_size < 6) {
+        fs.num_bytes_written = 0;
+        return fs;
+    }
+
+    FIGtype0_0 *fig0_0;
+    fig0_0 = (FIGtype0_0 *)buf;
+
+    fig0_0->FIGtypeNumber = 0;
+    fig0_0->Length = 5;
+    fig0_0->CN = 0;
+    fig0_0->OE = 0;
+    fig0_0->PD = 0;
+    fig0_0->Extension = 0;
+
+    fig0_0->EId = htons(m_rti->ensemble->id);
+    fig0_0->Change = 0;
+    fig0_0->Al = 0;
+    fig0_0->CIFcnt_hight = (m_rti->currentFrame / 250) % 20;
+    fig0_0->CIFcnt_low = (m_rti->currentFrame % 250);
+
+    fs.complete_fig_transmitted = true;
+    fs.num_bytes_written = 6;
+    return fs;
+}
+
+}
 

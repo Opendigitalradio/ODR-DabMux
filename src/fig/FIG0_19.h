@@ -25,18 +25,29 @@
 
 #pragma once
 
-#include "fig/FIG0structs.h"
-#include "fig/FIG0_0.h"
-#include "fig/FIG0_1.h"
-#include "fig/FIG0_2.h"
-#include "fig/FIG0_3.h"
-#include "fig/FIG0_5.h"
-#include "fig/FIG0_6.h"
-#include "fig/FIG0_8.h"
-#include "fig/FIG0_9.h"
-#include "fig/FIG0_10.h"
-#include "fig/FIG0_13.h"
-#include "fig/FIG0_17.h"
-#include "fig/FIG0_18.h"
-#include "fig/FIG0_19.h"
+#include <cstdint>
+#include <vector>
 
+#include "fig/FIG0structs.h"
+#include "fig/TransitionHandler.h"
+
+namespace FIC {
+
+// FIG type 0/19
+class FIG0_19 : public IFIG
+{
+    public:
+        FIG0_19(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void);
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 19; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+
+        TransitionHandler<AnnouncementCluster> m_transition;
+};
+
+}

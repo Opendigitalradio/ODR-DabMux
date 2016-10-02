@@ -25,18 +25,29 @@
 
 #pragma once
 
-#include "fig/FIG0structs.h"
-#include "fig/FIG0_0.h"
-#include "fig/FIG0_1.h"
-#include "fig/FIG0_2.h"
-#include "fig/FIG0_3.h"
-#include "fig/FIG0_5.h"
-#include "fig/FIG0_6.h"
-#include "fig/FIG0_8.h"
-#include "fig/FIG0_9.h"
-#include "fig/FIG0_10.h"
-#include "fig/FIG0_13.h"
-#include "fig/FIG0_17.h"
-#include "fig/FIG0_18.h"
-#include "fig/FIG0_19.h"
+#include <cstdint>
+#include <vector>
 
+#include "fig/FIG0structs.h"
+
+namespace FIC {
+
+// FIG type 0/17
+// Programme Type (PTy)
+class FIG0_17 : public IFIG
+{
+    public:
+        FIG0_17(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+
+        virtual const int figtype(void) const { return 0; }
+        virtual const int figextension(void) const { return 17; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_17;
+};
+
+}

@@ -154,7 +154,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                     remaining -= 2;
                 }
             }
-            if (not PD and ILS) {
+            else if (not PD and ILS) {
                 buf[0] = ensemble->ecc;
                 buf[1] = (*keyservice)->id >> 8;
                 buf[2] = (*keyservice)->id & 0xFF;

@@ -139,37 +139,40 @@ using boost::property_tree::ptree_error;
 
 volatile sig_atomic_t running = 1;
 
+/* We are not allowed to use etiLog in the signal handler,
+ * because etiLog uses mutexes
+ */
 void signalHandler(int signum)
 {
 #ifdef _WIN32
-    etiLog.log(debug, "\npid: %i\n", _getpid());
+    fprintf(stderr, "\npid: %i\n", _getpid());
 #else
-    etiLog.log(debug, "\npid: %i, ppid: %i\n", getpid(), getppid());
+    fprintf(stderr, "\npid: %i, ppid: %i\n", getpid(), getppid());
 #endif
 #define SIG_MSG "Signal received: "
     switch (signum) {
 #ifndef _WIN32
     case SIGHUP:
-        etiLog.log(debug, SIG_MSG "SIGHUP\n");
+        fprintf(stderr, SIG_MSG "SIGHUP\n");
         break;
     case SIGQUIT:
-        etiLog.log(debug, SIG_MSG "SIGQUIT\n");
+        fprintf(stderr, SIG_MSG "SIGQUIT\n");
         break;
     case SIGPIPE:
-        etiLog.log(debug, SIG_MSG "SIGPIPE\n");
+        fprintf(stderr, SIG_MSG "SIGPIPE\n");
         return;
         break;
 #endif
     case SIGINT:
-        etiLog.log(debug, SIG_MSG "SIGINT\n");
+        fprintf(stderr, SIG_MSG "SIGINT\n");
         break;
     case SIGTERM:
-        etiLog.log(debug, SIG_MSG "SIGTERM\n");
-        etiLog.log(debug, "Exiting software\n");
+        fprintf(stderr, SIG_MSG "SIGTERM\n");
+        fprintf(stderr, "Exiting software\n");
         exit(0);
         break;
     default:
-        etiLog.log(debug, SIG_MSG "number %i\n", signum);
+        fprintf(stderr, SIG_MSG "number %i\n", signum);
     }
 #ifndef _WIN32
     killpg(0, SIGPIPE);

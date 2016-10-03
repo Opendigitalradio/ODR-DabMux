@@ -74,6 +74,35 @@ linking {
             }
         }
     }
+
+    ; And now an international true to test more options
+    set-ri {
+        lsn 0xdef
+        active false
+        hard soft
+        international true
+        keyservice srv-ri
+
+        list {
+            ri-on-drm {
+                type drm
+                id 0x1298
+                ecc 0xec
+            }
+
+            ri-on-amss {
+                type amss
+                id 0x1A2B
+                ecc 0xea
+            }
+
+            ri-on-fm {
+                type fm
+                id 0x4C5D
+                ecc 0x4f
+            }
+        }
+    }
 }
 
 ; For information about the ensemble, service, subchannels, components and outputs,

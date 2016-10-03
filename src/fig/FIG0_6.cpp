@@ -40,10 +40,8 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
     ssize_t remaining = max_size;
     auto ensemble = m_rti->ensemble;
 
-    update();
-
     if (not m_initialised) {
-        linkageSetFIG0_6 = linkageSubsets.begin();
+        update();
         m_initialised = true;
     }
 
@@ -198,7 +196,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
     }
 
     if (linkageSetFIG0_6 == linkageSubsets.end()) {
-        linkageSetFIG0_6 = linkageSubsets.begin();
+        update();
         fs.complete_fig_transmitted = true;
     }
 
@@ -229,6 +227,42 @@ void FIG0_6::update()
             }
         }
     }
+
+    linkageSetFIG0_6 = linkageSubsets.begin();
+
+#if 0
+    etiLog.log(info, " Linkage Sets");
+    for (const auto& lsd : linkageSubsets) {
+
+        etiLog.log(info,      "   LSN 0x%04x", lsd.lsn);
+        etiLog.level(info) << "   active " << (lsd.active ? "true" : "false");
+        etiLog.level(info) << "   " << (lsd.hard ? "hard" : "soft");
+        etiLog.level(info) << "   international " << (lsd.international ? "true" : "false");
+        etiLog.level(info) << "   key service " << lsd.keyservice;
+
+        etiLog.level(info) << "   ID list";
+        for (const auto& link : lsd.id_list) {
+            switch (link.type) {
+                case ServiceLinkType::DAB:
+                    etiLog.level(info) << "    type DAB";
+                    break;
+                case ServiceLinkType::FM:
+                    etiLog.level(info) << "    type FM";
+                    break;
+                case ServiceLinkType::DRM:
+                    etiLog.level(info) << "    type DRM";
+                    break;
+                case ServiceLinkType::AMSS:
+                    etiLog.level(info) << "    type AMSS";
+                    break;
+            }
+            etiLog.log(info,      "    id 0x%04x", link.id);
+            if (lsd.international) {
+                etiLog.log(info,      "    ecc 0x%04x", link.ecc);
+            }
+        }
+    }
+#endif
 }
 
 }

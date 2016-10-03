@@ -87,7 +87,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         fig0_6->LA = linkageSetFIG0_6->active;
         fig0_6->SH = linkageSetFIG0_6->hard;
         fig0_6->ILS = ILS;
-        fig0_6->LSN = linkageSetFIG0_6->lsn;
+        fig0_6->setLSN(linkageSetFIG0_6->lsn);
 
         fig0->Length += sizeof(struct FIGtype0_6);
         buf += sizeof(struct FIGtype0_6);
@@ -125,7 +125,6 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
             buf += headersize;
             remaining -= headersize;
 
-            // TODO insert key service first
             const std::string keyserviceuid = linkageSetFIG0_6->keyservice;
             const auto& keyservice = std::find_if(
                     ensemble->services.begin(),
@@ -207,6 +206,8 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
 void FIG0_6::update()
 {
     linkageSubsets.clear();
+
+    // TODO check if AMSS and DRM have to be put into a single subset
 
     for (const auto& linkageset : m_rti->ensemble->linkagesets) {
         const auto lsn = linkageset->data.lsn;

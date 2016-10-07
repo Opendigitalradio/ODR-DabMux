@@ -3,10 +3,10 @@
    Her Majesty the Queen in Right of Canada (Communications Research
    Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
-   This module adds remote-control capability to some of the dabmod modules.
+   This module adds remote-control capability to some of the dabmux modules.
    see testremotecontrol/test.cpp for an example of how to use this.
  */
 /*
@@ -26,8 +26,15 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _REMOTECONTROL_H
-#define _REMOTECONTROL_H
+#pragma once
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#if defined(HAVE_RC_ZEROMQ)
+#  include "zmq.hpp"
+#endif
 
 #include <list>
 #include <map>
@@ -36,14 +43,13 @@
 #include <atomic>
 #include <iostream>
 #include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/thread.hpp>
 #include <stdexcept>
 
+#include "Log.h"
 
 #define RC_ADD_PARAMETER(p, desc) {   \
   std::vector<std::string> p; \
@@ -51,7 +57,6 @@
   p.push_back(desc); \
   m_parameters.push_back(p); \
 }
-
 
 class ParameterError : public std::exception
 {
@@ -71,9 +76,6 @@ class RemoteControllable;
  */
 class BaseRemoteController {
     public:
-        /* Add a new controllable under this controller's command */
-        virtual void enrol(RemoteControllable* controllable) = 0;
-
         /* When this returns one, the remote controller cannot be
          * used anymore, and must be restarted by dabmux
          */
@@ -90,10 +92,13 @@ class BaseRemoteController {
 /* Objects that support remote control must implement the following class */
 class RemoteControllable {
     public:
+        RemoteControllable(const std::string& name) :
+            m_name(name) {}
 
-        RemoteControllable(std::string name) : m_name(name) {}
+        RemoteControllable(const RemoteControllable& other) = delete;
+        RemoteControllable& operator=(const RemoteControllable& other) = delete;
 
-        virtual ~RemoteControllable() {}
+        virtual ~RemoteControllable();
 
         /* return a short name used to identify the controllable.
          * It might be used in the commands the user has to type, so keep
@@ -101,33 +106,19 @@ class RemoteControllable {
          */
         virtual std::string get_rc_name() const { return m_name; }
 
-        /* Tell the controllable to enrol at the given controller */
-        virtual void enrol_at(BaseRemoteController& controller) {
-            controller.enrol(this);
-        }
-
-        virtual void enrol_at(std::shared_ptr<BaseRemoteController> controller) {
-            controller->enrol(this);
-        }
-
         /* Return a list of possible parameters that can be set */
-        virtual std::list<std::string> get_supported_parameters() const {
-            std::list<std::string> parameterlist;
-            for (std::list< std::vector<std::string> >::const_iterator it = m_parameters.begin();
-                    it != m_parameters.end(); ++it) {
-                parameterlist.push_back((*it)[0]);
-            }
-            return parameterlist;
-        }
+        virtual std::list<std::string> get_supported_parameters() const;
 
         /* Return a mapping of the descriptions of all parameters */
         virtual std::list< std::vector<std::string> >
-            get_parameter_descriptions() const {
-            return m_parameters;
-        }
+            get_parameter_descriptions() const
+            {
+                return m_parameters;
+            }
 
         /* Base function to set parameters. */
-        virtual void set_parameter(const std::string& parameter,
+        virtual void set_parameter(
+                const std::string& parameter,
                 const std::string& value) = 0;
 
         /* Getting a parameter always returns a string. */
@@ -138,30 +129,93 @@ class RemoteControllable {
         std::list< std::vector<std::string> > m_parameters;
 };
 
+/* Holds all our remote controllers and controlled object.
+ */
+class RemoteControllers {
+    public:
+        void add_controller(std::shared_ptr<BaseRemoteController> rc) {
+            m_controllers.push_back(rc);
+        }
+
+        void enrol(RemoteControllable *rc) {
+            controllables.push_back(rc);
+        }
+
+        void remove_controllable(RemoteControllable *rc) {
+            controllables.remove(rc);
+        }
+
+        void check_faults() {
+            for (auto &controller : m_controllers) {
+                if (controller->fault_detected())
+                {
+                    etiLog.level(warn) <<
+                            "Detected Remote Control fault, restarting it";
+                    controller->restart();
+                }
+            }
+        }
+
+        std::list< std::vector<std::string> >
+            get_param_list_values(const std::string& name) {
+            RemoteControllable* controllable = get_controllable_(name);
+
+            std::list< std::vector<std::string> > allparams;
+            for (auto &param : controllable->get_supported_parameters()) {
+                std::vector<std::string> item;
+                item.push_back(param);
+                item.push_back(controllable->get_parameter(param));
+
+                allparams.push_back(item);
+            }
+            return allparams;
+        }
+
+        std::string get_param(const std::string& name, const std::string& param) {
+            RemoteControllable* controllable = get_controllable_(name);
+            return controllable->get_parameter(param);
+        }
+
+        void set_param(const std::string& name, const std::string& param, const std::string& value) {
+            RemoteControllable* controllable = get_controllable_(name);
+            return controllable->set_parameter(param, value);
+        }
+
+        std::list<RemoteControllable*> controllables;
+
+    private:
+        RemoteControllable* get_controllable_(const std::string& name);
+
+        std::list<std::shared_ptr<BaseRemoteController> > m_controllers;
+};
+
+extern RemoteControllers rcs;
+
+
 /* Implements a Remote controller based on a simple telnet CLI
  * that listens on localhost
  */
 class RemoteControllerTelnet : public BaseRemoteController {
     public:
-        RemoteControllerTelnet() :
-            m_running(false),
-            m_io_service(),
-            m_fault(false),
+        RemoteControllerTelnet()
+            : m_running(false), m_fault(false),
             m_port(0) { }
 
-        RemoteControllerTelnet(int port) :
-            m_running(false),
-            m_io_service(),
-            m_fault(false),
-            m_port(port)
-        {
-            restart();
-        }
+        RemoteControllerTelnet(int port)
+            : m_running(true), m_fault(false),
+            m_child_thread(&RemoteControllerTelnet::process, this, 0),
+            m_port(port) { }
 
-        ~RemoteControllerTelnet();
+        RemoteControllerTelnet& operator=(const RemoteControllerTelnet& other) = delete;
+        RemoteControllerTelnet(const RemoteControllerTelnet& other) = delete;
 
-        void enrol(RemoteControllable* controllable) {
-            m_cohort.push_back(controllable);
+        ~RemoteControllerTelnet() {
+            m_running = false;
+            m_fault = false;
+            if (m_port) {
+                m_child_thread.interrupt();
+                m_child_thread.join();
+            }
         }
 
         virtual bool fault_detected() { return m_fault; }
@@ -178,14 +232,6 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         void reply(boost::asio::ip::tcp::socket& socket, std::string message);
 
-        void handle_accept(
-                const boost::system::error_code& boost_error,
-                boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
-                boost::asio::ip::tcp::acceptor& acceptor);
-
-        RemoteControllerTelnet& operator=(const RemoteControllerTelnet& other);
-        RemoteControllerTelnet(const RemoteControllerTelnet& other);
-
         std::vector<std::string> tokenise_(std::string message) {
             std::vector<std::string> all_tokens;
 
@@ -197,58 +243,7 @@ class RemoteControllerTelnet : public BaseRemoteController {
             return all_tokens;
         }
 
-        RemoteControllable* get_controllable_(std::string name) {
-            for (std::list<RemoteControllable*>::iterator it = m_cohort.begin();
-                    it != m_cohort.end(); ++it) {
-                if ((*it)->get_rc_name() == name)
-                {
-                    return *it;
-                }
-            }
-            throw ParameterError("Module name unknown");
-        }
-
-        std::list< std::vector<std::string> >
-            get_parameter_descriptions_(std::string name) {
-            RemoteControllable* controllable = get_controllable_(name);
-            return controllable->get_parameter_descriptions();
-        }
-
-        std::list<std::string> get_param_list_(std::string name) {
-            RemoteControllable* controllable = get_controllable_(name);
-            return controllable->get_supported_parameters();
-        }
-
-        std::list< std::vector<std::string> >
-            get_param_list_values_(std::string name) {
-            RemoteControllable* controllable = get_controllable_(name);
-
-            std::list< std::vector<std::string> > allparams;
-            std::list<std::string> params = controllable->get_supported_parameters();
-            for (std::list<std::string>::iterator it = params.begin();
-                    it != params.end(); ++it) {
-                std::vector<std::string> item;
-                item.push_back(*it);
-                item.push_back(controllable->get_parameter(*it));
-
-                allparams.push_back(item);
-            }
-            return allparams;
-        }
-
-        std::string get_param_(std::string name, std::string param) {
-            RemoteControllable* controllable = get_controllable_(name);
-            return controllable->get_parameter(param);
-        }
-
-        void set_param_(std::string name, std::string param, std::string value) {
-            RemoteControllable* controllable = get_controllable_(name);
-            return controllable->set_parameter(param, value);
-        }
-
         std::atomic<bool> m_running;
-
-        boost::asio::io_service m_io_service;
 
         /* This is set to true if a fault occurred */
         std::atomic<bool> m_fault;
@@ -256,23 +251,60 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         boost::thread m_child_thread;
 
-        /* This controller commands the controllables in the cohort */
-        std::list<RemoteControllable*> m_cohort;
-
         int m_port;
 };
 
-
-/* The Dummy remote controller does nothing, and never fails
+#if defined(HAVE_RC_ZEROMQ)
+/* Implements a Remote controller using zmq transportlayer
+ * that listens on localhost
  */
-class RemoteControllerDummy : public BaseRemoteController {
+class RemoteControllerZmq : public BaseRemoteController {
     public:
-        void enrol(RemoteControllable*) {}
+        RemoteControllerZmq()
+            : m_running(false), m_fault(false),
+            m_zmqContext(1),
+            m_endpoint("") { }
 
-        bool fault_detected() { return false; }
+        RemoteControllerZmq(const std::string& endpoint)
+            : m_running(true), m_fault(false),
+            m_zmqContext(1),
+            m_endpoint(endpoint),
+            m_child_thread(&RemoteControllerZmq::process, this) { }
 
-        virtual void restart() {}
+        RemoteControllerZmq& operator=(const RemoteControllerZmq& other) = delete;
+        RemoteControllerZmq(const RemoteControllerZmq& other) = delete;
+
+        ~RemoteControllerZmq() {
+            m_running = false;
+            m_fault = false;
+            if (!m_endpoint.empty()) {
+                m_child_thread.interrupt();
+                m_child_thread.join();
+            }
+        }
+
+        virtual bool fault_detected() { return m_fault; }
+
+        virtual void restart();
+
+    private:
+        void restart_thread();
+
+        void recv_all(zmq::socket_t &pSocket, std::vector<std::string> &message);
+        void send_ok_reply(zmq::socket_t &pSocket);
+        void send_fail_reply(zmq::socket_t &pSocket, const std::string &error);
+        void process();
+
+        std::atomic<bool> m_running;
+
+        /* This is set to true if a fault occurred */
+        std::atomic<bool> m_fault;
+        boost::thread m_restarter_thread;
+
+        zmq::context_t m_zmqContext;
+
+        std::string m_endpoint;
+        boost::thread m_child_thread;
 };
-
 #endif
 

@@ -50,6 +50,16 @@ remotecontrol {
     ; Set the port to 0 to disable the server
     telnetport 12721
 
+    ; The remote control is also accessible through a ZMQ REQ/REP socket,
+    ; and is useful for machine-triggered interactions. It supports the
+    ; same commands as the telnet RC.
+    ; The example code in doc/zmq_remote.py illustrates how to use this rc.
+    ; To disable the zeromq endpoint, remove the zmqendpoint line.
+    ; By specifying "lo" in the URL, we make the server only accessible
+    ; from localhost. You can write tcp://*:12722 to make it accessible
+    ; on all interfaces.
+    zmqendpoint tcp://lo:12722
+
     ; the remote control server makes use of the unique identifiers
     ; for the subchannels, services and components. Make sure you
     ; chose them so that you can identify them.

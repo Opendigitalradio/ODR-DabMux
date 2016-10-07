@@ -143,10 +143,8 @@ uint16_t get_announcement_flag_from_ptree(
 }
 
 // Parse the linkage section
-void parse_linkage(boost::property_tree::ptree& pt,
-        std::shared_ptr<dabEnsemble> ensemble,
-        std::shared_ptr<BaseRemoteController> rc
-        )
+static void parse_linkage(boost::property_tree::ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
@@ -230,10 +228,9 @@ void parse_linkage(boost::property_tree::ptree& pt,
     }
 }
 
-void parse_ptree(boost::property_tree::ptree& pt,
-        std::shared_ptr<dabEnsemble> ensemble,
-        std::shared_ptr<BaseRemoteController> rc
-        )
+void parse_ptree(
+        boost::property_tree::ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
@@ -335,7 +332,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
                     pt_announcement.get_child("flags"));
             cl->subchanneluid = pt_announcement.get<string>("subchannel");
 
-            cl->enrol_at(*rc);
+            rcs.enrol(cl.get());
             ensemble->clusters.push_back(cl);
         }
     }
@@ -483,7 +480,7 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
         try {
             setup_subchannel_from_ptree(subchan, it->second, ensemble,
-                    subchanuid, rc);
+                    subchanuid);
         }
         catch (runtime_error &e) {
             etiLog.log(error,
@@ -644,14 +641,13 @@ void parse_ptree(boost::property_tree::ptree& pt,
 
     }
 
-    parse_linkage(pt, ensemble, rc);
+    parse_linkage(pt, ensemble);
 }
 
 void setup_subchannel_from_ptree(DabSubchannel* subchan,
         boost::property_tree::ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
-        string subchanuid,
-        std::shared_ptr<BaseRemoteController> rc)
+        string subchanuid)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
@@ -746,7 +742,7 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
 
             DabInputZmqMPEG* inzmq =
                 new DabInputZmqMPEG(subchanuid, zmqconfig);
-            inzmq->enrol_at(*rc);
+            rcs.enrol(inzmq);
             subchan->input     = inzmq;
 
             if (proto == "epmg") {
@@ -812,7 +808,7 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
             DabInputZmqAAC* inzmq =
                 new DabInputZmqAAC(subchanuid, zmqconfig);
 
-            inzmq->enrol_at(*rc);
+            rcs.enrol(inzmq);
             subchan->input     = inzmq;
 
             if (proto == "epmg") {

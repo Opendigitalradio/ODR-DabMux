@@ -135,8 +135,6 @@ using namespace std;
 using boost::property_tree::ptree;
 using boost::property_tree::ptree_error;
 
-
-
 volatile sig_atomic_t running = 1;
 
 /* We are not allowed to use etiLog in the signal handler,
@@ -275,17 +273,18 @@ int main(int argc, char *argv[])
 
         /************** READ REMOTE CONTROL PARAMETERS *************/
         int telnetport = pt.get<int>("remotecontrol.telnetport", 0);
-
-        std::shared_ptr<BaseRemoteController> rc;
-
         if (telnetport != 0) {
-            rc = std::make_shared<RemoteControllerTelnet>(telnetport);
-        }
-        else {
-            rc = std::make_shared<RemoteControllerDummy>();
+            auto rc = std::make_shared<RemoteControllerTelnet>(telnetport);
+            rcs.add_controller(rc);
         }
 
-        DabMultiplexer mux(rc, pt);
+        auto zmqendpoint = pt.get<string>("remotecontrol.zmqendpoint", "");
+        if (not zmqendpoint.empty()) {
+            auto rc = std::make_shared<RemoteControllerZmq>(zmqendpoint);
+            rcs.add_controller(rc);
+        }
+
+        DabMultiplexer mux(pt);
 
         etiLog.level(info) <<
                 PACKAGE_NAME << " " <<
@@ -460,9 +459,8 @@ int main(int argc, char *argv[])
             }
 
             /* Check every six seconds if the remote control is still working */
-            if ((currentFrame % 250 == 249) && rc->fault_detected()) {
-                etiLog.level(warn) << "Detected Remote Control fault, restarting it";
-                rc->restart();
+            if (currentFrame % 250 == 249) {
+                rcs.check_faults();
             }
 
             /* Same for statistics server */

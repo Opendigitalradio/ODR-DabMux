@@ -55,7 +55,9 @@ std::list<std::string> RemoteControllable::get_supported_parameters() const {
     return parameterlist;
 }
 
-RemoteControllable* RemoteControllers::get_controllable_(const std::string& name) {
+RemoteControllable* RemoteControllers::get_controllable_(
+        const std::string& name)
+{
     auto rc = std::find_if(controllables.begin(), controllables.end(),
             [&](RemoteControllable* r) { return r->get_rc_name() == name; });
 
@@ -65,6 +67,17 @@ RemoteControllable* RemoteControllers::get_controllable_(const std::string& name
     else {
         return *rc;
     }
+}
+
+void RemoteControllers::set_param(
+        const std::string& name,
+        const std::string& param,
+        const std::string& value)
+{
+    etiLog.level(info) << "RC: Setting " << name << " " << param
+        << " to " << value;
+    RemoteControllable* controllable = get_controllable_(name);
+    return controllable->set_parameter(param, value);
 }
 
 // This runs in a separate thread, because

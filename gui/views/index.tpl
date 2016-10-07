@@ -3,7 +3,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>ODR-DabMux Configuration</title>
 	<link rel="stylesheet" href="static/style.css" type="text/css" media="screen" charset="utf-8"/>
-    <script type="text/javascript" src="static/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="static/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="static/script.js"></script>
 </head>
 <body>

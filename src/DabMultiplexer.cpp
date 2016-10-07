@@ -67,11 +67,9 @@ const unsigned short BitRateTable[64] = {
 };
 
 DabMultiplexer::DabMultiplexer(
-        std::shared_ptr<BaseRemoteController> rc,
         boost::property_tree::ptree pt) :
     RemoteControllable("mux"),
     m_pt(pt),
-    m_rc(rc),
     timestamp(0),
     MNSC_increment_time(false),
     sync(0x49C5F8),
@@ -79,8 +77,8 @@ DabMultiplexer::DabMultiplexer(
     ensemble(std::make_shared<dabEnsemble>()),
     fig_carousel(ensemble)
 {
-    RC_ADD_PARAMETER(carousel,
-            "Set to 1 to use the new carousel");
+    RC_ADD_PARAMETER(frames,
+            "Show number of frames generated [read-only]");
 }
 
 void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
@@ -135,10 +133,10 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 // Run a set of checks on the configuration
 void DabMultiplexer::prepare()
 {
-    parse_ptree(m_pt, ensemble, m_rc);
+    parse_ptree(m_pt, ensemble);
 
-    this->enrol_at(m_rc);
-    ensemble->enrol_at(m_rc);
+    rcs.enrol(this);
+    rcs.enrol(ensemble.get());
 
     prepare_subchannels();
     prepare_services_components();
@@ -236,7 +234,7 @@ void DabMultiplexer::prepare_services_components()
             throw MuxInitException();
         }
 
-        service->enrol_at(m_rc);
+        rcs.enrol(service.get());
 
         // Adjust components type for DAB+
         while (component != ensemble->components.end()) {
@@ -296,8 +294,7 @@ void DabMultiplexer::prepare_services_components()
 
         component->packet.id = cur_packetid++;
 
-        component->enrol_at(m_rc);
-
+        rcs.enrol(component);
     }
 
 }
@@ -796,7 +793,12 @@ void DabMultiplexer::print_info(void)
 void DabMultiplexer::set_parameter(const std::string& parameter,
                const std::string& value)
 {
-    if (0) {
+    if (parameter == "frames") {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' of " << get_rc_name() <<
+            " is read-only";
+        throw ParameterError(ss.str());
     }
     else {
         stringstream ss;
@@ -810,7 +812,8 @@ void DabMultiplexer::set_parameter(const std::string& parameter,
 const std::string DabMultiplexer::get_parameter(const std::string& parameter) const
 {
     stringstream ss;
-    if (0) {
+    if (parameter == "frames") {
+        ss << currentFrame;
     }
     else {
         ss << "Parameter '" << parameter <<

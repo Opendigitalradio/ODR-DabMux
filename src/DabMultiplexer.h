@@ -55,7 +55,6 @@
 class DabMultiplexer : public RemoteControllable {
     public:
         DabMultiplexer(
-                std::shared_ptr<BaseRemoteController> rc,
                 boost::property_tree::ptree pt);
         void prepare(void);
 
@@ -80,7 +79,6 @@ class DabMultiplexer : public RemoteControllable {
         void prepare_data_inputs(void);
 
         boost::property_tree::ptree m_pt;
-        std::shared_ptr<BaseRemoteController> m_rc;
 
         unsigned timestamp;
         bool MNSC_increment_time;

@@ -18,8 +18,8 @@
     </ul>
 
     <div id="info">
-        <div id="general">
-            <p>General Multiplex Options</p>
+        <div id="general"><div class="cadre">
+            <h2>General Multiplex Options</h2>
             <ul>
                 <li>Number of frames to encode: {{g.nbframes}}</li>
                 <li>Statistics server port: {{g.statsserverport}}</li>
@@ -28,45 +28,45 @@
                 <li>DAB Mode: {{g.dabmode}}</li>
                 <li>Log to syslog: {{g.syslog}}</li>
             </ul>
-        </div>
-        <div id="servicelist">
-            <p>Services</p>
+        </div></div>
+        <div id="servicelist"><div class="cadre">
+            <h2>Services</h2>
             <ul>
                 % for s in services:
                     <li>{{s.name}}: <i>{{s.label}} ({{s.shortlabel}})</i> &mdash; id = {{s.id}}</li>
                 % end
             </ul>
-        </div>
-        <div id="subchannels">
-            <p>Subchannels</p>
+        </div></div>
+        <div id="subchannels"><div class="cadre">
+            <h2>Subchannels</h2>
             <ul>
                 % for s in subchannels:
                     <li>{{s.name}}: <i>{{s.type}}</i> &mdash; {{s.inputfile}}; {{s.bitrate}}kbps</li>
                 % end
             </ul>
-        </div>
-        <div id="components">
-            <p>Components</p>
+        </div></div>
+        <div id="components"><div class="cadre">
+            <h2>Components</h2>
             <ul>
                 % for s in components:
                     <li>{{s.name}}: <i>{{s.label}} ({{s.shortlabel}})</i> &mdash; service {{s.service}}; subchannel {{s.subchannel}}; figtype {{s.figtype}}</li>
                 % end
             </ul>
-        </div>
-        <div id="rcmodules">
-            <p>RC Modules</p>
+        </div></div>
+        <div id="rcmodules"><div class="cadre">
+            <h2>RC Modules</h2>
             <ul>
                 % for m in rcmodules:
                     <li>{{m.name}}
                         <ul>
                             % for p in m.parameters:
-                                <li>{{p.param}} : {{p.value}}</li>
+                                <li><a href="/rc/{{m.name}}/{{p.param}}">{{p.param}}</a> : {{p.value}}</li>
                             % end
                         </ul>
                     </li>
                 % end
             </ul>
-        </div>
+        </div></div>
     </div>
 </body>
 </html>

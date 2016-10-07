@@ -78,6 +78,28 @@ def config_json_get():
             'config': conf.get_full_configuration() }
 
 
+@route('/rc/<module>/<param>', method="GET")
+def rc_get(module, param):
+    rc.load()
+
+    value = rc.get_param_value(module, param)
+
+    return template('rcparam',
+            module    = module,
+            param     = param,
+            value     = value)
+
+@route('/rc/<module>/<param>', method="POST")
+def rc_post(module, param):
+    value = request.forms.get('newvalue')
+
+    rc.set_param_value(module, param, value)
+
+    value = rc.get_param_value(module, param)
+
+    return """<p>Parameter is now {}</p>
+<p><a href="/#rcmodules">Return</a></p>""".format(value)
+
 @route('/')
 def index():
     conf.load()

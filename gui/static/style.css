@@ -8,6 +8,12 @@ p {
     padding: 5px;
 }
 
+div.cadre{
+    border: 1px solid #999;
+    padding: 0 10px;
+    margin: 5px;
+}
+
 #info{
     width: 600px;
     border: 1px solid #999;
@@ -34,10 +40,9 @@ p {
 #info-nav li a:hover{
     color:#d15600;
 }
-#info-nav li.current{ 
+#info-nav li.current{
     background: #fff;
     padding-bottom: 4px;
-  
 }
 
 #celebs {

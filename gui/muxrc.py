@@ -90,3 +90,15 @@ class MuxRemoteControl(object):
     def get_modules(self):
         return self.module_list
 
+    def get_param_value(self, module, param):
+        value = self.zRead([b'get', module, param])
+        if value[0] == b'fail':
+            raise ValueError("Error getting param: {}".format(value[1]))
+        else:
+            return value[0]
+
+    def set_param_value(self, module, param, value):
+        ret = self.zRead([b'set', module, param, value])
+        if ret[0] == b'fail':
+            raise ValueError("Error getting param: {}".format(ret[1]))
+

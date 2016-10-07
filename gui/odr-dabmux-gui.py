@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#   Copyright (C) 2015
+#   Copyright (C) 2016
 #   Matthias P. Braendli, matthias.braendli@mpb.li
 #
 #    http://www.opendigitalradio.org
@@ -28,6 +28,7 @@
 #   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 from muxconfig import *
+from muxrc import *
 from bottle import route, run, template, static_file, request
 import json
 
@@ -80,13 +81,15 @@ def config_json_get():
 @route('/')
 def index():
     conf.load()
+    rc.load()
 
     return template('index',
             version     = conf.get_mux_version(),
             g           = conf.get_general_options(),
             services    = conf.get_services(),
             subchannels = conf.get_subchannels(),
-            components  = conf.get_components())
+            components  = conf.get_components(),
+            rcmodules   = rc.get_modules())
 
 @route('/services')
 def index():
@@ -119,10 +122,13 @@ if __name__ == '__main__':
     parser.add_argument('--host', default='127.0.0.1', help='socket host (default: 127.0.0.1)',required=False)
     parser.add_argument('--port', default='8000', help='socket port (default: 8000)',required=False)
     parser.add_argument('--mhost', default='127.0.0.1', help='mux host (default: 127.0.0.1)',required=False)
-    parser.add_argument('--mport', default='12720', help='mux port (default: 12720)',required=False)
+    parser.add_argument('--mport', default='12720', help='mux management server port (default: 12720)',required=False)
+    parser.add_argument('--rcport', default='12722', help='mux zmq rc port (default: 12722)',required=False)
     cli_args = parser.parse_args()
 
     conf = ConfigurationHandler(cli_args.mhost, cli_args.mport)
+
+    rc = MuxRemoteControl(cli_args.mhost, cli_args.rcport)
 
     run(host=cli_args.host, port=int(cli_args.port), debug=True, reloader=False)
 

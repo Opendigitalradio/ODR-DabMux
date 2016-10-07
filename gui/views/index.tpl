@@ -14,6 +14,7 @@
         <li><a href="#servicelist">Services</a></li>
         <li><a href="#subchannels">Subchannels</a></li>
         <li><a href="#components">Components</a></li>
+        <li><a href="#rcmodules">RC Modules</a></li>
     </ul>
 
     <div id="info">
@@ -49,6 +50,20 @@
             <ul>
                 % for s in components:
                     <li>{{s.name}}: <i>{{s.label}} ({{s.shortlabel}})</i> &mdash; service {{s.service}}; subchannel {{s.subchannel}}; figtype {{s.figtype}}</li>
+                % end
+            </ul>
+        </div>
+        <div id="rcmodules">
+            <p>RC Modules</p>
+            <ul>
+                % for m in rcmodules:
+                    <li>{{m.name}}
+                        <ul>
+                            % for p in m.parameters:
+                                <li>{{p.param}} : {{p.value}}</li>
+                            % end
+                        </ul>
+                    </li>
                 % end
             </ul>
         </div>

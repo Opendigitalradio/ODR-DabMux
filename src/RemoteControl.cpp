@@ -120,7 +120,7 @@ void RemoteControllerTelnet::process(long)
                 boost::asio::streambuf buffer;
                 length = boost::asio::read_until( socket, buffer, "\n", ignored_error);
 
-                std::istream str(&buffer); 
+                std::istream str(&buffer);
                 std::getline(str, in_message);
 
                 if (length == 0) {
@@ -268,7 +268,7 @@ void RemoteControllerTelnet::reply(tcp::socket& socket, string message)
 }
 
 
-#if 0 // #if defined(HAVE_ZEROMQ)
+#if defined(HAVE_RC_ZEROMQ)
 
 void RemoteControllerZmq::restart()
 {
@@ -352,8 +352,8 @@ void RemoteControllerZmq::process()
                     send_ok_reply(repSocket);
                 }
                 else if (msg.size() == 1 && command == "list") {
-                    size_t cohort_size = m_cohort.size();
-                    for (auto &controllable : m_cohort) {
+                    size_t cohort_size = rcs.controllables.size();
+                    for (auto &controllable : rcs.controllables) {
                         std::stringstream ss;
                         ss << controllable->get_rc_name();
 
@@ -369,7 +369,7 @@ void RemoteControllerZmq::process()
                 else if (msg.size() == 2 && command == "show") {
                     std::string module((char*) msg[1].data(), msg[1].size());
                     try {
-                        list< vector<string> > r = get_param_list_values_(module);
+                        list< vector<string> > r = rcs.get_param_list_values(module);
                         size_t r_size = r.size();
                         for (auto &param_val : r) {
                             std::stringstream ss;
@@ -390,7 +390,7 @@ void RemoteControllerZmq::process()
                     std::string parameter((char*) msg[2].data(), msg[2].size());
 
                     try {
-                        std::string value = get_param_(module, parameter);
+                        std::string value = rcs.get_param(module, parameter);
                         zmq::message_t msg(value.size());
                         memcpy ((void*) msg.data(), value.data(), value.size());
                         repSocket.send(msg, 0);
@@ -405,7 +405,7 @@ void RemoteControllerZmq::process()
                     std::string value((char*) msg[3].data(), msg[3].size());
 
                     try {
-                        set_param_(module, parameter, value);
+                        rcs.set_param(module, parameter, value);
                         send_ok_reply(repSocket);
                     }
                     catch (ParameterError &err) {

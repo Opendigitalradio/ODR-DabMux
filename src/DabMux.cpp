@@ -273,11 +273,14 @@ int main(int argc, char *argv[])
 
         /************** READ REMOTE CONTROL PARAMETERS *************/
         int telnetport = pt.get<int>("remotecontrol.telnetport", 0);
-
-
         if (telnetport != 0) {
             auto rc = std::make_shared<RemoteControllerTelnet>(telnetport);
+            rcs.add_controller(rc);
+        }
 
+        auto zmqendpoint = pt.get<string>("remotecontrol.zmqendpoint", "");
+        if (not zmqendpoint.empty()) {
+            auto rc = std::make_shared<RemoteControllerZmq>(zmqendpoint);
             rcs.add_controller(rc);
         }
 

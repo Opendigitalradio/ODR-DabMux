@@ -177,10 +177,10 @@ class RemoteControllers {
             return controllable->get_parameter(param);
         }
 
-        void set_param(const std::string& name, const std::string& param, const std::string& value) {
-            RemoteControllable* controllable = get_controllable_(name);
-            return controllable->set_parameter(param, value);
-        }
+        void set_param(
+                const std::string& name,
+                const std::string& param,
+                const std::string& value);
 
         std::list<RemoteControllable*> controllables;
 

@@ -46,6 +46,8 @@
 #include <iostream>
 #include <string>
 
+#include <boost/optional.hpp>
+
 /**
  *  This class represents a TCP socket.
  */
@@ -84,6 +86,7 @@ class TcpSocket
 
         void listen(void);
         TcpSocket accept(void);
+        boost::optional<TcpSocket> accept(int timeout_ms);
 
         /** Retrieve address this socket is bound to */
         InetAddress getOwnAddress() const;

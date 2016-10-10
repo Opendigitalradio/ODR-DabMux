@@ -166,6 +166,34 @@ TcpSocket TcpSocket::accept()
     }
 }
 
+boost::optional<TcpSocket> TcpSocket::accept(int timeout_ms)
+{
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&rfds);
+    FD_SET(m_sock, &rfds);
+
+    tv.tv_sec = 0;
+    tv.tv_usec = 1000ul * timeout_ms;
+
+    retval = select(1, &rfds, NULL, NULL, &tv);
+
+    if (retval == -1) {
+        stringstream ss;
+        ss << "TCP Socket accept error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+    else if (retval) {
+        return accept();
+    }
+    else {
+        return boost::none;
+    }
+}
+
+
 InetAddress TcpSocket::getOwnAddress() const
 {
     return m_own_address;

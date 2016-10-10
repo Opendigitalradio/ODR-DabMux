@@ -128,9 +128,14 @@ class TCPDataDispatcher
         void process(long) {
             m_listener_socket.listen();
 
+            const int timeout_ms = 1000;
+
             while (m_running) {
                 // Add a new TCPConnection to the list, constructing it from the client socket
-                m_connections.emplace(m_connections.begin(), m_listener_socket.accept());
+                auto optional_sock = m_listener_socket.accept(timeout_ms);
+                if (optional_sock) {
+                    m_connections.emplace(m_connections.begin(), std::move(*optional_sock));
+                }
             }
         }
 

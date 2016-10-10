@@ -196,6 +196,8 @@ int DabOutputTcp::Open(const char* name)
     string address;
     bool success = parse_uri(name, &port, address);
 
+    uri_ = name;
+
     if (success) {
         dispatcher_ = new TCPDataDispatcher();
         try {

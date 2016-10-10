@@ -113,34 +113,16 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
 
 void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
 {
-    int type = fig.figtype();
-    int extension = fig.figextension();
-
-    m_figs_available[std::make_pair(type, extension)] = &fig;
-    allocate_fig_to_fib(type, extension, fib);
+    FIGCarouselElement el;
+    el.fig = &fig;
+    el.deadline = 0;
+    el.increase_deadline();
+    m_fibs[fib].push_back(el);
 }
 
 void FIGCarousel::update(unsigned long currentFrame)
 {
     m_rti.currentFrame = currentFrame;
-}
-
-void FIGCarousel::allocate_fig_to_fib(int figtype, int extension, FIBAllocation fib)
-{
-    auto fig = m_figs_available.find(std::make_pair(figtype, extension));
-
-    if (fig != m_figs_available.end()) {
-        FIGCarouselElement el;
-        el.fig = fig->second;
-        el.deadline = 0;
-        el.increase_deadline();
-        m_fibs[fib].push_back(el);
-    }
-    else {
-        std::stringstream ss;
-        ss << "No FIG " << figtype << "/" << extension << " available";
-        throw std::runtime_error(ss.str());
-    }
 }
 
 void dumpfib(const uint8_t *buf, size_t bufsize) {

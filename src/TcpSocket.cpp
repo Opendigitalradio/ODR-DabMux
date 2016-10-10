@@ -32,6 +32,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdint.h>
+#include <poll.h>
 
 using namespace std;
 
@@ -165,6 +166,28 @@ TcpSocket TcpSocket::accept()
         return client;
     }
 }
+
+boost::optional<TcpSocket> TcpSocket::accept(int timeout_ms)
+{
+    struct pollfd fds[1];
+    fds[0].fd = m_sock;
+    fds[0].events = POLLIN | POLLOUT;
+
+    int retval = poll(fds, 1, timeout_ms);
+
+    if (retval == -1) {
+        stringstream ss;
+        ss << "TCP Socket accept error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+    else if (retval) {
+        return accept();
+    }
+    else {
+        return boost::none;
+    }
+}
+
 
 InetAddress TcpSocket::getOwnAddress() const
 {

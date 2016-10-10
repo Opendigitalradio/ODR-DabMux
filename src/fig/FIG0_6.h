@@ -70,8 +70,8 @@ class FIG0_6 : public IFIG
          * We reorganise all LinkageSets into subsets that have
          * the same type.
          */
-        std::list<LinkageSetData> linkageSubsets;
-        std::list<LinkageSetData>::iterator linkageSetFIG0_6;
+        std::vector<LinkageSetData> linkageSubsets;
+        std::vector<LinkageSetData>::iterator linkageSetFIG0_6;
 };
 
 // FIG0/6 needs a change indicator, which is a short-form FIG (i.e. without the list)
@@ -91,8 +91,8 @@ class FIG0_6_CEI : public IFIG
 
     private:
         FIGRuntimeInformation *m_rti;
-        bool m_initialised;
-        std::vector<std::shared_ptr<LinkageSet> >::iterator linkageSetFIG0_6;
+
+        TransitionHandler<LinkageSet> m_transition;
 };
 
 }

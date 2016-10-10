@@ -229,7 +229,7 @@ class dabEnsemble : public RemoteControllable {
         std::vector<DabSubchannel*> subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
-        std::list<std::shared_ptr<LinkageSet> > linkagesets;
+        std::vector<std::shared_ptr<LinkageSet> > linkagesets;
 };
 
 
@@ -463,6 +463,8 @@ class LinkageSet : public RemoteControllable {
         LinkageSet(std::string name, uint16_t lsn, bool hard, bool international);
 
         LinkageSetData data;
+
+        bool is_active(void) const { return data.active; }
     private:
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,

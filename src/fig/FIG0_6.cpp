@@ -57,9 +57,9 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         const size_t num_ids = 1 + linkageSetFIG0_6->id_list.size();
 
         const size_t headersize = sizeof(struct FIGtype0_6_header);
-        const int required_size = sizeof(struct FIGtype0_6) +
+        const int required_size = sizeof(struct FIGtype0_6) + headersize +
             (num_ids > 0 ?
-             headersize + (PD == 0 ? (ILS == 0 ? 2*num_ids : 3*num_ids) : 4*num_ids) :
+             (PD == 0 ? (ILS == 0 ? 2*num_ids : 3*num_ids) : 4*num_ids) :
              0);
 
         if (fig0 == NULL) {
@@ -264,6 +264,89 @@ void FIG0_6::update()
         }
     }
 #endif
+}
+
+
+FIG0_6_CEI::FIG0_6_CEI(FIGRuntimeInformation *rti) :
+    m_rti(rti)
+{
+}
+
+FillStatus FIG0_6_CEI::fill(uint8_t *buf, size_t max_size)
+{
+    using namespace std;
+
+    auto ensemble = m_rti->ensemble;
+
+    // We are called every 24ms, and must timeout after 5s
+    const int timeout = 5000/24;
+
+    m_transition.update_state(timeout, ensemble->linkagesets);
+
+    FillStatus fs;
+    ssize_t remaining = max_size;
+
+    FIGtype0* fig0 = NULL;
+
+    // Combine all links into one list
+    set<LinkageSet*> alllinks;
+    for (const auto& l : m_transition.new_entries) {
+        alllinks.insert(l.first.get());
+    }
+    for (const auto& l : m_transition.repeated_entries) {
+        alllinks.insert(l.get());
+    }
+    for (const auto& l : m_transition.disabled_entries) {
+        alllinks.insert(l.first.get());
+    }
+
+    for (auto& link : alllinks) {
+        const bool PD = false;
+        const bool ILS = link->data.international;
+
+        // The CEI does not send list contents
+        const size_t num_ids = 0;
+
+        const size_t headersize = sizeof(struct FIGtype0_6_header);
+        const int required_size = sizeof(struct FIGtype0_6) + headersize +
+            (num_ids > 0 ?
+             (PD == 0 ? (ILS == 0 ? 2*num_ids : 3*num_ids) : 4*num_ids) :
+             0);
+
+        if (fig0 == NULL) {
+            if (remaining < 2 + required_size) {
+                break;
+            }
+            fig0 = (FIGtype0*)buf;
+            fig0->FIGtypeNumber = 0;
+            fig0->Length = 1;
+            fig0->CN = 1; // This is a CEI
+            fig0->OE = 0;
+            fig0->PD = PD;
+            fig0->Extension = 6;
+
+            buf += 2;
+            remaining -= 2;
+        }
+        else if (remaining < required_size) {
+            break;
+        }
+
+        FIGtype0_6 *fig0_6 = (FIGtype0_6*)buf;
+
+        fig0_6->IdListFlag = (num_ids > 0);
+        fig0_6->LA = link->data.active;
+        fig0_6->SH = link->data.hard;
+        fig0_6->ILS = ILS;
+        fig0_6->setLSN(link->data.lsn);
+
+        fig0->Length += sizeof(struct FIGtype0_6);
+        buf += sizeof(struct FIGtype0_6);
+        remaining -= sizeof(struct FIGtype0_6);
+    }
+
+    fs.complete_fig_transmitted = true;
+    return fs;
 }
 
 }

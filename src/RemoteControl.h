@@ -198,11 +198,11 @@ extern RemoteControllers rcs;
 class RemoteControllerTelnet : public BaseRemoteController {
     public:
         RemoteControllerTelnet()
-            : m_running(false), m_fault(false),
+            : m_active(false), m_fault(false),
             m_port(0) { }
 
         RemoteControllerTelnet(int port)
-            : m_running(true), m_fault(false),
+            : m_active(port > 0), m_fault(false),
             m_child_thread(&RemoteControllerTelnet::process, this, 0),
             m_port(port) { }
 
@@ -210,7 +210,7 @@ class RemoteControllerTelnet : public BaseRemoteController {
         RemoteControllerTelnet(const RemoteControllerTelnet& other) = delete;
 
         ~RemoteControllerTelnet() {
-            m_running = false;
+            m_active = false;
             m_fault = false;
             if (m_port) {
                 m_child_thread.interrupt();
@@ -243,7 +243,7 @@ class RemoteControllerTelnet : public BaseRemoteController {
             return all_tokens;
         }
 
-        std::atomic<bool> m_running;
+        std::atomic<bool> m_active;
 
         /* This is set to true if a fault occurred */
         std::atomic<bool> m_fault;
@@ -261,12 +261,12 @@ class RemoteControllerTelnet : public BaseRemoteController {
 class RemoteControllerZmq : public BaseRemoteController {
     public:
         RemoteControllerZmq()
-            : m_running(false), m_fault(false),
+            : m_active(false), m_fault(false),
             m_zmqContext(1),
             m_endpoint("") { }
 
         RemoteControllerZmq(const std::string& endpoint)
-            : m_running(true), m_fault(false),
+            : m_active(not endpoint.empty()), m_fault(false),
             m_zmqContext(1),
             m_endpoint(endpoint),
             m_child_thread(&RemoteControllerZmq::process, this) { }
@@ -275,8 +275,10 @@ class RemoteControllerZmq : public BaseRemoteController {
         RemoteControllerZmq(const RemoteControllerZmq& other) = delete;
 
         ~RemoteControllerZmq() {
-            m_running = false;
+            m_active = false;
             m_fault = false;
+
+            m_zmqContext.close();
             if (!m_endpoint.empty()) {
                 m_child_thread.interrupt();
                 m_child_thread.join();
@@ -295,7 +297,7 @@ class RemoteControllerZmq : public BaseRemoteController {
         void send_fail_reply(zmq::socket_t &pSocket, const std::string &error);
         void process();
 
-        std::atomic<bool> m_running;
+        std::atomic<bool> m_active;
 
         /* This is set to true if a fault occurred */
         std::atomic<bool> m_fault;

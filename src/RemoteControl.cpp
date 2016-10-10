@@ -85,12 +85,12 @@ void RemoteControllers::set_param(
 // thread.
 void RemoteControllerTelnet::restart_thread(long)
 {
-    m_running = false;
-
     if (m_port) {
         m_child_thread.interrupt();
         m_child_thread.join();
     }
+
+    m_fault = false;
 
     m_child_thread = boost::thread(&RemoteControllerTelnet::process, this, 0);
 }
@@ -110,7 +110,7 @@ void RemoteControllerTelnet::process(long)
         tcp::acceptor acceptor(io_service, tcp::endpoint(
                     boost::asio::ip::address::from_string("127.0.0.1"), m_port) );
 
-        while (m_running) {
+        while (m_active) {
             in_message = "";
 
             tcp::socket socket(io_service);
@@ -123,7 +123,7 @@ void RemoteControllerTelnet::process(long)
                     boost::asio::transfer_all(),
                     ignored_error);
 
-            while (m_running && in_message != "quit") {
+            while (m_active && in_message != "quit") {
                 boost::asio::write(socket, boost::asio::buffer(m_prompt),
                         boost::asio::transfer_all(),
                         ignored_error);
@@ -160,7 +160,8 @@ void RemoteControllerTelnet::process(long)
         }
     }
     catch (std::exception& e) {
-        std::cerr << "Remote control caught exception: " << e.what() << std::endl;
+        etiLog.level(error) <<
+            "Remote control caught exception: " << e.what();
         m_fault = true;
     }
 }
@@ -293,7 +294,7 @@ void RemoteControllerZmq::restart()
 // thread.
 void RemoteControllerZmq::restart_thread()
 {
-    m_running = false;
+    m_active = false;
 
     if (!m_endpoint.empty()) {
         m_child_thread.interrupt();
@@ -352,7 +353,7 @@ void RemoteControllerZmq::process()
 
         // create pollitem that polls the  ZMQ sockets
         zmq::pollitem_t pollItems[] = { {repSocket, 0, ZMQ_POLLIN, 0} };
-        for (;;) {
+        while (m_active) {
             zmq::poll(pollItems, 1, 100);
             std::vector<std::string> msg;
 

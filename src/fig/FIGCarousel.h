@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -62,8 +62,6 @@ class FIGCarousel {
 
         void update(unsigned long currentFrame);
 
-        void allocate_fig_to_fib(int figtype, int extension, FIBAllocation fib);
-
         /* Write all FIBs to the buffer, including correct padding and crc.
          * Returns number of bytes written.
          *
@@ -81,7 +79,6 @@ class FIGCarousel {
         void load_and_allocate(IFIG& fig, FIBAllocation fib);
 
         FIGRuntimeInformation m_rti;
-        std::map<std::pair<int, int>, IFIG*> m_figs_available;
 
         // Some FIGs can be mapped to a specific FIB or to FIB_ANY
         std::map<FIBAllocation, std::list<FIGCarouselElement> > m_fibs;

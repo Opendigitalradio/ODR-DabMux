@@ -107,8 +107,13 @@ typedef DWORD32 uint32_t;
 
 using namespace std;
 
+static void setup_subchannel_from_ptree(DabSubchannel* subchan,
+        const boost::property_tree::ptree &pt,
+        std::shared_ptr<dabEnsemble> ensemble,
+        const string& subchanuid);
+
 /* a helper class to parse hexadecimal ids */
-int hexparse(std::string input)
+static int hexparse(std::string input)
 {
     int value;
     if (input.find("0x") == 0) {
@@ -125,7 +130,7 @@ int hexparse(std::string input)
     return value;
 }
 
-uint16_t get_announcement_flag_from_ptree(
+static uint16_t get_announcement_flag_from_ptree(
         boost::property_tree::ptree& pt
         )
 {
@@ -556,10 +561,44 @@ void parse_ptree(
     }
 }
 
-void setup_subchannel_from_ptree(DabSubchannel* subchan,
-        boost::property_tree::ptree &pt,
+static dab_input_zmq_config_t setup_zmq_input(
+        const boost::property_tree::ptree &pt,
+        const std::string& subchanuid)
+{
+    using boost::property_tree::ptree_error;
+
+    dab_input_zmq_config_t zmqconfig;
+
+    try {
+        zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
+    }
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Subchannel " << subchanuid << ": " << "no zmq-buffer defined!";
+        throw runtime_error(ss.str());
+    }
+    try {
+        zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
+    }
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Subchannel " << subchanuid << ": " << "no zmq-prebuffer defined!";
+        throw runtime_error(ss.str());
+    }
+
+    zmqconfig.curve_encoder_keyfile = pt.get<string>("encoder-key","");
+    zmqconfig.curve_secret_keyfile = pt.get<string>("secret-key","");
+    zmqconfig.curve_public_keyfile = pt.get<string>("public-key","");
+
+    zmqconfig.enable_encryption = pt.get<int>("encryption", 0);
+
+    return zmqconfig;
+}
+
+static void setup_subchannel_from_ptree(DabSubchannel* subchan,
+        const boost::property_tree::ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
-        string subchanuid)
+        const string& subchanuid)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
@@ -626,43 +665,24 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
 #if defined(HAVE_INPUT_ZEROMQ)
         }
         else if (proto == "tcp"  ||
-                 proto == "epmg" ||
+                 proto == "epgm" ||
                  proto == "ipc") {
             input_is_old_style = false;
 
-            dab_input_zmq_config_t zmqconfig;
-
-            try {
-                zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-            try {
-                zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-            zmqconfig.enable_encryption = false;
+            auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             DabInputZmqMPEG* inzmq =
                 new DabInputZmqMPEG(subchanuid, zmqconfig);
             rcs.enrol(inzmq);
             subchan->input     = inzmq;
 
-            if (proto == "epmg") {
-                etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            if (proto == "epgm") {
+                etiLog.level(warn) << "Using untested epgm:// zeromq input";
             }
             else if (proto == "ipc") {
                 etiLog.level(warn) << "Using untested ipc:// zeromq input";
             }
+
 #endif // defined(HAVE_INPUT_ZEROMQ)
         } else {
             stringstream ss;
@@ -685,37 +705,11 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
 #if defined(HAVE_INPUT_ZEROMQ)
         }
         else if (proto == "tcp"  ||
-                 proto == "epmg" ||
+                 proto == "epgm" ||
                  proto == "ipc") {
             input_is_old_style = false;
 
-            dab_input_zmq_config_t zmqconfig;
-
-            try {
-                zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-
-            try {
-                zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-
-            zmqconfig.curve_encoder_keyfile = pt.get<string>("encoder-key","");
-            zmqconfig.curve_secret_keyfile = pt.get<string>("secret-key","");
-            zmqconfig.curve_public_keyfile = pt.get<string>("public-key","");
-
-            zmqconfig.enable_encryption = pt.get<int>("encryption", 0);
+            auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             DabInputZmqAAC* inzmq =
                 new DabInputZmqAAC(subchanuid, zmqconfig);
@@ -723,8 +717,8 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
             rcs.enrol(inzmq);
             subchan->input     = inzmq;
 
-            if (proto == "epmg") {
-                etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            if (proto == "epgm") {
+                etiLog.level(warn) << "Using untested epgm:// zeromq input";
             }
             else if (proto == "ipc") {
                 etiLog.level(warn) << "Using untested ipc:// zeromq input";

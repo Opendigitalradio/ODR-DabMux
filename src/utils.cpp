@@ -38,7 +38,7 @@ static int dab_time_millis = 0;
 void update_dab_time()
 {
     if (dab_time_seconds == 0) {
-        dab_time_seconds = time(NULL);
+        dab_time_seconds = time(nullptr);
     } else {
         dab_time_millis+= 24;
         if (dab_time_millis >= 1000) {
@@ -566,7 +566,7 @@ void printEnsemble(const shared_ptr<dabEnsemble> ensemble)
     etiLog.log(info, " mode:        %u", ensemble->mode);
 
     if (ensemble->lto_auto) {
-        time_t now = time(NULL);
+        time_t now = time(nullptr);
         struct tm* ltime = localtime(&now);
         time_t now2 = timegm(ltime);
         etiLog.log(info, " lto:         %2.1f hours", 0.5 * (now2 - now) / 1800);

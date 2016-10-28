@@ -45,7 +45,7 @@ Dmb::Dmb(bool reverse) :
 interleaver(12, 17),
 encoder(204, 188)
 {
-    buffer = NULL;
+    buffer = nullptr;
     bufferSize = 0;
     setReverse(reverse);
 }
@@ -53,7 +53,7 @@ encoder(204, 188)
 
 Dmb::~Dmb()
 {
-    if (buffer != NULL) {
+    if (buffer != nullptr) {
         delete[] buffer;
     }
 }
@@ -93,7 +93,7 @@ int Dmb::encode(
     char* output = reinterpret_cast<char*>(dataOut);
 
     if (bufferSize < sizeIn + 204) {
-        if (buffer != NULL) {
+        if (buffer != nullptr) {
             delete[] buffer;
         }
         unsigned char* oldBuffer = buffer;
@@ -263,9 +263,9 @@ int Dmb::sync(void* dataIn, unsigned long sizeIn)
     char* sync = input;
     unsigned long size = sizeIn;
 
-    while (sync != NULL) {
+    while (sync != nullptr) {
         sync = (char*)memchr(sync, 0x47, size);
-        if (sync != NULL) {
+        if (sync != nullptr) {
             int offset = sync - input;
             if (offset % 12 != 0) {
                 offset = ((offset / 12) * 12) + 12;

@@ -42,14 +42,14 @@ struct dabInputOperations dabInputDmbFileOperations = {
     dabInputDmbFileInit,
     dabInputDmbFileOpen,
     dabInputSetbuf,
-    NULL,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
+    nullptr,
     dabInputDmbFileRead,
     dabInputSetbitrate,
     dabInputDmbFileClose,
     dabInputDmbFileClean,
-    NULL
+    nullptr
 };
 
 
@@ -58,7 +58,7 @@ int dabInputDmbFileInit(void** args)
     dabInputDmbFileData* input = new dabInputDmbFileData;
     memset(&input->stats, 0, sizeof(input->stats));
     input->stats.id = dabInputFifoData::nb++;
-    input->file = NULL;
+    input->file = nullptr;
     input->bufferLength = 0;
     input->dmb = new Dmb();
     *args = input;
@@ -73,7 +73,7 @@ int dabInputDmbFileOpen(void* args, const char* inputName)
     dabInputDmbFileData* input = (dabInputDmbFileData*)args;
 
     input->file = fopen(inputName, "r");
-    if (input->file == NULL) {
+    if (input->file == nullptr) {
         perror(inputName);
         returnCode = -1;
     }
@@ -138,7 +138,7 @@ int dabInputDmbFileClose(void* args)
 {
     dabInputDmbFileData* input = (dabInputDmbFileData*)args;
 
-    if (input->file != NULL) {
+    if (input->file != nullptr) {
         if (fclose(input->file)) {
             perror("");
             return -1;

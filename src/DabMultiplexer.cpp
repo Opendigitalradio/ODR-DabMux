@@ -162,7 +162,7 @@ void DabMultiplexer::prepare()
      * Ideally, we must be able to restart transmission s.t. the receiver
      * synchronisation is preserved.
      */
-    gettimeofday(&mnsc_time, NULL);
+    gettimeofday(&mnsc_time, nullptr);
 
 #if HAVE_OUTPUT_EDI
     edi_time = chrono::system_clock::now();
@@ -212,7 +212,7 @@ void DabMultiplexer::prepare_subchannels()
 void DabMultiplexer::prepare_services_components()
 {
     set<uint32_t> ids;
-    dabProtection* protection = NULL;
+    dabProtection* protection = nullptr;
 
     vector<DabComponent*>::iterator component;
     vector<DabSubchannel*>::iterator subchannel;
@@ -301,7 +301,7 @@ void DabMultiplexer::prepare_services_components()
 
 void DabMultiplexer::prepare_data_inputs()
 {
-    dabProtection* protection = NULL;
+    dabProtection* protection = nullptr;
     vector<DabSubchannel*>::iterator subchannel;
 
     // Prepare and check the data inputs

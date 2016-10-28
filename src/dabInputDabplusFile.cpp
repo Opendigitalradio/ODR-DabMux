@@ -40,8 +40,8 @@ struct dabInputOperations dabInputDabplusFileOperations = {
     dabInputDabplusFileOpen,
     dabInputSetbuf,
     dabInputDabplusFileRead,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     dabInputDabplusFileReadFrame,
     dabInputSetbitrate,
     dabInputDabplusFileClose,
@@ -54,7 +54,7 @@ int dabInputDabplusFileInit(void** args)
 {
     dabInputDabplusFileData* data = new dabInputDabplusFileData;
     data->file = -1;
-    data->buffer = NULL;
+    data->buffer = nullptr;
     data->bufferSize = 0;
     data->bufferIndex = 0;
 
@@ -80,7 +80,7 @@ int dabInputDabplusFileRead(void* args, void* buffer, int size)
 {
     dabInputDabplusFileData* data = (dabInputDabplusFileData*)args;
     if (data->bufferSize != (size_t)size * 5) {
-        if (data->buffer == NULL) {
+        if (data->buffer == nullptr) {
             delete[] data->buffer;
         }
         data->buffer = new uint8_t[size * 5];
@@ -158,7 +158,7 @@ int dabInputDabplusFileClose(void* args)
 int dabInputDabplusFileClean(void** args)
 {
     dabInputDabplusFileData* data = (dabInputDabplusFileData*)*args;
-    if (data->buffer != NULL) {
+    if (data->buffer != nullptr) {
         delete[] data->buffer;
     }
     delete data;

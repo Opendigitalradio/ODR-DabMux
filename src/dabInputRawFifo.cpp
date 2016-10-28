@@ -40,8 +40,8 @@ struct dabInputOperations dabInputRawFifoOperations = {
     dabInputRawFifoOpen,
     dabInputRawFifoSetbuf,
     dabInputRawFifoRead,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     dabInputRawFifoReadFrame,
     dabInputSetbitrate,
     dabInputRawFifoClose,
@@ -54,7 +54,7 @@ int dabInputRawFifoInit(void** args)
 {
     dabInputRawFifoData* data = new dabInputRawFifoData;
     data->file = -1;
-    data->buffer = NULL;
+    data->buffer = nullptr;
     data->bufferSize = 0;
     data->bufferOffset = 0;
 
@@ -97,7 +97,7 @@ int dabInputRawFifoSetbuf(void* args, int size)
     }
 
     if (data->bufferSize != (size_t)size) {
-        if (data->buffer != NULL) {
+        if (data->buffer != nullptr) {
             delete[] data->buffer;
         }
         data->buffer = new uint8_t[size];
@@ -174,7 +174,7 @@ int dabInputRawFifoClose(void* args)
 int dabInputRawFifoClean(void** args)
 {
     dabInputRawFifoData* data = (dabInputRawFifoData*)*args;
-    if (data->buffer != NULL) {
+    if (data->buffer != nullptr) {
         delete[] data->buffer;
     }
     delete data;

@@ -213,7 +213,7 @@ void DabInputZmqBase::rebind()
     m_zmq_sock_bound_to = m_inputUri;
 
     try {
-        m_zmq_sock.setsockopt(ZMQ_SUBSCRIBE, NULL, 0);
+        m_zmq_sock.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
     }
     catch (zmq::error_t& err) {
         std::ostringstream os;

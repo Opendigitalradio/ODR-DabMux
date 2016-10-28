@@ -59,8 +59,8 @@ struct dabInputOperations dabInputPacketFileOperations = {
     dabInputFileOpen,
     dabInputSetbuf,
     dabInputFileRead,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     dabInputPacketFileRead,
     dabInputSetbitrate,
     dabInputFileClose,
@@ -114,7 +114,7 @@ int dabInputPacketFileRead(dabInputOperations* ops, void* args, void* buffer,
                 dataBuffer[22] = 0x60;
                 dataBuffer[23] = 0x4b;
                 length = 24;
-            } else if (data->enhancedPacketData != NULL) {
+            } else if (data->enhancedPacketData != nullptr) {
                 if (data->enhancedPacketLength + data->packetLength
                         > (12 * 188)) {
                     memset(dataBuffer, 0, 22);
@@ -131,7 +131,7 @@ int dabInputPacketFileRead(dabInputOperations* ops, void* args, void* buffer,
                 length = data->packetLength;
                 data->packetLength = 0;
             }
-            if (data->enhancedPacketData != NULL) {
+            if (data->enhancedPacketData != nullptr) {
                 indexCol = data->enhancedPacketLength / 12;
                 indexRow = data->enhancedPacketLength % 12;     // TODO Check if always 0
                 for (int j = 0; j < length; ++j) {
@@ -179,7 +179,7 @@ int dabInputPacketFileRead(dabInputOperations* ops, void* args, void* buffer,
                 data->packetLength = length;
                 continue;
             }
-            if (data->enhancedPacketData != NULL) {
+            if (data->enhancedPacketData != nullptr) {
                 if (data->enhancedPacketLength + length > (12 * 188)) {
                     memcpy(data->packetData, header, 3);
                     ops->read(args, &data->packetData[3], length - 3);
@@ -203,7 +203,7 @@ int dabInputPacketFileRead(dabInputOperations* ops, void* args, void* buffer,
                         "read %i out of %i bytes\n", nbBytes, length - 3);
                 break;
             }
-            if (data->enhancedPacketData != NULL) {
+            if (data->enhancedPacketData != nullptr) {
                 indexCol = data->enhancedPacketLength / 12;
                 indexRow = data->enhancedPacketLength % 12;     // TODO Check if always 0
                 for (int j = 0; j < length; ++j) {

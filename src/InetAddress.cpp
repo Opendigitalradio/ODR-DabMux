@@ -44,8 +44,8 @@
 
 
 int inetErrNo = 0;
-const char *inetErrMsg = NULL;
-const char *inetErrDesc = NULL;
+const char *inetErrMsg = nullptr;
+const char *inetErrDesc = nullptr;
 
 
 /**

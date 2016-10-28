@@ -38,7 +38,7 @@ int dabInputFileInit(void** args)
     data->parity = false;
     data->packetLength = 0;
     data->packetData = new unsigned char[96];
-    data->enhancedPacketData = NULL;
+    data->enhancedPacketData = nullptr;
     data->enhancedPacketLength = 0;
     data->enhancedPacketWaiting = 0;
 
@@ -79,12 +79,12 @@ int dabInputFileClose(void* args)
 int dabInputFileClean(void** args)
 {
     dabInputFileData* data = (dabInputFileData*)*args;
-    if (data->packetData != NULL) {
+    if (data->packetData != nullptr) {
         delete[] data->packetData;
     }
-    if (data->enhancedPacketData != NULL) {
+    if (data->enhancedPacketData != nullptr) {
         for (int i = 0; i < 12; ++i) {
-            if (data->enhancedPacketData[i] != NULL) {
+            if (data->enhancedPacketData[i] != nullptr) {
                 delete[] data->enhancedPacketData[i];
             }
         }

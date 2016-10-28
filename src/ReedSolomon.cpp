@@ -47,7 +47,7 @@ ReedSolomon::ReedSolomon(int N, int K, bool reverse, int gfpoly, int firstRoot, 
 
     rsData = init_rs_char(symsize, gfpoly, firstRoot, primElem, nroots, pad);
 
-    if (rsData == NULL) {
+    if (rsData == nullptr) {
         std::stringstream ss;
         ss << "Invalid Reed-Solomon parameters! " <<
             "N=" << N << " ; K=" << K << " ; pad=" << pad;
@@ -79,7 +79,7 @@ int ReedSolomon::encode(void* data, void* fec, unsigned long size)
         memcpy(buffer, input, myK);
         memcpy(&buffer[myK], output, myN - myK);
 
-        ret = decode_rs_char(rsData, buffer, NULL, 0);
+        ret = decode_rs_char(rsData, buffer, nullptr, 0);
         if ((ret != 0) && (ret != -1)) {
             memcpy(input, buffer, myK);
             memcpy(output, &buffer[myK], myN - myK);
@@ -100,7 +100,7 @@ int ReedSolomon::encode(void* data, unsigned long size)
     int ret = 0;
 
     if (reverse) {
-        ret = decode_rs_char(rsData, input, NULL, 0);
+        ret = decode_rs_char(rsData, input, nullptr, 0);
     } else {
         encode_rs_char(rsData, input, &input[myK]);
     }

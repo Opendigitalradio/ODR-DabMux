@@ -117,10 +117,10 @@ static int hexparse(std::string input)
 {
     int value;
     if (input.find("0x") == 0) {
-        value = strtoll(input.c_str() + 2, NULL, 16);
+        value = strtoll(input.c_str() + 2, nullptr, 16);
     }
     else {
-        value = strtoll(input.c_str(), NULL, 10);
+        value = strtoll(input.c_str(), nullptr, 10);
     }
 
     if (errno == ERANGE) {

@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 
     const int sigs[] = {SIGHUP, SIGQUIT, SIGINT, SIGTERM};
     for (int i = 0; i < 4; i++) {
-        if (sigaction(sigs[i], &sa, NULL) == -1) {
+        if (sigaction(sigs[i], &sa, nullptr) == -1) {
             perror("sigaction");
             return EXIT_FAILURE;
         }
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
                     throw MuxInitException();
                 }
 
-                if (output == NULL) {
+                if (output == nullptr) {
                     etiLog.level(error) <<
                         "Unable to init output " <<
                         uri;

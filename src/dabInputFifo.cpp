@@ -61,9 +61,9 @@ int dabInputFifoInit(void** args)
     data->curSize = 0;
     data->head = 0;
     data->tail = 0;
-    data->buffer = NULL;
-    data->packetData = NULL;
-    data->enhancedPacketData = NULL;
+    data->buffer = nullptr;
+    data->packetData = nullptr;
+    data->enhancedPacketData = nullptr;
     data->packetLength = 0;
     data->enhancedPacketLength = 0;
     data->enhancedPacketWaiting = 0;
@@ -145,7 +145,7 @@ int dabInputFifoOpen(void* args, const char* filename)
         return -1;
     }
 #else
-    if (pthread_create(&data->thread, NULL, dabInputFifoThread, data)) {
+    if (pthread_create(&data->thread, nullptr, dabInputFifoThread, data)) {
         perror("Can't create FIFO child");
         return -1;
     }
@@ -166,7 +166,7 @@ int dabInputFifoSetbuf(void* args, int size)
         sem_wait(&data->semBuffer);
 #endif
     }
-    if (data->buffer != NULL) {
+    if (data->buffer != nullptr) {
         delete data->buffer;
     }
     if (size == 0) {
@@ -367,7 +367,7 @@ int dabInputFifoClean(void** args)
     }
 #else
     if (data->thread != (pthread_t)NULL) {
-        if (pthread_join(data->thread, NULL)) {
+        if (pthread_join(data->thread, nullptr)) {
             etiLog.log(debug, "ERROR: FIFO child thread had not exit normally\n");
         }
     }
@@ -382,12 +382,12 @@ int dabInputFifoClean(void** args)
     sem_destroy(&data->semFull);
     sem_destroy(&data->semBuffer);
 #endif
-    if (data->packetData != NULL) {
+    if (data->packetData != nullptr) {
         delete[] data->packetData;
     }
-    if (data->enhancedPacketData != NULL) {
+    if (data->enhancedPacketData != nullptr) {
         for (int i = 0; i < 12; ++i) {
-            if (data->enhancedPacketData[i] != NULL) {
+            if (data->enhancedPacketData[i] != nullptr) {
                 delete[] data->enhancedPacketData[i];
             }
         }
@@ -505,7 +505,7 @@ void* dabInputFifoThread(void* args)
         sem_post(&data->semBuffer);
 #endif
     }
-    return NULL;
+    return nullptr;
 }
 
 

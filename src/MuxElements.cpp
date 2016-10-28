@@ -71,7 +71,7 @@ std::string AnnouncementCluster::tostring() const
     return ss.str();
 }
 
-bool AnnouncementCluster::is_active(void)
+bool AnnouncementCluster::is_active()
 {
     if (m_deferred_start_time)
     {
@@ -415,7 +415,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble) const
 {
     vector<DabSubchannel*>::iterator subchannel;
-    vector<DabComponent*>::iterator component =
+    auto component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
         throw std::runtime_error("No component found for service");
@@ -647,17 +647,17 @@ unsigned short DabSubchannel::getSizeCu() const
     return 0;
 }
 
-unsigned short DabSubchannel::getSizeByte(void) const
+unsigned short DabSubchannel::getSizeByte() const
 {
     return bitrate * 3;
 }
 
-unsigned short DabSubchannel::getSizeWord(void) const
+unsigned short DabSubchannel::getSizeWord() const
 {
     return (bitrate * 3) >> 2;
 }
 
-unsigned short DabSubchannel::getSizeDWord(void) const
+unsigned short DabSubchannel::getSizeDWord() const
 {
     return (bitrate * 3) >> 3;
 }

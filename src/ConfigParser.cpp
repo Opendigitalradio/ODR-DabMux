@@ -393,7 +393,7 @@ void parse_ptree(
     ptree pt_subchans = pt.get_child("subchannels");
     for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
-        DabSubchannel* subchan = new DabSubchannel(subchanuid);
+        auto subchan = new DabSubchannel(subchanuid);
 
         ensemble->subchannels.push_back(subchan);
 
@@ -466,7 +466,7 @@ void parse_ptree(
         int packet_datagroup = pt_comp.get("datagroup", false);
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
-        DabComponent* component = new DabComponent(componentuid);
+        auto component = new DabComponent(componentuid);
 
         component->serviceId = service->id;
         component->subchId = subchannel->id;

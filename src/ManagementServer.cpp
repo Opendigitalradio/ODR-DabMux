@@ -339,7 +339,7 @@ std::string InputStat::encodeStateJSON()
     return ss.str();
 }
 
-input_state_t InputStat::determineState(void)
+input_state_t InputStat::determineState()
 {
     boost::mutex::scoped_lock lock(m_mutex);
 

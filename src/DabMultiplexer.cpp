@@ -773,7 +773,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     currentFrame++;
 }
 
-void DabMultiplexer::print_info(void)
+void DabMultiplexer::print_info()
 {
     // Print settings before starting
     etiLog.log(info, "--- Multiplex configuration ---");

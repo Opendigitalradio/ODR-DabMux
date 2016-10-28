@@ -188,8 +188,8 @@ int main(int argc, char *argv[])
     sa.sa_handler = &signalHandler;
 
     const int sigs[] = {SIGHUP, SIGQUIT, SIGINT, SIGTERM};
-    for (int i = 0; i < 4; i++) {
-        if (sigaction(sigs[i], &sa, nullptr) == -1) {
+    for (int sig : sigs) {
+        if (sigaction(sig, &sa, nullptr) == -1) {
             perror("sigaction");
             return EXIT_FAILURE;
         }

@@ -125,7 +125,6 @@ typedef DWORD32 uint32_t;
 #include "DabMux.h"
 #include "MuxElements.h"
 #include "utils.h"
-#include "ParserCmdline.h"
 #include "ConfigParser.h"
 #include "ManagementServer.h"
 #include "Log.h"
@@ -252,18 +251,9 @@ int main(int argc, char *argv[])
                 throw MuxInitException(e.what());
             }
         }
-#if ENABLE_CMDLINE_OPTIONS
-        else {
-            if (!parse_cmdline(argv, argc, outputs, ensemble, &enableTist, &FICL,
-                        &factumAnalyzer, &limit)) {
-                throw MuxInitException();
-            }
-        }
-#else
         else {
             throw MuxInitException("No configuration file specified");
         }
-#endif
 
         int mgmtserverport = pt.get<int>("general.managementport",
                              pt.get<int>("general.statsserverport", 0) );

@@ -102,9 +102,7 @@ void header_message()
             "http://opendigitalradio.org\n\n");
 
     std::cerr << "Input URLs supported:" << std::endl <<
-#if defined(HAVE_INPUT_PRBS)
     " prbs" <<
-#endif
 #if defined(HAVE_INPUT_TEST)
     " test" <<
 #endif
@@ -166,163 +164,6 @@ void header_message()
 
 }
 
-#if ENABLE_CMDLINE_OPTIONS
-void printUsage(char *name, FILE* out)
-{
-    fprintf(out, "NAME\n");
-    fprintf(out, "  %s - A software DAB multiplexer\n", name);
-    fprintf(out, "\nSYNOPSYS\n");
-    fprintf(out, "    You can use either a configuration file, or the command line arguments\n");
-    fprintf(out, "    With external configuration file:\n");
-    fprintf(out, "  %s [-e] configuration.mux\n", name);
-    fprintf(out, "    See doc/example.config for an example format for the configuration file\n");
-    fprintf(out, "    With command line arguments:\n");
-    fprintf(out, "  %s"
-            " [ensemble]"
-            " [subchannel1 subchannel2 ...]"
-            " [service1 component1 [component2 ...] service2 ...]"
-            " [output1 ...]"
-            " [-h]"
-            " [-m mode]"
-            " [-n nbFrames]"
-            " [-o]"
-            " [-s]"
-            " [-V]"
-            " [-z]"
-            "\n",
-            name);
-    fprintf(out, "\n  Where ensemble ="
-            " [-i ensembleId]"
-            " [-L label]"
-            " [-l sLabel]"
-            "\n");
-    fprintf(out, "\n  Where subchannel ="
-            " -(A | B | D | E | F | M | P | T) inputName"
-            " [-b bitrate]"
-            " [-i subchannelId]"
-            " [-k]"
-            " [-p protection]"
-            "\n");
-    fprintf(out, "\n  Where service ="
-            " -S"
-            " [-g language]"
-            " [-i serviceId]"
-            " [-L label]"
-            " [-l sLabel]"
-            " [-y PTy]"
-            "\n");
-    fprintf(out, "\n  Where component ="
-            " -C"
-            " [-a address]"
-            " [-d]"
-            " [-f figType]"
-            " [-i subchannelId]"
-            " [-L label]"
-            " [-l sLabel]"
-            " [-t type]"
-            "\n");
-    fprintf(out, "\nDESCRIPTION\n");
-    fprintf(out,
-            "  %s  is a software multiplexer that generates an ETI stream from\n"
-            "  audio and data streams. Because of  its  software  based  architecture,\n"
-            "  many  typical DAB services can be generated and multiplexed on a single\n"
-            "  PC platform with live or pre-recorded sources.\n"
-            "\n"
-            "  A DAB multiplex configuration is composed of one ensemble. An  ensemble\n"
-            "  is  the entity that receivers tune to and process. An ensemble contains\n"
-            "  several services. A service is  the  listener-selectable  output.  Each\n"
-            "  service  contains  one mandatory service component which is called pri-\n"
-            "  mary component. An audio primary component  define  a  program  service\n"
-            "  while  a data primary component define a data service. Service can con-\n"
-            "  tain additional components which are called secondary components. Maxi-\n"
-            "  mum  total  number  of components is 12 for program services and 11 for\n"
-            "  data services. A service component is a link to one subchannel (of Fast\n"
-            "  Information  Data  Channel).  A  subchannel  is the physical space used\n"
-            "  within the common interleaved frame.\n"
-            "\n"
-            "   __________________________________________________\n"
-            "  |                     Ensemble                     |  ENSEMBLE\n"
-            "  |__________________________________________________|\n"
-            "          |                 |                 |\n"
-            "          |                 |                 |\n"
-            "   _______V______    _______V______    _______V______\n"
-            "  |   Service 1  |  |   Service 2  |  |   Service 3  |  SERVICES\n"
-            "  |______________|  |______________|  |______________|\n"
-            "     |        |        |        | |______         |\n"
-            "     |        |        |        |        |        |\n"
-            "   __V__    __V__    __V__    __V__    __V__    __V__\n"
-            "  | SC1 |  | SC2 |  | SC3 |  | SC4 |  | SC5 |  | SC6 |  SERVICE\n"
-            "  |_____|  |_____|  |_____|  |_____|  |_____|  |_____|  COMPONENTS\n"
-            "     |        |   _____|        |        |    ____|\n"
-            "     |        |  |              |        |   |\n"
-            "   __V________V__V______________V________V___V_______   COMMON\n"
-            "  | SubCh1 | SubCh9 |  ...  | SubCh3 | SubCh60 | ... |  INTERLEAVED\n"
-            "  |________|________|_______|________|_________|_____|  FRAME\n"
-            "  Figure 1: An example of a DAB multiplex configuration\n",
-        name);
-
-    fprintf(out, "\nGENERAL OPTIONS\n");
-    fprintf(out, "  -h                   : get this help\n");
-    fprintf(out, "  -m                   : DAB mode (default: 2)\n");
-    fprintf(out, "  -n nbFrames          : number of frames to produce\n");
-    fprintf(out, "  -o                   : enable logging to syslog\n");
-    fprintf(out, "  -r                   : throttle the output rate to one ETI frame every 24ms\n");
-    fprintf(out, "  -V                   : print version information and "
-            "exit\n");
-    fprintf(out, "  -z                   : write SCCA field for Factum ETI"
-            " analyzer\n");
-    fprintf(out, "\nINPUT OPTIONS\n");
-    fprintf(out, "  -A                   : set audio service\n");
-    fprintf(out, "  -B                   : set CRC-Bridge data service\n");
-    fprintf(out, "  -D                   : set data service\n");
-    fprintf(out, "  -E                   : set enhanced packet service\n");
-    fprintf(out, "  -F                   : set DAB+ service\n");
-    fprintf(out, "  -M                   : set DMB service\n");
-    fprintf(out, "  -P                   : set packet service\n");
-    fprintf(out, "  -T                   : set test service\n");
-    fprintf(out, "  inputName<n>         : name of file for audio and "
-            "packet service and Udp input address for data service "
-            "([address]:port)\n");
-    fprintf(out, "  -a                   : packet address (default: 0x%x "
-            "(%i))\n", DEFAULT_PACKET_ADDRESS, DEFAULT_PACKET_ADDRESS);
-    fprintf(out, "  -b bitrate<n>        : bitrate (in kbits/s) of the "
-            "subchannel (default: audio 1st frame, data %i, packet %i)\n",
-            DEFAULT_DATA_BITRATE, DEFAULT_PACKET_BITRATE);
-    fprintf(out, "  -c                   : set the extendend country code ECC "
-            "(default: %u (0x%2x)\n", DEFAULT_ENSEMBLE_ECC, DEFAULT_ENSEMBLE_ECC);
-    fprintf(out, "  -d                   : turn on datagroups in packet "
-            "mode\n");
-    fprintf(out, "  -f figType           : user application type in FIG "
-            "0/13 for packet mode\n");
-    fprintf(out, "  -g language          : Primary service component "
-            "language: english=9, french=15\n");
-    fprintf(out, "  -i id<n>             : service|subchannel|"
-            "serviceComponent id <n> (default: <n>)\n");
-    fprintf(out, "  -k                   : set non-blocking file input "
-            "(audio and packet only)\n");
-    fprintf(out, "  -L label<n>          : label of service <n>"
-            " (default: CRC-Audio<n>)\n");
-    fprintf(out, "  -l sLabel<n>         : short label flag of service <n>"
-            " (default: 0xf040)\n");
-    fprintf(out, "  -p protection<n>     : protection level (default: 3)\n");
-    fprintf(out, "  -s                   : enable TIST, synchronized on 1PPS at level 2.\n");
-    fprintf(out, "                         This also transmits time using the MNSC.\n");
-    fprintf(out, "  -t type              : audio/data service component type"
-            " (default: 0)\n");
-    fprintf(out, "                         audio: foreground=0, "
-            "background=1, multi-channel=2\n");
-    fprintf(out, "                         data: unspecified=0, TMC=1, "
-            "EWS=2, ITTS=3, paging=4, TDC=5, DMB=24, IP=59, MOT=60, "
-            "proprietary=61\n");
-    fprintf(out, "  -y PTy               : Primary service component program"
-            " type international code\n");
-    fprintf(out, "\nOUTPUT OPTIONS\n");
-    fprintf(out, "  -O output            : name of the output in format "
-            "scheme://[address][:port][/name]\n"
-            "                         where scheme is (raw|udp|tcp|file|fifo|simul)\n"
-           );
-}
-#else // no command line options
 void printUsage(char *name, FILE* out)
 {
     fprintf(out, "NAME\n");
@@ -371,7 +212,6 @@ void printUsage(char *name, FILE* out)
             "  Figure 1: An example of a DAB multiplex configuration\n",
         name);
 }
-#endif
 
 void printOutputs(const vector<shared_ptr<DabOutput> >& outputs)
 {

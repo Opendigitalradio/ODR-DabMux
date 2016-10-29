@@ -115,12 +115,6 @@ AC_ARG_ENABLE([input_file],
 AS_IF([test "x$enable_input_file" = "xyes"],
         [AC_DEFINE(HAVE_INPUT_FILE, [1], [Define if FILE input is enabled])])
 
-# PRBS
-AC_ARG_ENABLE([input_prbs],
-        [AS_HELP_STRING([--enable-input-prbs], [Enable PRBS input])],
-        [], [enable_input_prbs=no])
-AS_IF([test "x$enable_input_prbs" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_PRBS, [1], [Define if PRBS input is enabled])])
 # TEST
 AC_ARG_ENABLE([input_test],
         [AS_HELP_STRING([--enable-input-test], [Enable TEST input])],

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014, 2015
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -742,16 +742,18 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_UDP)
 #endif // defined(HAVE_FORMAT_BRIDGE)
         }
+    } else if (type == "data" and proto == "prbs") {
+        input_is_old_style = false;
+
+        subchan->input = new DabInputPrbs();
+        subchan->type = subchannel_type_t::DataDmb;
+        subchan->bitrate = DEFAULT_DATA_BITRATE;
     } else if (type == "data") {
         // TODO default proto should be udp://
         if (0) {
 #if defined(HAVE_INPUT_UDP)
         } else if (proto == "udp") {
             operations = dabInputUdpOperations;
-#endif
-#if defined(HAVE_INPUT_PRBS) && defined(HAVE_FORMAT_RAW)
-        } else if (proto == "prbs") {
-            operations = dabInputPrbsOperations;
 #endif
 #if defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_RAW)
         } else if (proto == "file") {
@@ -761,7 +763,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
             operations = dabInputRawFifoOperations;
         } else {
             stringstream ss;
-            ss << "Subchannel with uid " << subchanuid << 
+            ss << "Subchannel with uid " << subchanuid <<
                 ": Invalid protocol for data input (" <<
                 proto << ")" << endl;
             throw runtime_error(ss.str());

@@ -1,6 +1,13 @@
 /*
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
+
+   Pseudo-Random Bit Sequence generator for test purposes.
    */
 /*
    This file is part of ODR-DabMux.
@@ -19,38 +26,27 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef DAB_INPUT_PRBS_H
-#define DAB_INPUT_PRBS_H
-
+#pragma once
 
 #ifdef HAVE_CONFIG_H
-#   include "config.h"
+#  include "config.h"
 #endif
+
+#include <string>
+
 #include "dabInput.h"
 #include "prbs.h"
 
-#include <errno.h>
+class DabInputPrbs : public DabInputBase {
+    public:
+        virtual int open(const std::string name);
+        virtual int readFrame(void* buffer, int size);
+        virtual int setBitrate(int bitrate);
+        virtual int close();
 
+    private:
+        virtual int rewind();
 
-#ifdef HAVE_FORMAT_RAW
-#   ifdef HAVE_INPUT_PRBS
+        PrbsGenerator m_prbs;
+};
 
-
-extern struct dabInputOperations dabInputPrbsOperations;
-
-int dabInputPrbsInit(void** args);
-int dabInputPrbsOpen(void* args, const char* name);
-int dabInputPrbsRead(void* args, void* buffer, int size);
-int dabInputPrbsReadFrame(dabInputOperations* ops, void* args,
-        void* buffer, int size);
-int dabInputPrbsBitrate(dabInputOperations* ops, void* args, int bitrate);
-int dabInputPrbsClose(void* args);
-int dabInputPrbsClean(void** args);
-int dabInputPrbsRewind(void* args);
-
-
-#   endif
-#endif
-
-
-#endif // DAB_INPUT_PRBS_H

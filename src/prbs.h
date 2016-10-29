@@ -19,43 +19,53 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _PRBS
-#define _PRBS
+#pragma once
+
+#include <stdint.h>
+#include <stdlib.h>
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
 
+class PrbsGenerator {
+    public:
+        void setup(long polynomial);
 
-#ifdef __cplusplus
-extern "C" { // }
-#endif
+        uint8_t step(void);
 
-typedef struct {
-    // table of matrix products used to update a 32-bit PRBS generator
-    unsigned long prbs_table [4] [256];
-    // table of weights for 8-bit bytes
-    unsigned char weight[256];
-    // PRBS polynomial generator
-    unsigned long polynomial;
-    // PRBS generator polarity mask
-    unsigned char polarity_mask;
-    // PRBS accumulator
-    unsigned long accum;
-} prbs_data;
+        void rewind(void);
 
+    private:
+        /* Generate a table of matrix products to update a 32-bit PRBS
+         * generator. */
+        void gen_prbs_table(void);
 
-unsigned long parity_check(unsigned long prbs_accum);
-void gen_prbs_table(void* args);
-unsigned long update_prbs(void* args);
-void gen_weight_table(void* args);
-unsigned long error_count(void* args, unsigned char *rx_data,
-        int rx_data_length);
-void gen_sequence(void* args, unsigned char *tx_data, int tx_data_length,
-        unsigned long polynomial);
+        /* Update a 32-bit PRBS generator eight bits at a time. */
+        unsigned long update_prbs(void);
 
-#ifdef __cplusplus
-}
-#endif
+        /* Generate the weight table. */
+        void gen_weight_table(void);
 
-#endif // _PRBS
+        /* Count the number of errors in a block of received data. */
+        size_t error_count(
+                unsigned char *rx_data,
+                int rx_data_length);
+
+        void gen_sequence(
+                unsigned char *tx_data,
+                int tx_data_length,
+                unsigned long polynomial);
+
+        // table of matrix products used to update a 32-bit PRBS generator
+        unsigned long prbs_table [4] [256];
+        // table of weights for 8-bit bytes
+        unsigned char weight[256];
+        // PRBS polynomial generator
+        unsigned long polynomial;
+        // PRBS generator polarity mask
+        unsigned char polarity_mask;
+        // PRBS accumulator
+        unsigned long accum;
+};
+

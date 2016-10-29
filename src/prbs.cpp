@@ -22,14 +22,13 @@
 #include "prbs.h"
 
 #include <string.h>
-#include <stdlib.h>
 #include <limits.h>
 
 
 /*
  * Generate a parity check for a 32-bit word.
  */
-unsigned long parity_check(unsigned long prbs_accum)
+static unsigned long parity_check(unsigned long prbs_accum)
 {
     unsigned long mask=1UL, parity=0UL;
     int i;
@@ -40,92 +39,97 @@ unsigned long parity_check(unsigned long prbs_accum)
     return parity;
 }
 
-/*
- * Generate a table of matrix products to update a 32-bit PRBS generator.
- */
-void gen_prbs_table(void* args)
+void PrbsGenerator::setup(long polynomial)
 {
-    prbs_data* data = (prbs_data*)args;
-    int i;
-    for (i = 0;  i < 4;  ++i) {
-        int j;
-        for (j = 0;  j < 256;  ++j) {
+    this->polynomial = polynomial;
+    this->accum = 0;
+    gen_prbs_table();
+    gen_weight_table();
+}
+
+uint8_t PrbsGenerator::step()
+{
+    accum = update_prbs();
+    return accum & 0xff;
+}
+
+void PrbsGenerator::rewind()
+{
+    while (accum < polynomial) {
+        accum <<= 1;
+        accum |= 1;
+    }
+}
+
+void PrbsGenerator::gen_prbs_table()
+{
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 256; ++j) {
             unsigned long prbs_accum = ((unsigned long)j << (i * 8));
-            int k;
-            for (k = 0;  k < 8;  ++k) {
+            for (int k = 0; k < 8; ++k) {
                 prbs_accum = (prbs_accum << 1)
-                                ^ parity_check(prbs_accum & data->polynomial);
+                    ^ parity_check(prbs_accum & polynomial);
             }
-            data->prbs_table[i][j] = (prbs_accum & 0xff);
+
+            prbs_table[i][j] = (prbs_accum & 0xff);
         }
     }
 }
 
-/*
- * Update a 32-bit PRBS generator eight bits at a time.
- */
-unsigned long update_prbs(void* args)
+unsigned long PrbsGenerator::update_prbs()
 {
-    prbs_data* data = (prbs_data*)args;
     unsigned char acc_lsb = 0;
     int i;
     for (i = 0;  i < 4;  ++i ) {
-        acc_lsb ^= data->prbs_table [i] [ (data->accum >> (i * 8) ) & 0xff ];
+        acc_lsb ^= prbs_table [i] [ (accum >> (i * 8) ) & 0xff ];
     }
-    return (data->accum << 8) ^ ((unsigned long)acc_lsb);
+    return (accum << 8) ^ ((unsigned long)acc_lsb);
 }
 
-/*
- * Generate the weight table.
- */
-void gen_weight_table(void* args)
+void PrbsGenerator::gen_weight_table()
 {
-    prbs_data* data = (prbs_data*)args; 
-    int i;
-    for (i = 0;  i < 256;  ++i) {
-        unsigned char mask=1U, ones_count = 0U;
-        int j;
-        for (j = 0;  j < 8;  ++j) {
+    for (int i = 0; i < 256; ++i) {
+        unsigned char mask = 1U;
+        unsigned char ones_count = 0U;
+
+        for (int j = 0; j < 8; ++j) {
             ones_count += ((i & mask) != 0U);
             mask = mask << 1;
         }
-        data->weight[i] = ones_count;
+        weight[i] = ones_count;
     }
 }
 
-/*
- * Count the number of errors in a block of received data.
- */
-unsigned long error_count(void* args, unsigned char *rx_data,
+size_t PrbsGenerator::error_count(
+        unsigned char *rx_data,
         int rx_data_length)
 {
-    prbs_data* data = (prbs_data*)args;
     unsigned long error_count = 0U;
     unsigned long prbs_accum = 0U;
-    int i;
 
     /* seed the PRBS accumulator */
-    for (i = 0;  i < 4;  ++i) {
-        prbs_accum = (prbs_accum << 8) ^ (rx_data[i] ^ data->polarity_mask);
+    for (int i = 0;  i < 4;  ++i) {
+        prbs_accum = (prbs_accum << 8) ^ (rx_data[i] ^ polarity_mask);
     }
 
     /* check the received data */
-    for (i = 0;  i < rx_data_length;  ++i) {
+    for (int i = 0;  i < rx_data_length;  ++i) {
         unsigned char error_pattern = (unsigned char)
                           ((prbs_accum >> 24)
-                          ^ (rx_data[i] ^ data->polarity_mask));
+                          ^ (rx_data[i] ^ polarity_mask));
         if (error_pattern != 0U) {
-            error_count += data->weight[error_pattern];
+            error_count += weight[error_pattern];
         }
-        prbs_accum = update_prbs(data);
+        prbs_accum = update_prbs();
     }
     return error_count;
 }
 
-void gen_sequence(void* args, unsigned char *tx_data, int tx_data_length,
+void PrbsGenerator::gen_sequence(
+        unsigned char *tx_data,
+        int tx_data_length,
         unsigned long polynomial)
 {
-    prbs_data* data = (prbs_data*)args;
     unsigned long prbs_accum = 0U;
 
     while (prbs_accum < polynomial) {
@@ -134,7 +138,7 @@ void gen_sequence(void* args, unsigned char *tx_data, int tx_data_length,
     }
 
     while (tx_data_length-- > 0) {
-        prbs_accum = update_prbs(data);
+        prbs_accum = update_prbs();
         *(tx_data++) = (unsigned char)(prbs_accum & 0xff);
     }
 }

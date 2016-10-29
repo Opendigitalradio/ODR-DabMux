@@ -2,7 +2,7 @@
 # (Communications Research Center Canada)
 # Pascal Charest
 #
-# Copyright (C) 2014, Matthias P. Braendli, http://mpb.li
+# Copyright (C) 2016, Matthias P. Braendli, http://opendigitalradio.org
 #
 
 # This file is part of ODR-DabMux.
@@ -87,7 +87,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 Log.h Log.cpp \
 					 ManagementServer.h ManagementServer.cpp \
 					 MuxElements.cpp MuxElements.h \
-					 ParserCmdline.cpp ParserCmdline.h \
 					 PcDebug.h \
 					 ReedSolomon.h ReedSolomon.cpp \
 					 RemoteControl.cpp RemoteControl.h \
@@ -114,7 +113,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 fig/FIGCarousel.cpp fig/FIGCarousel.h \
 					 fig/TransitionHandler.h \
 					 mpeg.h mpeg.c \
-					 prbs.h prbs.c \
+					 prbs.h prbs.cpp \
 					 utils.cpp utils.h \
 					 zmq.hpp \
 					 fec/char.h fec/rs-common.h \

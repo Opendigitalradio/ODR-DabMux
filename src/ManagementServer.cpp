@@ -339,11 +339,11 @@ std::string InputStat::encodeStateJSON()
     return ss.str();
 }
 
-input_state_t InputStat::determineState(void)
+input_state_t InputStat::determineState()
 {
     boost::mutex::scoped_lock lock(m_mutex);
 
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     input_state_t state;
 
     /* if the last event was more that INPUT_COUNTER_RESET_TIME

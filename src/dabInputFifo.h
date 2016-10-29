@@ -1,6 +1,11 @@
 /*
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -19,19 +24,18 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef DAB_INPUT_FIFO_H
-#define DAB_INPUT_FIFO_H
+#pragma once
 
 #ifdef HAVE_CONFIG_H
-#   include "config.h"
+#  include "config.h"
 #endif
+
 #include "dabInputFile.h"
 #include "Log.h"
 
 
 #ifdef _WIN32
 #   include <io.h>
-
 #   define sem_t HANDLE
 #   define O_NONBLOCK 0
 #else
@@ -97,4 +101,3 @@ void* dabInputFifoThread(void* args);
 #   endif
 #endif
 
-#endif // DAB_INPUT_FIFO_H

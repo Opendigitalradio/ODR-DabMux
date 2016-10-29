@@ -213,7 +213,7 @@ void DabInputZmqBase::rebind()
     m_zmq_sock_bound_to = m_inputUri;
 
     try {
-        m_zmq_sock.setsockopt(ZMQ_SUBSCRIBE, NULL, 0);
+        m_zmq_sock.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
     }
     catch (zmq::error_t& err) {
         std::ostringstream os;
@@ -387,7 +387,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
         }
         else if (m_enable_input) {
             // copy the input frame blockwise into the frame_buffer
-            uint8_t* framedata = new uint8_t[framesize];
+            auto framedata = new uint8_t[framesize];
             memcpy(framedata, data, framesize);
             m_frame_buffer.push_back(framedata);
         }
@@ -467,7 +467,7 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
                 for (uint8_t* framestart = data;
                         framestart < &data[5*framesize];
                         framestart += framesize) {
-                    uint8_t* audioframe = new uint8_t[framesize];
+                    auto audioframe = new uint8_t[framesize];
                     memcpy(audioframe, framestart, framesize);
                     m_frame_buffer.push_back(audioframe);
                 }

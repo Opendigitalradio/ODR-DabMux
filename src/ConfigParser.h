@@ -41,10 +41,5 @@
 void parse_ptree(boost::property_tree::ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble);
 
-void setup_subchannel_from_ptree(DabSubchannel* subchan,
-        boost::property_tree::ptree &pt,
-        std::shared_ptr<dabEnsemble> ensemble,
-        std::string subchanuid);
-
 #endif
 

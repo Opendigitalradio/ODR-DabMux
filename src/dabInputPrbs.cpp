@@ -1,6 +1,13 @@
 /*
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
+
+   Pseudo-Random Bit Sequence generator for test purposes.
    */
 /*
    This file is part of ODR-DabMux.
@@ -21,126 +28,65 @@
 
 #include "dabInputPrbs.h"
 
+#include <stdexcept>
+#include <sstream>
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <errno.h>
 
+using namespace std;
 
-#ifdef HAVE_FORMAT_RAW
-#   ifdef HAVE_INPUT_PRBS
-
-
-struct dabInputOperations dabInputPrbsOperations = {
-    dabInputPrbsInit,
-    dabInputPrbsOpen,
-    NULL,
-    dabInputPrbsRead,
-    NULL,
-    NULL,
-    dabInputPrbsReadFrame,
-    dabInputPrbsBitrate,
-    dabInputPrbsClose,
-    dabInputPrbsClean,
-    dabInputPrbsRewind,
-};
-
-
-int dabInputPrbsInit(void** args)
+int DabInputPrbs::open(const string name)
 {
-    prbs_data* data = new prbs_data;
-
-    memset(data, 0, sizeof(*data));
-
-    *args = data;
-    return 0;
-}
-
-
-int dabInputPrbsOpen(void* args, const char* name)
-{
-    prbs_data* data = (prbs_data*)args;
-
-    if (*name != ':') {
-        etiLog.log(error,
-                "Sorry, PRBS address format is prbs://:polynomial.\n");
-        errno = EINVAL;
-        return -1;
+    if (name[0] != ':') {
+        throw invalid_argument(
+                "Invalid PRBS address format. Must be prbs://:polynomial.");
     }
 
-    long polynomial = strtol(++name, (char **)NULL, 10);
+    const string poly_str = name.substr(1);
+
+    long polynomial = strtol(poly_str.c_str(), (char **)NULL, 10);
     if ((polynomial == LONG_MIN) || (polynomial == LONG_MAX)) {
-        etiLog.log(error, "can't convert polynomial number %s\n", name);
-        errno = EINVAL;
-        return -1;
+        stringstream ss;
+        ss <<  "Can't convert polynomial number " << poly_str;
+        throw invalid_argument(ss.str());
     }
+
     if (polynomial == 0) {
-        etiLog.log(error, "you must specify a polynomial number\n");
-        errno = EINVAL;
-        return -1;
+        throw invalid_argument("No polynomial given for PRBS input");
     }
-    
-    data->polynomial = polynomial;
-    data->accum = 0;
-    gen_prbs_table(data);
-    gen_weight_table(data);
-    dabInputPrbsRewind(args);
+
+    m_prbs.setup(polynomial);
+    rewind();
 
     return 0;
 }
 
-
-int dabInputPrbsRead(void* args, void* buffer, int size)
+int DabInputPrbs::readFrame(void* buffer, int size)
 {
-    prbs_data* data = (prbs_data*)args;
-	unsigned char* cbuffer = reinterpret_cast<unsigned char*>(buffer);
+    unsigned char* cbuffer = reinterpret_cast<unsigned char*>(buffer);
 
-    for(int i = 0; i < size; ++i) {
-        data->accum = update_prbs(args);
-        *(cbuffer++) = (unsigned char)(data->accum & 0xff);
+    for (int i = 0; i < size; ++i) {
+        cbuffer[i] = m_prbs.step();
     }
 
     return size;
 }
 
-
-int dabInputPrbsReadFrame(dabInputOperations* ops, void* args,
-        void* buffer, int size)
-{
-    return ops->read(args, buffer, size);
-}
-
-
-int dabInputPrbsBitrate(dabInputOperations* ops, void* args, int bitrate)
+int DabInputPrbs::setBitrate(int bitrate)
 {
     return bitrate;
 }
 
-
-int dabInputPrbsClose(void* args)
+int DabInputPrbs::close()
 {
     return 0;
 }
 
-
-int dabInputPrbsClean(void** args)
+int DabInputPrbs::rewind()
 {
-    delete (prbs_data*)(*args);
+    m_prbs.rewind();
     return 0;
 }
 
-
-int dabInputPrbsRewind(void* args)
-{
-    prbs_data* data = (prbs_data*)args;
-
-    while (data->accum < data->polynomial) {
-        data->accum <<= 1;
-        data->accum |= 1;
-    }
-
-    return 0;
-}
-
-
-#   endif
-#endif

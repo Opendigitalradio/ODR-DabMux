@@ -2,7 +2,7 @@
 # (Communications Research Center Canada)
 # Pascal Charest
 #
-# Copyright (C) 2014, Matthias P. Braendli, http://mpb.li
+# Copyright (C) 2016, Matthias P. Braendli, http://opendigitalradio.org
 #
 
 # This file is part of ODR-DabMux.
@@ -41,7 +41,7 @@ CURL_LIBS    =
 endif
 
 odr_dabmux_CFLAGS   =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
-odr_dabmux_CXXFLAGS =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
+odr_dabmux_CXXFLAGS =-Wall -std=c++11 -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) \
 					  -lpthread -lboost_thread -lboost_system -lboost_regex
 
@@ -87,7 +87,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 Log.h Log.cpp \
 					 ManagementServer.h ManagementServer.cpp \
 					 MuxElements.cpp MuxElements.h \
-					 ParserCmdline.cpp ParserCmdline.h \
 					 PcDebug.h \
 					 ReedSolomon.h ReedSolomon.cpp \
 					 RemoteControl.cpp RemoteControl.h \
@@ -115,7 +114,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 fig/FIGCarousel.cpp fig/FIGCarousel.h \
 					 fig/TransitionHandler.h \
 					 mpeg.h mpeg.c \
-					 prbs.h prbs.c \
+					 prbs.h prbs.cpp \
 					 utils.cpp utils.h \
 					 zmq.hpp \
 					 fec/char.h fec/rs-common.h \
@@ -135,4 +134,4 @@ odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
                            zmq.hpp
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
-odr_zmq2farsync_CXXFLAGS = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
+odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)

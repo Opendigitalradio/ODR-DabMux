@@ -107,15 +107,20 @@ typedef DWORD32 uint32_t;
 
 using namespace std;
 
+static void setup_subchannel_from_ptree(DabSubchannel* subchan,
+        const boost::property_tree::ptree &pt,
+        std::shared_ptr<dabEnsemble> ensemble,
+        const string& subchanuid);
+
 /* a helper class to parse hexadecimal ids */
-int hexparse(std::string input)
+static int hexparse(std::string input)
 {
     int value;
     if (input.find("0x") == 0) {
-        value = strtoll(input.c_str() + 2, NULL, 16);
+        value = strtoll(input.c_str() + 2, nullptr, 16);
     }
     else {
-        value = strtoll(input.c_str(), NULL, 10);
+        value = strtoll(input.c_str(), nullptr, 10);
     }
 
     if (errno == ERANGE) {
@@ -125,7 +130,7 @@ int hexparse(std::string input)
     return value;
 }
 
-uint16_t get_announcement_flag_from_ptree(
+static uint16_t get_announcement_flag_from_ptree(
         boost::property_tree::ptree& pt
         )
 {
@@ -474,7 +479,7 @@ void parse_ptree(
     ptree pt_subchans = pt.get_child("subchannels");
     for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
-        DabSubchannel* subchan = new DabSubchannel(subchanuid);
+        auto subchan = new DabSubchannel(subchanuid);
 
         ensemble->subchannels.push_back(subchan);
 
@@ -547,7 +552,7 @@ void parse_ptree(
         int packet_datagroup = pt_comp.get("datagroup", false);
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
-        DabComponent* component = new DabComponent(componentuid);
+        auto component = new DabComponent(componentuid);
 
         component->serviceId = service->id;
         component->subchId = subchannel->id;
@@ -644,10 +649,44 @@ void parse_ptree(
     parse_linkage(pt, ensemble);
 }
 
-void setup_subchannel_from_ptree(DabSubchannel* subchan,
-        boost::property_tree::ptree &pt,
+static dab_input_zmq_config_t setup_zmq_input(
+        const boost::property_tree::ptree &pt,
+        const std::string& subchanuid)
+{
+    using boost::property_tree::ptree_error;
+
+    dab_input_zmq_config_t zmqconfig;
+
+    try {
+        zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
+    }
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Subchannel " << subchanuid << ": " << "no zmq-buffer defined!";
+        throw runtime_error(ss.str());
+    }
+    try {
+        zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
+    }
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Subchannel " << subchanuid << ": " << "no zmq-prebuffer defined!";
+        throw runtime_error(ss.str());
+    }
+
+    zmqconfig.curve_encoder_keyfile = pt.get<string>("encoder-key","");
+    zmqconfig.curve_secret_keyfile = pt.get<string>("secret-key","");
+    zmqconfig.curve_public_keyfile = pt.get<string>("public-key","");
+
+    zmqconfig.enable_encryption = pt.get<int>("encryption", 0);
+
+    return zmqconfig;
+}
+
+static void setup_subchannel_from_ptree(DabSubchannel* subchan,
+        const boost::property_tree::ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
-        string subchanuid)
+        const string& subchanuid)
 {
     using boost::property_tree::ptree;
     using boost::property_tree::ptree_error;
@@ -714,43 +753,24 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
 #if defined(HAVE_INPUT_ZEROMQ)
         }
         else if (proto == "tcp"  ||
-                 proto == "epmg" ||
+                 proto == "epgm" ||
                  proto == "ipc") {
             input_is_old_style = false;
 
-            dab_input_zmq_config_t zmqconfig;
-
-            try {
-                zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-            try {
-                zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-            zmqconfig.enable_encryption = false;
+            auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             DabInputZmqMPEG* inzmq =
                 new DabInputZmqMPEG(subchanuid, zmqconfig);
             rcs.enrol(inzmq);
             subchan->input     = inzmq;
 
-            if (proto == "epmg") {
-                etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            if (proto == "epgm") {
+                etiLog.level(warn) << "Using untested epgm:// zeromq input";
             }
             else if (proto == "ipc") {
                 etiLog.level(warn) << "Using untested ipc:// zeromq input";
             }
+
 #endif // defined(HAVE_INPUT_ZEROMQ)
         } else {
             stringstream ss;
@@ -773,37 +793,11 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
 #if defined(HAVE_INPUT_ZEROMQ)
         }
         else if (proto == "tcp"  ||
-                 proto == "epmg" ||
+                 proto == "epgm" ||
                  proto == "ipc") {
             input_is_old_style = false;
 
-            dab_input_zmq_config_t zmqconfig;
-
-            try {
-                zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-
-            try {
-                zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "ZMQ Subchannel with uid " << subchanuid <<
-                    " has no zmq-buffer defined!";
-                throw runtime_error(ss.str());
-            }
-
-            zmqconfig.curve_encoder_keyfile = pt.get<string>("encoder-key","");
-            zmqconfig.curve_secret_keyfile = pt.get<string>("secret-key","");
-            zmqconfig.curve_public_keyfile = pt.get<string>("public-key","");
-
-            zmqconfig.enable_encryption = pt.get<int>("encryption", 0);
+            auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             DabInputZmqAAC* inzmq =
                 new DabInputZmqAAC(subchanuid, zmqconfig);
@@ -811,8 +805,8 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
             rcs.enrol(inzmq);
             subchan->input     = inzmq;
 
-            if (proto == "epmg") {
-                etiLog.level(warn) << "Using untested epmg:// zeromq input";
+            if (proto == "epgm") {
+                etiLog.level(warn) << "Using untested epgm:// zeromq input";
             }
             else if (proto == "ipc") {
                 etiLog.level(warn) << "Using untested ipc:// zeromq input";
@@ -836,16 +830,18 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
 #endif // defined(HAVE_INPUT_UDP)
 #endif // defined(HAVE_FORMAT_BRIDGE)
         }
+    } else if (type == "data" and proto == "prbs") {
+        input_is_old_style = false;
+
+        subchan->input = new DabInputPrbs();
+        subchan->type = subchannel_type_t::DataDmb;
+        subchan->bitrate = DEFAULT_DATA_BITRATE;
     } else if (type == "data") {
         // TODO default proto should be udp://
         if (0) {
 #if defined(HAVE_INPUT_UDP)
         } else if (proto == "udp") {
             operations = dabInputUdpOperations;
-#endif
-#if defined(HAVE_INPUT_PRBS) && defined(HAVE_FORMAT_RAW)
-        } else if (proto == "prbs") {
-            operations = dabInputPrbsOperations;
 #endif
 #if defined(HAVE_INPUT_FILE) && defined(HAVE_FORMAT_RAW)
         } else if (proto == "file") {
@@ -855,7 +851,7 @@ void setup_subchannel_from_ptree(DabSubchannel* subchan,
             operations = dabInputRawFifoOperations;
         } else {
             stringstream ss;
-            ss << "Subchannel with uid " << subchanuid << 
+            ss << "Subchannel with uid " << subchanuid <<
                 ": Invalid protocol for data input (" <<
                 proto << ")" << endl;
             throw runtime_error(ss.str());

@@ -68,7 +68,7 @@ int dabInputDabplusFifoInit(void** args)
     dabInputDabplusFifoData* data = new dabInputDabplusFifoData;
 
     dabInputFifoInit(&data->fifoData);
-    data->buffer = NULL;
+    data->buffer = nullptr;
     data->bufferSize = 0;
     data->bufferIndex = 0;
     data->bufferOffset = 0;
@@ -100,7 +100,7 @@ int dabInputDabplusFifoRead(void* args, void* buffer, int size)
     dabInputDabplusFifoData* data = (dabInputDabplusFifoData*)args;
 
     if (data->bufferSize != (size_t)size * 5) {
-        if (data->buffer != NULL) {
+        if (data->buffer != nullptr) {
             delete[] data->buffer;
         }
         data->buffer = new uint8_t[size * 5];

@@ -151,14 +151,6 @@ class TCPDataDispatcher
         std::list<TCPConnection> m_connections;
 };
 
-DabOutputTcp::~DabOutputTcp()
-{
-    if (dispatcher_) {
-        delete dispatcher_;
-        dispatcher_ = nullptr;
-    }
-}
-
 static bool parse_uri(const char *uri, long *port, string& addr)
 {
     char* const hostport = strdup(uri); // the uri is actually an tuple host:port
@@ -205,7 +197,7 @@ int DabOutputTcp::Open(const char* name)
     uri_ = name;
 
     if (success) {
-        dispatcher_ = new TCPDataDispatcher();
+        dispatcher_ = make_shared<TCPDataDispatcher>();
         try {
             dispatcher_->start(port, address);
         }

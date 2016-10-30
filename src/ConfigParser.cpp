@@ -594,20 +594,19 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         throw runtime_error(ss.str());
     }
 
-    string inputUri = "";
-    // fail if no inputUri given unless type is test
-    if (type != "test") {
-        inputUri = pt.get<string>("inputuri", "");
+    /* Both inputfile and inputuri are supported, and are equivalent.
+     * inputuri has precedence
+     */
+    string inputUri = pt.get<string>("inputuri", "");
 
-        if (inputUri == "") {
-            try {
-                inputUri = pt.get<string>("inputfile");
-            }
-            catch (ptree_error &e) {
-                stringstream ss;
-                ss << "Subchannel with uid " << subchanuid << " has no inputUri defined!";
-                throw runtime_error(ss.str());
-            }
+    if (inputUri == "") {
+        try {
+            inputUri = pt.get<string>("inputfile");
+        }
+        catch (ptree_error &e) {
+            stringstream ss;
+            ss << "Subchannel with uid " << subchanuid << " has no inputUri defined!";
+            throw runtime_error(ss.str());
         }
     }
 

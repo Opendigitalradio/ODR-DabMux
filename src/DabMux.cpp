@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
 
 
         if (outputs.size() == 0) {
-            etiLog.log(emerg, "no output defined");
+            etiLog.log(alert, "no output defined");
             throw MuxInitException();
         }
 
@@ -489,7 +489,7 @@ int main(int argc, char *argv[])
     outputs.clear();
 
     if (returnCode != 0) {
-        etiLog.log(emerg, "...aborting\n");
+        etiLog.log(alert, "...aborting\n");
     } else {
         etiLog.log(debug, "...done\n");
     }

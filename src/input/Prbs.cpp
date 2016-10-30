@@ -46,17 +46,23 @@ const uint32_t PRBS_DEFAULT_POLY = (1 << 19) | (1 << 16) | 1;
 
 int Prbs::open(const string& name)
 {
-    if (name.empty()) {
+    if (name.substr(0, 7) != "prbs://") {
+        throw logic_error("Invalid PRBS name");
+    }
+
+    const string& url_polynomial = name.substr(7);
+
+    if (url_polynomial.empty()) {
         m_prbs.setup(PRBS_DEFAULT_POLY);
     }
     else {
-        if (name[0] != ':') {
+        if (url_polynomial[0] != ':') {
             throw invalid_argument(
                     "Invalid PRBS address format. "
                     "Must be prbs://:polynomial.");
         }
 
-        const string poly_str = name.substr(1);
+        const string poly_str = url_polynomial.substr(1);
 
         long polynomial = hexparse(poly_str);
 

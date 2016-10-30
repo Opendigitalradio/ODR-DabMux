@@ -126,16 +126,22 @@ class TCPDataDispatcher
 
     private:
         void process(long) {
-            m_listener_socket.listen();
+            try {
+                m_listener_socket.listen();
 
-            const int timeout_ms = 1000;
+                const int timeout_ms = 1000;
 
-            while (m_running) {
-                // Add a new TCPConnection to the list, constructing it from the client socket
-                auto optional_sock = m_listener_socket.accept(timeout_ms);
-                if (optional_sock) {
-                    m_connections.emplace(m_connections.begin(), std::move(*optional_sock));
+                while (m_running) {
+                    // Add a new TCPConnection to the list, constructing it from the client socket
+                    auto optional_sock = m_listener_socket.accept(timeout_ms);
+                    if (optional_sock) {
+                        m_connections.emplace(m_connections.begin(), std::move(*optional_sock));
+                    }
                 }
+            }
+            catch (std::runtime_error& e) {
+                etiLog.level(error) << "TCPDataDispatcher caught runtime error: " << e.what();
+                m_running = false;
             }
         }
 

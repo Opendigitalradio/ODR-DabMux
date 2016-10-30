@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013, 2014 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -39,9 +39,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "dabInput.h"
-#include "dabInputZmq.h"
-#include "PcDebug.h"
+#include "input/Zmq.h"
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
@@ -58,22 +56,28 @@
 #include <string>
 #include <sstream>
 #include <limits.h>
+#include "PcDebug.h"
+#include "Log.h"
 
 #ifdef __MINGW32__
 #   define bzero(s, n) memset(s, 0, n)
 #endif
 
+namespace Inputs {
+
 using namespace std;
 
 int readkey(string& keyfile, char* key)
 {
-    int fd = open(keyfile.c_str(), O_RDONLY);
-    if (fd < 0)
-        return fd;
-    int ret = read(fd, key, CURVE_KEYLEN);
-    close(fd);
-    if (ret < 0) {
-        return ret;
+    FILE* fd = fopen(keyfile.c_str(), "r");
+    if (fd == nullptr) {
+        return -1;
+    }
+
+    int ret = fread(key, CURVE_KEYLEN, 1, fd);
+    fclose(fd);
+    if (ret == 0) {
+        return -1;
     }
 
     /* It needs to be zero-terminated */
@@ -89,7 +93,7 @@ int readkey(string& keyfile, char* key)
  * keys to the socket, and finally bind the socket
  * to the new address
  */
-void DabInputZmqBase::rebind()
+void ZmqBase::rebind()
 {
     if (! m_zmq_sock_bound_to.empty()) {
         try {
@@ -223,7 +227,7 @@ void DabInputZmqBase::rebind()
     }
 }
 
-int DabInputZmqBase::open(const std::string& inputUri)
+int ZmqBase::open(const std::string& inputUri)
 {
     m_inputUri = inputUri;
 
@@ -236,20 +240,20 @@ int DabInputZmqBase::open(const std::string& inputUri)
     return 0;
 }
 
-int DabInputZmqBase::close()
+int ZmqBase::close()
 {
     m_zmq_sock.close();
     return 0;
 }
 
-int DabInputZmqBase::setBitrate(int bitrate)
+int ZmqBase::setBitrate(int bitrate)
 {
     m_bitrate = bitrate;
     return bitrate; // TODO do a nice check here
 }
 
 // size corresponds to a frame size. It is constant for a given bitrate
-int DabInputZmqBase::readFrame(void* buffer, int size)
+int ZmqBase::readFrame(void* buffer, int size)
 {
     int rc;
 
@@ -340,7 +344,7 @@ int DabInputZmqBase::readFrame(void* buffer, int size)
 /******** MPEG input *******/
 
 // Read a MPEG frame from the socket, and push to list
-int DabInputZmqMPEG::readFromSocket(size_t framesize)
+int ZmqMPEG::readFromSocket(size_t framesize)
 {
     bool messageReceived = false;
     zmq::message_t msg;
@@ -410,7 +414,7 @@ int DabInputZmqMPEG::readFromSocket(size_t framesize)
 
 // Read a AAC+ superframe from the socket, cut it into five frames,
 // and push to list
-int DabInputZmqAAC::readFromSocket(size_t framesize)
+int ZmqAAC::readFromSocket(size_t framesize)
 {
     bool messageReceived;
     zmq::message_t msg;
@@ -496,7 +500,7 @@ int DabInputZmqAAC::readFromSocket(size_t framesize)
 
 /********* REMOTE CONTROL ***********/
 
-void DabInputZmqBase::set_parameter(const string& parameter,
+void ZmqBase::set_parameter(const string& parameter,
         const string& value)
 {
     if (parameter == "buffer") {
@@ -576,7 +580,7 @@ void DabInputZmqBase::set_parameter(const string& parameter,
     }
 }
 
-const string DabInputZmqBase::get_parameter(const string& parameter) const
+const string ZmqBase::get_parameter(const string& parameter) const
 {
     stringstream ss;
     if (parameter == "buffer") {
@@ -614,6 +618,8 @@ const string DabInputZmqBase::get_parameter(const string& parameter) const
     return ss.str();
 
 }
+
+};
 
 #endif
 

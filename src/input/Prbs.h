@@ -34,10 +34,12 @@
 
 #include <string>
 
-#include "dabInput.h"
+#include "input/inputs.h"
 #include "prbs.h"
 
-class DabInputPrbs : public DabInputBase {
+namespace Inputs {
+
+class Prbs : public InputBase {
     public:
         virtual int open(const std::string& name);
         virtual int readFrame(void* buffer, int size);
@@ -48,5 +50,7 @@ class DabInputPrbs : public DabInputBase {
         virtual int rewind();
 
         PrbsGenerator m_prbs;
+};
+
 };
 

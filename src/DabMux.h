@@ -25,8 +25,7 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef _DABMUX_H
-#define _DABMUX_H
+#pragma once
 
 #include <stdint.h>
 #include <string>
@@ -34,7 +33,7 @@
 #include "DabMultiplexer.h"
 #include "RemoteControl.h"
 #include "dabOutput/dabOutput.h"
-#include "dabInput.h"
+#include "input/inputs.h"
 #include "Eti.h"
 #include "MuxElements.h"
 
@@ -42,7 +41,5 @@
 #   include <time.h>
 #else
 #   include <sys/time.h>
-#endif
-
 #endif
 

@@ -94,22 +94,8 @@ typedef DWORD32 uint32_t;
 #   include "Eti.h"
 #endif
 
-#include "dabInputFile.h"
-#include "dabInputFifo.h"
-#include "dabInputMpegFile.h"
-#include "dabInputMpegFifo.h"
-#include "dabInputDabplusFile.h"
-#include "dabInputDabplusFifo.h"
-#include "dabInputPacketFile.h"
-#include "dabInputEnhancedPacketFile.h"
-#include "dabInputEnhancedFifo.h"
-#include "dabInputUdp.h"
-#include "dabInputPrbs.h"
-#include "dabInputRawFile.h"
-#include "dabInputRawFifo.h"
-#include "dabInputDmbFile.h"
-#include "dabInputDmbUdp.h"
-
+#include "input/Prbs.h"
+#include "input/Zmq.h"
 
 #include "dabOutput/dabOutput.h"
 #include "dabOutput/edi/TagItems.h"

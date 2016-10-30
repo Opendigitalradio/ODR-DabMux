@@ -47,23 +47,9 @@ odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) \
 
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 DabMultiplexer.cpp DabMultiplexer.h \
-					 dabInput.h dabInput.cpp \
-					 dabInputDabplusFifo.h dabInputDabplusFifo.cpp \
-					 dabInputDabplusFile.h dabInputDabplusFile.cpp \
-					 dabInputDmbFile.h dabInputDmbFile.cpp \
-					 dabInputDmbUdp.h dabInputDmbUdp.cpp \
-					 dabInputEnhancedFifo.h dabInputEnhancedFifo.cpp \
-					 dabInputEnhancedPacketFile.h dabInputEnhancedPacketFile.cpp \
-					 dabInputFifo.h dabInputFifo.cpp \
-					 dabInputFile.h dabInputFile.cpp \
-					 dabInputMpegFifo.h dabInputMpegFifo.cpp \
-					 dabInputMpegFile.h dabInputMpegFile.cpp \
-					 dabInputPacketFile.h dabInputPacketFile.cpp \
-					 dabInputPrbs.h dabInputPrbs.cpp \
-					 dabInputRawFile.h dabInputRawFile.cpp \
-					 dabInputRawFifo.h dabInputRawFifo.cpp \
-					 dabInputUdp.h dabInputUdp.cpp \
-					 dabInputZmq.h dabInputZmq.cpp \
+					 input/inputs.h \
+					 input/Prbs.cpp input/Prbs.h \
+					 input/Zmq.cpp input/Zmq.h \
 					 dabOutput/dabOutput.h \
 					 dabOutput/dabOutputFile.cpp \
 					 dabOutput/dabOutputFifo.cpp \

@@ -26,7 +26,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "dabInputPrbs.h"
+#include "input/Prbs.h"
 
 #include <stdexcept>
 #include <sstream>
@@ -38,11 +38,13 @@
 
 using namespace std;
 
+namespace Inputs {
+
 // ETS 300 799 Clause G.2.1
 // Preferred polynomial is G(x) = x^20 + x^17 + 1
 const uint32_t PRBS_DEFAULT_POLY = (1 << 19) | (1 << 16) | 1;
 
-int DabInputPrbs::open(const string& name)
+int Prbs::open(const string& name)
 {
     if (name.empty()) {
         m_prbs.setup(PRBS_DEFAULT_POLY);
@@ -69,7 +71,7 @@ int DabInputPrbs::open(const string& name)
     return 0;
 }
 
-int DabInputPrbs::readFrame(void* buffer, int size)
+int Prbs::readFrame(void* buffer, int size)
 {
     unsigned char* cbuffer = reinterpret_cast<unsigned char*>(buffer);
 
@@ -80,19 +82,20 @@ int DabInputPrbs::readFrame(void* buffer, int size)
     return size;
 }
 
-int DabInputPrbs::setBitrate(int bitrate)
+int Prbs::setBitrate(int bitrate)
 {
     return bitrate;
 }
 
-int DabInputPrbs::close()
+int Prbs::close()
 {
     return 0;
 }
 
-int DabInputPrbs::rewind()
+int Prbs::rewind()
 {
     m_prbs.rewind();
     return 0;
 }
 
+};

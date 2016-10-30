@@ -20,6 +20,7 @@ env:
   - CONF=--disable-output-edi
   - CONF=
   - CONF=--enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
+  - CONF=--disable-format-raw --disable-format-mpeg --disable-format-packet --disable-format-dabplus --disable-format-dmb --disable-format-epm --disable-input-fifo --disable-input-file
 
 compiler:
   - gcc

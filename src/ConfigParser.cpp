@@ -60,7 +60,6 @@
 #include "dabInputEnhancedPacketFile.h"
 #include "dabInputEnhancedFifo.h"
 #include "dabInputUdp.h"
-#include "dabInputBridgeUdp.h"
 #include "dabInputTest.h"
 #include "dabInputPrbs.h"
 #include "dabInputRawFile.h"
@@ -714,16 +713,6 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
 #endif // defined(HAVE_FORMAT_DABPLUS)
-    } else if (type == "bridge") {
-        // TODO default proto should be udp://
-        if (0) {
-#if defined(HAVE_FORMAT_BRIDGE)
-#if defined(HAVE_INPUT_UDP)
-        } else if (proto == "udp") {
-            operations = dabInputBridgeUdpOperations;
-#endif // defined(HAVE_INPUT_UDP)
-#endif // defined(HAVE_FORMAT_BRIDGE)
-        }
     } else if (type == "data" and proto == "prbs") {
         input_is_old_style = false;
 

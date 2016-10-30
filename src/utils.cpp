@@ -124,9 +124,6 @@ void header_message()
 #if defined(HAVE_FORMAT_RAW)
     " raw" <<
 #endif
-#if defined(HAVE_FORMAT_BRIDGE)
-    " bridge" <<
-#endif
 #if defined(HAVE_FORMAT_MPEG)
     " mpeg" <<
 #endif

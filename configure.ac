@@ -198,12 +198,6 @@ AC_ARG_ENABLE([format_raw],
         [], [enable_format_raw=yes])
 AS_IF([test "x$enable_format_raw" = "xyes"],
         [AC_DEFINE(HAVE_FORMAT_RAW, [1], [Define if RAW format is enabled])])
-# BRIDGE
-AC_ARG_ENABLE([format_bridge],
-        [AS_HELP_STRING([--enable-format-bridge], [Enable BRIDGE format])],
-        [], [enable_format_bridge=no])
-AS_IF([test "x$enable_format_bridge" = "xno"],
-        [AC_DEFINE(HAVE_FORMAT_BRIDGE, [1], [Define if BRIDGE format is enabled])])
 # MPEG
 AC_ARG_ENABLE([format_mpeg],
         [AS_HELP_STRING([--disable-format-mpeg], [Disable MPEG format])],
@@ -266,7 +260,7 @@ echo
 echo "Formats:"
 enabled=""
 disabled=""
-for format in raw bridge mpeg packet dabplus dmb epm
+for format in raw mpeg packet dabplus dmb epm
 do
     eval var=\$enable_format_$format
     AS_IF([test "x$var" = "xyes"],

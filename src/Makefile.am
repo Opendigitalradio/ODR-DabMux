@@ -48,7 +48,6 @@ odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) \
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 DabMultiplexer.cpp DabMultiplexer.h \
 					 dabInput.h dabInput.cpp \
-					 dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
 					 dabInputDabplusFifo.h dabInputDabplusFifo.cpp \
 					 dabInputDabplusFile.h dabInputDabplusFile.cpp \
 					 dabInputDmbFile.h dabInputDmbFile.cpp \
@@ -93,7 +92,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 TcpSocket.h TcpSocket.cpp \
 					 UdpSocket.h UdpSocket.cpp \
 					 ThreadsafeQueue.h \
-					 bridge.h bridge.c \
 					 crc.h crc.c \
 					 fig/FIG.h fig/FIG.cpp \
 					 fig/FIG0.h fig/FIG0structs.h \

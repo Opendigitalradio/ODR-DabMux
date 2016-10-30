@@ -50,6 +50,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 input/inputs.h \
 					 input/Prbs.cpp input/Prbs.h \
 					 input/Zmq.cpp input/Zmq.h \
+					 input/File.cpp input/File.h \
 					 dabOutput/dabOutput.h \
 					 dabOutput/dabOutputFile.cpp \
 					 dabOutput/dabOutputFifo.cpp \

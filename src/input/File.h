@@ -2,12 +2,9 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
-   Matthias P. Braendli, matthias.braendli@mpb.li
-
+   Copyright (C) 2016 Matthias P. Braendli
     http://www.opendigitalradio.org
 
-   Pseudo-Random Bit Sequence generator for test purposes.
    */
 /*
    This file is part of ODR-DabMux.
@@ -28,25 +25,45 @@
 
 #pragma once
 
+#include <vector>
 #include <string>
-
+#include <stdint.h>
 #include "input/inputs.h"
-#include "prbs.h"
+#include "ManagementServer.h"
 
 namespace Inputs {
 
-class Prbs : public InputBase {
+class FileBase : public InputBase {
     public:
         virtual int open(const std::string& name);
-        virtual int readFrame(void* buffer, int size);
-        virtual int setBitrate(int bitrate);
+        virtual int readFrame(void* buffer, int size) = 0;
+        virtual int setBitrate(int bitrate) = 0;
         virtual int close();
 
-    private:
+        /* Rewind the file
+         * Returns -1 on failure, 0 on success
+         */
         virtual int rewind();
-
-        PrbsGenerator m_prbs;
+    protected:
+        // We use unix open() instead of fopen() because
+        // we want to do non-blocking I/O
+        int m_fd = -1;
 };
 
+class MPEGFile : public FileBase {
+    public:
+        virtual int readFrame(void* buffer, int size);
+        virtual int setBitrate(int bitrate);
+
+    private:
+        bool m_parity = false;
 };
 
+class DABPlusFile : public FileBase {
+    public:
+        virtual int readFrame(void* buffer, int size);
+        virtual int setBitrate(int bitrate);
+};
+
+
+};

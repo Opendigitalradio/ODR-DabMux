@@ -43,12 +43,6 @@
 
 #pragma once
 
-#ifdef HAVE_CONFIG_H
-#   include "config.h"
-#endif
-
-#ifdef HAVE_INPUT_ZEROMQ
-
 #include <list>
 #include <string>
 #include <stdint.h>
@@ -266,6 +260,5 @@ class ZmqAAC : public ZmqBase {
 };
 
 };
-#endif // HAVE_INPUT_ZMQ
 
 

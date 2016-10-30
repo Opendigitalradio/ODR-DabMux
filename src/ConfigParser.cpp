@@ -55,6 +55,7 @@
 
 #include "input/Prbs.h"
 #include "input/Zmq.h"
+#include "input/File.h"
 
 
 #ifdef _WIN32
@@ -929,6 +930,16 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         if (proto == "file") {
             if (nonblock) {
                 // TODO
+            }
+
+            if (type == "audio") {
+                subchan->input = make_shared<Inputs::MPEGFile>();
+            }
+            else if (type == "dabplus") {
+                subchan->input = make_shared<Inputs::DABPlusFile>();
+            }
+            else {
+                throw logic_error("Incomplete handling of file input");
             }
         }
         else if (proto == "tcp"  ||

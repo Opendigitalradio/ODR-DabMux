@@ -1,13 +1,11 @@
 /*
-   Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
-   Research Center Canada)
+   Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
+   Right of Canada (Communications Research Center Canada)
 
    Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
-
-   Pseudo-Random Bit Sequence generator for test purposes.
    */
 /*
    This file is part of ODR-DabMux.
@@ -28,24 +26,26 @@
 
 #pragma once
 
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+#include "Log.h"
+#include "RemoteControl.h"
 #include <string>
-
-#include "input/inputs.h"
-#include "prbs.h"
 
 namespace Inputs {
 
-class Prbs : public InputBase {
+/* New input object base */
+class InputBase {
     public:
-        virtual int open(const std::string& name);
-        virtual int readFrame(void* buffer, int size);
-        virtual int setBitrate(int bitrate);
-        virtual int close();
+        virtual int open(const std::string& name) = 0;
+        virtual int readFrame(void* buffer, int size) = 0;
+        virtual int setBitrate(int bitrate) = 0;
+        virtual int close() = 0;
 
-    private:
-        virtual int rewind();
-
-        PrbsGenerator m_prbs;
+        virtual ~InputBase() {}
+    protected:
+        InputBase() {}
 };
 
 };

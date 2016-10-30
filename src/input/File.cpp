@@ -1,6 +1,10 @@
 /*
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
+
+   Copyright (C) 2016 Matthias P. Braendli
+    http://www.opendigitalradio.org
+
    */
 /*
    This file is part of ODR-DabMux.
@@ -19,50 +23,62 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "dabInputMpegFile.h"
-#include "dabInputFile.h"
+#include <sstream>
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#ifndef _WIN32
+#   define O_BINARY 0
+#endif
+
+#include "input/File.h"
 #include "mpeg.h"
 
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
+namespace Inputs {
 
-
-#ifdef HAVE_FORMAT_MPEG
-#   ifdef HAVE_INPUT_FILE
-
-
-struct dabInputOperations dabInputMpegFileOperations = {
-    dabInputFileInit,
-    dabInputFileOpen,
-    dabInputSetbuf,
-    dabInputFileRead,
-    nullptr,
-    nullptr,
-    dabInputMpegFileRead,
-    dabInputMpegSetbitrate,
-    dabInputFileClose,
-    dabInputFileClean,
-    dabInputFileRewind
-};
-
-
-int dabInputMpegFileRead(dabInputOperations* ops, void* args, void* buffer, int size)
+int FileBase::open(const std::string& name)
 {
-    dabInputFileData* data = (dabInputFileData*)args;
+    m_fd = ::open(name.c_str(), O_RDONLY | O_BINARY);
+    if (m_fd == -1) {
+        std::stringstream ss;
+        ss << "Could not open input file " << name << ": " <<
+            strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+    return 0;
+}
+
+int FileBase::close()
+{
+    if (m_fd != -1) {
+        ::close(m_fd);
+        m_fd = -1;
+    }
+    return 0;
+}
+
+int FileBase::rewind()
+{
+    return ::lseek(m_fd, 0, SEEK_SET);
+}
+
+int MPEGFile::readFrame(void* buffer, int size)
+{
     int result;
-    bool rewind = false;
+    bool do_rewind = false;
 READ_SUBCHANNEL:
-    if (data->parity) {
-        result = readData(data->file, buffer, size, 2);
-        data->parity = false;
+    if (m_parity) {
+        result = readData(m_fd, buffer, size, 2);
+        m_parity = false;
         return 0;
     } else {
-        result = readMpegHeader(data->file, buffer, size);
+        result = readMpegHeader(m_fd, buffer, size);
         if (result > 0) {
-            result = readMpegFrame(data->file, buffer, size);
+            result = readMpegFrame(m_fd, buffer, size);
             if (result < 0 && getMpegFrequency(buffer) == 24000) {
-                data->parity = true;
+                m_parity = true;
                 result = size;
             }
         }
@@ -75,14 +91,14 @@ READ_SUBCHANNEL:
         etiLog.log(warn, "bitrate too high -> frame muted\n");
         goto MUTE_SUBCHANNEL;
     case MPEG_FILE_EMPTY:
-        if (rewind) {
+        if (do_rewind) {
             etiLog.log(error, "file rewinded and still empty "
                     "-> frame muted\n");
             goto MUTE_SUBCHANNEL;
-        } else {
-            rewind = true;
+        }
+        else {
             etiLog.log(info, "reach end of file -> rewinding\n");
-            lseek(data->file, 0, SEEK_SET);
+            rewind();
             goto READ_SUBCHANNEL;
         }
     case MPEG_FILE_ERROR:
@@ -104,12 +120,14 @@ READ_SUBCHANNEL:
                     result);
 MUTE_SUBCHANNEL:
             memset(buffer, 0, size);
-        } else {
+        }
+        else {
             if (result < size) {
                 etiLog.log(warn, "bitrate too low from file "
                         "-> frame padded\n");
                 memset((char*)buffer + result, 0, size - result);
             }
+
             result = checkDabMpegFrame(buffer);
             switch (result) {
             case MPEG_FREQUENCY:
@@ -122,12 +140,10 @@ MUTE_SUBCHANNEL:
                         "file has a frame with padding bit set\n");
                 break;
             case MPEG_COPYRIGHT:
-                etiLog.log(warn,
-                        "file has a frame with copyright bit set\n");
+                result = 0;
                 break;
             case MPEG_ORIGINAL:
-                etiLog.log(warn,
-                        "file has a frame with original bit set\n");
+                result = 0;
                 break;
             case MPEG_EMPHASIS:
                 etiLog.log(warn,
@@ -145,26 +161,67 @@ MUTE_SUBCHANNEL:
     return result;
 }
 
-
-int dabInputMpegSetbitrate(dabInputOperations* ops, void* args, int bitrate)
+int MPEGFile::setBitrate(int bitrate)
 {
-    //dabInputFileData* data = (dabInputFileData*)args;
     if (bitrate == 0) {
         char buffer[4];
 
-        if (ops->readFrame(ops, args, buffer, 4) == 0) {
+        if (readFrame(buffer, 4) == 0) {
             bitrate = getMpegBitrate(buffer);
-        } else {
+        }
+        else {
             bitrate = -1;
         }
-        ops->rewind(args);
-    }
-    if (ops->setbuf(args, bitrate * 3) != 0) {
-        bitrate = -1;
+        rewind();
     }
     return bitrate;
 }
 
 
-#   endif
-#endif
+int DABPlusFile::readFrame(void* buffer, int size)
+{
+    uint8_t* dataOut = reinterpret_cast<uint8_t*>(buffer);
+
+    ssize_t ret = read(m_fd, dataOut, size);
+
+    if (ret == -1) {
+        etiLog.log(alert, "ERROR: Can't read file\n");
+        perror("");
+        return -1;
+    }
+
+    if (ret < size) {
+        ssize_t sizeOut = ret;
+        etiLog.log(info, "reach end of file -> rewinding\n");
+        if (rewind() == -1) {
+            etiLog.log(alert, "ERROR: Can't rewind file\n");
+            return -1;
+        }
+
+        ret = read(m_fd, dataOut + sizeOut, size - sizeOut);
+        if (ret == -1) {
+            etiLog.log(alert, "ERROR: Can't read file\n");
+            perror("");
+            return -1;
+        }
+
+        if (ret < size) {
+            etiLog.log(alert, "ERROR: Not enough data in file\n");
+            return -1;
+        }
+    }
+
+    return size;
+}
+
+int DABPlusFile::setBitrate(int bitrate)
+{
+    if (bitrate <= 0) {
+        etiLog.log(error, "Invalid bitrate (%i)\n", bitrate);
+        return -1;
+    }
+
+    return bitrate;
+}
+
+};

@@ -41,13 +41,6 @@
 
 #include "input/Zmq.h"
 
-#ifdef HAVE_CONFIG_H
-#   include "config.h"
-#endif
-
-#ifdef HAVE_INPUT_ZEROMQ
-
-#include "zmq.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <list>
@@ -620,6 +613,4 @@ const string ZmqBase::get_parameter(const string& parameter) const
 }
 
 };
-
-#endif
 

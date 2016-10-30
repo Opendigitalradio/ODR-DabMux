@@ -30,7 +30,7 @@
 
 class PrbsGenerator {
     public:
-        void setup(long polynomial);
+        void setup(uint32_t polynomial);
 
         uint8_t step(void);
 
@@ -42,30 +42,30 @@ class PrbsGenerator {
         void gen_prbs_table(void);
 
         /* Update a 32-bit PRBS generator eight bits at a time. */
-        unsigned long update_prbs(void);
+        uint32_t update_prbs(void);
 
         /* Generate the weight table. */
         void gen_weight_table(void);
 
         /* Count the number of errors in a block of received data. */
         size_t error_count(
-                unsigned char *rx_data,
-                int rx_data_length);
+                uint8_t *rx_data,
+                size_t rx_data_length);
 
         void gen_sequence(
-                unsigned char *tx_data,
-                int tx_data_length,
-                unsigned long polynomial);
+                uint8_t *tx_data,
+                size_t tx_data_length,
+                uint32_t polynomial);
 
         // table of matrix products used to update a 32-bit PRBS generator
-        unsigned long prbs_table [4] [256];
+        uint32_t prbs_table [4] [256];
         // table of weights for 8-bit bytes
-        unsigned char weight[256];
+        uint8_t weight[256];
         // PRBS polynomial generator
-        unsigned long polynomial;
+        uint32_t polynomial;
         // PRBS generator polarity mask
-        unsigned char polarity_mask;
+        uint8_t polarity_mask;
         // PRBS accumulator
-        unsigned long accum;
+        uint32_t accum;
 };
 

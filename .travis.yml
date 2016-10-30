@@ -16,20 +16,17 @@ addons: &addons
       - gcc-5
       - g++-5
 
+env:
+  - CONF=--disable-output-edi
+  - CONF=
+  - CONF=--enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
+
 compiler:
   - gcc
 
 script:
   - |
     ./bootstrap.sh
-    CC=gcc-5 CXX=g++-5 ./configure --disable-output-edi
-    make
-  - |
-    ./bootstrap.sh
-    CC=gcc-5 CXX=g++-5 ./configure
-    make
-  - |
-    ./bootstrap.sh
-    CC=gcc-5 CXX=g++-5 ./configure --enable-input-prbs --enable-input-test --enable-input-udp --enable-output-raw
+    CC=gcc-5 CXX=g++-5 ./configure $CONF
     make
 

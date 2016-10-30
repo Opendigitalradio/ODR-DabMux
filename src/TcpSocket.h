@@ -67,6 +67,8 @@ class TcpSocket
         ~TcpSocket();
         TcpSocket(TcpSocket&& other);
         TcpSocket& operator=(TcpSocket&& other);
+        TcpSocket(const TcpSocket& other) = delete;
+        TcpSocket& operator=(const TcpSocket& other) = delete;
 
         int close();
 
@@ -94,8 +96,6 @@ class TcpSocket
 
     private:
         TcpSocket(SOCKET sock, InetAddress own, InetAddress remote);
-        TcpSocket(const TcpSocket& other) = delete;
-        TcpSocket& operator=(const TcpSocket& other) = delete;
 
         /// The address on which the socket is bound.
         InetAddress m_own_address;

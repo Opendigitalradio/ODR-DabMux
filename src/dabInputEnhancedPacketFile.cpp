@@ -23,6 +23,9 @@
 #include "dabInputPacketFile.h"
 #include "dabInputFile.h"
 
+#ifdef HAVE_FORMAT_PACKET
+#   ifdef HAVE_FORMAT_EPM
+#       ifdef HAVE_INPUT_FILE
 
 struct dabInputOperations dabInputEnhancedPacketFileOperations = {
     dabInputEnhancedFileInit,
@@ -51,3 +54,7 @@ int dabInputEnhancedFileInit(void** args)
 
     return 0;
 }
+
+#    endif
+#  endif
+#endif

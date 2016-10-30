@@ -728,8 +728,10 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         } else if (proto == "file") {
             operations = dabInputRawFileOperations;
 #endif
+#if defined(HAVE_INPUT_FIFO)
         } else if (proto == "fifo") {
             operations = dabInputRawFifoOperations;
+#endif
         } else {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid <<
@@ -855,8 +857,8 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
                     " non-blocking I/O only available for audio or packet services!";
                 throw runtime_error(ss.str());
         }
-#endif // defined(HAVE_INPUT_FIFO) && defined(HAVE_INPUT_FILE)
     }
+#endif // defined(HAVE_INPUT_FIFO) && defined(HAVE_INPUT_FILE)
 
 
     /* Get id */

@@ -51,7 +51,7 @@ struct dabInputOperations {
 /* New input object base */
 class DabInputBase {
     public:
-        virtual int open(const std::string name) = 0;
+        virtual int open(const std::string& name) = 0;
         virtual int readFrame(void* buffer, int size) = 0;
         virtual int setBitrate(int bitrate) = 0;
         virtual int close() = 0;
@@ -71,7 +71,7 @@ class DabInputCompatible : public DabInputBase {
         virtual ~DabInputCompatible()
         { m_ops.clean(&args); }
 
-        virtual int open(const std::string name)
+        virtual int open(const std::string& name)
         { return m_ops.open(args, name.c_str()); }
 
         virtual int setbuf(int size)

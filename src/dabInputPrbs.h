@@ -39,7 +39,7 @@
 
 class DabInputPrbs : public DabInputBase {
     public:
-        virtual int open(const std::string name);
+        virtual int open(const std::string& name);
         virtual int readFrame(void* buffer, int size);
         virtual int setBitrate(int bitrate);
         virtual int close();

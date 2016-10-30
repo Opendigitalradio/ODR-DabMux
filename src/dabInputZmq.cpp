@@ -223,7 +223,7 @@ void DabInputZmqBase::rebind()
     }
 }
 
-int DabInputZmqBase::open(const std::string inputUri)
+int DabInputZmqBase::open(const std::string& inputUri)
 {
     m_inputUri = inputUri;
 

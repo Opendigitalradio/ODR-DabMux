@@ -191,7 +191,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
                 INVALIDATE_KEY(m_curve_encoder_key);
             }
 
-        virtual int open(const std::string inputUri);
+        virtual int open(const std::string& inputUri);
         virtual int readFrame(void* buffer, int size);
         virtual int setBitrate(int bitrate);
         virtual int close();

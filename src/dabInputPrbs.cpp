@@ -42,7 +42,7 @@ using namespace std;
 // Preferred polynomial is G(x) = x^20 + x^17 + 1
 const uint32_t PRBS_DEFAULT_POLY = (1 << 19) | (1 << 16) | 1;
 
-int DabInputPrbs::open(const string name)
+int DabInputPrbs::open(const string& name)
 {
     if (name.empty()) {
         m_prbs.setup(PRBS_DEFAULT_POLY);

@@ -115,12 +115,6 @@ AC_ARG_ENABLE([input_file],
 AS_IF([test "x$enable_input_file" = "xyes"],
         [AC_DEFINE(HAVE_INPUT_FILE, [1], [Define if FILE input is enabled])])
 
-# TEST
-AC_ARG_ENABLE([input_test],
-        [AS_HELP_STRING([--enable-input-test], [Enable TEST input])],
-        [], [enable_input_test=no])
-AS_IF([test "x$enable_input_test" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_TEST, [1], [Define if TEST input is enabled])])
 # UDP
 AC_ARG_ENABLE([input_udp],
         [AS_HELP_STRING([--enable-input-udp], [Enable UDP input])],
@@ -246,12 +240,12 @@ echo
 echo "Inputs:"
 enabled="prbs"
 disabled=""
-for output in test udp fifo file
+for input in udp fifo file
 do
-    eval var=\$enable_input_$output
+    eval var=\$enable_input_$input
     AS_IF([test "x$var" = "xyes"],
-          [enabled="$enabled $output"],
-          [disabled="$disabled $output"])
+          [enabled="$enabled $input"],
+          [disabled="$disabled $input"])
 done
 echo "  Enabled: $enabled"
 echo "  Disabled: $disabled"

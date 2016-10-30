@@ -60,7 +60,6 @@
 #include "dabInputEnhancedPacketFile.h"
 #include "dabInputEnhancedFifo.h"
 #include "dabInputUdp.h"
-#include "dabInputTest.h"
 #include "dabInputPrbs.h"
 #include "dabInputRawFile.h"
 #include "dabInputRawFifo.h"
@@ -742,12 +741,6 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
 
         subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
-#if defined(HAVE_INPUT_TEST) && defined(HAVE_FORMAT_RAW)
-    } else if (type == "test") {
-        subchan->type = subchannel_type_t::DataDmb;
-        subchan->bitrate = DEFAULT_DATA_BITRATE;
-        operations = dabInputTestOperations;
-#endif // defined(HAVE_INPUT_TEST)) && defined(HAVE_FORMAT_RAW)
 #ifdef HAVE_FORMAT_PACKET
     } else if (type == "packet") {
         subchan->type = subchannel_type_t::Packet;

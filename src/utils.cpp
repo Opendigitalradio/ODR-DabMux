@@ -103,9 +103,6 @@ void header_message()
 
     std::cerr << "Input URLs supported:" << std::endl <<
     " prbs" <<
-#if defined(HAVE_INPUT_TEST)
-    " test" <<
-#endif
 #if defined(HAVE_INPUT_UDP)
     " udp" <<
 #endif

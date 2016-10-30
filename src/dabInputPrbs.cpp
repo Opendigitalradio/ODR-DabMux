@@ -34,30 +34,36 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "utils.h"
 
 using namespace std;
 
+// ETS 300 799 Clause G.2.1
+// Preferred polynomial is G(x) = x^20 + x^17 + 1
+const uint32_t PRBS_DEFAULT_POLY = (1 << 19) | (1 << 16) | 1;
+
 int DabInputPrbs::open(const string name)
 {
-    if (name[0] != ':') {
-        throw invalid_argument(
-                "Invalid PRBS address format. Must be prbs://:polynomial.");
+    if (name.empty()) {
+        m_prbs.setup(PRBS_DEFAULT_POLY);
     }
+    else {
+        if (name[0] != ':') {
+            throw invalid_argument(
+                    "Invalid PRBS address format. "
+                    "Must be prbs://:polynomial.");
+        }
 
-    const string poly_str = name.substr(1);
+        const string poly_str = name.substr(1);
 
-    long polynomial = strtol(poly_str.c_str(), (char **)NULL, 10);
-    if ((polynomial == LONG_MIN) || (polynomial == LONG_MAX)) {
-        stringstream ss;
-        ss <<  "Can't convert polynomial number " << poly_str;
-        throw invalid_argument(ss.str());
+        long polynomial = hexparse(poly_str);
+
+        if (polynomial == 0) {
+            throw invalid_argument("No polynomial given for PRBS input");
+        }
+
+        m_prbs.setup(polynomial);
     }
-
-    if (polynomial == 0) {
-        throw invalid_argument("No polynomial given for PRBS input");
-    }
-
-    m_prbs.setup(polynomial);
     rewind();
 
     return 0;

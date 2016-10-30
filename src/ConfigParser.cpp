@@ -112,24 +112,6 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid);
 
-/* a helper class to parse hexadecimal ids */
-static int hexparse(std::string input)
-{
-    int value;
-    if (input.find("0x") == 0) {
-        value = strtoll(input.c_str() + 2, nullptr, 16);
-    }
-    else {
-        value = strtoll(input.c_str(), nullptr, 10);
-    }
-
-    if (errno == ERANGE) {
-        throw runtime_error("hex conversion: value out of range");
-    }
-
-    return value;
-}
-
 static uint16_t get_announcement_flag_from_ptree(
         boost::property_tree::ptree& pt
         )

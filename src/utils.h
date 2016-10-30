@@ -26,9 +26,10 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef _UTILS_H
-#define _UTILS_H
+#pragma once
 
+#include <string>
+#include <vector>
 #include <cstdio>
 #include <memory>
 #include "MuxElements.h"
@@ -78,5 +79,6 @@ void printEnsemble(const std::shared_ptr<dabEnsemble> ensemble);
 
 /* Print detailed component information */
 void printComponent(DabComponent* component);
-#endif
+
+long hexparse(const std::string& input);
 

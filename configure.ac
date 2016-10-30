@@ -250,9 +250,9 @@ echo
 echo ZeroMQ input, output and management server enabled.
 echo
 echo "Inputs:"
-enabled=""
+enabled="prbs"
 disabled=""
-for output in prbs test udp fifo file
+for output in test udp fifo file
 do
     eval var=\$enable_input_$output
     AS_IF([test "x$var" = "xyes"],

@@ -62,7 +62,7 @@ class DabInputCompatible : public DabInputBase {
         virtual int setbuf(int size)
         { return m_ops.setbuf(args, size); }
 
-        virtual int readFrame(void* buffer, int size)
+        virtual int readFrame(uint8_t* buffer, size_t size)
         {
             if (m_ops.lock) {
                 m_ops.lock(args);

@@ -246,7 +246,7 @@ int ZmqBase::setBitrate(int bitrate)
 }
 
 // size corresponds to a frame size. It is constant for a given bitrate
-int ZmqBase::readFrame(void* buffer, int size)
+int ZmqBase::readFrame(uint8_t* buffer, size_t size)
 {
     int rc;
 

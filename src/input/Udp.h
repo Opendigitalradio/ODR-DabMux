@@ -36,7 +36,7 @@ namespace Inputs {
 class Udp : public InputBase {
     public:
         virtual int open(const std::string& name);
-        virtual int readFrame(void* buffer, int size);
+        virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
         virtual int close();
 

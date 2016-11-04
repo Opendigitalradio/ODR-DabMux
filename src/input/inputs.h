@@ -39,7 +39,7 @@ namespace Inputs {
 class InputBase {
     public:
         virtual int open(const std::string& name) = 0;
-        virtual int readFrame(void* buffer, int size) = 0;
+        virtual int readFrame(uint8_t* buffer, size_t size) = 0;
         virtual int setBitrate(int bitrate) = 0;
         virtual int close() = 0;
 

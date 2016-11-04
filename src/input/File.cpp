@@ -64,7 +64,7 @@ int FileBase::rewind()
     return ::lseek(m_fd, 0, SEEK_SET);
 }
 
-int MPEGFile::readFrame(void* buffer, int size)
+int MPEGFile::readFrame(uint8_t* buffer, size_t size)
 {
     int result;
     bool do_rewind = false;
@@ -122,7 +122,7 @@ MUTE_SUBCHANNEL:
             memset(buffer, 0, size);
         }
         else {
-            if (result < size) {
+            if (result < (ssize_t)size) {
                 etiLog.log(warn, "bitrate too low from file "
                         "-> frame padded\n");
                 memset((char*)buffer + result, 0, size - result);
@@ -164,7 +164,7 @@ MUTE_SUBCHANNEL:
 int MPEGFile::setBitrate(int bitrate)
 {
     if (bitrate == 0) {
-        char buffer[4];
+        uint8_t buffer[4];
 
         if (readFrame(buffer, 4) == 0) {
             bitrate = getMpegBitrate(buffer);
@@ -178,11 +178,9 @@ int MPEGFile::setBitrate(int bitrate)
 }
 
 
-int DABPlusFile::readFrame(void* buffer, int size)
+int DABPlusFile::readFrame(uint8_t* buffer, size_t size)
 {
-    uint8_t* dataOut = reinterpret_cast<uint8_t*>(buffer);
-
-    ssize_t ret = read(m_fd, dataOut, size);
+    ssize_t ret = read(m_fd, buffer, size);
 
     if (ret == -1) {
         etiLog.log(alert, "ERROR: Can't read file\n");
@@ -190,7 +188,7 @@ int DABPlusFile::readFrame(void* buffer, int size)
         return -1;
     }
 
-    if (ret < size) {
+    if (ret < (ssize_t)size) {
         ssize_t sizeOut = ret;
         etiLog.log(info, "reach end of file -> rewinding\n");
         if (rewind() == -1) {
@@ -198,14 +196,14 @@ int DABPlusFile::readFrame(void* buffer, int size)
             return -1;
         }
 
-        ret = read(m_fd, dataOut + sizeOut, size - sizeOut);
+        ret = read(m_fd, buffer + sizeOut, size - sizeOut);
         if (ret == -1) {
             etiLog.log(alert, "ERROR: Can't read file\n");
             perror("");
             return -1;
         }
 
-        if (ret < size) {
+        if (ret < (ssize_t)size) {
             etiLog.log(alert, "ERROR: Not enough data in file\n");
             return -1;
         }

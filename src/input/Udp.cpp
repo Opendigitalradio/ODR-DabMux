@@ -87,7 +87,7 @@ int Udp::open(const std::string& name)
     return 0;
 }
 
-int Udp::readFrame(void* buffer, int size)
+int Udp::readFrame(uint8_t* buffer, size_t size)
 {
     uint8_t* data = reinterpret_cast<uint8_t*>(buffer);
 

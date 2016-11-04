@@ -36,7 +36,7 @@ namespace Inputs {
 class FileBase : public InputBase {
     public:
         virtual int open(const std::string& name);
-        virtual int readFrame(void* buffer, int size) = 0;
+        virtual int readFrame(uint8_t* buffer, size_t size) = 0;
         virtual int setBitrate(int bitrate) = 0;
         virtual int close();
 
@@ -52,7 +52,7 @@ class FileBase : public InputBase {
 
 class MPEGFile : public FileBase {
     public:
-        virtual int readFrame(void* buffer, int size);
+        virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
 
     private:
@@ -61,7 +61,7 @@ class MPEGFile : public FileBase {
 
 class DABPlusFile : public FileBase {
     public:
-        virtual int readFrame(void* buffer, int size);
+        virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
 };
 

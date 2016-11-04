@@ -77,12 +77,10 @@ int Prbs::open(const string& name)
     return 0;
 }
 
-int Prbs::readFrame(void* buffer, int size)
+int Prbs::readFrame(uint8_t* buffer, size_t size)
 {
-    unsigned char* cbuffer = reinterpret_cast<unsigned char*>(buffer);
-
-    for (int i = 0; i < size; ++i) {
-        cbuffer[i] = m_prbs.step();
+    for (size_t i = 0; i < size; ++i) {
+        buffer[i] = m_prbs.step();
     }
 
     return size;

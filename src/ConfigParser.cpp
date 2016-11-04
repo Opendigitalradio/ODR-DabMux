@@ -979,7 +979,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
     }
-    else if (type == "data") {
+    else if (type == "data" or type == "dmb") {
         if (proto == "udp") {
             subchan->input = make_shared<Inputs::Udp>();
         } else if (proto == "file" or proto == "fifo") {
@@ -994,6 +994,14 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
 
         subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
+
+        if (type == "dmb") {
+            /* The old dmb input took care of interleaving and Reed-Solomon encoding. This
+             * code is unported.
+             * See dabInputDmbFile.cpp
+             */
+            etiLog.level(warn) << "uid " << subchanuid << " of type Dmb uses RAW input";
+        }
     }
     else {
         stringstream ss;

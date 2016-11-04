@@ -233,14 +233,14 @@ int checkDabMpegFrame(void* data) {
     if (header->padding != 0) {
         return MPEG_PADDING;
     }
+    if (header->emphasis != 0) {
+        return MPEG_EMPHASIS;
+    }
     if (header->copyright != 0) {
         return MPEG_COPYRIGHT;
     }
     if (header->original != 0) {
         return MPEG_ORIGINAL;
-    }
-    if (header->emphasis != 0) {
-        return MPEG_EMPHASIS;
     }
     return -1;
 }

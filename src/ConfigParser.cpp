@@ -373,7 +373,7 @@ void parse_ptree(
         catch (runtime_error &e) {
             etiLog.log(error,
                     "%s\n", e.what());
-            throw e;
+            throw;
         }
 
 

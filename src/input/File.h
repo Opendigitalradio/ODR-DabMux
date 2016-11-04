@@ -59,11 +59,10 @@ class MPEGFile : public FileBase {
         bool m_parity = false;
 };
 
-class DABPlusFile : public FileBase {
+class RawFile : public FileBase {
     public:
         virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
 };
-
 
 };

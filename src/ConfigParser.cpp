@@ -936,7 +936,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
                 subchan->input = make_shared<Inputs::MPEGFile>();
             }
             else if (type == "dabplus") {
-                subchan->input = make_shared<Inputs::DABPlusFile>();
+                subchan->input = make_shared<Inputs::RawFile>();
             }
             else {
                 throw logic_error("Incomplete handling of file input");
@@ -982,10 +982,8 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     else if (type == "data") {
         if (proto == "udp") {
             subchan->input = make_shared<Inputs::Udp>();
-        } else if (proto == "file") {
-            // TODO
-        } else if (proto == "fifo") {
-            // TODO
+        } else if (proto == "file" or proto == "fifo") {
+            subchan->input = make_shared<Inputs::RawFile>();
         } else {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid <<

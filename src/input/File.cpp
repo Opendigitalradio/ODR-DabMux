@@ -178,7 +178,7 @@ int MPEGFile::setBitrate(int bitrate)
 }
 
 
-int DABPlusFile::readFrame(uint8_t* buffer, size_t size)
+int RawFile::readFrame(uint8_t* buffer, size_t size)
 {
     ssize_t ret = read(m_fd, buffer, size);
 
@@ -212,7 +212,7 @@ int DABPlusFile::readFrame(uint8_t* buffer, size_t size)
     return size;
 }
 
-int DABPlusFile::setBitrate(int bitrate)
+int RawFile::setBitrate(int bitrate)
 {
     if (bitrate <= 0) {
         etiLog.log(error, "Invalid bitrate (%i)\n", bitrate);

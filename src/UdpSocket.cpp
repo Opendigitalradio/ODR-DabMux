@@ -37,19 +37,19 @@ using namespace std;
 UdpSocket::UdpSocket() :
     listenSocket(INVALID_SOCKET)
 {
-    init_sock(0, "");
+    reinit(0, "");
 }
 
 UdpSocket::UdpSocket(int port) :
     listenSocket(INVALID_SOCKET)
 {
-    init_sock(port, "");
+    reinit(port, "");
 }
 
 UdpSocket::UdpSocket(int port, const std::string& name) :
     listenSocket(INVALID_SOCKET)
 {
-    init_sock(port, name);
+    reinit(port, name);
 }
 
 
@@ -67,7 +67,7 @@ int UdpSocket::setBlocking(bool block)
     return 0;
 }
 
-int UdpSocket::init_sock(int port, const std::string& name)
+int UdpSocket::reinit(int port, const std::string& name)
 {
     if (listenSocket != INVALID_SOCKET) {
         ::close(listenSocket);
@@ -98,6 +98,16 @@ int UdpSocket::init_sock(int port, const std::string& name)
     return 0;
 }
 
+int UdpSocket::close()
+{
+    if (listenSocket != INVALID_SOCKET) {
+        ::close(listenSocket);
+    }
+
+    listenSocket = INVALID_SOCKET;
+
+    return 0;
+}
 
 UdpSocket::~UdpSocket()
 {

@@ -56,6 +56,7 @@
 #include "input/Prbs.h"
 #include "input/Zmq.h"
 #include "input/File.h"
+#include "input/Udp.h"
 
 
 #ifdef _WIN32
@@ -922,16 +923,15 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     dabProtection* protection = &subchan->protection;
 
     const bool nonblock = pt.get("nonblock", false);
+    if (nonblock) {
+        etiLog.level(warn) << "The nonblock option is not supported";
+    }
 
     if (type == "dabplus" or type == "audio") {
         subchan->type = subchannel_type_t::Audio;
         subchan->bitrate = 0;
 
         if (proto == "file") {
-            if (nonblock) {
-                // TODO
-            }
-
             if (type == "audio") {
                 subchan->input = make_shared<Inputs::MPEGFile>();
             }
@@ -945,10 +945,6 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         else if (proto == "tcp"  ||
                  proto == "epgm" ||
                  proto == "ipc") {
-
-            if (nonblock) {
-                etiLog.level(warn) << "The nonblock option is meaningless for the zmq input";
-            }
 
             auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
@@ -980,6 +976,24 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     }
     else if (type == "data" and proto == "prbs") {
         subchan->input = make_shared<Inputs::Prbs>();
+        subchan->type = subchannel_type_t::DataDmb;
+        subchan->bitrate = DEFAULT_DATA_BITRATE;
+    }
+    else if (type == "data") {
+        if (proto == "udp") {
+            subchan->input = make_shared<Inputs::Udp>();
+        } else if (proto == "file") {
+            // TODO
+        } else if (proto == "fifo") {
+            // TODO
+        } else {
+            stringstream ss;
+            ss << "Subchannel with uid " << subchanuid <<
+                ": Invalid protocol for data input (" <<
+                proto << ")" << endl;
+            throw runtime_error(ss.str());
+        }
+
         subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
     }

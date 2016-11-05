@@ -101,27 +101,6 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([bzero gethostbyname gettimeofday inet_ntoa memchr memmove memset socket strchr strdup strerror strrchr strstr strtol strtoul])
 
 # Options
-# Inputs
-# FIFO
-AC_ARG_ENABLE([input_fifo],
-        [AS_HELP_STRING([--disable-input-fifo], [Disable FIFO input])],
-        [], [enable_input_fifo=yes])
-AS_IF([test "x$enable_input_fifo" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_FIFO, [1], [Define if FIFO input is enabled])])
-# FILE
-AC_ARG_ENABLE([input_file],
-        [AS_HELP_STRING([--disable-input-file], [Disable FILE input])],
-        [], [enable_input_file=yes])
-AS_IF([test "x$enable_input_file" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_FILE, [1], [Define if FILE input is enabled])])
-
-# UDP
-AC_ARG_ENABLE([input_udp],
-        [AS_HELP_STRING([--enable-input-udp], [Enable UDP input])],
-        [], [enable_input_udp=no])
-AS_IF([test "x$enable_input_udp" = "xyes"],
-        [AC_DEFINE(HAVE_INPUT_UDP, [1], [Define if UDP input is enabled])])
-
 # Outputs
 # FILE
 AC_ARG_ENABLE([output_file],
@@ -184,45 +163,6 @@ AM_CONDITIONAL([HAVE_CURL_TEST],
 AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],
 			   [test "x$enable_output_raw" = "xyes"])
 
-
-# Formats
-# RAW
-AC_ARG_ENABLE([format_raw],
-        [AS_HELP_STRING([--disable-format-raw], [Disable RAW format])],
-        [], [enable_format_raw=yes])
-AS_IF([test "x$enable_format_raw" = "xyes"],
-        [AC_DEFINE(HAVE_FORMAT_RAW, [1], [Define if RAW format is enabled])])
-# MPEG
-AC_ARG_ENABLE([format_mpeg],
-        [AS_HELP_STRING([--disable-format-mpeg], [Disable MPEG format])],
-        [], [enable_format_mpeg=yes])
-AS_IF([test "x$enable_format_mpeg" = "xyes"],
-        [AC_DEFINE(HAVE_FORMAT_MPEG, [1], [Define if MPEG format is enabled])])
-# PACKET
-AC_ARG_ENABLE([format_packet],
-        [AS_HELP_STRING([--disable-format-packet], [Disable PACKET format])],
-        [], [enable_format_packet=yes])
-AS_IF([test "x$enable_format_packet" = "xyes"],
-        [AC_DEFINE(HAVE_FORMAT_PACKET, [1], [Define if PACKET format is enabled])])
-# DABPLUS
-AC_ARG_ENABLE([format_dabplus],
-        [AS_HELP_STRING([--disable-format-dabplus], [Disable DABPLUS format])],
-        [], [enable_format_dabplus=yes])
-AS_IF([test "x$enable_format_dabplus" = "xyes"],
-        [AC_DEFINE(HAVE_FORMAT_DABPLUS, [1], [Define if DABPLUS format is enabled])])
-# DMB
-AC_ARG_ENABLE([format_dmb],
-        [AS_HELP_STRING([--disable-format-dmb], [Disable DMB format])],
-        [], [enable_format_dmb=yes])
-AS_IF([test "x$enable_format_dmb" = "xyes"],
-        [AC_DEFINE(HAVE_FORMAT_DMB, [1], [Define if DMB format is enabled])])
-# EPM
-AC_ARG_ENABLE([format_epm],
-        [AS_HELP_STRING([--disable-format-epm], [Disable EPM format])],
-        [], [enable_format_epm=yes])
-AS_IF([test "x$enable_format_epm" = "xyes"],
-        [AC_DEFINE(HAVE_FORMAT_EPM, [1], [Define if EPM format is enabled])])
-
 AM_CONDITIONAL([IS_GIT_REPO], [test -d '.git'])
 
 AC_CONFIG_FILES([Makefile
@@ -235,34 +175,11 @@ AC_OUTPUT
 echo
 echo "***********************************************"
 echo
-echo ZeroMQ input, output and management server enabled.
+echo "ZeroMQ management server enabled."
 echo
-echo "Inputs:"
-enabled="prbs"
-disabled=""
-for input in udp fifo file
-do
-    eval var=\$enable_input_$input
-    AS_IF([test "x$var" = "xyes"],
-          [enabled="$enabled $input"],
-          [disabled="$disabled $input"])
-done
-echo "  Enabled: $enabled"
-echo "  Disabled: $disabled"
-
+echo "Inputs: prbs udp zmq fifo file"
 echo
-echo "Formats:"
-enabled=""
-disabled=""
-for format in raw mpeg packet dabplus dmb epm
-do
-    eval var=\$enable_format_$format
-    AS_IF([test "x$var" = "xyes"],
-          [enabled="$enabled $format"],
-          [disabled="$disabled $format"])
-done
-echo "  Enabled: $enabled"
-echo "  Disabled: $disabled"
+echo "Formats: raw mpeg packet dabplus dmb epm"
 
 echo
 echo "Outputs:"
@@ -275,7 +192,7 @@ do
           [enabled="$enabled $output"],
           [disabled="$disabled $output"])
 done
-echo "  Enabled: $enabled"
+echo "  Enabled: $enabled zmq"
 echo "  Disabled: $disabled"
 
 echo

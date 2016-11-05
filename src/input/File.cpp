@@ -35,8 +35,30 @@
 
 #include "input/File.h"
 #include "mpeg.h"
+#include "ReedSolomon.h"
 
 namespace Inputs {
+
+#ifdef _WIN32
+#   pragma pack(push, 1)
+#endif
+struct packetHeader {
+    unsigned char addressHigh:2;
+    unsigned char last:1;
+    unsigned char first:1;
+    unsigned char continuityIndex:2;
+    unsigned char packetLength:2;
+    unsigned char addressLow;
+    unsigned char dataLength:7;
+    unsigned char command;
+}
+#ifdef _WIN32
+#   pragma pack(pop)
+#else
+__attribute((packed))
+#endif
+;
+
 
 int FileBase::open(const std::string& name)
 {
@@ -50,6 +72,17 @@ int FileBase::open(const std::string& name)
     return 0;
 }
 
+int FileBase::setBitrate(int bitrate)
+{
+    if (bitrate <= 0) {
+        etiLog.log(error, "Invalid bitrate (%i)\n", bitrate);
+        return -1;
+    }
+
+    return bitrate;
+}
+
+
 int FileBase::close()
 {
     if (m_fd != -1) {
@@ -62,6 +95,40 @@ int FileBase::close()
 int FileBase::rewind()
 {
     return ::lseek(m_fd, 0, SEEK_SET);
+}
+
+ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
+{
+    ssize_t ret = read(m_fd, buffer, size);
+
+    if (ret == -1) {
+        etiLog.log(alert, "ERROR: Can't read file\n");
+        perror("");
+        return -1;
+    }
+
+    if (ret < (ssize_t)size) {
+        ssize_t sizeOut = ret;
+        etiLog.log(info, "reach end of file -> rewinding\n");
+        if (rewind() == -1) {
+            etiLog.log(alert, "ERROR: Can't rewind file\n");
+            return -1;
+        }
+
+        ret = read(m_fd, buffer + sizeOut, size - sizeOut);
+        if (ret == -1) {
+            etiLog.log(alert, "ERROR: Can't read file\n");
+            perror("");
+            return -1;
+        }
+
+        if (ret < (ssize_t)size) {
+            etiLog.log(alert, "ERROR: Not enough data in file\n");
+            return -1;
+        }
+    }
+
+    return size;
 }
 
 int MPEGFile::readFrame(uint8_t* buffer, size_t size)
@@ -177,49 +244,200 @@ int MPEGFile::setBitrate(int bitrate)
     return bitrate;
 }
 
-
 int RawFile::readFrame(uint8_t* buffer, size_t size)
 {
-    ssize_t ret = read(m_fd, buffer, size);
-
-    if (ret == -1) {
-        etiLog.log(alert, "ERROR: Can't read file\n");
-        perror("");
-        return -1;
-    }
-
-    if (ret < (ssize_t)size) {
-        ssize_t sizeOut = ret;
-        etiLog.log(info, "reach end of file -> rewinding\n");
-        if (rewind() == -1) {
-            etiLog.log(alert, "ERROR: Can't rewind file\n");
-            return -1;
-        }
-
-        ret = read(m_fd, buffer + sizeOut, size - sizeOut);
-        if (ret == -1) {
-            etiLog.log(alert, "ERROR: Can't read file\n");
-            perror("");
-            return -1;
-        }
-
-        if (ret < (ssize_t)size) {
-            etiLog.log(alert, "ERROR: Not enough data in file\n");
-            return -1;
-        }
-    }
-
-    return size;
+    return readFromFile(buffer, size);
 }
 
-int RawFile::setBitrate(int bitrate)
+PacketFile::PacketFile(bool enhancedPacketMode)
 {
-    if (bitrate <= 0) {
-        etiLog.log(error, "Invalid bitrate (%i)\n", bitrate);
-        return -1;
-    }
+    m_enhancedPacketEnabled = enhancedPacketMode;
+}
 
-    return bitrate;
+int PacketFile::readFrame(uint8_t* buffer, size_t size)
+{
+    size_t written = 0;
+    int length;
+    packetHeader* header;
+    int indexRow;
+    int indexCol;
+
+    while (written < size) {
+        if (m_enhancedPacketWaiting > 0) {
+            *buffer = 192 - m_enhancedPacketWaiting;
+            *buffer /= 22;
+            *buffer <<= 2;
+            *(buffer++) |= 0x03;
+            *(buffer++) = 0xfe;
+            indexCol = 188;
+            indexCol += (192 - m_enhancedPacketWaiting) / 12;
+            indexRow = 0;
+            indexRow += (192 - m_enhancedPacketWaiting) % 12;
+            for (int j = 0; j < 22; ++j) {
+                if (m_enhancedPacketWaiting == 0) {
+                    *(buffer++) = 0;
+                }
+                else {
+                    *(buffer++) = m_enhancedPacketData[indexRow][indexCol];
+                    if (++indexRow == 12) {
+                        indexRow = 0;
+                        ++indexCol;
+                    }
+                    --m_enhancedPacketWaiting;
+                }
+            }
+            written += 24;
+            if (m_enhancedPacketWaiting == 0) {
+                m_enhancedPacketLength = 0;
+            }
+        }
+        else if (m_packetLength != 0) {
+            header = (packetHeader*)(&m_packetData[0]);
+            if (written + m_packetLength > (unsigned)size) {
+                memset(buffer, 0, 22);
+                buffer[22] = 0x60;
+                buffer[23] = 0x4b;
+                length = 24;
+            }
+            else if (m_enhancedPacketEnabled) {
+                if (m_enhancedPacketLength + m_packetLength > (12 * 188)) {
+                    memset(buffer, 0, 22);
+                    buffer[22] = 0x60;
+                    buffer[23] = 0x4b;
+                    length = 24;
+                }
+                else {
+                    std::copy(m_packetData.begin(),
+                            m_packetData.begin() + m_packetLength,
+                            buffer);
+                    length = m_packetLength;
+                    m_packetLength = 0;
+                }
+            }
+            else {
+                std::copy(m_packetData.begin(),
+                        m_packetData.begin() + m_packetLength,
+                        buffer);
+                length = m_packetLength;
+                m_packetLength = 0;
+            }
+
+            if (m_enhancedPacketEnabled) {
+                indexCol = m_enhancedPacketLength / 12;
+                indexRow = m_enhancedPacketLength % 12;     // TODO Check if always 0
+                for (int j = 0; j < length; ++j) {
+                    m_enhancedPacketData[indexRow][indexCol] = buffer[j];
+                    if (++indexRow == 12) {
+                        indexRow = 0;
+                        ++indexCol;
+                    }
+                }
+                m_enhancedPacketLength += length;
+                if (m_enhancedPacketLength >= (12 * 188)) {
+                    m_enhancedPacketLength = (12 * 188);
+                    ReedSolomon encoder(204, 188);
+                    for (int j = 0; j < 12; ++j) {
+                        encoder.encode(&m_enhancedPacketData[j][0], 188);
+                    }
+                    m_enhancedPacketWaiting = 192;
+                }
+            }
+            written += length;
+            buffer += length;
+        }
+        else {
+            int nbBytes = readFromFile(buffer, 3);
+            header = (packetHeader*)buffer;
+            if (nbBytes == -1) {
+                if (errno == EAGAIN) goto END_PACKET;
+                perror("Packet file");
+                return -1;
+            }
+            else if (nbBytes == 0) {
+                if (rewind() == -1) {
+                    goto END_PACKET;
+                }
+                continue;
+            }
+            else if (nbBytes < 3) {
+                etiLog.log(error,
+                        "Error while reading file for packet header; "
+                        "read %i out of 3 bytes\n", nbBytes);
+                break;
+            }
+
+            length = header->packetLength * 24 + 24;
+            if (written + length > size) {
+                memcpy(&m_packetData[0], header, 3);
+                readFromFile(&m_packetData[3], length - 3);
+                m_packetLength = length;
+                continue;
+            }
+
+            if (m_enhancedPacketEnabled) {
+                if (m_enhancedPacketLength + length > (12 * 188)) {
+                    memcpy(&m_packetData[0], header, 3);
+                    readFromFile(&m_packetData[3], length - 3);
+                    m_packetLength = length;
+                    continue;
+                }
+            }
+
+            nbBytes = readFromFile(buffer + 3, length - 3);
+            if (nbBytes == -1) {
+                perror("Packet file");
+                return -1;
+            }
+            else if (nbBytes == 0) {
+                etiLog.log(info,
+                        "Packet header read, but no data!\n");
+                if (rewind() == -1) {
+                    goto END_PACKET;
+                }
+                continue;
+            }
+            else if (nbBytes < length - 3) {
+                etiLog.log(error, "Error while reading packet file; "
+                        "read %i out of %i bytes\n", nbBytes, length - 3);
+                break;
+            }
+
+            if (m_enhancedPacketEnabled) {
+                indexCol = m_enhancedPacketLength / 12;
+                indexRow = m_enhancedPacketLength % 12;     // TODO Check if always 0
+                for (int j = 0; j < length; ++j) {
+                    m_enhancedPacketData[indexRow][indexCol] = buffer[j];
+                    if (++indexRow == 12) {
+                        indexRow = 0;
+                        ++indexCol;
+                    }
+                }
+                m_enhancedPacketLength += length;
+                if (m_enhancedPacketLength >= (12 * 188)) {
+                    if (m_enhancedPacketLength > (12 * 188)) {
+                        etiLog.log(error,
+                                "Error, too much enhanced packet data!\n");
+                    }
+                    ReedSolomon encoder(204, 188);
+                    for (int j = 0; j < 12; ++j) {
+                        encoder.encode(&m_enhancedPacketData[j][0], 188);
+                    }
+                    m_enhancedPacketWaiting = 192;
+                }
+            }
+            written += length;
+            buffer += length;
+        }
+    }
+END_PACKET:
+    while (written < size) {
+        memset(buffer, 0, 22);
+        buffer[22] = 0x60;
+        buffer[23] = 0x4b;
+        buffer += 24;
+        written += 24;
+    }
+    return written;
 }
 
 };

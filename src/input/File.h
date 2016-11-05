@@ -26,6 +26,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <string>
 #include <stdint.h>
 #include "input/inputs.h"
@@ -37,7 +38,7 @@ class FileBase : public InputBase {
     public:
         virtual int open(const std::string& name);
         virtual int readFrame(uint8_t* buffer, size_t size) = 0;
-        virtual int setBitrate(int bitrate) = 0;
+        virtual int setBitrate(int bitrate);
         virtual int close();
 
         /* Rewind the file
@@ -45,8 +46,13 @@ class FileBase : public InputBase {
          */
         virtual int rewind();
     protected:
+        /* Read len bytes from the file into buf, and return
+         * the number of bytes read, or -1 in case of error.
+         */
+        virtual ssize_t readFromFile(uint8_t* buf, size_t len);
+
         // We use unix open() instead of fopen() because
-        // we want to do non-blocking I/O
+        // we might want to do non-blocking I/O in the future
         int m_fd = -1;
 };
 
@@ -62,7 +68,21 @@ class MPEGFile : public FileBase {
 class RawFile : public FileBase {
     public:
         virtual int readFrame(uint8_t* buffer, size_t size);
-        virtual int setBitrate(int bitrate);
+};
+
+class PacketFile : public FileBase {
+    public:
+        PacketFile(bool enhancedPacketMode);
+        virtual int readFrame(uint8_t* buffer, size_t size);
+
+    protected:
+        std::array<uint8_t,96> m_packetData;
+        size_t m_packetLength;
+
+        bool m_enhancedPacketEnabled = false;
+        std::array<std::array<uint8_t, 204>,12> m_enhancedPacketData;
+        size_t m_enhancedPacketWaiting;
+        size_t m_enhancedPacketLength;
 };
 
 };

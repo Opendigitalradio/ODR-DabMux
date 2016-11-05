@@ -1003,6 +1003,13 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
             etiLog.level(warn) << "uid " << subchanuid << " of type Dmb uses RAW input";
         }
     }
+    else if (type == "packet" or type == "enhancedpacket") {
+        subchan->type = subchannel_type_t::Packet;
+        subchan->bitrate = DEFAULT_PACKET_BITRATE;
+
+        bool enhanced = (type == "enhancedpacket");
+        subchan->input = make_shared<Inputs::PacketFile>(enhanced);
+    }
     else {
         stringstream ss;
         ss << "Subchannel with uid " << subchanuid << " has unknown type!";

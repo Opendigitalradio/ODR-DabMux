@@ -46,7 +46,7 @@
 #include <iostream>
 #include <string>
 
-#include <boost/optional.hpp>
+#include <memory>
 
 /**
  *  This class represents a TCP socket.
@@ -70,7 +70,9 @@ class TcpSocket
         TcpSocket(const TcpSocket& other) = delete;
         TcpSocket& operator=(const TcpSocket& other) = delete;
 
-        int close();
+        bool isValid(void);
+
+        int close(void);
 
         /** Send data over the TCP connection.
          *  @param data The buffer that will be sent.
@@ -88,7 +90,12 @@ class TcpSocket
 
         void listen(void);
         TcpSocket accept(void);
-        boost::optional<TcpSocket> accept(int timeout_ms);
+
+        /* Returns either valid socket if a connection was
+         * accepted before the timeout expired, or an invalid
+         * socket otherwise.
+         */
+        TcpSocket accept(int timeout_ms);
 
         /** Retrieve address this socket is bound to */
         InetAddress getOwnAddress() const;

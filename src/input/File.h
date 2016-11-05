@@ -79,6 +79,9 @@ class PacketFile : public FileBase {
         std::array<uint8_t,96> m_packetData;
         size_t m_packetLength;
 
+        /* Enhanced packet mode enables FEC for MSC packet mode
+         * as described in EN 300 401 Clause 5.3.5
+         */
         bool m_enhancedPacketEnabled = false;
         std::array<std::array<uint8_t, 204>,12> m_enhancedPacketData;
         size_t m_enhancedPacketWaiting;

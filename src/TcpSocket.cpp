@@ -116,6 +116,11 @@ TcpSocket::~TcpSocket()
     close();
 }
 
+bool TcpSocket::isValid()
+{
+    return m_sock != INVALID_SOCKET;
+}
+
 ssize_t TcpSocket::recv(void* data, size_t size)
 {
     ssize_t ret = ::recv(m_sock, (char*)data, size, 0);
@@ -167,7 +172,7 @@ TcpSocket TcpSocket::accept()
     }
 }
 
-boost::optional<TcpSocket> TcpSocket::accept(int timeout_ms)
+TcpSocket TcpSocket::accept(int timeout_ms)
 {
     struct pollfd fds[1];
     fds[0].fd = m_sock;
@@ -184,7 +189,8 @@ boost::optional<TcpSocket> TcpSocket::accept(int timeout_ms)
         return accept();
     }
     else {
-        return boost::none;
+        TcpSocket invalidsock(0, "");
+        return invalidsock;
     }
 }
 

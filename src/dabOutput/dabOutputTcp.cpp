@@ -133,9 +133,9 @@ class TCPDataDispatcher
 
                 while (m_running) {
                     // Add a new TCPConnection to the list, constructing it from the client socket
-                    auto optional_sock = m_listener_socket.accept(timeout_ms);
-                    if (optional_sock) {
-                        m_connections.emplace(m_connections.begin(), std::move(*optional_sock));
+                    auto sock = m_listener_socket.accept(timeout_ms);
+                    if (sock.isValid()) {
+                        m_connections.emplace(m_connections.begin(), move(sock));
                     }
                 }
             }

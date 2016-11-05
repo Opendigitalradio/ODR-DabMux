@@ -42,7 +42,7 @@ namespace Inputs {
 
 // ETS 300 799 Clause G.2.1
 // Preferred polynomial is G(x) = x^20 + x^17 + 1
-const uint32_t PRBS_DEFAULT_POLY = (1 << 19) | (1 << 16) | 1;
+const uint32_t PRBS_DEFAULT_POLY = (1 << 20) | (1 << 17) | (1 << 0);
 
 int Prbs::open(const string& name)
 {

@@ -103,36 +103,16 @@ void header_message()
 
     std::cerr << "Input URLs supported:" << std::endl <<
     " prbs" <<
-#if defined(HAVE_INPUT_UDP)
     " udp" <<
-#endif
-#if defined(HAVE_INPUT_FIFO)
-    " fifo" <<
-#endif
-#if defined(HAVE_INPUT_FILE)
     " file" <<
-#endif
-#if defined(HAVE_INPUT_ZEROMQ)
     " zmq" <<
-#endif
     std::endl;
 
     std::cerr << "Inputs format supported:" << std::endl <<
-#if defined(HAVE_FORMAT_RAW)
     " raw" <<
-#endif
-#if defined(HAVE_FORMAT_MPEG)
     " mpeg" <<
-#endif
-#if defined(HAVE_FORMAT_PACKET)
     " packet" <<
-#endif
-#if defined(HAVE_FORMAT_DMB)
-    " dmb" <<
-#endif
-#if defined(HAVE_FORMAT_EPM)
     " epm" <<
-#endif
     std::endl;
 
     std::cerr << "Output URLs supported:" << std::endl <<

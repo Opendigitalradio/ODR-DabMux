@@ -66,7 +66,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 dabOutput/edi/PFT.cpp dabOutput/edi/PFT.h \
 					 ClockTAI.h ClockTAI.cpp \
 					 ConfigParser.cpp ConfigParser.h \
-					 Dmb.h Dmb.cpp \
 					 Eti.h Eti.cpp \
 					 InetAddress.h InetAddress.cpp \
 					 Interleaver.h Interleaver.cpp \

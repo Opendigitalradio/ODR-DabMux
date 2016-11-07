@@ -130,8 +130,17 @@ services {
 }
 
 ; The subchannels are defined in the corresponding section.
-; supported types are : audio, bridge, data, enhancedpacket,
-;                       dabplus, dmb, packet, test
+; supported types are : audio, data, enhancedpacket,
+;                       dabplus, packet
+;
+; Type 'packet' expects to receive data in the format described
+; in EN 300 401 Clause 3.5.2.
+;
+; 'enhancedpacket' mode will calculate FEC for MSC packet mode
+; as described in EN 300 401 Clause 5.3.5.
+;
+; 'data' will read from the source and write it unmodified into
+; the MSC.
 subchannels {
     sub-fu {
         type audio
@@ -235,6 +244,25 @@ subchannels {
         zmq-buffer 40
         zmq-prebuffering 20
     }
+
+    ; 'prbs' will generate a pseudorandom bit sequence according to
+    ; ETS 300 799 Clause G.2.1. This is useful for testing purposes and
+    ; measurement of bit error rate.
+    sub-prbs {
+       type data
+
+       ; Use the default PRBS polynomial.
+       inputfile "prbs://"
+
+       ; To use another polynomial, set it in the url as hexadecimal
+       ; The default polynomial is G(x) = x^20 + x^17 + 1, represented as
+       ; (1 << 20) + (1 << 17) + (1 << 0) = 0x120001
+       ;inputuri "prbs://:0x120001
+
+       bitrate 16
+       id 5
+       protection 3
+   }
 }
 
 ; For now, each component links one service to one subchannel

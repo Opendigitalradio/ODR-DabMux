@@ -48,26 +48,15 @@
 #include <map>
 #include <cstring>
 #include "dabOutput/dabOutput.h"
-#include "dabInput.h"
+#include "input/inputs.h"
 #include "utils.h"
-#include "dabInputFile.h"
-#include "dabInputFifo.h"
-#include "dabInputMpegFile.h"
-#include "dabInputMpegFifo.h"
-#include "dabInputDabplusFile.h"
-#include "dabInputDabplusFifo.h"
-#include "dabInputPacketFile.h"
-#include "dabInputEnhancedPacketFile.h"
-#include "dabInputEnhancedFifo.h"
-#include "dabInputUdp.h"
-#include "dabInputPrbs.h"
-#include "dabInputRawFile.h"
-#include "dabInputRawFifo.h"
-#include "dabInputDmbFile.h"
-#include "dabInputDmbUdp.h"
-#include "dabInputZmq.h"
 #include "DabMux.h"
 #include "ManagementServer.h"
+
+#include "input/Prbs.h"
+#include "input/Zmq.h"
+#include "input/File.h"
+#include "input/Udp.h"
 
 
 #ifdef _WIN32
@@ -541,13 +530,13 @@ void parse_ptree(
     }
 }
 
-static dab_input_zmq_config_t setup_zmq_input(
+static Inputs::dab_input_zmq_config_t setup_zmq_input(
         const boost::property_tree::ptree &pt,
         const std::string& subchanuid)
 {
     using boost::property_tree::ptree_error;
 
-    dab_input_zmq_config_t zmqconfig;
+    Inputs::dab_input_zmq_config_t zmqconfig;
 
     try {
         zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
@@ -621,6 +610,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
 
     subchan->inputUri = inputUri;
 
+#if OLD_INPUTS // {{{
     /* The input is of the old_style type,
      * with the struct of function pointers,
      * and needs to be a DabInputCompatible
@@ -714,7 +704,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     } else if (type == "data" and proto == "prbs") {
         input_is_old_style = false;
 
-        subchan->input = new DabInputPrbs();
+        subchan->input = make_shared<Inputs::Prbs>();
         subchan->type = subchannel_type_t::DataDmb;
         subchan->bitrate = DEFAULT_DATA_BITRATE;
     } else if (type == "data") {
@@ -928,5 +918,191 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         subchan->input = new DabInputCompatible(operations);
     }
     // else { it's already been created! }
+#endif // 0 }}}
+
+    dabProtection* protection = &subchan->protection;
+
+    const bool nonblock = pt.get("nonblock", false);
+    if (nonblock) {
+        etiLog.level(warn) << "The nonblock option is not supported";
+    }
+
+    if (type == "dabplus" or type == "audio") {
+        subchan->type = subchannel_type_t::Audio;
+        subchan->bitrate = 0;
+
+        if (proto == "file") {
+            if (type == "audio") {
+                subchan->input = make_shared<Inputs::MPEGFile>();
+            }
+            else if (type == "dabplus") {
+                subchan->input = make_shared<Inputs::RawFile>();
+            }
+            else {
+                throw logic_error("Incomplete handling of file input");
+            }
+        }
+        else if (proto == "tcp"  ||
+                 proto == "epgm" ||
+                 proto == "ipc") {
+
+            auto zmqconfig = setup_zmq_input(pt, subchanuid);
+
+            if (type == "audio") {
+                auto inzmq = make_shared<Inputs::ZmqMPEG>(subchanuid, zmqconfig);
+                rcs.enrol(inzmq.get());
+                subchan->input = inzmq;
+            }
+            else if (type == "dabplus") {
+                auto inzmq = make_shared<Inputs::ZmqAAC>(subchanuid, zmqconfig);
+                rcs.enrol(inzmq.get());
+                subchan->input = inzmq;
+            }
+
+            if (proto == "epgm") {
+                etiLog.level(warn) << "Using untested epgm:// zeromq input";
+            }
+            else if (proto == "ipc") {
+                etiLog.level(warn) << "Using untested ipc:// zeromq input";
+            }
+        }
+        else {
+            stringstream ss;
+            ss << "Subchannel with uid " << subchanuid <<
+                ": Invalid protocol for " << type << " input (" <<
+                proto << ")" << endl;
+            throw runtime_error(ss.str());
+        }
+    }
+    else if (type == "data" and proto == "prbs") {
+        subchan->input = make_shared<Inputs::Prbs>();
+        subchan->type = subchannel_type_t::DataDmb;
+        subchan->bitrate = DEFAULT_DATA_BITRATE;
+    }
+    else if (type == "data" or type == "dmb") {
+        if (proto == "udp") {
+            subchan->input = make_shared<Inputs::Udp>();
+        } else if (proto == "file" or proto == "fifo") {
+            subchan->input = make_shared<Inputs::RawFile>();
+        } else {
+            stringstream ss;
+            ss << "Subchannel with uid " << subchanuid <<
+                ": Invalid protocol for data input (" <<
+                proto << ")" << endl;
+            throw runtime_error(ss.str());
+        }
+
+        subchan->type = subchannel_type_t::DataDmb;
+        subchan->bitrate = DEFAULT_DATA_BITRATE;
+
+        if (type == "dmb") {
+            /* The old dmb input took care of interleaving and Reed-Solomon encoding. This
+             * code is unported.
+             * See dabInputDmbFile.cpp
+             */
+            etiLog.level(warn) << "uid " << subchanuid << " of type Dmb uses RAW input";
+        }
+    }
+    else if (type == "packet" or type == "enhancedpacket") {
+        subchan->type = subchannel_type_t::Packet;
+        subchan->bitrate = DEFAULT_PACKET_BITRATE;
+
+        bool enhanced = (type == "enhancedpacket");
+        subchan->input = make_shared<Inputs::PacketFile>(enhanced);
+    }
+    else {
+        stringstream ss;
+        ss << "Subchannel with uid " << subchanuid << " has unknown type!";
+        throw runtime_error(ss.str());
+    }
+    subchan->startAddress = 0;
+
+    if (type == "audio") {
+        protection->form = UEP;
+        protection->level = 2;
+        protection->uep.tableIndex = 0;
+    }
+    else {
+        protection->level = 2;
+        protection->form = EEP;
+        protection->eep.profile = EEP_A;
+    }
+
+    /* Get bitrate */
+    try {
+        subchan->bitrate = pt.get<int>("bitrate");
+        if ((subchan->bitrate & 0x7) != 0) {
+            stringstream ss;
+            ss << "Subchannel with uid " << subchanuid <<
+                ": Bitrate (" << subchan->bitrate << " not a multiple of 8!";
+            throw runtime_error(ss.str());
+        }
+    }
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Error, no bitrate defined for subchannel " << subchanuid;
+        throw runtime_error(ss.str());
+    }
+
+    /* Get id */
+    try {
+        subchan->id = hexparse(pt.get<std::string>("id"));
+    }
+    catch (ptree_error &e) {
+        for (int i = 0; i < 64; ++i) { // Find first free subchannel
+            vector<DabSubchannel*>::iterator subchannel = getSubchannel(ensemble->subchannels, i);
+            if (subchannel == ensemble->subchannels.end()) {
+                subchannel = ensemble->subchannels.end() - 1;
+                subchan->id = i;
+                break;
+            }
+        }
+    }
+
+    /* Get optional protection profile */
+    string profile = pt.get("protection-profile", "");
+
+    if (profile == "EEP_A") {
+        protection->form = EEP;
+        protection->eep.profile = EEP_A;
+    }
+    else if (profile == "EEP_B") {
+        protection->form = EEP;
+        protection->eep.profile = EEP_B;
+    }
+    else if (profile == "UEP") {
+        protection->form = UEP;
+    }
+
+    /* Get protection level */
+    try {
+        int level = pt.get<int>("protection");
+
+        if (protection->form == UEP) {
+            if ((level < 1) || (level > 5)) {
+                stringstream ss;
+                ss << "Subchannel with uid " << subchanuid <<
+                    ": protection level must be between "
+                    "1 to 5 inclusively (current = " << level << " )";
+                throw runtime_error(ss.str());
+            }
+        }
+        else if (protection->form == EEP) {
+            if ((level < 1) || (level > 4)) {
+                stringstream ss;
+                ss << "Subchannel with uid " << subchanuid <<
+                    ": protection level must be between "
+                    "1 to 4 inclusively (current = " << level << " )";
+                throw runtime_error(ss.str());
+            }
+        }
+        protection->level = level - 1;
+    }
+    catch (ptree_error &e) {
+        stringstream ss;
+        ss << "Subchannel with uid " << subchanuid <<
+            ": protection level undefined!";
+        throw runtime_error(ss.str());
+    }
 }
 

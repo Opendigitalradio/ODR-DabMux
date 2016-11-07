@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2013, 2014 Matthias P. Braendli
+   Copyright (C) 2016 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -41,48 +41,37 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef DAB_INPUT_ZMQ_H
-#define DAB_INPUT_ZMQ_H
-
-#ifdef HAVE_CONFIG_H
-#   include "config.h"
-#endif
-
-#ifdef HAVE_INPUT_ZEROMQ
+#pragma once
 
 #include <list>
 #include <string>
 #include <stdint.h>
 #include "zmq.hpp"
-#include "dabInput.h"
+#include "input/inputs.h"
 #include "ManagementServer.h"
+
+namespace Inputs {
 
 /* The frame_buffer contains DAB logical frames as defined in
  * TS 102 563, section 6.
  * Five elements of this buffer make one AAC superframe (120ms audio)
  */
 
-// Number of elements to prebuffer before starting the pipeline
-#define INPUT_ZMQ_DEF_PREBUFFERING (5*4) // 480ms
-
-// Default frame_buffer size in number of elements
-#define INPUT_ZMQ_DEF_BUFFER_SIZE (5*8) // 960ms
-
 // Minimum frame_buffer size in number of elements
 // This is one AAC superframe, but you probably don't want to
 // go that low anyway.
-#define INPUT_ZMQ_MIN_BUFFER_SIZE (5*1) // 120ms
+const size_t INPUT_ZMQ_MIN_BUFFER_SIZE = 5*1; // 120ms
 
 // Maximum frame_buffer size in number of elements
 // One minute is clearly way over what everybody would
 // want.
-#define INPUT_ZMQ_MAX_BUFFER_SIZE (5*500) // 60s
+const size_t INPUT_ZMQ_MAX_BUFFER_SIZE = 5*500; // 60s
 
 /* The ZeroMQ Curve key is 40 bytes long in Z85 representation
  *
  * But we need to store it as zero-terminated string.
  */
-#define CURVE_KEYLEN 40
+const size_t CURVE_KEYLEN = 40;
 
 /* helper to invalidate a key */
 #define INVALIDATE_KEY(k) memset(k, 0, CURVE_KEYLEN+1)
@@ -156,9 +145,9 @@ struct zmq_frame_header_t
 #define ZMQ_FRAME_DATA(f) ( ((uint8_t*)f)+sizeof(zmq_frame_header_t) )
 
 
-class DabInputZmqBase : public DabInputBase, public RemoteControllable {
+class ZmqBase : public InputBase, public RemoteControllable {
     public:
-        DabInputZmqBase(const std::string name,
+        ZmqBase(const std::string name,
                 dab_input_zmq_config_t config)
             : RemoteControllable(name),
             m_zmq_context(1),
@@ -192,7 +181,7 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
             }
 
         virtual int open(const std::string& inputUri);
-        virtual int readFrame(void* buffer, int size);
+        virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
         virtual int close();
 
@@ -238,11 +227,11 @@ class DabInputZmqBase : public DabInputBase, public RemoteControllable {
         size_t m_prebuf_current;
 };
 
-class DabInputZmqMPEG : public DabInputZmqBase {
+class ZmqMPEG : public ZmqBase {
     public:
-        DabInputZmqMPEG(const std::string name,
+        ZmqMPEG(const std::string name,
                 dab_input_zmq_config_t config)
-            : DabInputZmqBase(name, config) {
+            : ZmqBase(name, config) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [mpeg frames]");
 
@@ -254,11 +243,11 @@ class DabInputZmqMPEG : public DabInputZmqBase {
         virtual int readFromSocket(size_t framesize);
 };
 
-class DabInputZmqAAC : public DabInputZmqBase {
+class ZmqAAC : public ZmqBase {
     public:
-        DabInputZmqAAC(const std::string name,
+        ZmqAAC(const std::string name,
                 dab_input_zmq_config_t config)
-            : DabInputZmqBase(name, config) {
+            : ZmqBase(name, config) {
                 RC_ADD_PARAMETER(buffer,
                         "Size of the input buffer [aac superframes]");
 
@@ -270,7 +259,6 @@ class DabInputZmqAAC : public DabInputZmqBase {
         virtual int readFromSocket(size_t framesize);
 };
 
-#endif // HAVE_INPUT_ZMQ
+};
 
-#endif // DAB_INPUT_ZMQ_H
 

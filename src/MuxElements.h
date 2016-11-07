@@ -40,7 +40,7 @@
 #include <boost/optional.hpp>
 #include <stdint.h>
 #include "dabOutput/dabOutput.h"
-#include "dabInput.h"
+#include "input/inputs.h"
 #include "RemoteControl.h"
 #include "Eti.h"
 
@@ -295,7 +295,7 @@ public:
     std::string uid;
 
     std::string inputUri;
-    DabInputBase* input;
+    std::shared_ptr<Inputs::InputBase> input;
     unsigned char id;
     subchannel_type_t type;
     uint16_t startAddress;

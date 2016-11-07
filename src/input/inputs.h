@@ -1,13 +1,11 @@
 /*
-   Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
-   2011 Her Majesty the Queen in Right of Canada (Communications
-   Research Center Canada)
+   Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
+   Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
-   This file declares several structures used in the multiplexer,
-   and defines default values for some parameters.
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -24,22 +22,31 @@
 
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
-*/
+   */
+
 #pragma once
 
-#include <stdint.h>
-#include <string>
-#include <vector>
-#include "DabMultiplexer.h"
-#include "RemoteControl.h"
-#include "dabOutput/dabOutput.h"
-#include "input/inputs.h"
-#include "Eti.h"
-#include "MuxElements.h"
-
-#ifdef _WIN32
-#   include <time.h>
-#else
-#   include <sys/time.h>
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
 #endif
+#include "Log.h"
+#include "RemoteControl.h"
+#include <string>
+
+namespace Inputs {
+
+/* New input object base */
+class InputBase {
+    public:
+        virtual int open(const std::string& name) = 0;
+        virtual int readFrame(uint8_t* buffer, size_t size) = 0;
+        virtual int setBitrate(int bitrate) = 0;
+        virtual int close() = 0;
+
+        virtual ~InputBase() {}
+    protected:
+        InputBase() {}
+};
+
+};
 

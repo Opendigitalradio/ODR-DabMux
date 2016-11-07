@@ -1,13 +1,13 @@
 /*
-   Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
-   2011 Her Majesty the Queen in Right of Canada (Communications
+   Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
-   This file declares several structures used in the multiplexer,
-   and defines default values for some parameters.
+    http://www.opendigitalradio.org
+
+   Pseudo-Random Bit Sequence generator for test purposes.
    */
 /*
    This file is part of ODR-DabMux.
@@ -24,22 +24,29 @@
 
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
-*/
+   */
+
 #pragma once
 
-#include <stdint.h>
 #include <string>
-#include <vector>
-#include "DabMultiplexer.h"
-#include "RemoteControl.h"
-#include "dabOutput/dabOutput.h"
-#include "input/inputs.h"
-#include "Eti.h"
-#include "MuxElements.h"
 
-#ifdef _WIN32
-#   include <time.h>
-#else
-#   include <sys/time.h>
-#endif
+#include "input/inputs.h"
+#include "prbs.h"
+
+namespace Inputs {
+
+class Prbs : public InputBase {
+    public:
+        virtual int open(const std::string& name);
+        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual int setBitrate(int bitrate);
+        virtual int close();
+
+    private:
+        virtual int rewind();
+
+        PrbsGenerator m_prbs;
+};
+
+};
 

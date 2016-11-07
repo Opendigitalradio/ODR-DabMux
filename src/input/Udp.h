@@ -6,8 +6,6 @@
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
-
-   Pseudo-Random Bit Sequence generator for test purposes.
    */
 /*
    This file is part of ODR-DabMux.
@@ -28,25 +26,27 @@
 
 #pragma once
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
 #include <string>
+#include <vector>
+#include "input/inputs.h"
+#include "UdpSocket.h"
 
-#include "dabInput.h"
-#include "prbs.h"
+namespace Inputs {
 
-class DabInputPrbs : public DabInputBase {
+class Udp : public InputBase {
     public:
         virtual int open(const std::string& name);
-        virtual int readFrame(void* buffer, int size);
+        virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
         virtual int close();
 
     private:
-        virtual int rewind();
+        UdpSocket m_sock;
 
-        PrbsGenerator m_prbs;
+        // The content of the UDP packets gets written into the
+        // buffer, and the UDP packet boundaries disappear there.
+        std::vector<uint8_t> m_buffer;
+};
+
 };
 

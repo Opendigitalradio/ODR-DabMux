@@ -26,7 +26,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "dabInputPrbs.h"
+#include "input/Prbs.h"
 
 #include <stdexcept>
 #include <sstream>
@@ -38,23 +38,31 @@
 
 using namespace std;
 
+namespace Inputs {
+
 // ETS 300 799 Clause G.2.1
 // Preferred polynomial is G(x) = x^20 + x^17 + 1
-const uint32_t PRBS_DEFAULT_POLY = (1 << 19) | (1 << 16) | 1;
+const uint32_t PRBS_DEFAULT_POLY = (1 << 20) | (1 << 17) | (1 << 0);
 
-int DabInputPrbs::open(const string& name)
+int Prbs::open(const string& name)
 {
-    if (name.empty()) {
+    if (name.substr(0, 7) != "prbs://") {
+        throw logic_error("Invalid PRBS name");
+    }
+
+    const string& url_polynomial = name.substr(7);
+
+    if (url_polynomial.empty()) {
         m_prbs.setup(PRBS_DEFAULT_POLY);
     }
     else {
-        if (name[0] != ':') {
+        if (url_polynomial[0] != ':') {
             throw invalid_argument(
                     "Invalid PRBS address format. "
                     "Must be prbs://:polynomial.");
         }
 
-        const string poly_str = name.substr(1);
+        const string poly_str = url_polynomial.substr(1);
 
         long polynomial = hexparse(poly_str);
 
@@ -69,30 +77,29 @@ int DabInputPrbs::open(const string& name)
     return 0;
 }
 
-int DabInputPrbs::readFrame(void* buffer, int size)
+int Prbs::readFrame(uint8_t* buffer, size_t size)
 {
-    unsigned char* cbuffer = reinterpret_cast<unsigned char*>(buffer);
-
-    for (int i = 0; i < size; ++i) {
-        cbuffer[i] = m_prbs.step();
+    for (size_t i = 0; i < size; ++i) {
+        buffer[i] = m_prbs.step();
     }
 
     return size;
 }
 
-int DabInputPrbs::setBitrate(int bitrate)
+int Prbs::setBitrate(int bitrate)
 {
     return bitrate;
 }
 
-int DabInputPrbs::close()
+int Prbs::close()
 {
     return 0;
 }
 
-int DabInputPrbs::rewind()
+int Prbs::rewind()
 {
     m_prbs.rewind();
     return 0;
 }
 
+};

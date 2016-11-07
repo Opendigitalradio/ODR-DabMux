@@ -29,8 +29,6 @@
 #include "RemoteControl.h"
 #include <string>
 
-extern Logger etiLog;
-
 // TODO replace usage of dabInputOperations by a
 // class hierarchy
 struct dabInputOperations {
@@ -46,19 +44,6 @@ struct dabInputOperations {
     int (*clean)(void** args);
     int (*rewind)(void* args);
     bool operator==(const dabInputOperations&);
-};
-
-/* New input object base */
-class DabInputBase {
-    public:
-        virtual int open(const std::string& name) = 0;
-        virtual int readFrame(void* buffer, int size) = 0;
-        virtual int setBitrate(int bitrate) = 0;
-        virtual int close() = 0;
-
-        virtual ~DabInputBase() {}
-    protected:
-        DabInputBase() {}
 };
 
 /* Wrapper class for old-style dabInputOperations inputs */
@@ -77,7 +62,7 @@ class DabInputCompatible : public DabInputBase {
         virtual int setbuf(int size)
         { return m_ops.setbuf(args, size); }
 
-        virtual int readFrame(void* buffer, int size)
+        virtual int readFrame(uint8_t* buffer, size_t size)
         {
             if (m_ops.lock) {
                 m_ops.lock(args);

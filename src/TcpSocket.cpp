@@ -39,31 +39,30 @@ using namespace std;
 TcpSocket::TcpSocket() :
     m_sock(INVALID_SOCKET)
 {
-    if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        throw std::runtime_error("Can't create socket");
-    }
 }
 
 TcpSocket::TcpSocket(int port, const string& name) :
     m_sock(INVALID_SOCKET)
 {
-    if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        throw std::runtime_error("Can't create socket");
-    }
+    if (port) {
+        if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+            throw std::runtime_error("Can't create socket");
+        }
 
-    reuseopt_t reuse = 1;
-    if (setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))
-            == SOCKET_ERROR) {
-        throw std::runtime_error("Can't reuse address");
-    }
+        reuseopt_t reuse = 1;
+        if (setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))
+                == SOCKET_ERROR) {
+            throw std::runtime_error("Can't reuse address");
+        }
 
-    m_own_address.setAddress(name);
-    m_own_address.setPort(port);
+        m_own_address.setAddress(name);
+        m_own_address.setPort(port);
 
-    if (bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
-        ::close(m_sock);
-        m_sock = INVALID_SOCKET;
-        throw std::runtime_error("Can't bind socket");
+        if (bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
+            ::close(m_sock);
+            m_sock = INVALID_SOCKET;
+            throw std::runtime_error("Can't bind socket");
+        }
     }
 }
 

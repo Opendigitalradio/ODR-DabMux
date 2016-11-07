@@ -95,6 +95,10 @@ class TCPConnection
                     m_running = false;
                 }
             }
+
+            auto addr = m_sock.getRemoteAddress();
+            etiLog.level(debug) << "Dropping TCP Connection from " <<
+                addr.getHostAddress() << ":" << addr.getPort();
         }
 };
 

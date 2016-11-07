@@ -121,7 +121,7 @@ class TCPDataDispatcher
                 connection.queue.push(data);
             }
 
-            m_connections.remove_if([](TCPConnection& conn){ return conn.is_overloaded(); });
+            m_connections.remove_if([](const TCPConnection& conn){ return conn.is_overloaded(); });
         }
 
     private:

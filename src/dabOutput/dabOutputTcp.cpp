@@ -95,6 +95,10 @@ class TCPConnection
                     m_running = false;
                 }
             }
+
+            auto addr = m_sock.getRemoteAddress();
+            etiLog.level(debug) << "Dropping TCP Connection from " <<
+                addr.getHostAddress() << ":" << addr.getPort();
         }
 };
 
@@ -121,21 +125,27 @@ class TCPDataDispatcher
                 connection.queue.push(data);
             }
 
-            m_connections.remove_if([](TCPConnection& conn){ return conn.is_overloaded(); });
+            m_connections.remove_if([](const TCPConnection& conn){ return conn.is_overloaded(); });
         }
 
     private:
         void process(long) {
-            m_listener_socket.listen();
+            try {
+                m_listener_socket.listen();
 
-            const int timeout_ms = 1000;
+                const int timeout_ms = 1000;
 
-            while (m_running) {
-                // Add a new TCPConnection to the list, constructing it from the client socket
-                auto optional_sock = m_listener_socket.accept(timeout_ms);
-                if (optional_sock) {
-                    m_connections.emplace(m_connections.begin(), std::move(*optional_sock));
+                while (m_running) {
+                    // Add a new TCPConnection to the list, constructing it from the client socket
+                    auto sock = m_listener_socket.accept(timeout_ms);
+                    if (sock.isValid()) {
+                        m_connections.emplace(m_connections.begin(), move(sock));
+                    }
                 }
+            }
+            catch (std::runtime_error& e) {
+                etiLog.level(error) << "TCPDataDispatcher caught runtime error: " << e.what();
+                m_running = false;
             }
         }
 
@@ -144,14 +154,6 @@ class TCPDataDispatcher
         TcpSocket m_listener_socket;
         std::list<TCPConnection> m_connections;
 };
-
-DabOutputTcp::~DabOutputTcp()
-{
-    if (dispatcher_) {
-        delete dispatcher_;
-        dispatcher_ = nullptr;
-    }
-}
 
 static bool parse_uri(const char *uri, long *port, string& addr)
 {
@@ -199,7 +201,7 @@ int DabOutputTcp::Open(const char* name)
     uri_ = name;
 
     if (success) {
-        dispatcher_ = new TCPDataDispatcher();
+        dispatcher_ = make_shared<TCPDataDispatcher>();
         try {
             dispatcher_->start(port, address);
         }

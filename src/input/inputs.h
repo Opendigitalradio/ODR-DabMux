@@ -1,6 +1,11 @@
 /*
-   Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
-   Research Center Canada)
+   Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
+   Right of Canada (Communications Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -19,28 +24,29 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef DAB_INPUT_ENHANCED_FIFO_H
-#define DAB_INPUT_ENHANCED_FIFO_H
-
+#pragma once
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
-#include "dabInput.h"
+#include "Log.h"
+#include "RemoteControl.h"
+#include <string>
 
+namespace Inputs {
 
-#ifdef HAVE_FORMAT_PACKET
-#   ifdef HAVE_FORMAT_EPM
-#       ifdef HAVE_INPUT_FIFO
+/* New input object base */
+class InputBase {
+    public:
+        virtual int open(const std::string& name) = 0;
+        virtual int readFrame(uint8_t* buffer, size_t size) = 0;
+        virtual int setBitrate(int bitrate) = 0;
+        virtual int close() = 0;
 
+        virtual ~InputBase() {}
+    protected:
+        InputBase() {}
+};
 
-extern struct dabInputOperations dabInputEnhancedFifoOperations;
-int dabInputEnhancedFifoInit(void** args);
+};
 
-
-#       endif
-#   endif
-#endif
-
-
-#endif // DAB_INPUT_ENHANCED_FIFO_H

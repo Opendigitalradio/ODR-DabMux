@@ -15,6 +15,7 @@ ODR-DabMod to add EDI input there too.
 
 Initial work started in http://git.mpb.li/git/odr-edilib/
 
+
 Explicit Service Linking
 ------------------------
 At the moment there is no support to signal explicit service linking.
@@ -36,19 +37,23 @@ Clarify usage of PTy
 We currently transmit dynamic PTy in FIG0/17 since it can be changed in
 through the remote control. Some receivers might not display the dynamic
 PTy, but only the static PTy. Clarify if we need to add both PTy variants
-to the configuration and the code.o
+to the configuration and the code.
 
 
-Refactor inputs
----------------
-The input code is written in very C-like OOP, with structures of function
-pointers that do dynamic dispatch. Refactoring this to proper classes and
-documenting it properly will simplify the addition of new input formats,
-facilitate runtime configurability and clarify the usages of the inputs.
+Improvements for inputs
+-----------------------
+Add statistics to UDP input, in a similar way that ZeroMQ offers statistics.
+This would mean we have to move the packet buffer from the operating system
+into our own buffer, so that we can actually get the statistics.
 
-Also, all inputs using UDP are now broken.
+Also see the STI-D over EDI topic above.
 
-Find out what purpose the bridge input serves.
+
+Fix DMB input
+-------------
+The code that does interleaving and reed-solomon encoding for DMB is not used
+anymore, and is untested. The relevant parts are src/dabInputDmb* and src/Dmb.cpp
+
 
 Communicate Leap Seconds
 ------------------------
@@ -57,6 +62,7 @@ upcoming, but since that's not trivial to find out because the POSIX time
 concept is totally unaware of that, this is not done. We need to know for EDI
 TIST, and the ClockTAI class can get the information from the Internet, but it
 is not used in FIG0/10.
+
 
 Add support for services with different ECC than ensemble
 ---------------------------------------------------------

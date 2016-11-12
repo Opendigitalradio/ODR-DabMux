@@ -219,3 +219,29 @@ int readMpegFrame(int file, void* data, int size)
     }
     return framelength;
 }
+
+int checkDabMpegFrame(void* data) {
+    mpegHeader* header = (mpegHeader*)data;
+    unsigned long* headerData = (unsigned long*)data;
+    if ((*headerData & 0x0f0ffcff) == 0x0004fcff) return 0;
+    if ((*headerData & 0x0f0ffcff) == 0x0004f4ff) return 0;
+    if (getMpegFrequency(header) != 48000) {
+        if (getMpegFrequency(header) != 24000) {
+            return MPEG_FREQUENCY;
+        }
+    }
+    if (header->padding != 0) {
+        return MPEG_PADDING;
+    }
+    if (header->emphasis != 0) {
+        return MPEG_EMPHASIS;
+    }
+    if (header->copyright != 0) {
+        return MPEG_COPYRIGHT;
+    }
+    if (header->original != 0) {
+        return MPEG_ORIGINAL;
+    }
+    return -1;
+}
+

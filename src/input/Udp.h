@@ -1,6 +1,11 @@
 /*
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
+
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -19,29 +24,29 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "dabInputMpegFifo.h"
-#include "dabInputFifo.h"
-#include "dabInputMpegFile.h"
+#pragma once
 
+#include <string>
+#include <vector>
+#include "input/inputs.h"
+#include "UdpSocket.h"
 
-#ifdef HAVE_FORMAT_MPEG
-#   ifdef HAVE_INPUT_FIFO
+namespace Inputs {
 
+class Udp : public InputBase {
+    public:
+        virtual int open(const std::string& name);
+        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual int setBitrate(int bitrate);
+        virtual int close();
 
-struct dabInputOperations dabInputMpegFifoOperations = {
-    dabInputFifoInit,
-    dabInputFifoOpen,
-    dabInputFifoSetbuf,
-    dabInputFifoRead,
-    dabInputFifoLock,
-    dabInputFifoUnlock,
-    dabInputMpegFileRead,
-    dabInputSetbitrate,
-    dabInputFifoClose,
-    dabInputFifoClean,
-    dabInputFifoRewind
+    private:
+        UdpSocket m_sock;
+
+        // The content of the UDP packets gets written into the
+        // buffer, and the UDP packet boundaries disappear there.
+        std::vector<uint8_t> m_buffer;
 };
 
+};
 
-#   endif
-#endif

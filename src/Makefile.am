@@ -47,25 +47,11 @@ odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) \
 
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 DabMultiplexer.cpp DabMultiplexer.h \
-					 dabInput.h dabInput.cpp \
-					 dabInputBridgeUdp.h dabInputBridgeUdp.cpp \
-					 dabInputDabplusFifo.h dabInputDabplusFifo.cpp \
-					 dabInputDabplusFile.h dabInputDabplusFile.cpp \
-					 dabInputDmbFile.h dabInputDmbFile.cpp \
-					 dabInputDmbUdp.h dabInputDmbUdp.cpp \
-					 dabInputEnhancedFifo.h dabInputEnhancedFifo.cpp \
-					 dabInputEnhancedPacketFile.h dabInputEnhancedPacketFile.cpp \
-					 dabInputFifo.h dabInputFifo.cpp \
-					 dabInputFile.h dabInputFile.cpp \
-					 dabInputMpegFifo.h dabInputMpegFifo.cpp \
-					 dabInputMpegFile.h dabInputMpegFile.cpp \
-					 dabInputPacketFile.h dabInputPacketFile.cpp \
-					 dabInputPrbs.h dabInputPrbs.cpp \
-					 dabInputRawFile.h dabInputRawFile.cpp \
-					 dabInputRawFifo.h dabInputRawFifo.cpp \
-					 dabInputTest.h dabInputTest.cpp \
-					 dabInputUdp.h dabInputUdp.cpp \
-					 dabInputZmq.h dabInputZmq.cpp \
+					 input/inputs.h \
+					 input/Prbs.cpp input/Prbs.h \
+					 input/Zmq.cpp input/Zmq.h \
+					 input/File.cpp input/File.h \
+					 input/Udp.cpp input/Udp.h \
 					 dabOutput/dabOutput.h \
 					 dabOutput/dabOutputFile.cpp \
 					 dabOutput/dabOutputFifo.cpp \
@@ -80,7 +66,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 dabOutput/edi/PFT.cpp dabOutput/edi/PFT.h \
 					 ClockTAI.h ClockTAI.cpp \
 					 ConfigParser.cpp ConfigParser.h \
-					 Dmb.h Dmb.cpp \
 					 Eti.h Eti.cpp \
 					 InetAddress.h InetAddress.cpp \
 					 Interleaver.h Interleaver.cpp \
@@ -93,7 +78,6 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 TcpSocket.h TcpSocket.cpp \
 					 UdpSocket.h UdpSocket.cpp \
 					 ThreadsafeQueue.h \
-					 bridge.h bridge.c \
 					 crc.h crc.c \
 					 fig/FIG.h fig/FIG.cpp \
 					 fig/FIG0.h fig/FIG0structs.h \

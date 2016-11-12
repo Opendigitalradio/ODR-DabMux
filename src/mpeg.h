@@ -75,6 +75,13 @@ ssize_t readData(int file, void* data, size_t size, unsigned int tries);
 int readMpegHeader(int file, void* data, int size);
 int readMpegFrame(int file, void* data, int size);
 
+#define MPEG_FREQUENCY      -2
+#define MPEG_PADDING        -3
+#define MPEG_COPYRIGHT      -4
+#define MPEG_ORIGINAL       -5
+#define MPEG_EMPHASIS       -6
+int checkDabMpegFrame(void* data);
+
 #ifdef __cplusplus
 }
 #endif

@@ -80,6 +80,15 @@ class UdpSocket
         UdpSocket(const UdpSocket& other) = delete;
         const UdpSocket& operator=(const UdpSocket& other) = delete;
 
+        /** reinitialise socket. Close the already open socket, and
+         * create a new one
+         */
+        int reinit(int port, const std::string& name);
+
+        /** Close the socket
+         */
+        int close(void);
+
         /** Send an UDP packet.
          *  @param packet The UDP packet to be sent. It includes the data and the
          *                destination address
@@ -111,7 +120,6 @@ class UdpSocket
         int setBlocking(bool block);
 
     protected:
-        int init_sock(int port, const std::string& name);
 
         /// The address on which the socket is bound.
         InetAddress address;

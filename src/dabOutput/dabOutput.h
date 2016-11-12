@@ -222,11 +222,6 @@ class TCPDataDispatcher;
 class DabOutputTcp : public DabOutput
 {
     public:
-        DabOutputTcp() {}
-        DabOutputTcp(const DabOutputTcp& other) = delete;
-        const DabOutputTcp& operator=(const DabOutputTcp& other) = delete;
-        ~DabOutputTcp();
-
         int Open(const char* name);
         int Write(void* buffer, int size);
         int Close();
@@ -238,7 +233,7 @@ class DabOutputTcp : public DabOutput
     private:
         std::string uri_;
 
-        TCPDataDispatcher* dispatcher_;
+        std::shared_ptr<TCPDataDispatcher> dispatcher_;
 };
 
 // -------------- Simul ------------------

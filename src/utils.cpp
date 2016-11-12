@@ -103,42 +103,16 @@ void header_message()
 
     std::cerr << "Input URLs supported:" << std::endl <<
     " prbs" <<
-#if defined(HAVE_INPUT_TEST)
-    " test" <<
-#endif
-#if defined(HAVE_INPUT_UDP)
     " udp" <<
-#endif
-#if defined(HAVE_INPUT_FIFO)
-    " fifo" <<
-#endif
-#if defined(HAVE_INPUT_FILE)
     " file" <<
-#endif
-#if defined(HAVE_INPUT_ZEROMQ)
     " zmq" <<
-#endif
     std::endl;
 
     std::cerr << "Inputs format supported:" << std::endl <<
-#if defined(HAVE_FORMAT_RAW)
     " raw" <<
-#endif
-#if defined(HAVE_FORMAT_BRIDGE)
-    " bridge" <<
-#endif
-#if defined(HAVE_FORMAT_MPEG)
     " mpeg" <<
-#endif
-#if defined(HAVE_FORMAT_PACKET)
     " packet" <<
-#endif
-#if defined(HAVE_FORMAT_DMB)
-    " dmb" <<
-#endif
-#if defined(HAVE_FORMAT_EPM)
     " epm" <<
-#endif
     std::endl;
 
     std::cerr << "Output URLs supported:" << std::endl <<
@@ -463,5 +437,31 @@ void printEnsemble(const shared_ptr<dabEnsemble> ensemble)
     }
 
     printLinking(ensemble);
+}
+
+long hexparse(const std::string& input)
+{
+    long value = 0;
+    errno = 0;
+
+    // Do not use strtol's base=0 because
+    // we do not want to accept octal.
+    if (input.find("0x") == 0) {
+        value = strtol(input.c_str() + 2, nullptr, 16);
+    }
+    else {
+        value = strtol(input.c_str(), nullptr, 10);
+    }
+
+    if ((value == LONG_MIN or value == LONG_MAX) and errno == ERANGE) {
+        throw out_of_range("hexparse: value out of range");
+    }
+    else if (value == 0 and errno != 0) {
+        stringstream ss;
+        ss << "hexparse: " << strerror(errno);
+        throw invalid_argument(ss.str());
+    }
+
+    return value;
 }
 

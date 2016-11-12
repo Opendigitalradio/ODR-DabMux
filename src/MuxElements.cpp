@@ -385,7 +385,7 @@ void DabComponent::set_parameter(const string& parameter,
                 throw ParameterError(ss.str());
             default:
                 ss << m_name << " short label definition: program error !";
-                etiLog.level(emerg) << ss.str();
+                etiLog.level(alert) << ss.str();
                 throw ParameterError(ss.str());
         }
     }
@@ -500,7 +500,7 @@ void DabService::set_parameter(const string& parameter,
                 throw ParameterError(ss.str());
             default:
                 ss << m_name << " short label definition: program error !";
-                etiLog.level(emerg) << ss.str();
+                etiLog.level(alert) << ss.str();
                 throw ParameterError(ss.str());
         }
     }

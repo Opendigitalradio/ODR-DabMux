@@ -39,31 +39,30 @@ using namespace std;
 TcpSocket::TcpSocket() :
     m_sock(INVALID_SOCKET)
 {
-    if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        throw std::runtime_error("Can't create socket");
-    }
 }
 
 TcpSocket::TcpSocket(int port, const string& name) :
     m_sock(INVALID_SOCKET)
 {
-    if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        throw std::runtime_error("Can't create socket");
-    }
+    if (port) {
+        if ((m_sock = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+            throw std::runtime_error("Can't create socket");
+        }
 
-    reuseopt_t reuse = 1;
-    if (setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))
-            == SOCKET_ERROR) {
-        throw std::runtime_error("Can't reuse address");
-    }
+        reuseopt_t reuse = 1;
+        if (setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))
+                == SOCKET_ERROR) {
+            throw std::runtime_error("Can't reuse address");
+        }
 
-    m_own_address.setAddress(name);
-    m_own_address.setPort(port);
+        m_own_address.setAddress(name);
+        m_own_address.setPort(port);
 
-    if (bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
-        ::close(m_sock);
-        m_sock = INVALID_SOCKET;
-        throw std::runtime_error("Can't bind socket");
+        if (bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
+            ::close(m_sock);
+            m_sock = INVALID_SOCKET;
+            throw std::runtime_error("Can't bind socket");
+        }
     }
 }
 
@@ -114,6 +113,11 @@ int TcpSocket::close()
 TcpSocket::~TcpSocket()
 {
     close();
+}
+
+bool TcpSocket::isValid()
+{
+    return m_sock != INVALID_SOCKET;
 }
 
 ssize_t TcpSocket::recv(void* data, size_t size)
@@ -167,7 +171,7 @@ TcpSocket TcpSocket::accept()
     }
 }
 
-boost::optional<TcpSocket> TcpSocket::accept(int timeout_ms)
+TcpSocket TcpSocket::accept(int timeout_ms)
 {
     struct pollfd fds[1];
     fds[0].fd = m_sock;
@@ -184,7 +188,8 @@ boost::optional<TcpSocket> TcpSocket::accept(int timeout_ms)
         return accept();
     }
     else {
-        return boost::none;
+        TcpSocket invalidsock(0, "");
+        return invalidsock;
     }
 }
 

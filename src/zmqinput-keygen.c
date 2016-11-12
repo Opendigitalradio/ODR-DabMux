@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <zmq_utils.h>
+#include <zmq.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

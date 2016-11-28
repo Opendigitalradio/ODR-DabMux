@@ -662,53 +662,22 @@ unsigned short DabSubchannel::getSizeDWord() const
     return (bitrate * 3) >> 3;
 }
 
-LinkageSet::LinkageSet(string name, uint16_t lsn, bool hard, bool international) :
-    RemoteControllable(name)
-{
-    data.lsn = lsn;
-    data.active = false;
-    data.hard = hard;
-    data.international = international;
-    RC_ADD_PARAMETER(active, "Activate this linkage set [0 or 1]");
-}
+LinkageSet::LinkageSet(const std::string& name,
+        uint16_t lsn,
+        bool hard,
+        bool international) :
+    lsn(lsn),
+    active(true),
+    hard(hard),
+    international(international)
+{}
 
-void LinkageSet::set_parameter(const string& parameter, const string& value)
-{
-    if (parameter == "active") {
-        stringstream ss;
-        ss << value;
-        ss >> data.active;
-    }
-    else {
-        stringstream ss;
-        ss << "Parameter '" << parameter <<
-            "' is not exported by controllable " << get_rc_name();
-        throw ParameterError(ss.str());
-    }
-}
 
-const string LinkageSet::get_parameter(const string& parameter) const
+LinkageSet LinkageSet::filter_type(const ServiceLinkType type)
 {
-    stringstream ss;
-    if (parameter == "active") {
-        ss << data.active;
-    }
-    else {
-        ss << "Parameter '" << parameter <<
-            "' is not exported by controllable " << get_rc_name();
-        throw ParameterError(ss.str());
-    }
-    return ss.str();
-}
+    LinkageSet lsd(m_name, lsn, hard, international);
 
-LinkageSetData LinkageSetData::filter_type(ServiceLinkType type)
-{
-    LinkageSetData lsd;
-
-    lsd.lsn = lsn;
     lsd.active = active;
-    lsd.hard = hard;
-    lsd.international = international;
     lsd.keyservice = keyservice;
 
     for (const auto& link : id_list) {

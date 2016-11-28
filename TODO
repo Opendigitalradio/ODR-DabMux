@@ -18,11 +18,12 @@ Initial work started in http://git.mpb.li/git/odr-edilib/
 
 Explicit Service Linking
 ------------------------
-At the moment there is no support to signal explicit service linking.
-Implementing this needs a definition of how it should look like in the
-configuration file and in the remote control, and adding new FIGs to signal the
-necessary information.
+It is impossible to activate/deactive linkage sets. Commit 5c3c6d7 added
+some code to transmit a FIG0/6 CEI, but this was subsequently reverted
+because it was not tested enough.
 
+Announcement of other frequencies on which to find programmes using FIG 0/21 is
+also missing.
 
 Inputs for packet data
 ----------------------

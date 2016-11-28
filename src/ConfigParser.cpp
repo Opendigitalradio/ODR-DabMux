@@ -137,7 +137,6 @@ static void parse_linkage(boost::property_tree::ptree& pt,
                 throw runtime_error("Invalid service linking definition");
             }
 
-            bool active = pt_set.get("active", false);
             bool hard = pt_set.get("hard", true);
             bool international = pt_set.get("international", false);
 
@@ -149,8 +148,7 @@ static void parse_linkage(boost::property_tree::ptree& pt,
             }
 
             auto linkageset = make_shared<LinkageSet>(setuid, lsn, hard, international);
-            linkageset->data.active = active;
-            linkageset->data.keyservice = service_uid; // TODO check if it exists
+            linkageset->keyservice = service_uid; // TODO check if it exists
 
             auto pt_list = pt_set.get_child_optional("list");
             if (not pt_list) {
@@ -195,7 +193,7 @@ static void parse_linkage(boost::property_tree::ptree& pt,
                     link.ecc = 0;
                 }
 
-                linkageset->data.id_list.push_back(link);
+                linkageset->id_list.push_back(link);
             }
             ensemble->linkagesets.push_back(linkageset);
         }

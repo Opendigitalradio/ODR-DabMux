@@ -30,9 +30,14 @@
 #include <memory>
 
 #include "fig/FIG0structs.h"
-#include "fig/TransitionHandler.h"
 
 namespace FIC {
+
+/* TODO
+ * This FIG code is unable to transmit the CEI to announce
+ * activation/deactivation of linkage sets.
+ * The TransitionHandler.h would be useful for that purpose
+ */
 
 // FIG type 0/6
 // Service Linking
@@ -70,29 +75,8 @@ class FIG0_6 : public IFIG
          * We reorganise all LinkageSets into subsets that have
          * the same type.
          */
-        std::vector<LinkageSetData> linkageSubsets;
-        std::vector<LinkageSetData>::iterator linkageSetFIG0_6;
-};
-
-// FIG0/6 needs a change indicator, which is a short-form FIG (i.e. without the list)
-// and with C/N 1. Since this has another rate, it's implemented in another class.
-//
-// This is signalled once per second for a period of five seconds
-// (TS 103 176 5.2.4.3).
-class FIG0_6_CEI : public IFIG
-{
-    public:
-        FIG0_6_CEI(FIGRuntimeInformation* rti);
-        virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
-
-        virtual const int figtype(void) const { return 0; }
-        virtual const int figextension(void) const { return 6; }
-
-    private:
-        FIGRuntimeInformation *m_rti;
-
-        TransitionHandler<LinkageSet> m_transition;
+        std::vector<LinkageSet> linkageSubsets;
+        std::vector<LinkageSet>::iterator linkageSetFIG0_6;
 };
 
 }

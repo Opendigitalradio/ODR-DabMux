@@ -7,7 +7,7 @@
 ;
 general {
     dabmode 1
-    nbframes 10000
+    nbframes 0
 
     syslog false
     tist false
@@ -28,10 +28,6 @@ linking {
         ; in a country (requires coordination between multiplex operators in a country)
         ; (mandatory)
         lsn 0xabc
-
-        ; whether this link is active or a "potential future link or de-activated link"
-        ; This field is also part of the remote control. (default false)
-        active true
 
         ; Hard link means that all services carry the same programme, soft links means
         ; that the programmes are related in some way. (default true)
@@ -78,7 +74,6 @@ linking {
     ; And now an international true to test more options
     set-ri {
         lsn 0xdef
-        active false
         hard soft
         international true
         keyservice srv-ri
@@ -162,5 +157,6 @@ components {
 
 outputs {
     file "file://./test.eti?type=raw"
+    throttle "simul://"
 }
 

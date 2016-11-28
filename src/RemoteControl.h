@@ -6,8 +6,9 @@
    Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
+    http://www.opendigitalradio.org
+
    This module adds remote-control capability to some of the dabmux modules.
-   see testremotecontrol/test.cpp for an example of how to use this.
  */
 /*
    This file is part of ODR-DabMux.

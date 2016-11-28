@@ -86,6 +86,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 fig/FIG0_2.cpp fig/FIG0_2.h \
 					 fig/FIG0_3.cpp fig/FIG0_3.h \
 					 fig/FIG0_5.cpp fig/FIG0_5.h \
+					 fig/FIG0_6.cpp fig/FIG0_6.h \
 					 fig/FIG0_8.cpp fig/FIG0_8.h \
 					 fig/FIG0_9.cpp fig/FIG0_9.h \
 					 fig/FIG0_10.cpp fig/FIG0_10.h \

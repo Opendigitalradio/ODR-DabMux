@@ -191,8 +191,9 @@ class DabLabel
 
 class DabService;
 class DabComponent;
-
 class DabSubchannel;
+class LinkageSet;
+
 class dabEnsemble : public RemoteControllable {
     public:
         dabEnsemble()
@@ -228,6 +229,7 @@ class dabEnsemble : public RemoteControllable {
         std::vector<DabSubchannel*> subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
+        std::vector<std::shared_ptr<LinkageSet> > linkagesets;
 };
 
 
@@ -419,6 +421,51 @@ class DabService : public RemoteControllable
     private:
         const DabService& operator=(const DabService& other);
         DabService(const DabService& other);
+};
+
+enum class ServiceLinkType {DAB, FM, DRM, AMSS};
+
+/* Represent one link inside a linkage set */
+struct ServiceLink {
+    ServiceLinkType type;
+    uint16_t id;
+    uint8_t ecc;
+};
+
+/* Represents a linkage set linkage sets according to
+ * TS 103 176 Clause 5.2.3 "Linkage sets". This information will
+ * be encoded in FIG 0/6.
+ */
+class LinkageSet {
+    public:
+        LinkageSet(const std::string& name,
+                uint16_t lsn,
+                bool hard,
+                bool international);
+
+        std::string get_name(void) const { return m_name; }
+
+        std::list<ServiceLink> id_list;
+
+        /* Linkage Set Number is a 12-bit number that identifies the linkage
+         * set in a country (requires coordination between multiplex operators
+         * in a country)
+         */
+        uint16_t lsn;
+
+        bool active; // TODO: Remote-controllable
+        bool hard;
+        bool international;
+
+        std::string keyservice; // TODO replace by pointer to service
+
+        /* Return a LinkageSet with id_list filtered to include
+         * only those links of a given type
+         */
+        LinkageSet filter_type(const ServiceLinkType type);
+
+    private:
+        std::string m_name;
 };
 
 std::vector<DabSubchannel*>::iterator getSubchannel(

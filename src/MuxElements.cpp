@@ -662,4 +662,29 @@ unsigned short DabSubchannel::getSizeDWord() const
     return (bitrate * 3) >> 3;
 }
 
+LinkageSet::LinkageSet(const std::string& name,
+        uint16_t lsn,
+        bool hard,
+        bool international) :
+    lsn(lsn),
+    active(true),
+    hard(hard),
+    international(international)
+{}
 
+
+LinkageSet LinkageSet::filter_type(const ServiceLinkType type)
+{
+    LinkageSet lsd(m_name, lsn, hard, international);
+
+    lsd.active = active;
+    lsd.keyservice = keyservice;
+
+    for (const auto& link : id_list) {
+        if (link.type == type) {
+            lsd.id_list.push_back(link);
+        }
+    }
+
+    return lsd;
+}

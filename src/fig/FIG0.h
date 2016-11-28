@@ -31,6 +31,7 @@
 #include "fig/FIG0_2.h"
 #include "fig/FIG0_3.h"
 #include "fig/FIG0_5.h"
+#include "fig/FIG0_6.h"
 #include "fig/FIG0_8.h"
 #include "fig/FIG0_9.h"
 #include "fig/FIG0_10.h"

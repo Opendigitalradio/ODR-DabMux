@@ -366,6 +366,42 @@ void printSubchannels(vector<DabSubchannel*>& subchannels)
     }
 }
 
+static void printLinking(const shared_ptr<dabEnsemble> ensemble)
+{
+    etiLog.log(info, " Linkage Sets");
+    for (const auto& ls : ensemble->linkagesets) {
+
+        etiLog.level(info) << "  set " << ls->get_name();
+        etiLog.log(info,      "   LSN 0x%04x", ls->lsn);
+        etiLog.level(info) << "   active " << (ls->active ? "true" : "false");
+        etiLog.level(info) << "   " << (ls->hard ? "hard" : "soft");
+        etiLog.level(info) << "   international " << (ls->international ? "true" : "false");
+        etiLog.level(info) << "   key service " << ls->keyservice;
+
+        etiLog.level(info) << "   ID list";
+        for (const auto& link : ls->id_list) {
+            switch (link.type) {
+                case ServiceLinkType::DAB:
+                    etiLog.level(info) << "    type DAB";
+                    break;
+                case ServiceLinkType::FM:
+                    etiLog.level(info) << "    type FM";
+                    break;
+                case ServiceLinkType::DRM:
+                    etiLog.level(info) << "    type DRM";
+                    break;
+                case ServiceLinkType::AMSS:
+                    etiLog.level(info) << "    type AMSS";
+                    break;
+            }
+            etiLog.log(info,      "    id 0x%04x", link.id);
+            if (ls->international) {
+                etiLog.log(info,      "    ecc 0x%04x", link.ecc);
+            }
+        }
+    }
+}
+
 void printEnsemble(const shared_ptr<dabEnsemble> ensemble)
 {
     etiLog.log(info, "Ensemble");
@@ -398,6 +434,8 @@ void printEnsemble(const shared_ptr<dabEnsemble> ensemble)
             etiLog.level(info) << cluster->tostring();
         }
     }
+
+    printLinking(ensemble);
 }
 
 long hexparse(const std::string& input)

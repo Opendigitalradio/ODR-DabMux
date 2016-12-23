@@ -1,6 +1,8 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    EDI output.
     This defines a TAG Packet.
@@ -22,8 +24,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _TAGPACKET_H_
-#define _TAGPACKET_H_
+#pragma once
 
 #include "config.h"
 #include "TagItems.h"
@@ -31,7 +32,6 @@
 #include <string>
 #include <list>
 #include <stdint.h>
-
 
 
 // A TagPacket is nothing else than a list of tag items, with an
@@ -50,6 +50,4 @@ class TagPacket
     private:
         unsigned int m_alignment;
 };
-
-#endif
 

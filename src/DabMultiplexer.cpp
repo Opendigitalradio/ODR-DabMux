@@ -119,10 +119,6 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
         etiLog.log(info, "EDI set up");
     }
 
-    // The TagPacket will then be placed into an AFPacket
-    AFPacketiser afPacketiser;
-    edi_afPacketiser = afPacketiser;
-
     // The AF Packet will be protected with reed-solomon and split in fragments
     PFT pft(edi_conf);
     edi_pft = pft;

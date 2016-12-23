@@ -1,6 +1,8 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    EDI output.
     This implements an AF Packet as defined ETSI TS 102 821.

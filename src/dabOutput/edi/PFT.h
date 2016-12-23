@@ -1,6 +1,8 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    EDI output,
    Protection, Fragmentation and Transport. (PFT)
@@ -28,8 +30,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _PFT_H_
-#define _PFT_H_
+#pragma once
 
 #include "config.h"
 #include <vector>
@@ -103,6 +104,4 @@ class PFT
         bool m_verbose;
 
 };
-
-#endif
 

@@ -1,6 +1,8 @@
 /*
-   Copyright (C) 2013,2014 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    EDI output,
    Protection, Fragmentation and Transport. (PFT)
@@ -76,7 +78,7 @@ RSBlock PFT::Protect(AFPacket af_packet)
     // Create the RS(k+p,k) encoder
     const int firstRoot = 1; // Discovered by analysing EDI dump
     const int gfPoly = 0x11d;
-    const bool reverse = 0;
+    const bool reverse = false;
     // The encoding has to be 255, 207 always, because the chunk has to
     // be padded at the end, and not at the beginning as libfec would
     // do
@@ -218,9 +220,7 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     const size_t zero_pad = enable_RS ?
         m_num_chunks * chunk_len - af_packet.size() : 0;
 
-    for (size_t i = 0; i < fragments.size(); i++) {
-        const vector<uint8_t>& fragment = fragments[i];
-
+    for (const auto &fragment : fragments) {
         // Psync
         std::string psync("PF");
         std::vector<uint8_t> packet(psync.begin(), psync.end());

@@ -1,6 +1,8 @@
 /*
-   Copyright (C) 2016 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    EDI output.
     This defines a few TAG items as defined ETSI TS 102 821 and
@@ -24,8 +26,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _TAGITEMS_H_
-#define _TAGITEMS_H_
+#pragma once
 
 #include "config.h"
 #include "Eti.h"
@@ -151,6 +152,4 @@ class TagStarDMY : public TagItem
     private:
         uint32_t length_;
 };
-
-#endif
 

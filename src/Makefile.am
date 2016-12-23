@@ -64,6 +64,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 dabOutput/edi/TagItems.cpp dabOutput/edi/TagItems.h \
 					 dabOutput/edi/TagPacket.cpp dabOutput/edi/TagPacket.h \
 					 dabOutput/edi/PFT.cpp dabOutput/edi/PFT.h \
+					 dabOutput/edi/Interleaver.cpp dabOutput/edi/Interleaver.h \
 					 ClockTAI.h ClockTAI.cpp \
 					 ConfigParser.cpp ConfigParser.h \
 					 Eti.h Eti.cpp \

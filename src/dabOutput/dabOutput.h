@@ -69,8 +69,10 @@ struct edi_configuration_t {
     unsigned int tagpacket_alignment;
     std::vector<edi_destination_t> destinations;
     unsigned int dest_port; // common destination port, because it's encoded in the transport layer
+    unsigned int latency_frames; // if nonzero, enable interleaver with a latency of latency_frames * 24ms
 
-    bool enabled() { return destinations.size() > 0; }
+    bool enabled() const { return destinations.size() > 0; }
+    bool interleaver_enabled() const { return latency_frames > 0; }
 };
 
 

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2014
+   Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     The Configuration parser sets up the ensemble according
@@ -28,8 +28,7 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __CONFIG_PARSER_H_
-#define __CONFIG_PARSER_H_
+#pragma once
 
 #include <vector>
 #include <string>
@@ -40,6 +39,4 @@
 
 void parse_ptree(boost::property_tree::ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble);
-
-#endif
 

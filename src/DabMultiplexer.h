@@ -23,8 +23,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __DAB_MULTIPLEXER_H__
-#define __DAB_MULTIPLEXER_H__
+#pragma once
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
@@ -35,6 +34,7 @@
 #include "dabOutput/edi/TagPacket.h"
 #include "dabOutput/edi/AFPacket.h"
 #include "dabOutput/edi/PFT.h"
+#include "dabOutput/edi/Interleaver.h"
 #include "fig/FIGCarousel.h"
 #include "crc.h"
 #include "utils.h"
@@ -102,6 +102,9 @@ class DabMultiplexer : public RemoteControllable {
 
         // The AF Packet will be protected with reed-solomon and split in fragments
         edi::PFT edi_pft;
+
+        // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
+        edi::Interleaver edi_interleaver;
 #endif // HAVE_OUTPUT_EDI
 
         /* New FIG Carousel */
@@ -129,6 +132,4 @@ class DabMultiplexer : public RemoteControllable {
 // start value for default service IDs (if not overridden by configuration)
 #define DEFAULT_SERVICE_ID      50
 #define DEFAULT_PACKET_ADDRESS  0
-
-#endif
 

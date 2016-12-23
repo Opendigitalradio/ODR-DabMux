@@ -181,6 +181,10 @@ void DabMultiplexer::prepare()
             throw e;
         }
     }
+
+    if (edi_conf.interleaver_enabled()) {
+        edi_interleaver.SetLatency(edi_conf.latency_frames);
+    }
 #endif
 
     // Shift ms by 14 to Timestamp level 2, see below in Section TIST
@@ -707,8 +711,13 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
         if (edi_conf.enable_pft) {
             // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
-            vector< edi::PFTFragment > edi_fragments =
-                edi_pft.Assemble(edi_afpacket);
+            vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(edi_afpacket);
+
+            if (edi_conf.interleaver_enabled()) {
+                edi_interleaver.PushFragments(edi_fragments);
+
+                edi_fragments = edi_interleaver.Interleave();
+            }
 
             // Send over ethernet
             for (const auto& edi_frag : edi_fragments) {

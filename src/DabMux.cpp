@@ -98,10 +98,6 @@ typedef DWORD32 uint32_t;
 #include "input/Zmq.h"
 
 #include "dabOutput/dabOutput.h"
-#include "dabOutput/edi/TagItems.h"
-#include "dabOutput/edi/TagPacket.h"
-#include "dabOutput/edi/AFPacket.h"
-#include "dabOutput/edi/PFT.h"
 #include "crc.h"
 #include "UdpSocket.h"
 #include "InetAddress.h"
@@ -311,6 +307,20 @@ int main(int argc, char *argv[])
                 edi_conf.fec                 = pt_edi.get<unsigned int>("fec", 3);
                 edi_conf.chunk_len           = pt_edi.get<unsigned int>("chunk_len", 207);
 
+                double interleave_ms         = pt_edi.get<double>("interleave", 0);
+                if (interleave_ms != 0.0) {
+                    if (interleave_ms < 0) {
+                        throw runtime_error("EDI output: negative interleave value is invalid.");
+                    }
+
+                    auto latency_rounded = lround(interleave_ms / 24.0);
+                    if (latency_rounded * 24 > 30000) {
+                        throw runtime_error("EDI output: interleaving set for more than 30 seconds!");
+                    }
+
+                    edi_conf.latency_frames = latency_rounded;
+                }
+
                 edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);
 
                 mux.set_edi_config(edi_conf);
@@ -416,6 +426,9 @@ int main(int argc, char *argv[])
                     etiLog.level(info) << "  ttl         " << edi_dest.ttl;
                 }
                 etiLog.level(info) << "  source port " << edi_dest.source_port;
+            }
+            if (edi_conf.interleaver_enabled()) {
+                etiLog.level(info) << " interleave     " << edi_conf.latency_frames * 24 << " ms";
             }
         }
 #endif

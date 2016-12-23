@@ -34,6 +34,8 @@
 #include "TagItems.h"
 #include "TagPacket.h"
 
+namespace edi {
+
 typedef std::vector<uint8_t> AFPacket;
 
 // ETSI TS 102 821, 6.1 AF packet structure
@@ -54,4 +56,6 @@ class AFPacketiser
 
         bool m_verbose;
 };
+
+}
 

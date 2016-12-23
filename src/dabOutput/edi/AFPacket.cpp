@@ -37,11 +37,13 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 
+namespace edi {
+
 // Header PT field. AF packet contains TAG payload
-#define AFHEADER_PT_TAG 'T'
+const uint8_t AFHEADER_PT_TAG = 'T';
 
 // AF Packet Major (3 bits) and Minor (4 bits) version
-#define AFHEADER_VERSION 0x10 // MAJ=1, MIN=0
+const uint8_t AFHEADER_VERSION = 0x10; // MAJ=1, MIN=0
 
 AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
 {
@@ -91,3 +93,4 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
     return packet;
 }
 
+}

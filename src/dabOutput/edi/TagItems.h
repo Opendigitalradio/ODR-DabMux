@@ -35,6 +35,8 @@
 #include <string>
 #include <stdint.h>
 
+namespace edi {
+
 class TagItem
 {
     public:
@@ -152,4 +154,6 @@ class TagStarDMY : public TagItem
     private:
         uint32_t length_;
 };
+
+}
 

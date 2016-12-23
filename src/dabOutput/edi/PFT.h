@@ -42,6 +42,8 @@
 #include "ReedSolomon.h"
 #include "dabOutput/dabOutput.h"
 
+namespace edi {
+
 typedef std::vector<uint8_t> RSBlock;
 typedef std::vector<uint8_t> PFTFragment;
 
@@ -104,4 +106,6 @@ class PFT
         bool m_verbose;
 
 };
+
+}
 

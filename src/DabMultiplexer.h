@@ -98,10 +98,10 @@ class DabMultiplexer : public RemoteControllable {
         std::ofstream edi_debug_file;
 
         // The TagPacket will then be placed into an AFPacket
-        AFPacketiser edi_afPacketiser;
+        edi::AFPacketiser edi_afPacketiser;
 
         // The AF Packet will be protected with reed-solomon and split in fragments
-        PFT edi_pft;
+        edi::PFT edi_pft;
 #endif // HAVE_OUTPUT_EDI
 
         /* New FIG Carousel */

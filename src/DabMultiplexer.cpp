@@ -120,7 +120,7 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
     }
 
     // The AF Packet will be protected with reed-solomon and split in fragments
-    PFT pft(edi_conf);
+    edi::PFT pft(edi_conf);
     edi_pft = pft;
 #endif
 }
@@ -372,12 +372,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     unsigned FICL  = (ensemble->mode == 3 ? 32 : 24);
 
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
-    TagDETI edi_tagDETI;
-    TagStarPTR edi_tagStarPtr;
-    map<DabSubchannel*, TagESTn> edi_subchannelToTag;
+    edi::TagDETI edi_tagDETI;
+    edi::TagStarPTR edi_tagStarPtr;
+    map<DabSubchannel*, edi::TagESTn> edi_subchannelToTag;
 
     // The above Tag Items will be assembled into a TAG Packet
-    TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
+    edi::TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
 
     update_dab_time();
 
@@ -477,7 +477,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         sstc->STL_high = (*subchannel)->getSizeDWord() / 256;
         sstc->STL_low = (*subchannel)->getSizeDWord() % 256;
 
-        TagESTn tag_ESTn;
+        edi::TagESTn tag_ESTn;
         tag_ESTn.id = edi_stream_id++;
         tag_ESTn.scid = (*subchannel)->id;
         tag_ESTn.sad = (*subchannel)->startAddress;
@@ -569,7 +569,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
 
-        TagESTn& tag = edi_subchannelToTag[*subchannel];
+        edi::TagESTn& tag = edi_subchannelToTag[*subchannel];
 
         int sizeSubchannel = (*subchannel)->getSizeByte();
         int result = (*subchannel)->input->readFrame(
@@ -703,11 +703,11 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
 
         // Assemble into one AF Packet
-        AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
+        edi::AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
 
         if (edi_conf.enable_pft) {
             // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
-            vector< PFTFragment > edi_fragments =
+            vector< edi::PFTFragment > edi_fragments =
                 edi_pft.Assemble(edi_afpacket);
 
             // Send over ethernet

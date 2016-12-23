@@ -1,6 +1,8 @@
 /*
-   Copyright (C) 2016 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    EDI output.
     This defines a few TAG items as defined ETSI TS 102 821 and
@@ -24,9 +26,6 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef _AFPACKET_H_
-#define _AFPACKET_H_
-
 #include "config.h"
 #include "TagItems.h"
 #include <vector>
@@ -34,6 +33,8 @@
 #include <string>
 #include <stdint.h>
 #include <stdexcept>
+
+namespace edi {
 
 std::vector<uint8_t> TagStarPTR::Assemble()
 {
@@ -209,5 +210,5 @@ std::vector<uint8_t> TagStarDMY::Assemble()
     return packet;
 }
 
-#endif
+}
 

@@ -43,6 +43,8 @@
 #include "crc.h"
 #include "ReedSolomon.h"
 
+namespace edi {
+
 using namespace std;
 
 // An integer division that rounds up, i.e. ceil(a/b)
@@ -291,5 +293,7 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     m_pseq++;
 
     return pft_fragments;
+}
+
 }
 

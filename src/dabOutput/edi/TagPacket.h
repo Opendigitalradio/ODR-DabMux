@@ -33,6 +33,7 @@
 #include <list>
 #include <stdint.h>
 
+namespace edi {
 
 // A TagPacket is nothing else than a list of tag items, with an
 // Assemble function that puts the bytestream together and adds
@@ -50,4 +51,6 @@ class TagPacket
     private:
         unsigned int m_alignment;
 };
+
+}
 

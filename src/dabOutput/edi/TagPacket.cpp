@@ -35,6 +35,8 @@
 #include <stdint.h>
 #include <cassert>
 
+namespace edi {
+
 TagPacket::TagPacket(unsigned int alignment) : m_alignment(alignment)
 { }
 
@@ -71,5 +73,7 @@ std::vector<uint8_t> TagPacket::Assemble()
     }
 
     return packet;
+}
+
 }
 

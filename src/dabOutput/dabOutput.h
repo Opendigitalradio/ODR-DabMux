@@ -26,8 +26,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef __DAB_OUTPUT_H
-#define __DAB_OUTPUT_H
+#pragma once
 
 #include "UdpSocket.h"
 #include "Log.h"
@@ -240,15 +239,6 @@ class DabOutputTcp : public DabOutput
 class DabOutputSimul : public DabOutput
 {
     public:
-        DabOutputSimul() {}
-
-        DabOutputSimul(const DabOutputSimul& other)
-        {
-            startTime_ = other.startTime_;
-        }
-
-        ~DabOutputSimul() { }
-
         int Open(const char* name);
         int Write(void* buffer, int size);
         int Close() { return 0; }
@@ -304,29 +294,22 @@ struct zmq_dab_message_t
 class DabOutputZMQ : public DabOutput
 {
     public:
-        DabOutputZMQ() :
-            endpoint_(""),
-            zmq_proto_(""), zmq_context_(1),
-            zmq_pub_sock_(zmq_context_, ZMQ_PUB),
-            zmq_message_ix(0)
-        {
-            throw std::runtime_error("ERROR: No ZMQ protocol specified !");
-        }
-
-        DabOutputZMQ(std::string zmq_proto) :
+        DabOutputZMQ(const std::string &zmq_proto) :
             endpoint_(""),
             zmq_proto_(zmq_proto), zmq_context_(1),
             zmq_pub_sock_(zmq_context_, ZMQ_PUB),
             zmq_message_ix(0)
         { }
 
+        DabOutputZMQ(const DabOutputZMQ& other) = delete;
+        DabOutputZMQ& operator=(const DabOutputZMQ& other) = delete;
 
         ~DabOutputZMQ()
         {
             zmq_pub_sock_.close();
         }
 
-        std::string get_info() const {
+        std::string get_info(void) const {
             return "zmq: " + zmq_proto_ + "://" + endpoint_;
         }
 
@@ -334,12 +317,6 @@ class DabOutputZMQ : public DabOutput
         int Write(void* buffer, int size);
         int Close();
     private:
-        DabOutputZMQ(const DabOutputZMQ& other) :
-            zmq_proto_(other.zmq_proto_), zmq_context_(1),
-            zmq_pub_sock_(zmq_context_, ZMQ_PUB)
-        {
-            /* Forbid copy constructor */
-        }
 
         std::string endpoint_;
         std::string zmq_proto_;
@@ -352,4 +329,3 @@ class DabOutputZMQ : public DabOutput
 
 #endif
 
-#endif

@@ -38,34 +38,32 @@ void Interleaver::SetLatency(size_t latency_frames)
     m_latency = latency_frames;
 }
 
-void Interleaver::PushFragments(const std::vector<PFTFragment> &fragments)
+Interleaver::fragment_vec Interleaver::Interleave(fragment_vec &fragments)
 {
+    m_fragment_count = fragments.size();
+
     // Create vectors containing Fcount*latency fragments in total
     // and store them into the deque
     if (m_buffer.empty()) {
-        m_buffer.push_back(fragments);
-    }
-    else {
-        auto& last_buffer = m_buffer.back();
-
-        const bool last_buffer_is_complete =
-                (last_buffer.size() >= m_fragment_count * m_latency);
-
-        if (last_buffer_is_complete) {
-            m_buffer.push_back(fragments);
-        }
-        else {
-            std::copy(fragments.begin(), fragments.end(),
-                    std::back_inserter(last_buffer));
-        }
+        m_buffer.emplace_back();
     }
 
-    m_fragment_count = fragments.size();
-}
+    auto& last_buffer = m_buffer.back();
 
-std::vector<PFTFragment> Interleaver::Interleave()
-{
-    std::vector<PFTFragment> fragments;
+    const bool last_buffer_is_complete =
+            (last_buffer.size() >= m_fragment_count * m_latency);
+
+    if (last_buffer_is_complete) {
+        m_buffer.emplace_back();
+        last_buffer = m_buffer.back();
+    }
+
+    std::move(fragments.begin(), fragments.end(),
+            std::back_inserter(last_buffer));
+
+    fragments.clear();
+
+    std::vector<PFTFragment> interleaved_frags;
 
     while ( not m_buffer.empty() and
             (m_buffer.front().size() >= m_fragment_count * m_latency)) {
@@ -90,7 +88,7 @@ std::vector<PFTFragment> Interleaver::Interleave()
 
         for (size_t i = 0; i < m_fragment_count; i++) {
             const size_t ix = m_interleave_offset + m_fragment_count * m_stride;
-            fragments.push_back(first_buffer.at(ix));
+            interleaved_frags.push_back(first_buffer.at(ix));
 
             m_stride += 1;
             if (m_stride >= m_latency) {
@@ -106,7 +104,7 @@ std::vector<PFTFragment> Interleaver::Interleave()
         }
     }
 
-    return fragments;
+    return interleaved_frags;
 }
 
 }

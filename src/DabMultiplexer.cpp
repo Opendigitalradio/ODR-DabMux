@@ -714,9 +714,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(edi_afpacket);
 
             if (edi_conf.interleaver_enabled()) {
-                edi_interleaver.PushFragments(edi_fragments);
-
-                edi_fragments = edi_interleaver.Interleave();
+                edi_fragments = edi_interleaver.Interleave(edi_fragments);
             }
 
             // Send over ethernet

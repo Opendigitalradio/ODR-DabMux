@@ -43,23 +43,25 @@ namespace edi {
 
 class Interleaver {
     public:
+        using fragment_vec = std::vector<PFTFragment>;
+
         /* Configure the interleaver to use latency_frames number of AF
          * packets for interleaving. Total delay through the interleaver
          * will be latency_frames * 24ms
          */
         void SetLatency(size_t latency_frames);
 
-        /* Push the fragments for an AF Packet into the interleaver */
-        void PushFragments(const std::vector< PFTFragment > &fragments);
-
-        std::vector< PFTFragment > Interleave(void);
+        /* Move the fragments for an AF Packet into the interleaver and
+         * return interleaved fragments to be transmitted.
+         */
+        fragment_vec Interleave(fragment_vec &fragments);
 
     private:
         size_t m_latency = 0;
         size_t m_fragment_count = 0;
         size_t m_interleave_offset = 0;
         size_t m_stride = 0;
-        std::deque<std::vector<PFTFragment> > m_buffer;
+        std::deque<fragment_vec> m_buffer;
 };
 
 }

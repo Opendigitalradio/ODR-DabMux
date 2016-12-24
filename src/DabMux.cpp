@@ -341,49 +341,49 @@ int main(int argc, char *argv[])
                 string proto = uri.substr(0, proto_pos);
                 string location = uri.substr(proto_pos + 3);
 
-                DabOutput *output;
+                std::shared_ptr<DabOutput> output;
 
                 if (0) {
 #if defined(HAVE_OUTPUT_FILE)
                 } else if (proto == "file") {
-                    output = new DabOutputFile();
+                    output = make_shared<DabOutputFile>();
 #endif // defined(HAVE_OUTPUT_FILE)
 #if defined(HAVE_OUTPUT_FIFO)
                 } else if (proto == "fifo") {
-                    output = new DabOutputFifo();
+                    output = make_shared<DabOutputFifo>();
 #endif // !defined(HAVE_OUTPUT_FIFO)
 #if defined(HAVE_OUTPUT_RAW)
                 } else if (proto == "raw") {
-                    output = new DabOutputRaw();
+                    output = make_shared<DabOutputRaw>();
 #endif // defined(HAVE_OUTPUT_RAW)
 #if defined(HAVE_OUTPUT_UDP)
                 } else if (proto == "udp") {
-                    output = new DabOutputUdp();
+                    output = make_shared<DabOutputUdp>();
 #endif // defined(HAVE_OUTPUT_UDP)
 #if defined(HAVE_OUTPUT_TCP)
                 } else if (proto == "tcp") {
-                    output = new DabOutputTcp();
+                    output = make_shared<DabOutputTcp>();
 #endif // defined(HAVE_OUTPUT_TCP)
 #if defined(HAVE_OUTPUT_SIMUL)
                 } else if (proto == "simul") {
-                    output = new DabOutputSimul();
+                    output = make_shared<DabOutputSimul>();
 #endif // defined(HAVE_OUTPUT_SIMUL)
 #if defined(HAVE_OUTPUT_ZEROMQ)
                 } else if (proto == "zmq+tcp") {
-                    output = new DabOutputZMQ("tcp");
+                    output = make_shared<DabOutputZMQ>("tcp");
                 } else if (proto == "zmq+ipc") {
-                    output = new DabOutputZMQ("ipc");
+                    output = make_shared<DabOutputZMQ>("ipc");
                 } else if (proto == "zmq+pgm") {
-                    output = new DabOutputZMQ("pgm");
+                    output = make_shared<DabOutputZMQ>("pgm");
                 } else if (proto == "zmq+epgm") {
-                    output = new DabOutputZMQ("epgm");
+                    output = make_shared<DabOutputZMQ>("epgm");
 #endif // defined(HAVE_OUTPUT_ZEROMQ)
                 } else {
                     etiLog.level(error) << "Output protocol unknown: " << proto;
                     throw MuxInitException();
                 }
 
-                if (output == nullptr) {
+                if (not output) {
                     etiLog.level(error) <<
                         "Unable to init output " <<
                         uri;
@@ -397,8 +397,7 @@ int main(int argc, char *argv[])
                     return -1;
                 }
 
-                std::shared_ptr<DabOutput> dabout(output);
-                outputs.push_back(dabout);
+                outputs.push_back(output);
 
             }
         }

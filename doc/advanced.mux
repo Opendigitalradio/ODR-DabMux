@@ -357,7 +357,8 @@ outputs {
 
     ; The edi output has a different syntax
     edi {
-        ; EDI uses the UDP protocol
+        ; EDI uses the UDP protocol. This implementation of EDI does not support
+        ; EDI Packet Resend.
         destinations {
             ; The names you give to the destinations have no meaning,
             ; but have to be unique. You can give them meaningful names to help

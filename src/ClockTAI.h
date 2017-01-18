@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -26,18 +26,19 @@
 */
 
 /* The EDI output needs TAI clock, according to ETSI TS 102 693 Annex F
- * "EDI Timestamps". This module sets the local CLOCK_TAI clock by
+ * "EDI Timestamps". This module can set the local CLOCK_TAI clock by
  * setting the TAI-UTC offset using adjtimex.
  *
- * This functionality requires Linux 3.10 (30 Jun 2013) or newer */
+ * This functionality requires Linux 3.10 (30 Jun 2013) or newer.
+ */
 
-#ifndef __CLOCK_TAI_H_
-#define __CLOCK_TAI_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <sstream>
 #include <chrono>
+#include <future>
 
 // EDI needs to know UTC-TAI, but doesn't need the CLOCK_TAI to be set.
 // We can keep this code, maybe for future use
@@ -46,8 +47,6 @@
 /* Loads, parses and represents TAI-UTC offset information from the USNO bulletin */
 class ClockTAI {
     public:
-        ClockTAI();
-
         // Fetch the bulletin from the USNO website and return the current
         // TAI-UTC offset.
         // Throws runtime_error on failure.
@@ -60,19 +59,26 @@ class ClockTAI {
 #endif
 
     private:
-        // leap seconds insertion bulletin is available at
-        const char* tai_data_url1 = "http://maia.usno.navy.mil/ser7/tai-utc.dat";
-        const char* tai_data_url2 = "http://toshi.nofs.navy.mil/ser7/tai-utc.dat";
+        int download_offset_task(void);
 
+        // Download of new bulletin is done asynchronously
+        std::future<int> m_offset_future;
+
+        // The currently used TAI-UTC offset
         int m_offset;
+        int m_offset_valid = false;
+
         std::stringstream m_bulletin;
         std::chrono::system_clock::time_point m_bulletin_download_time;
 
-        // Load bulletin into m_bulletin, return 0 on success
-        int download_tai_utc_bulletin(const char* url);
+        // Load bulletin into m_bulletin
+        void download_tai_utc_bulletin(const char* url);
 
-        // read TAI offset from m_bulletin
-        int parse_tai_offset(void);
+        // read TAI offset from m_bulletin in IETF format
+        int parse_ietf_bulletin(void);
+
+        // read TAI offset from m_bulletin in USNO format
+        int parse_usno_bulletin(void);
 
         // callback that receives data from cURL
         size_t fill_bulletin(char *ptr, size_t size, size_t nmemb);
@@ -81,6 +87,4 @@ class ClockTAI {
         static size_t fill_bulletin_cb(
                 char *ptr, size_t size, size_t nmemb, void *ctx);
 };
-
-#endif // __CLOCK_TAI_H_
 

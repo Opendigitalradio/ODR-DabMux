@@ -640,7 +640,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         bool tist_enabled = m_pt.get("general.tist", false);
 
         if (tist_enabled and edi_conf.enabled()) {
-            edi_tagDETI.set_utco(m_clock_tai.get_offset());
+            edi_tagDETI.set_tai_utc_offset(m_clock_tai.get_offset());
             edi_tagDETI.set_seconds(edi_time);
         }
 

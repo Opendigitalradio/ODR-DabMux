@@ -95,7 +95,7 @@ class TagDETI : public TagItem
          */
         uint8_t utco;
 
-        void set_utco(int tai_utc_offset) { utco = tai_utc_offset - 32; }
+        void set_tai_utc_offset(int tai_utc_offset) { utco = tai_utc_offset - 32; }
 
         /* The number of SI seconds since 2000-01-01 T 00:00:00 UTC as an
          * unsigned 32-bit quantity

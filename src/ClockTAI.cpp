@@ -83,8 +83,8 @@ int ClockTAI::download_offset_task()
     bool offset_valid = false;
 
     // Clear the bulletin
-    std::stringstream new_bulletin;
-    m_bulletin.swap(new_bulletin);
+    m_bulletin.str("");
+    m_bulletin.clear();
 
     try {
         download_tai_utc_bulletin(tai_ietf_url);

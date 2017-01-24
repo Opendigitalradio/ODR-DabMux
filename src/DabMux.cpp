@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -233,6 +233,11 @@ int main(int argc, char *argv[])
         }
         else {
             throw MuxInitException("No configuration file specified");
+        }
+
+        /* Enable Logging to syslog conditionally */
+        if (pt.get<bool>("general.syslog", false)) {
+            etiLog.register_backend(std::make_shared<LogToSyslog>());
         }
 
         int mgmtserverport = pt.get<int>("general.managementport",

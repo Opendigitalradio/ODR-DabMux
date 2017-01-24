@@ -3,7 +3,10 @@
    Her Majesty the Queen in Right of Canada (Communications Research
    Center Canada)
 
-   Copyright (C), 2014, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2017
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
  */
 /*
    This file is part of ODR-DabMux.
@@ -22,17 +25,13 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <list>
-#include <stdarg.h>
-
 #include "Log.h"
 
 Logger etiLog;
 
-
-void Logger::register_backend(LogBackend* backend) {
+void Logger::register_backend(std::shared_ptr<LogBackend> backend)
+{
     backends.push_back(backend);
-    //log(info, "Registered new logger " + backend->get_name());
 }
 
 

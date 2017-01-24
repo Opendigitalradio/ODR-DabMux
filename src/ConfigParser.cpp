@@ -218,12 +218,6 @@ void parse_ptree(
         ensemble->mode = 0;
     }
 
-    /* Enable Logging to syslog conditionally */
-    if (pt_general.get<bool>("syslog", false)) {
-        etiLog.register_backend(new LogToSyslog()); // TODO don't leak the LogToSyslog backend
-    }
-
-
     /******************** READ ENSEMBLE PARAMETERS *************/
     ptree pt_ensemble = pt.get_child("ensemble");
 

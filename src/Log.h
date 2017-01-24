@@ -3,7 +3,10 @@
    Her Majesty the Queen in Right of Canada (Communications Research
    Center Canada)
 
-   Copyright (C), 2014, Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2017
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
  */
 /*
    This file is part of ODR-DabMux.
@@ -22,8 +25,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LOG_H
-#define _LOG_H
+#pragma once
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
@@ -40,6 +42,7 @@
 #include <string>
 #include <map>
 #include <mutex>
+#include <memory>
 
 #define SYSLOG_IDENT "ODR-DabMux"
 #define SYSLOG_FACILITY LOG_LOCAL0
@@ -131,9 +134,7 @@ class LogLine;
 
 class Logger {
     public:
-        Logger() {}
-
-        void register_backend(LogBackend* backend);
+        void register_backend(std::shared_ptr<LogBackend> backend);
 
         /* Log the message to all backends */
         void log(log_level_t level, const char* fmt, ...);
@@ -145,7 +146,7 @@ class Logger {
         LogLine level(log_level_t level);
 
     private:
-        std::list<LogBackend*> backends;
+        std::list<std::shared_ptr<LogBackend> > backends;
 
         std::mutex m_cerr_mutex;
 };
@@ -185,6 +186,4 @@ class LogLine {
         Logger* logger_;
 };
 
-
-#endif
 

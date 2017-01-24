@@ -736,6 +736,9 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
                 etiLog.level(warn) << "Using untested ipc:// zeromq input";
             }
         }
+        else if (proto == "sti-rtp") {
+            subchan->input = make_shared<Inputs::Sti_d_Rtp>();
+        }
         else {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid <<

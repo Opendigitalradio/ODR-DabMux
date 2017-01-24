@@ -110,7 +110,7 @@ subchannels {
         ; This is our DAB+ programme, using a ZeroMQ
         type dabplus
         ; Accepts connections to port 9000 from any interface.
-        ; Use FDK-AAC-DABplus as encoder
+        ; Use ODR-AudioEnc as encoder
         inputfile "tcp://*:9000"
         bitrate 96
         id 1

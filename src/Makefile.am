@@ -120,3 +120,6 @@ odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
+
+EXTRA_DIST = fec/README.md \
+			 fec/LICENSE

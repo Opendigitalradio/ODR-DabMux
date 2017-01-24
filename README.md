@@ -14,9 +14,9 @@ Features of ODR-DabMux:
 - Standards-compliant DAB multiplexer
 - Configuration file, see doc/example.mux
 - Timestamping support required for SFN
-- ZeroMQ ETI output that can be used with ODR-DabMod
-- ZeroMQ input that can be used with FDK-AAC-DABplus
-  and Toolame-DAB, and supports CURVE authentication
+- ZeroMQ and TCP ETI outputs that can be used with ODR-DabMod
+- ZeroMQ input that can be used with ODR-AudioEnc
+  which supports CURVE authentication
 - Logging to syslog
 - Monitoring using munin tool
 - Includes a Telnet and ZMQ Remote Control for setting/getting parameters
@@ -27,7 +27,7 @@ Features of ODR-DabMux:
 
 The src/ directory contains the source code of ODR-DabMux.
 
-The doc/ directory contains the ODR-DabMux documentation, an example
+The doc/ directory contains the ODR-DabMux documentation, a few example
 configuration file, and the example munin script for the statistics
 server.
 

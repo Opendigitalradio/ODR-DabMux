@@ -2,9 +2,7 @@ Required dependencies:
 ======================
 
 * Boost 1.48 or later
-* ZeroMQ 4 from [http://www.zeromq.org](http://www.zeromq.org).
-  Please prefer the zeromq from your distribution, but mind that some distributions
-  ship ZeroMQ 2, which is not enough.
+* ZeroMQ 4 or later
 * (optional) cURL to download the TAI-UTC bulletin, needed for the EDI output.
 
 Simple install procedure using tarball release:
@@ -13,7 +11,7 @@ Simple install procedure using tarball release:
 Install odr-dabmux
 ------------------
 
-    % tar xjf odr-dabmux-x.y.z.tar.bz2      # Unpack the source
+    % tar xjf odr-dabmux-x.y.z.tar.gz       # Unpack the source
     % cd odr-dabmux-x.y.z                   # Change to the source directory
     % ./configure
                                             # Run the configure script
@@ -35,6 +33,9 @@ that did not yet make its way into a release, you can clone the
 * Bootstrap autotools: <pre>% ./bootstrap.sh</pre>
 * Then use ./configure as above
 
+It is advised to run the bootstrap and configure steps again every
+time you pull updates from the repository.
+
 Develop on OSX and FreeBSD
 ==========================
 
@@ -51,8 +52,7 @@ before calling ./configure
     CFLAGS="-I/usr/local/include"
     CXXFLAGS="-I/usr/local/include"
 
-
-In both cases, raw output is not available.
+On both systems, raw output is not available.
 
 Advanced install procedure:
 ===========================

@@ -1,6 +1,22 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2017-01-24: Matthias P. Braendli <matthias@mpb.li>
+	(v1.2.0):
+		Remove the libfec dependency.
+		Adapt several FIGs to EN 300 401 V2.1.1.
+		Add FIG0/6 for service linking information.
+		Big overhaul of all inputs.
+		TCP output improvements, stability and handling of multiple
+		connections.
+		Fix ZeroMQ input encryption for MPEG inputs.
+		Rework PRBS source and describe it better.
+		Remove unused bridge, SLIP, Test and nonfunctional
+		DMB input.
+		Add fragment interleaver for the EDI output.
+		Fix important issue when both EDI and TIST are enabled.
+		Enable syslog logger earlier.
+
 2016-09-02: Matthias P. Braendli <matthias@mpb.li>
 	(v1.1.0):
 		Switch FIG0/10 to long form, the latest draft spec marks the

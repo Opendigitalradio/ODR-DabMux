@@ -93,12 +93,14 @@ void Udp::openUdpSocket(const std::string& endpoint)
         ss << "Could not set non-blocking UDP socket: " << inetErrMsg;
         throw runtime_error(ss.str());
     }
+
+    etiLog.level(info) << "Opened UDP port " << address << ":" << port;
 }
 
 int Udp::readFrame(uint8_t* buffer, size_t size)
 {
     // Regardless of buffer contents, try receiving data.
-    UdpPacket packet;
+    UdpPacket packet(32768);
     int ret = m_sock.receive(packet);
 
     if (ret == -1) {
@@ -147,8 +149,8 @@ static const size_t RTP_HEADER_LEN = 12;
 
 static bool stiSyncValid(const uint8_t *buf)
 {
-    return  (memcmp(buf+1, STI_FSync0, sizeof(STI_FSync0)) == 0) or
-            (memcmp(buf+1, STI_FSync1, sizeof(STI_FSync1)) == 0);
+    return  (memcmp(buf, STI_FSync0, sizeof(STI_FSync0)) == 0) or
+            (memcmp(buf, STI_FSync1, sizeof(STI_FSync1)) == 0);
 }
 
 static bool rtpHeaderValid(const uint8_t *buf)
@@ -160,7 +162,7 @@ static bool rtpHeaderValid(const uint8_t *buf)
 
 static uint16_t unpack2(const uint8_t *buf)
 {
-    return (buf[0] << 8) | buf[1];
+    return (((uint16_t)buf[0]) << 8) | buf[1];
 }
 
 int Sti_d_Rtp::open(const std::string& name)
@@ -188,7 +190,7 @@ int Sti_d_Rtp::open(const std::string& name)
 
 void Sti_d_Rtp::receive_packet()
 {
-    UdpPacket packet;
+    UdpPacket packet(32768);
     int ret = m_sock.receive(packet);
 
     if (ret == -1) {
@@ -234,7 +236,7 @@ void Sti_d_Rtp::receive_packet()
     //  TFH
     //   DFS
     uint16_t DFS = unpack2(buf+index);
-    index += 4;
+    index += 2;
     if (DFS == 0) {
         etiLog.level(info) << "Received STI data with DFS=0 for " <<
             m_name;
@@ -254,12 +256,6 @@ void Sti_d_Rtp::receive_packet()
             m_name;
     }
 
-    // FD
-    //  STAT
-    //   ERR
-    index += 1;
-
-    //  FC
     //   SPID
     index += 2;
     //   rfa DL
@@ -268,15 +264,16 @@ void Sti_d_Rtp::receive_packet()
     index += 1;
 
     //  DFCT
-    uint32_t DFCTL = buf[index];
+    uint8_t  DFCTL = buf[index];
     index += 1;
-    uint32_t DFCTH = buf[index] >> 3;
-    uint32_t NST   = unpack2(buf+index) & 0x7FF; // 11 bits
+    uint8_t  DFCTH = buf[index] >> 3;
+    uint16_t NST   = unpack2(buf+index) & 0x7FF; // 11 bits
     index += 2;
 
     if (packet.getSize() < index + 4*NST) {
         etiLog.level(info) << "Received STI too small to contain NST for " <<
-            m_name;
+            m_name << " packet: " << packet.getSize() << " need " <<
+            index + 4*NST;
         return;
     }
 

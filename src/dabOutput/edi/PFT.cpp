@@ -158,11 +158,12 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
         for (size_t i = 0; i < num_fragments; i++) {
             fragments[i].resize(fragment_size);
             for (size_t j = 0; j < fragment_size; j++) {
-                if (j*num_fragments + i > rs_block.size()) {
-                    fragments[i][j] = 0;
+                const size_t ix = j*num_fragments + i;
+                if (ix < rs_block.size()) {
+                    fragments[i][j] = rs_block[ix];
                 }
                 else {
-                    fragments[i][j] = rs_block[j*num_fragments + i];
+                    fragments[i][j] = 0;
                 }
             }
         }
@@ -183,14 +184,15 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
         vector< vector<uint8_t> > fragments(num_fragments);
 
         for (size_t i = 0; i < num_fragments; i++) {
-            //fragments[i].reserve(fragment_size);
+            fragments[i].reserve(fragment_size);
 
             for (size_t j = 0; j < fragment_size; j++) {
-                if (i*fragment_size + j > af_packet.size()) {
-                    break;
+                const size_t ix = i*fragment_size + j;
+                if (ix < af_packet.size()) {
+                    fragments[i].push_back(af_packet.at(ix));
                 }
                 else {
-                    fragments[i].push_back(af_packet[i*fragment_size + j]);
+                    break;
                 }
             }
         }

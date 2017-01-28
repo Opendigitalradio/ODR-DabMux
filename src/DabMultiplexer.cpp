@@ -75,6 +75,7 @@ DabMultiplexer::DabMultiplexer(
     sync(0x49C5F8),
     currentFrame(0),
     ensemble(std::make_shared<dabEnsemble>()),
+    m_clock_tai(),
     fig_carousel(ensemble)
 {
     RC_ADD_PARAMETER(frames,
@@ -178,7 +179,7 @@ void DabMultiplexer::prepare()
                 "connection?";
 
             etiLog.level(error) << err_msg;
-            throw e;
+            throw;
         }
     }
 

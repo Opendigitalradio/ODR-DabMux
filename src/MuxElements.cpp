@@ -412,7 +412,7 @@ const string DabComponent::get_parameter(const string& parameter) const
 
 }
 
-subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble) const
+subchannel_type_t DabService::getType(const std::shared_ptr<dabEnsemble> ensemble) const
 {
     vector<DabSubchannel*>::iterator subchannel;
     auto component =
@@ -429,7 +429,7 @@ subchannel_type_t DabService::getType(std::shared_ptr<dabEnsemble> ensemble) con
     return (*subchannel)->type;
 }
 
-bool DabService::isProgramme(std::shared_ptr<dabEnsemble> ensemble) const
+bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
 {
     bool ret = false;
     switch (getType(ensemble)) {
@@ -452,18 +452,14 @@ bool DabService::isProgramme(std::shared_ptr<dabEnsemble> ensemble) const
 }
 
 
-unsigned char DabService::nbComponent(vector<DabComponent*>& components) const
+unsigned char DabService::nbComponent(const vector<DabComponent*>& components) const
 {
-    int nb = 0;
-    vector<DabComponent*>::iterator current;
-
-    for (current = components.begin(); current != components.end();
-            ++current) {
-        if ((*current)->serviceId == id) {
-            ++nb;
-        }
+    size_t count = std::count_if(components.begin(), components.end(),
+            [&](const DabComponent* c) { return c->serviceId == id;} );
+    if (count > 0xFF) {
+        throw std::logic_error("Invalid number of components in service");
     }
-    return nb;
+    return count;
 }
 
 void DabService::set_parameter(const string& parameter,

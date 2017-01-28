@@ -59,17 +59,15 @@ struct edi_destination_t {
 };
 
 struct edi_configuration_t {
-    edi_configuration_t() :
-        verbose(false) {}
-    unsigned chunk_len; // RSk, data length of each chunk
-    unsigned fec;       // number of fragments that can be recovered
-    bool dump;          // dump a file with the EDI packets
-    bool verbose;
-    bool enable_pft;    // Enable protection and fragmentation
-    unsigned int tagpacket_alignment;
+    unsigned chunk_len = 207;        // RSk, data length of each chunk
+    unsigned fec       = 0;          // number of fragments that can be recovered
+    bool dump          = false;      // dump a file with the EDI packets
+    bool verbose       = false;
+    bool enable_pft    = false;      // Enable protection and fragmentation
+    unsigned int tagpacket_alignment = 0;
     std::vector<edi_destination_t> destinations;
-    unsigned int dest_port; // common destination port, because it's encoded in the transport layer
-    unsigned int latency_frames; // if nonzero, enable interleaver with a latency of latency_frames * 24ms
+    unsigned int dest_port = 0;      // common destination port, because it's encoded in the transport layer
+    unsigned int latency_frames = 0; // if nonzero, enable interleaver with a latency of latency_frames * 24ms
 
     bool enabled() const { return destinations.size() > 0; }
     bool interleaver_enabled() const { return latency_frames > 0; }

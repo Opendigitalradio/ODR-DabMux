@@ -36,7 +36,7 @@ namespace FIC {
 
 class FIGRuntimeInformation {
     public:
-        FIGRuntimeInformation(std::shared_ptr<dabEnsemble> e) :
+        FIGRuntimeInformation(std::shared_ptr<dabEnsemble>& e) :
             currentFrame(0),
             ensemble(e),
             factumAnalyzer(false) {}

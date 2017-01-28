@@ -54,30 +54,20 @@ class TagStarPTR : public TagItem
 class TagDETI : public TagItem
 {
     public:
-        TagDETI()
-        {
-            // set optional fields to "not present"
-            atstf = 0;
-            rfudf = 0;
-            ficf = 0;
-
-            rfa = 0; //shall be zero
-            rfu = 0; //mnsc is valid
-        }
         std::vector<uint8_t> Assemble();
 
         /***** DATA in intermediary format ****/
         // For the ETI Header: must be defined !
-        uint8_t stat;
-        uint8_t mid;
-        uint8_t fp;
-        uint8_t rfa;
-        uint8_t rfu;
-        uint16_t mnsc;
-        uint16_t dflc; // modulo 5000 frame counter
+        uint8_t stat = 0;
+        uint8_t mid = 0;
+        uint8_t fp = 0;
+        uint8_t rfa = 0;
+        uint8_t rfu = 0; // MNSC is valid
+        uint16_t mnsc = 0;
+        uint16_t dflc = 0; // modulo 5000 frame counter
 
         // ATST (optional)
-        bool atstf; // presence of atst data
+        bool atstf = false; // presence of atst data
 
         /* UTCO: Offset (in seconds) between UTC and the Seconds value. The
          * value is expressed as an unsigned 8-bit quantity. As of February
@@ -93,14 +83,14 @@ class TagDETI : public TagItem
          * where the TAI-UTC offset is given by the USNO bulletin using
          * the ClockTAI module.
          */
-        uint8_t utco;
+        uint8_t utco = 0;
 
         void set_tai_utc_offset(int tai_utc_offset) { utco = tai_utc_offset - 32; }
 
         /* The number of SI seconds since 2000-01-01 T 00:00:00 UTC as an
          * unsigned 32-bit quantity
          */
-        uint32_t seconds;
+        uint32_t seconds = 0;
 
         void set_seconds(std::chrono::system_clock::time_point t);
 
@@ -110,16 +100,16 @@ class TagDETI : public TagItem
          * significant 8 bits of the TIST field of the incoming STI-D(LI)
          * frame, if required, may be carried in the RFAD field.
          */
-        uint32_t tsta;
+        uint32_t tsta = 0xFFFFFF;
 
         // the FIC (optional)
-        bool ficf;
+        bool ficf = false;
         const unsigned char* fic_data;
         size_t fic_length;
 
         // rfu
-        bool rfudf;
-        uint32_t rfud;
+        bool rfudf = false;
+        uint32_t rfud = 0;
 
 
 };

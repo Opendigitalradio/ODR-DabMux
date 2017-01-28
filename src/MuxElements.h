@@ -85,9 +85,8 @@ const char * const annoucement_flags_names[] = {
 /* Class representing an announcement cluster for FIG 0/19 */
 class AnnouncementCluster : public RemoteControllable {
     public:
-        AnnouncementCluster(std::string name) :
-            RemoteControllable(name),
-            m_active(false)
+        AnnouncementCluster(const std::string& name) :
+            RemoteControllable(name)
         {
             RC_ADD_PARAMETER(active, "Signal this announcement [0 or 1]");
 
@@ -100,8 +99,8 @@ class AnnouncementCluster : public RemoteControllable {
                     "Stop signalling this announcement after a delay [ms]");
         }
 
-        uint8_t cluster_id;
-        uint16_t flags;
+        uint8_t cluster_id = 0;
+        uint16_t flags = 0;
         std::string subchanneluid;
 
         std::string tostring(void) const;
@@ -112,7 +111,7 @@ class AnnouncementCluster : public RemoteControllable {
         bool is_active(void);
 
     private:
-        bool m_active;
+        bool m_active = false;
 
         boost::optional<
             std::chrono::time_point<
@@ -179,7 +178,7 @@ class DabLabel
         /* The flag field selects which label characters make
          * up the short label
          */
-        uint16_t m_flag;
+        uint16_t m_flag = 0xFFFF;
 
         /* The m_label is not padded in any way */
         std::string m_label;
@@ -211,18 +210,20 @@ class dabEnsemble : public RemoteControllable {
         virtual const std::string get_parameter(const std::string& parameter) const;
 
         /* all fields are public, since this was a struct before */
-        uint16_t id;
-        uint8_t ecc;
+        uint16_t id = 0;
+        uint8_t ecc = 0;
         DabLabel label;
-        uint8_t mode;
+        uint8_t mode = 0;
 
         /* Use the local time to calculate the lto */
-        bool lto_auto;
+        bool lto_auto = true;
 
-        int lto; // local time offset in half-hours
+        int lto = 0; // local time offset in half-hours
         // range: -24 to +24
 
-        int international_table;
+        // 1 corresponds to the PTy used in RDS
+        // 2 corresponds to program types used in north america
+        int international_table = 1;
 
         std::vector<std::shared_ptr<DabService> > services;
         std::vector<DabComponent*> components;
@@ -383,7 +384,8 @@ class DabService : public RemoteControllable
     public:
         DabService(std::string& uid) :
             RemoteControllable(uid),
-            uid(uid)
+            uid(uid),
+            label()
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
             RC_ADD_PARAMETER(pty, "Programme Type");
@@ -391,21 +393,21 @@ class DabService : public RemoteControllable
 
         std::string uid;
 
-        uint32_t id;
-        unsigned char pty;
-        unsigned char language;
+        uint32_t id = 0;
+        unsigned char pty = 0;
+        unsigned char language = 0;
 
         /* ASu (Announcement support) flags: this 16-bit flag field shall
          * specify the type(s) of announcements by which it is possible to
          * interrupt the reception of the service. The interpretation of this
          * field shall be as defined in TS 101 756, table 14.
          */
-        uint16_t ASu;
+        uint16_t ASu = 0;
         std::vector<uint8_t> clusters;
 
-        subchannel_type_t getType(std::shared_ptr<dabEnsemble> ensemble) const;
-        bool isProgramme(std::shared_ptr<dabEnsemble> ensemble) const;
-        unsigned char nbComponent(std::vector<DabComponent*>& components) const;
+        subchannel_type_t getType(const std::shared_ptr<dabEnsemble> ensemble) const;
+        bool isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const;
+        unsigned char nbComponent(const std::vector<DabComponent*>& components) const;
 
         DabLabel label;
 

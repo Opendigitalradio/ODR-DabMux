@@ -402,7 +402,7 @@ static void printLinking(const shared_ptr<dabEnsemble> ensemble)
     }
 }
 
-void printEnsemble(const shared_ptr<dabEnsemble> ensemble)
+void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
 {
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);

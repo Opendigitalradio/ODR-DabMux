@@ -329,6 +329,9 @@ class ManagementServer
             m_thread.join();
         }
 
+        ManagementServer(const ManagementServer& other) = delete;
+        ManagementServer& operator=(const ManagementServer& other) = delete;
+
         void open(int listenport)
         {
             m_listenport = listenport;
@@ -362,15 +365,12 @@ class ManagementServer
         zmq::context_t m_zmq_context;
         zmq::socket_t  m_zmq_sock;
 
-        // no copying (because of the thread)
-        ManagementServer(const ManagementServer& other);
-
         void serverThread(void);
         void handle_message(zmq::message_t& zmq_message);
 
         bool isInputRegistered(std::string& id);
 
-        int m_listenport;
+        int m_listenport = 0;
 
         // serverThread runs in a separate thread
         std::atomic<bool> m_running;
@@ -401,10 +401,10 @@ class ManagementServer
         std::string getStateJSON();
 
         // mutex for accessing the map
-        mutable boost::mutex m_statsmutex;
+        boost::mutex m_statsmutex;
 
         /******** Configuration Data *******/
-        mutable boost::mutex m_configmutex;
+        boost::mutex m_configmutex;
         boost::property_tree::ptree m_pt;
 };
 

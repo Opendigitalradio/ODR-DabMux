@@ -75,7 +75,7 @@ void printComponents(std::vector<DabComponent*>& components);
 void printSubchannels(std::vector<DabSubchannel*>& subchannels);
 
 /* Print information about the whole ensemble */
-void printEnsemble(const std::shared_ptr<dabEnsemble> ensemble);
+void printEnsemble(const std::shared_ptr<dabEnsemble>& ensemble);
 
 /* Print detailed component information */
 void printComponent(DabComponent* component);

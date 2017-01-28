@@ -52,7 +52,7 @@ class AFPacketiser
     private:
         static const bool have_crc = true;
 
-        uint16_t seq; //counter that overflows at 0xFFFF
+        uint16_t seq = 0; //counter that overflows at 0xFFFF
 
         bool m_verbose;
 };

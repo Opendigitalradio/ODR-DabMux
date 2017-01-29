@@ -289,13 +289,15 @@ void Sti_d_Rtp::receive_packet()
         index += NST*4+4;
 
         const size_t dataSize = STL - 2*CRCSTF;
+
         const size_t frameNumber = DFCTH*250 + DFCTL;
+        (void)frameNumber;
         // TODO must align framenumber with ETI
+        // TODO reordering
 
         vec_u8 data(dataSize);
         copy(buf+index, buf+index+dataSize, data.begin());
 
-        // TODO reordering
         m_queue.push_back(data);
     }
 

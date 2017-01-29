@@ -17,6 +17,8 @@ Features of ODR-DabMux:
 - ZeroMQ and TCP ETI outputs that can be used with ODR-DabMod
 - ZeroMQ input that can be used with ODR-AudioEnc
   which supports CURVE authentication
+- Experimental STI-D(PI, X)/RTP input intended to be compatible
+  with AVT encoders.
 - Logging to syslog
 - Monitoring using munin tool
 - Includes a Telnet and ZMQ Remote Control for setting/getting parameters

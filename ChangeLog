@@ -1,6 +1,11 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2017-01-29: Matthias P. Braendli <matthias@mpb.li>
+	(v1.2.1):
+		Bugfix for illegal memory access in EDI PFT layer.
+		Add experimental STI-D(PI, X)/RTP input.
+
 2017-01-24: Matthias P. Braendli <matthias@mpb.li>
 	(v1.2.0):
 		Remove the libfec dependency.

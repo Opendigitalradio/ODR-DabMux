@@ -15,6 +15,10 @@ ODR-DabMod to add EDI input there too.
 
 Initial work started in http://git.mpb.li/git/odr-edilib/
 
+There is experimental support for STI(PI, X)/RTP using UDP, which is used by
+AVT encoders. It does not properly reorder incoming UDP packets nor align
+STI frames with ETI frames.
+
 
 Explicit Service Linking
 ------------------------

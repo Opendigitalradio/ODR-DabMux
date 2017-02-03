@@ -716,6 +716,11 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
             vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(edi_afpacket);
 
+            if (edi_conf.verbose) {
+                fprintf(stderr, "EDI number of PFT fragment before interleaver %zu\n",
+                        edi_fragments.size());
+            }
+
             if (edi_conf.interleaver_enabled()) {
                 edi_fragments = edi_interleaver.Interleave(edi_fragments);
             }

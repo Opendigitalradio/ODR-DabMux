@@ -64,8 +64,6 @@ Interleaver::fragment_vec Interleaver::Interleave(fragment_vec &fragments)
 
     fragments.clear();
 
-    std::vector<PFTFragment> interleaved_frags;
-
     while ( not m_buffer.empty() and
             (m_buffer.front().size() >= m_fragment_count * m_latency)) {
 
@@ -89,7 +87,7 @@ Interleaver::fragment_vec Interleaver::Interleave(fragment_vec &fragments)
 
         for (size_t i = 0; i < m_fragment_count; i++) {
             const size_t ix = m_interleave_offset + m_fragment_count * m_stride;
-            interleaved_frags.push_back(first_buffer.at(ix));
+            m_interleaved_fragments.push_back(first_buffer.at(ix));
 
             m_stride += 1;
             if (m_stride >= m_latency) {
@@ -104,6 +102,16 @@ Interleaver::fragment_vec Interleaver::Interleave(fragment_vec &fragments)
             m_buffer.pop_front();
         }
     }
+
+    std::vector<PFTFragment> interleaved_frags;
+
+    const size_t n = std::min(m_fragment_count, m_interleaved_fragments.size());
+    std::move(m_interleaved_fragments.begin(),
+              m_interleaved_fragments.begin() + n,
+              std::back_inserter(interleaved_frags));
+    m_interleaved_fragments.erase(
+              m_interleaved_fragments.begin(),
+              m_interleaved_fragments.begin() + n);
 
     return interleaved_frags;
 }

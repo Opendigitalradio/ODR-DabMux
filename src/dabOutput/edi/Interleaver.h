@@ -64,6 +64,11 @@ class Interleaver {
 
         /* Buffer that accumulates enough fragments to interleave */
         std::deque<fragment_vec> m_buffer;
+
+        /* Buffer that contains fragments that have been interleaved,
+         * to avoid that the interleaver output is too bursty
+         */
+        std::deque<PFTFragment> m_interleaved_fragments;
 };
 
 }

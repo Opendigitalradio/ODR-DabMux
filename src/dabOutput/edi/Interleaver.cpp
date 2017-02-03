@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -50,16 +50,17 @@ Interleaver::fragment_vec Interleaver::Interleave(fragment_vec &fragments)
 
     auto& last_buffer = m_buffer.back();
 
-    const bool last_buffer_is_complete =
-            (last_buffer.size() >= m_fragment_count * m_latency);
+    for (auto& fragment : fragments) {
+        const bool last_buffer_is_complete =
+                (last_buffer.size() >= m_fragment_count * m_latency);
 
-    if (last_buffer_is_complete) {
-        m_buffer.emplace_back();
-        last_buffer = m_buffer.back();
+        if (last_buffer_is_complete) {
+            m_buffer.emplace_back();
+            last_buffer = m_buffer.back();
+        }
+
+        last_buffer.push_back(std::move(fragment));
     }
-
-    std::move(fragments.begin(), fragments.end(),
-            std::back_inserter(last_buffer));
 
     fragments.clear();
 

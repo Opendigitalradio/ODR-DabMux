@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -61,6 +61,8 @@ class Interleaver {
         size_t m_fragment_count = 0;
         size_t m_interleave_offset = 0;
         size_t m_stride = 0;
+
+        /* Buffer that accumulates enough fragments to interleave */
         std::deque<fragment_vec> m_buffer;
 };
 

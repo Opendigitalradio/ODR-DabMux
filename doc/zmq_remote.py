@@ -22,12 +22,21 @@ message_parts = sys.argv[2:]
 
 # first do a ping test
 
-print("ping")
-sock.send("ping")
+print("Send ping")
+sock.send("ping".encode())
 data = sock.recv_multipart()
-print("Received: {}".format(len(data)))
-for i,part in enumerate(data):
-    print("   {}".format(part))
+
+if len(data) != 1:
+    print("Received invalid number of parts: {}".format(len(data)))
+    for i,part in enumerate(data):
+        print("   {}".format(part))
+    sys.exit(1)
+
+if data[0] != b'ok':
+    print("Received invalid ping response: {}".format(data.decode()))
+    sys.exit(1)
+
+print("Ping ok, sending request '{}'...".format(" ".join(message_parts)))
 
 for i, part in enumerate(message_parts):
     if i == len(message_parts) - 1:
@@ -35,17 +44,12 @@ for i, part in enumerate(message_parts):
     else:
         f = zmq.SNDMORE
 
-    print("Send {}({}): '{}'".format(i, f, part))
-
-    sock.send(part, flags=f)
+    sock.send(part.encode(), flags=f)
 
 data = sock.recv_multipart()
 
-print("Received: {}".format(len(data)))
-for i,part in enumerate(data):
-    print(" RX {}: {}".format(i, part))
-
-
+print("Received {} entries:".format(len(data)))
+print("  " + "  ".join([d.decode() for d in data]))
 
 # This is free and unencumbered software released into the public domain.
 #

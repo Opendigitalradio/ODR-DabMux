@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -357,6 +357,7 @@ struct FIG0_13_app {
     uint16_t xpad;
 } PACKED;
 
+
 #define FIG0_13_APPTYPE_SLIDESHOW  0x2
 #define FIG0_13_APPTYPE_WEBSITE    0x3
 #define FIG0_13_APPTYPE_TPEG       0x4
@@ -366,6 +367,18 @@ struct FIG0_13_app {
 #define FIG0_13_APPTYPE_DABJAVA    0x8
 #define FIG0_13_APPTYPE_JOURNALINE 0x441
 
+
+struct FIGtype0_21_header {
+    uint16_t rfa:11;
+    uint16_t length_fi:5;
+} PACKED;
+
+struct FIGtype0_21_fi_list_header {
+    uint16_t id;
+    uint8_t range_modulation:4;
+    uint8_t continuity:1;
+    uint8_t length_freq_list:3;
+} PACKED;
 
 #ifdef _WIN32
 #   pragma pack(pop)

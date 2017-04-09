@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -196,6 +196,102 @@ static void parse_linkage(boost::property_tree::ptree& pt,
                 linkageset->id_list.push_back(link);
             }
             ensemble->linkagesets.push_back(linkageset);
+        }
+    }
+}
+
+// Parse the FI section
+static void parse_freq_info(boost::property_tree::ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
+{
+    using boost::property_tree::ptree;
+    using boost::property_tree::ptree_error;
+
+    auto pt_fi = pt.get_child_optional("frequency_information");
+    if (pt_fi)
+    {
+        for (const auto& it : *pt_fi) {
+            const string fi_uid = it.first;
+            const ptree pt_entry = it.second;
+
+            FrequencyListEntry fle;
+
+            string rm_str = pt_entry.get("range_modulation", "");
+            if (rm_str == "dab") {
+                fle.rm = RangeModulation::dab_ensemble;
+            }
+            else if (rm_str == "fm") {
+                fle.rm = RangeModulation::fm_with_rds;
+            }
+            else if (rm_str == "drm") {
+                fle.rm = RangeModulation::drm;
+            }
+            else if (rm_str == "amss") {
+                fle.rm = RangeModulation::amss;
+            }
+            else {
+                throw runtime_error("Invalid range_modulation: " + rm_str);
+            }
+
+            fle.continuity = pt_entry.get<bool>("continuity");
+
+            switch (fle.rm) {
+                case RangeModulation::dab_ensemble:
+                    {
+                        for (const auto& list_it : pt_entry) {
+                            const string fi_list_uid = list_it.first;
+                            const ptree pt_list_entry = list_it.second;
+
+                            FrequencyInfoDab::ListElement el;
+                            el.frequency = pt_list_entry.get<float>("frequency");
+
+                            bool signal_mode_1 = pt_list_entry.get("signal_mode_1", false);
+                            bool adjacent = pt_list_entry.get("adjacent", false);
+
+                            if (adjacent and signal_mode_1) {
+                                el.control_field = FrequencyInfoDab::ControlField_e::adjacent_mode1;
+                            }
+                            else if (adjacent and not signal_mode_1) {
+                                el.control_field = FrequencyInfoDab::ControlField_e::adjacent_no_mode;
+                            }
+                            if (not adjacent and signal_mode_1) {
+                                el.control_field = FrequencyInfoDab::ControlField_e::disjoint_mode1;
+                            }
+                            else if (not adjacent and not signal_mode_1) {
+                                el.control_field = FrequencyInfoDab::ControlField_e::disjoint_no_mode;
+                            }
+                            fle.fi_dab.frequencies.push_back(el);
+                        }
+                    } break;
+                case RangeModulation::fm_with_rds:
+                    {
+                        std::stringstream frequencies_ss;
+                        frequencies_ss << pt_entry.get<string>("frequencies");
+                        for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                            fle.fi_fm.frequencies.push_back(std::stof(freq));
+                        }
+                    } break;
+                case RangeModulation::drm:
+                    {
+                        fle.fi_drm.drm_service_id = hexparse(pt_entry.get<string>("drm_id"));
+
+                        std::stringstream frequencies_ss;
+                        frequencies_ss << pt_entry.get<string>("frequencies");
+                        for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                            fle.fi_drm.frequencies.push_back(std::stof(freq));
+                        }
+                    } break;
+                case RangeModulation::amss:
+                    {
+                        fle.fi_amss.amss_service_id = hexparse(pt_entry.get<string>("amss_id"));
+
+                        std::stringstream frequencies_ss;
+                        frequencies_ss << pt_entry.get<string>("frequencies");
+                        for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                            fle.fi_amss.frequencies.push_back(std::stof(freq));
+                        }
+                    } break;
+            }
         }
     }
 }
@@ -608,6 +704,7 @@ void parse_ptree(
     }
 
     parse_linkage(pt, ensemble);
+    parse_freq_info(pt, ensemble);
 }
 
 static Inputs::dab_input_zmq_config_t setup_zmq_input(

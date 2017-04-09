@@ -100,6 +100,43 @@ linking {
     }
 }
 
+; According to ETSI TR 101 496-2 Clause 3.6.10
+frequency_information {
+    fi_dab_1 {
+        range_modulation dab
+        continuity true
+        frequencies {
+            entry_a {
+                signal_mode_1 true
+                adjacent true
+                frequency 234.208
+            }
+            entry_b {
+                signal_mode_1 true
+                adjacent true
+                frequency 188.928
+            }
+        }
+    }
+    fi_fm_1 {
+        range_modulation fm
+        continuity true
+        frequencies "87.6 105.2"
+    }
+    fi_drm_3 {
+        range_modulation drm
+        continuity true
+        drm_id 0x12
+        frequencies "15.21 22.4"
+    }
+    fi_amss_4 {
+        range_modulation amss
+        continuity true
+        amss_id 0x33
+        frequencies "14.8"
+    }
+}
+
 ; For information about the ensemble, service, subchannels, components and outputs,
 ; please see doc/example.mux and doc/advanced.mux
 ensemble {

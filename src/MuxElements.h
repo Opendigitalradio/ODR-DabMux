@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -27,8 +27,7 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef _MUX_ELEMENTS
-#define _MUX_ELEMENTS
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -192,6 +191,7 @@ class DabService;
 class DabComponent;
 class DabSubchannel;
 class LinkageSet;
+struct FrequencyListEntry;
 
 class dabEnsemble : public RemoteControllable {
     public:
@@ -231,6 +231,7 @@ class dabEnsemble : public RemoteControllable {
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
         std::vector<std::shared_ptr<LinkageSet> > linkagesets;
+        std::vector<std::shared_ptr<FrequencyListEntry> > frequency_information;
 };
 
 
@@ -470,6 +471,56 @@ class LinkageSet {
         std::string m_name;
 };
 
+// FIG 0/21
+enum class RangeModulation {
+    dab_ensemble = 0,
+    drm = 6,
+    fm_with_rds = 8,
+    amss = 14
+};
+
+struct FrequencyInfoDab {
+    enum class ControlField_e {
+        adjacent_no_mode = 0,
+        adjacent_mode1 = 2,
+        disjoint_no_mode = 1,
+        disjoint_mode1 = 3};
+
+    struct ListElement {
+        ControlField_e control_field;
+        float frequency;
+    };
+
+    std::vector<ListElement> frequencies;
+};
+
+struct FrequencyInfoDrm {
+    uint8_t drm_service_id;
+    std::vector<float> frequencies;
+};
+
+struct FrequencyInfoFm {
+    std::vector<float> frequencies;
+};
+
+struct FrequencyInfoAmss {
+    uint8_t amss_service_id;
+    std::vector<float> frequencies;
+};
+
+struct FrequencyListEntry {
+    uint16_t id;
+    RangeModulation rm;
+    bool continuity;
+
+    // Only one of those must contain information, which
+    // must be consistent with RangeModulation
+    FrequencyInfoDab fi_dab;
+    FrequencyInfoDrm fi_drm;
+    FrequencyInfoFm fi_fm;
+    FrequencyInfoAmss fi_amss;
+};
+
 std::vector<DabSubchannel*>::iterator getSubchannel(
         std::vector<DabSubchannel*>& subchannels, int id);
 
@@ -485,6 +536,4 @@ std::vector<DabComponent*>::iterator getComponent(
 std::vector<std::shared_ptr<DabService> >::iterator getService(
         DabComponent* component,
         std::vector<std::shared_ptr<DabService> >& services);
-
-#endif
 

@@ -191,7 +191,7 @@ class DabService;
 class DabComponent;
 class DabSubchannel;
 class LinkageSet;
-struct FrequencyListEntry;
+struct FrequencyInformation;
 
 class dabEnsemble : public RemoteControllable {
     public:
@@ -231,7 +231,7 @@ class dabEnsemble : public RemoteControllable {
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
         std::vector<std::shared_ptr<LinkageSet> > linkagesets;
-        std::vector<std::shared_ptr<FrequencyListEntry> > frequency_information;
+        std::vector<std::shared_ptr<FrequencyInformation> > frequency_information;
 };
 
 
@@ -487,29 +487,33 @@ struct FrequencyInfoDab {
         disjoint_mode1 = 3};
 
     struct ListElement {
+        std::string uid;
         ControlField_e control_field;
         float frequency;
     };
 
+    uint16_t eid;
     std::vector<ListElement> frequencies;
 };
 
 struct FrequencyInfoDrm {
-    uint8_t drm_service_id;
+    uint32_t drm_service_id;
     std::vector<float> frequencies;
 };
 
 struct FrequencyInfoFm {
+    uint16_t pi_code;
     std::vector<float> frequencies;
 };
 
 struct FrequencyInfoAmss {
-    uint8_t amss_service_id;
+    uint32_t amss_service_id;
     std::vector<float> frequencies;
 };
 
 struct FrequencyListEntry {
-    uint16_t id;
+    std::string uid;
+
     RangeModulation rm;
     bool continuity;
 
@@ -519,6 +523,14 @@ struct FrequencyListEntry {
     FrequencyInfoDrm fi_drm;
     FrequencyInfoFm fi_fm;
     FrequencyInfoAmss fi_amss;
+};
+
+struct FrequencyInformation {
+    std::string uid;
+
+    // The latest draft spec does not specify the RegionId anymore, it's
+    // now a reserved field.
+    std::vector<FrequencyListEntry> frequency_information;
 };
 
 std::vector<DabSubchannel*>::iterator getSubchannel(

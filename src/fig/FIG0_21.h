@@ -50,8 +50,8 @@ class FIG0_21 : public IFIG
 
         bool m_initialised;
 
-        std::vector<std::shared_ptr<FrequencyListEntry> >::iterator
-            freqListEntryFIG0_21;
+        std::vector<std::shared_ptr<FrequencyInformation> >::iterator
+            freqInfoFIG0_21;
 };
 
 }

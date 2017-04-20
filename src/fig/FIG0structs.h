@@ -380,6 +380,17 @@ struct FIGtype0_21_fi_list_header {
     uint8_t length_freq_list:3;
 } PACKED;
 
+struct FIGtype0_21_fi_dab_entry {
+    uint8_t control_field:5;
+    uint8_t freqHigh:3;
+    uint16_t freqLow;
+
+    void setFreq(uint32_t freq) {
+        freqHigh = (freq >> 16) & 0x7;
+        freqLow = freq & 0xffff;
+    }
+} PACKED;
+
 #ifdef _WIN32
 #   pragma pack(pop)
 #endif

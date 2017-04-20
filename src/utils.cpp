@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 */
 /*
@@ -97,7 +97,7 @@ void header_message()
     fprintf(stderr,
             "(Communications Research Centre Canada) All rights reserved.\n\n");
     fprintf(stderr,
-            "Copyright (C) 2016 Matthias P. Braendli\n");
+            "Copyright (C) 2017 Matthias P. Braendli\n");
     fprintf(stderr,
             "http://opendigitalradio.org\n\n");
 
@@ -366,9 +366,12 @@ void printSubchannels(vector<DabSubchannel*>& subchannels)
     }
 }
 
-static void printLinking(const shared_ptr<dabEnsemble> ensemble)
+static void printLinking(const shared_ptr<dabEnsemble>& ensemble)
 {
     etiLog.log(info, " Linkage Sets");
+    if (ensemble->linkagesets.empty()) {
+        etiLog.level(info) << "  None ";
+    }
     for (const auto& ls : ensemble->linkagesets) {
 
         etiLog.level(info) << "  set " << ls->get_name();
@@ -397,6 +400,80 @@ static void printLinking(const shared_ptr<dabEnsemble> ensemble)
             etiLog.log(info,      "    id 0x%04x", link.id);
             if (ls->international) {
                 etiLog.log(info,      "    ecc 0x%04x", link.ecc);
+            }
+        }
+    }
+}
+
+static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)
+{
+    etiLog.log(info, " Frequency Information");
+    if (ensemble->frequency_information.empty()) {
+        etiLog.level(info) << "  None ";
+    }
+    for (const auto& fi : ensemble->frequency_information) {
+        etiLog.level(info) << "  FI " << fi->uid;
+        for (const auto& fle : fi->frequency_information) {
+            etiLog.level(info) << "    continuity " << (fle.continuity ? "true" : "false");
+            switch (fle.rm) {
+                case RangeModulation::dab_ensemble:
+                    etiLog.level(info) << "    RM: DAB";
+                    etiLog.log(info,      "      EId 0x%04x", fle.fi_dab.eid);
+                    break;
+                case RangeModulation::drm:
+                    etiLog.level(info) << "    RM: DRM";
+                    etiLog.log(info,      "      DRM Id 0x%06x", fle.fi_drm.drm_service_id);
+                    break;
+                case RangeModulation::fm_with_rds:
+                    etiLog.level(info) << "    RM: FM (with RDS)";
+                    etiLog.log(info,      "      PI-Code 0x%04x", fle.fi_fm.pi_code);
+                    break;
+                case RangeModulation::amss:
+                    etiLog.level(info) << "    RM: AMSS";
+                    etiLog.log(info,      "      AMSS Id 0x%06x", fle.fi_amss.amss_service_id);
+                    break;
+            }
+
+            switch (fle.rm) {
+                case RangeModulation::dab_ensemble:
+                    for (const auto& f : fle.fi_dab.frequencies) {
+                        stringstream ss;
+                        ss << "      " << f.uid << " ";
+                        switch (f.control_field) {
+                            case FrequencyInfoDab::ControlField_e::adjacent_no_mode:
+                                ss << "Adjacent, w/o mode indication, ";
+                                break;
+                            case FrequencyInfoDab::ControlField_e::adjacent_mode1:
+                                ss << "Adjacent, mode I, ";
+                                break;
+                            case FrequencyInfoDab::ControlField_e::disjoint_no_mode:
+                                ss << "Disjoint, w/o mode indication, ";
+                                break;
+                            case FrequencyInfoDab::ControlField_e::disjoint_mode1:
+                                ss << "Disjoint, mode I, ";
+                                break;
+                        }
+                        ss << f.frequency;
+                        etiLog.level(info) << ss.str();
+                    }
+                    break;
+                case RangeModulation::drm:
+                    etiLog.log(info, "    ID 0x%02x", fle.fi_drm.drm_service_id);
+                    for (const auto& f : fle.fi_drm.frequencies) {
+                        etiLog.level(info) << "        " << f;
+                    }
+                    break;
+                case RangeModulation::fm_with_rds:
+                    for (const auto& f : fle.fi_fm.frequencies) {
+                        etiLog.level(info) << "        " << f;
+                    }
+                    break;
+                case RangeModulation::amss:
+                    etiLog.log(info, "    ID 0x%02x", fle.fi_amss.amss_service_id);
+                    for (const auto& f : fle.fi_amss.frequencies) {
+                        etiLog.level(info) << "        " << f;
+                    }
+                    break;
             }
         }
     }
@@ -436,6 +513,7 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
     }
 
     printLinking(ensemble);
+    printFrequencyInformation(ensemble);
 }
 
 long hexparse(const std::string& input)

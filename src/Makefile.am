@@ -2,7 +2,7 @@
 # (Communications Research Center Canada)
 # Pascal Charest
 #
-# Copyright (C) 2016, Matthias P. Braendli, http://opendigitalradio.org
+# Copyright (C) 2017, Matthias P. Braendli, http://opendigitalradio.org
 #
 
 # This file is part of ODR-DabMux.
@@ -95,6 +95,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 fig/FIG0_17.cpp fig/FIG0_17.h \
 					 fig/FIG0_18.cpp fig/FIG0_18.h \
 					 fig/FIG0_19.cpp fig/FIG0_19.h \
+					 fig/FIG0_21.cpp fig/FIG0_21.h \
 					 fig/FIG1.cpp fig/FIG1.h \
 					 fig/FIGCarousel.cpp fig/FIGCarousel.h \
 					 fig/TransitionHandler.h \

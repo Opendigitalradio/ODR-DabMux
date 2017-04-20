@@ -50,7 +50,29 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
     for (; freqInfoFIG0_21 != ensemble->frequency_information.end();
             ++freqInfoFIG0_21) {
 
-        size_t required_size = sizeof(struct FIGtype0_21_header);
+        size_t required_fi_size = 2; // RegionId + length of FI list
+        for (const auto& fle : (*freqInfoFIG0_21)->frequency_information) {
+            size_t list_entry_size = sizeof(FIGtype0_21_fi_list_header);
+            switch (fle.rm) {
+                case RangeModulation::dab_ensemble:
+                    list_entry_size += fle.fi_dab.frequencies.size() * 3;
+                    break;
+                case RangeModulation::fm_with_rds:
+                    list_entry_size += fle.fi_fm.frequencies.size() * 1;
+                    break;
+                case RangeModulation::amss:
+                    list_entry_size += 1; // Id field 2
+                    list_entry_size += fle.fi_amss.frequencies.size() * 2;
+                    break;
+                case RangeModulation::drm:
+                    list_entry_size += 1; // Id field 2
+                    list_entry_size += fle.fi_drm.frequencies.size() * 2;
+                    break;
+            }
+            required_fi_size += list_entry_size;
+        }
+
+        const size_t required_size = sizeof(struct FIGtype0_21_header) + required_fi_size;
 
         if (fig0 == nullptr) {
             if (remaining < 2 + required_size) {
@@ -70,34 +92,11 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
             buf += 2;
             remaining -= 2;
         }
-
-        if (remaining < required_size) {
+        else if (remaining < required_size) {
             break;
         }
 
         for (const auto& fle : (*freqInfoFIG0_21)->frequency_information) {
-            size_t list_entry_size = sizeof(FIGtype0_21_fi_list_header);
-            switch (fle.rm) {
-                case RangeModulation::dab_ensemble:
-                    list_entry_size += fle.fi_dab.frequencies.size() * 3;
-                    break;
-                case RangeModulation::fm_with_rds:
-                    list_entry_size += fle.fi_fm.frequencies.size() * 3;
-                    break;
-                case RangeModulation::amss:
-                    list_entry_size += 1; // Id field 2
-                    list_entry_size += fle.fi_amss.frequencies.size() * 3;
-                    break;
-                case RangeModulation::drm:
-                    list_entry_size += 1; // Id field 2
-                    list_entry_size += fle.fi_drm.frequencies.size() * 3;
-                    break;
-            }
-
-            if (remaining < list_entry_size) {
-                break;
-            }
-
             auto *fig0_21_header = (FIGtype0_21_header*)buf;
             fig0_21_header->rfa = 0; // This was RegionId in EN 300 401 V1.4.1
             switch (fle.rm) {
@@ -195,7 +194,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         remaining -= 2;
                     }
                     break;
-            }
+            } // switch (RM)
         } // for over fle
     } // for over FI
 

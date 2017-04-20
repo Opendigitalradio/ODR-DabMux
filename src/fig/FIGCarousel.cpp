@@ -286,8 +286,8 @@ size_t FIGCarousel::carousel(
         if (written == 1 or written == 2) {
             std::stringstream ss;
             ss << "Assertion error: FIG" << fig_el->fig->figtype() << "/" <<
-                fig_el->fig->figextension() << " wrote not enough data (" <<
-                written << ")";
+                fig_el->fig->figextension() <<
+                " did not write enough data: (" << written << ")";
             throw std::runtime_error(ss.str());
         }
 

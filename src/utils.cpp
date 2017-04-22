@@ -5,6 +5,8 @@
 
    Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 */
 /*
    This file is part of ODR-DabMux.
@@ -95,9 +97,11 @@ void header_message()
     fprintf(stderr,
             "Her Majesty the Queen in Right of Canada\n");
     fprintf(stderr,
-            "(Communications Research Centre Canada) All rights reserved.\n\n");
+            "(Communications Research Centre Canada)\n\n");
     fprintf(stderr,
             "Copyright (C) 2017 Matthias P. Braendli\n");
+    fprintf(stderr,
+            "LICENCE: GPLv3+\n\n");
     fprintf(stderr,
             "http://opendigitalradio.org\n\n");
 

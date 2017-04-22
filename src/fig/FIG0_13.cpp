@@ -23,10 +23,36 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_13.h"
 #include "utils.h"
 
 namespace FIC {
+
+// See EN 300 401, Clause 8.1.20 for the FIG0_13 description
+struct FIG0_13_shortAppInfo {
+    uint16_t SId;
+    uint8_t No:4;
+    uint8_t SCIdS:4;
+} PACKED;
+
+struct FIG0_13_longAppInfo {
+    uint32_t SId;
+    uint8_t No:4;
+    uint8_t SCIdS:4;
+} PACKED;
+
+struct FIG0_13_app {
+    uint8_t typeHigh;
+    uint8_t length:5;
+    uint8_t typeLow:3;
+    void setType(uint16_t type) {
+        typeHigh = type >> 3;
+        typeLow = type & 0x1f;
+    }
+    uint16_t xpad;
+} PACKED;
+
 
 FIG0_13::FIG0_13(FIGRuntimeInformation *rti) :
     m_rti(rti),

@@ -28,8 +28,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "fig/FIG0structs.h"
-
 namespace FIC {
 // FIG type 0/2, MCI, Service Organization, one instance of
 // FIGtype0_2_Service for each subchannel

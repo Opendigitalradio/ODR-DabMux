@@ -29,8 +29,6 @@
 #include <vector>
 #include <memory>
 
-#include "fig/FIG0structs.h"
-
 namespace FIC {
 
 // FIG type 0/21
@@ -40,7 +38,7 @@ class FIG0_21 : public IFIG
     public:
         FIG0_21(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::E; }
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
 
         virtual const int figtype(void) const { return 0; }
         virtual const int figextension(void) const { return 21; }

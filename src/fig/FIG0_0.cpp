@@ -23,10 +23,26 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_0.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_0 {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:5;
+    uint8_t PD:1;
+    uint8_t OE:1;
+    uint8_t CN:1;
+
+    uint16_t EId;
+    uint8_t CIFcnt_hight:5;
+    uint8_t Al:1;
+    uint8_t Change:2;
+    uint8_t CIFcnt_low:8;
+} PACKED;
 
 //=========== FIG 0/0 ===========
 

@@ -23,10 +23,19 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_18.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_18 {
+    uint16_t SId;
+    uint16_t ASu;
+    uint8_t  NumClusters:5;
+    uint8_t  Rfa:3;
+    /* Followed by uint8_t Cluster IDs */
+} PACKED;
 
 FIG0_18::FIG0_18(FIGRuntimeInformation *rti) :
     m_rti(rti),

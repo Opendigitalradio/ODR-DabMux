@@ -23,10 +23,38 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_21.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_21_header {
+    // This was RegionId in EN 300 401 V1.4.1
+    uint8_t rfaHigh;
+    uint8_t rfaLow:3;
+
+    uint8_t length_fi:5;
+} PACKED;
+
+struct FIGtype0_21_fi_list_header {
+    uint16_t id;
+    uint8_t range_modulation:4;
+    uint8_t continuity:1;
+    uint8_t length_freq_list:3;
+} PACKED;
+
+struct FIGtype0_21_fi_dab_entry {
+    uint8_t control_field:5;
+    uint8_t freqHigh:3;
+    uint16_t freqLow;
+
+    void setFreq(uint32_t freq) {
+        freqHigh = (freq >> 16) & 0x7;
+        freqLow = freq & 0xffff;
+    }
+} PACKED;
+
 
 FIG0_21::FIG0_21(FIGRuntimeInformation *rti) :
     m_rti(rti),
@@ -36,9 +64,13 @@ FIG0_21::FIG0_21(FIGRuntimeInformation *rti) :
 
 FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 {
+#define FIG0_21_TRACE debug
     FillStatus fs;
     size_t remaining = max_size;
     auto ensemble = m_rti->ensemble;
+
+    etiLog.level(FIG0_21_TRACE) << "FIG0_21::fill init " <<
+        (m_initialised ? 1 : 0) << " ********************************";
 
     if (not m_initialised) {
         freqInfoFIG0_21 = ensemble->frequency_information.begin();
@@ -74,8 +106,11 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
         const size_t required_size = sizeof(struct FIGtype0_21_header) + required_fi_size;
 
+        etiLog.level(FIG0_21_TRACE) << "FIG0_21::loop " << (*freqInfoFIG0_21)->uid;
+
         if (fig0 == nullptr) {
             if (remaining < 2 + required_size) {
+                etiLog.level(FIG0_21_TRACE) << "FIG0_21::no space for fig0";
                 break;
             }
             fig0 = (FIGtype0*)buf;
@@ -93,24 +128,34 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
             remaining -= 2;
         }
         else if (remaining < required_size) {
+            etiLog.level(FIG0_21_TRACE) << "FIG0_21::no space";
             break;
         }
 
         for (const auto& fle : (*freqInfoFIG0_21)->frequency_information) {
             auto *fig0_21_header = (FIGtype0_21_header*)buf;
-            fig0_21_header->rfa = 0; // This was RegionId in EN 300 401 V1.4.1
+            fig0_21_header->rfaHigh = 0;
+            fig0_21_header->rfaLow = 0;
             switch (fle.rm) {
                 case RangeModulation::dab_ensemble:
                     fig0_21_header->length_fi = fle.fi_dab.frequencies.size();
+                    etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr DAB " <<
+                        fle.fi_dab.frequencies.size();
                     break;
                 case RangeModulation::fm_with_rds:
                     fig0_21_header->length_fi = fle.fi_fm.frequencies.size();
+                    etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr FM " <<
+                        fle.fi_fm.frequencies.size();
                     break;
                 case RangeModulation::drm:
                     fig0_21_header->length_fi = fle.fi_drm.frequencies.size();
+                    etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr DRM " <<
+                        fle.fi_drm.frequencies.size();
                     break;
                 case RangeModulation::amss:
                     fig0_21_header->length_fi = fle.fi_amss.frequencies.size();
+                    etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr AMSS " <<
+                        fle.fi_amss.frequencies.size();
                     break;
             }
 
@@ -141,6 +186,8 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         fig0->Length += 3;
                         buf += 3;
                         remaining -= 3;
+                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq " <<
+                            freq.frequency;
                     }
                     break;
                 case RangeModulation::fm_with_rds:
@@ -154,6 +201,8 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         fig0->Length += 1;
                         buf += 1;
                         remaining -= 1;
+                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq " <<
+                            freq;
                     }
                     break;
                 case RangeModulation::drm:
@@ -173,6 +222,8 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         fig0->Length += 2;
                         buf += 2;
                         remaining -= 2;
+                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq " <<
+                            freq;
                     }
                     break;
                 case RangeModulation::amss:
@@ -192,14 +243,21 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         fig0->Length += 2;
                         buf += 2;
                         remaining -= 2;
+                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq " <<
+                            freq;
                     }
                     break;
             } // switch (RM)
+            etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle end len=" <<
+                static_cast<size_t>(fig0->Length) << " rem=" << remaining;
         } // for over fle
+        etiLog.level(FIG0_21_TRACE) << "FIG0_21::next FI "
+            " ********************************";
     } // for over FI
 
     if (freqInfoFIG0_21 == ensemble->frequency_information.end()) {
         fs.complete_fig_transmitted = true;
+        freqInfoFIG0_21 = ensemble->frequency_information.begin();
     }
 
     fs.num_bytes_written = max_size - remaining;

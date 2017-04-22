@@ -23,10 +23,55 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_10.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_10_LongForm {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+
+    uint8_t Extension:5;
+    uint8_t PD:1;
+    uint8_t OE:1;
+    uint8_t CN:1;
+
+    uint8_t MJD_high:7;
+    uint8_t RFU:1;
+
+    uint8_t MJD_med;
+
+    uint8_t Hours_high:3;
+    uint8_t UTC:1;
+    uint8_t ConfInd:1;
+    uint8_t LSI:1;
+    uint8_t MJD_low:2;
+
+    uint8_t Minutes:6;
+    uint8_t Hours_low:2;
+
+    uint8_t Milliseconds_high:2;
+    uint8_t Seconds:6;
+
+    uint8_t Milliseconds_low;
+
+    void setMJD(uint32_t date) {
+        MJD_high = (date >> 10) & 0x7f;
+        MJD_med = (date >> 2) & 0xff;
+        MJD_low = date & 0x03;
+    }
+    void setHours(uint16_t hours) {
+        Hours_high = (hours >> 2) & 0x07;
+        Hours_low = hours & 0x03;
+    }
+
+    void setMilliseconds(uint16_t ms) {
+        Milliseconds_high = (ms >> 8) & 0x03;
+        Milliseconds_low = ms & 0xFF;
+    }
+} PACKED;
 
 FIG0_10::FIG0_10(FIGRuntimeInformation *rti) :
     m_rti(rti)

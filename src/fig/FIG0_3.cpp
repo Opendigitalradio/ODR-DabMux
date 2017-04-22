@@ -23,10 +23,37 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_3.h"
 #include "utils.h"
 
 namespace FIC {
+
+/* Warning: When bit SCCA_flag is unset(0), the multiplexer R&S does not send
+ * the SCCA field. But, in the Factum ETI analyzer, if this field is not there,
+ * it is an error.
+ */
+struct FIGtype0_3 {
+    uint8_t SCId_high;
+    uint8_t SCCA_flag:1;
+    uint8_t rfa:3;
+    uint8_t SCId_low:4;
+    uint8_t DSCTy:6;
+    uint8_t rfu:1;
+    uint8_t DG_flag:1;
+    uint8_t Packet_address_high:2;
+    uint8_t SubChId:6;
+    uint8_t Packet_address_low;
+    uint16_t SCCA;
+    void setSCId(uint16_t SCId) {
+        SCId_high = SCId >> 4;
+        SCId_low = SCId & 0xf;
+    }
+    void setPacketAddress(uint16_t address) {
+        Packet_address_high = address >> 8;
+        Packet_address_low = address & 0xff;
+    }
+} PACKED;
 
 FIG0_3::FIG0_3(FIGRuntimeInformation *rti) :
     m_rti(rti),

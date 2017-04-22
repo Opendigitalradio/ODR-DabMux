@@ -29,8 +29,6 @@
 #include <vector>
 #include <memory>
 
-#include "fig/FIG0structs.h"
-
 namespace FIC {
 
 /* TODO

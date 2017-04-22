@@ -27,8 +27,6 @@
 
 #include <cstdint>
 
-#include "fig/FIG0structs.h"
-
 namespace FIC {
 
 // FIG type 0/0, Multiplex Configuration Info (MCI),

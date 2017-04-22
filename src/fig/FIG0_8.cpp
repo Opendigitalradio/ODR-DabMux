@@ -23,10 +23,39 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_8.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_8_short {
+    uint8_t SCIdS:4;
+    uint8_t rfa_1:3;
+    uint8_t ext:1;
+    uint8_t Id:6;
+    uint8_t MscFic:1;
+    uint8_t LS:1;
+    uint8_t rfa_2;
+} PACKED;
+
+struct FIGtype0_8_long {
+    uint8_t SCIdS:4;
+    uint8_t rfa_1:3;
+    uint8_t ext:1;
+    uint8_t SCId_high:4;
+    uint8_t rfa:3;
+    uint8_t LS:1;
+    uint8_t SCId_low;
+    uint8_t rfa_2;
+    void setSCId(uint16_t id) {
+        SCId_high = id >> 8;
+        SCId_low = id & 0xff;
+    }
+    uint16_t getSCid() {
+        return (SCId_high << 8) | SCId_low;
+    }
+} PACKED;
 
 FIG0_8::FIG0_8(FIGRuntimeInformation *rti) :
     m_rti(rti),

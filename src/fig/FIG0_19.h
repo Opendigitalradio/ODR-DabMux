@@ -27,8 +27,6 @@
 
 #include <cstdint>
 #include <vector>
-
-#include "fig/FIG0structs.h"
 #include "fig/TransitionHandler.h"
 
 namespace FIC {

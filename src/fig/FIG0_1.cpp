@@ -23,10 +23,40 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_1.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_1 {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:5;
+    uint8_t PD:1;
+    uint8_t OE:1;
+    uint8_t CN:1;
+} PACKED;
+
+struct FIGtype0_1_SubChannel_ShortF {
+    uint8_t StartAdress_high:2;
+    uint8_t SubChId:6;
+    uint8_t StartAdress_low:8;
+    uint8_t TableIndex:6;
+    uint8_t TableSwitch:1;
+    uint8_t Short_Long_form:1;
+} PACKED;
+
+struct FIGtype0_1_SubChannel_LongF {
+    uint8_t StartAdress_high:2;
+    uint8_t SubChId:6;
+    uint8_t StartAdress_low:8;
+    uint8_t Sub_ChannelSize_high:2;
+    uint8_t ProtectionLevel:2;
+    uint8_t Option:3;
+    uint8_t Short_Long_form:1;
+    uint8_t Sub_ChannelSize_low:8;
+} PACKED;
 
 FIG0_1::FIG0_1(FIGRuntimeInformation *rti) :
     m_rti(rti),
@@ -133,8 +163,8 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
         }
 
         if (protection->form == UEP) {
-            FIG_01_SubChannel_ShortF *fig0_1subchShort =
-                (FIG_01_SubChannel_ShortF*)buf;
+            FIGtype0_1_SubChannel_ShortF *fig0_1subchShort =
+                (FIGtype0_1_SubChannel_ShortF*)buf;
             fig0_1subchShort->SubChId = (*subchannelFIG0_1)->id;
 
             fig0_1subchShort->StartAdress_high =
@@ -156,8 +186,8 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
                << " ix=" << subch_iter_ix;
         }
         else if (protection->form == EEP) {
-            FIG_01_SubChannel_LongF *fig0_1subchLong1 =
-                (FIG_01_SubChannel_LongF*)buf;
+            FIGtype0_1_SubChannel_LongF *fig0_1subchLong1 =
+                (FIGtype0_1_SubChannel_LongF*)buf;
             fig0_1subchLong1->SubChId = (*subchannelFIG0_1)->id;
 
             fig0_1subchLong1->StartAdress_high =

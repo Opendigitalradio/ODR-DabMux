@@ -23,10 +23,19 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_5.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_5_short {
+    uint8_t SubChId:6;
+    uint8_t rfu:1;
+    uint8_t LS:1;
+
+    uint8_t language;
+} PACKED;
 
 FIG0_5::FIG0_5(FIGRuntimeInformation *rti) :
     m_rti(rti),

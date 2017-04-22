@@ -23,10 +23,67 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_2.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_2 {
+    uint8_t Length:5;
+    uint8_t FIGtypeNumber:3;
+    uint8_t Extension:5;
+    uint8_t PD:1;
+    uint8_t OE:1;
+    uint8_t CN:1;
+} PACKED;
+
+
+struct FIGtype0_2_Service {
+    uint16_t SId;
+    uint8_t NbServiceComp:4;
+    uint8_t CAId:3;
+    uint8_t Local_flag:1;
+} PACKED;
+
+
+struct FIGtype0_2_Service_data {
+    uint32_t SId;
+    uint8_t NbServiceComp:4;
+    uint8_t CAId:3;
+    uint8_t Local_flag:1;
+} PACKED;
+
+
+struct FIGtype0_2_audio_component {
+    uint8_t ASCTy:6;
+    uint8_t TMid:2;
+    uint8_t CA_flag:1;
+    uint8_t PS:1;
+    uint8_t SubChId:6;
+} PACKED;
+
+
+struct FIGtype0_2_data_component {
+    uint8_t DSCTy:6;
+    uint8_t TMid:2;
+    uint8_t CA_flag:1;
+    uint8_t PS:1;
+    uint8_t SubChId:6;
+} PACKED;
+
+
+struct FIGtype0_2_packet_component {
+    uint8_t SCId_high:6;
+    uint8_t TMid:2;
+    uint8_t CA_flag:1;
+    uint8_t PS:1;
+    uint8_t SCId_low:6;
+    void setSCId(uint16_t SCId) {
+        SCId_high = SCId >> 6;
+        SCId_low = SCId & 0x3f;
+    }
+} PACKED;
 
 FIG0_2::FIG0_2(FIGRuntimeInformation *rti) :
     m_rti(rti),

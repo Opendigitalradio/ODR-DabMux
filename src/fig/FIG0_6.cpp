@@ -23,10 +23,37 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fig/FIG0structs.h"
 #include "fig/FIG0_6.h"
 #include "utils.h"
 
 namespace FIC {
+
+struct FIGtype0_6 {
+    uint8_t LSN_high:4; // Linkage Set Number
+    uint8_t ILS:1; // 0=national / 1=international
+    uint8_t SH:1; // 0=Soft link / 1=Hard link
+    uint8_t LA:1; // Linkage actuator
+    uint8_t IdListFlag:1; // Marks the presence of the list
+
+    uint8_t LSN_low; // Linkage Set Number
+
+    void setLSN(uint16_t LSN) {
+        LSN_high = LSN >> 8;
+        LSN_low = LSN & 0xff;
+    }
+} PACKED;
+
+#define FIG0_6_IDLQ_DAB 0x0
+#define FIG0_6_IDLQ_RDS 0x1
+#define FIG0_6_IDLQ_DRM_AMSS 0x3
+
+struct FIGtype0_6_header {
+    uint8_t num_ids:4; // number of Ids to follow in the list
+    uint8_t rfa:1; // must be 0
+    uint8_t IdLQ:2; // Identifier List Qualifier, see above defines
+    uint8_t rfu:1; // must be 0
+} PACKED;
 
 FIG0_6::FIG0_6(FIGRuntimeInformation *rti) :
     m_rti(rti),

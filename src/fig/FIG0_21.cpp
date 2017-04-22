@@ -32,9 +32,9 @@ namespace FIC {
 struct FIGtype0_21_header {
     // This was RegionId in EN 300 401 V1.4.1
     uint8_t rfaHigh;
-    uint8_t rfaLow:3;
 
     uint8_t length_fi:5;
+    uint8_t rfaLow:3;
 } PACKED;
 
 struct FIGtype0_21_fi_list_header {

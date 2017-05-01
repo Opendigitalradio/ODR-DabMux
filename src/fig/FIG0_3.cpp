@@ -35,14 +35,18 @@ namespace FIC {
  */
 struct FIGtype0_3 {
     uint8_t SCId_high;
+
     uint8_t SCCA_flag:1;
     uint8_t rfa:3;
     uint8_t SCId_low:4;
+
     uint8_t DSCTy:6;
     uint8_t rfu:1;
     uint8_t DG_flag:1;
+
     uint8_t Packet_address_high:2;
     uint8_t SubChId:6;
+
     uint8_t Packet_address_low;
     uint16_t SCCA;
     void setSCId(uint16_t SCId) {

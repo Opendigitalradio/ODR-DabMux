@@ -38,20 +38,32 @@ struct FIGtype0_21_header {
 } PACKED;
 
 struct FIGtype0_21_fi_list_header {
-    uint16_t id;
-    uint8_t range_modulation:4;
-    uint8_t continuity:1;
+    uint8_t idHigh;
+
+    uint8_t idLow;
+
     uint8_t length_freq_list:3;
+    uint8_t continuity:1;
+    uint8_t range_modulation:4;
+
+    void setId(uint16_t id) {
+        idHigh = id >> 8;
+        idLow = id & 0xFF;
+    }
 } PACKED;
 
 struct FIGtype0_21_fi_dab_entry {
-    uint8_t control_field:5;
     uint8_t freqHigh:3;
-    uint16_t freqLow;
+    uint8_t control_field:5;
+
+    uint8_t freqMid;
+
+    uint8_t freqLow;
 
     void setFreq(uint32_t freq) {
         freqHigh = (freq >> 16) & 0x7;
-        freqLow = freq & 0xffff;
+        freqMid = (freq >> 8) & 0xff;
+        freqLow = freq & 0xff;
     }
 } PACKED;
 
@@ -136,24 +148,27 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
             auto *fig0_21_header = (FIGtype0_21_header*)buf;
             fig0_21_header->rfaHigh = 0;
             fig0_21_header->rfaLow = 0;
+            fig0_21_header->length_fi = sizeof(struct FIGtype0_21_fi_list_header);
             switch (fle.rm) {
                 case RangeModulation::dab_ensemble:
-                    fig0_21_header->length_fi = fle.fi_dab.frequencies.size();
+                    fig0_21_header->length_fi += 3 * fle.fi_dab.frequencies.size();
                     etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr DAB " <<
                         fle.fi_dab.frequencies.size();
                     break;
                 case RangeModulation::fm_with_rds:
-                    fig0_21_header->length_fi = fle.fi_fm.frequencies.size();
+                    fig0_21_header->length_fi += fle.fi_fm.frequencies.size();
                     etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr FM " <<
                         fle.fi_fm.frequencies.size();
                     break;
                 case RangeModulation::drm:
-                    fig0_21_header->length_fi = fle.fi_drm.frequencies.size();
+                    fig0_21_header->length_fi += 1; // ID field 2
+                    fig0_21_header->length_fi += 2*fle.fi_drm.frequencies.size();
                     etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr DRM " <<
                         fle.fi_drm.frequencies.size();
                     break;
                 case RangeModulation::amss:
-                    fig0_21_header->length_fi = fle.fi_amss.frequencies.size();
+                    fig0_21_header->length_fi += 1; // ID field 2
+                    fig0_21_header->length_fi += 2*fle.fi_amss.frequencies.size();
                     etiLog.level(FIG0_21_TRACE) << "FIG0_21::fle hdr AMSS " <<
                         fle.fi_amss.frequencies.size();
                     break;
@@ -169,13 +184,13 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
             remaining -= sizeof(struct FIGtype0_21_fi_list_header);
 
             fi_list_header->continuity = fle.continuity;
+            fi_list_header->length_freq_list = 0;
+            fi_list_header->range_modulation = static_cast<uint8_t>(fle.rm);
 
             switch (fle.rm) {
                 case RangeModulation::dab_ensemble:
-                    fi_list_header->id = fle.fi_dab.eid;
-                    fi_list_header->range_modulation = static_cast<uint8_t>(fle.rm);
+                    fi_list_header->setId(fle.fi_dab.eid);
                     assert(fle.fi_dab.frequencies.size() < 8);
-                    fi_list_header->length_freq_list = fle.fi_dab.frequencies.size();
 
                     for (const auto& freq : fle.fi_dab.frequencies) {
                         auto *field = (FIGtype0_21_fi_dab_entry*)buf;
@@ -183,6 +198,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         field->setFreq(static_cast<uint32_t>(
                                     freq.frequency * 1000.0f / 16.0f));
 
+                        fi_list_header->length_freq_list += 3;
                         fig0->Length += 3;
                         buf += 3;
                         remaining -= 3;
@@ -191,13 +207,15 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                     }
                     break;
                 case RangeModulation::fm_with_rds:
-                    fi_list_header->id = fle.fi_fm.pi_code;
+                    fi_list_header->setId(fle.fi_fm.pi_code);
 
                     for (const auto& freq : fle.fi_fm.frequencies) {
                         // RealFreq = 87.5 MHz + (F * 100kHz)
                         // => F = (RealFreq - 87.5 MHz) / 100kHz
                         // Do the whole calculation in kHz:
                         *buf = (freq * 1000.0f - 87500.0f) / 100.0f;
+
+                        fi_list_header->length_freq_list += 1;
                         fig0->Length += 1;
                         buf += 1;
                         remaining -= 1;
@@ -206,45 +224,51 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                     }
                     break;
                 case RangeModulation::drm:
-                    fi_list_header->id = (fle.fi_drm.drm_service_id) & 0xFFFF;
+                    fi_list_header->setId((fle.fi_drm.drm_service_id) & 0xFFFF);
 
                     // Id field 2
                     *buf = (fle.fi_drm.drm_service_id >> 16) & 0xFF;
+
+                    fi_list_header->length_freq_list += 1;
                     fig0->Length += 1;
                     buf += 1;
                     remaining -= 1;
 
                     for (const auto& freq : fle.fi_drm.frequencies) {
-                        uint16_t *freq_field = (uint16_t*)buf;
+                        uint16_t freq_field = static_cast<uint16_t>(freq * 1000.0f);
+                        buf[0] = freq_field >> 8;
+                        buf[1] = freq_field & 0xFF;
 
-                        *freq_field = static_cast<uint16_t>(freq * 1000.0f);
-
+                        fi_list_header->length_freq_list += 2;
                         fig0->Length += 2;
                         buf += 2;
                         remaining -= 2;
-                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq " <<
-                            freq;
+                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq_field " <<
+                            freq_field;
                     }
                     break;
                 case RangeModulation::amss:
-                    fi_list_header->id = (fle.fi_amss.amss_service_id) & 0xFFFF;
+                    fi_list_header->setId((fle.fi_amss.amss_service_id) & 0xFFFF);
 
                     // Id field 2
                     *buf = (fle.fi_amss.amss_service_id >> 16) & 0xFF;
+
+                    fi_list_header->length_freq_list += 1;
                     fig0->Length += 1;
                     buf += 1;
                     remaining -= 1;
 
                     for (const auto& freq : fle.fi_amss.frequencies) {
-                        uint16_t *freq_field = (uint16_t*)buf;
+                        uint16_t freq_field = static_cast<uint16_t>(freq * 1000.0f);
+                        buf[0] = freq_field >> 8;
+                        buf[1] = freq_field & 0xFF;
 
-                        *freq_field = static_cast<uint16_t>(freq * 1000.0f);
-
+                        fi_list_header->length_freq_list += 2;
                         fig0->Length += 2;
                         buf += 2;
                         remaining -= 2;
-                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq " <<
-                            freq;
+                        etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq_field " <<
+                            freq_field;
                     }
                     break;
             } // switch (RM)

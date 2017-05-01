@@ -76,7 +76,7 @@ FIG0_21::FIG0_21(FIGRuntimeInformation *rti) :
 
 FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 {
-#define FIG0_21_TRACE debug
+#define FIG0_21_TRACE discard
     FillStatus fs;
     size_t remaining = max_size;
     auto ensemble = m_rti->ensemble;

@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -132,8 +132,26 @@ ssize_t TcpSocket::recv(void* data, size_t size)
 }
 
 
-ssize_t TcpSocket::send(const void* data, size_t size)
+ssize_t TcpSocket::send(const void* data, size_t size, int timeout_ms)
 {
+    if (timeout_ms) {
+        struct pollfd fds[1];
+        fds[0].fd = m_sock;
+        fds[0].events = POLLOUT;
+
+        int retval = poll(fds, 1, timeout_ms);
+
+        if (retval == -1) {
+            stringstream ss;
+            ss << "TCP Socket send error on poll(): " << strerror(errno);
+            throw std::runtime_error(ss.str());
+        }
+        else if (retval == 0) {
+            // Timed out
+            return 0;
+        }
+    }
+
     /* Without MSG_NOSIGNAL the process would receive a SIGPIPE and die */
     ssize_t ret = ::send(m_sock, (const char*)data, size, MSG_NOSIGNAL);
 

@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -77,9 +77,10 @@ class TcpSocket
         /** Send data over the TCP connection.
          *  @param data The buffer that will be sent.
          *  @param size Number of bytes to send.
+         *  @param timeout_ms number of milliseconds before timeout
          *  return number of bytes sent or -1 if error
          */
-        ssize_t send(const void* data, size_t size);
+        ssize_t send(const void* data, size_t size, int timeout_ms=0);
 
         /** Receive data from the socket.
          *  @param data The buffer that will receive data.

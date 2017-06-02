@@ -89,7 +89,17 @@ class TCPConnection
                 queue.wait_and_pop(data);
 
                 try {
-                    m_sock.send(&data[0], data.size());
+                    ssize_t sent = 0;
+                    do {
+                        const int timeout_ms = 10; // Less than one ETI frame
+                        sent = m_sock.send(&data[0], data.size(), timeout_ms);
+
+                        if (is_overloaded()) {
+                            m_running = false;
+                            break;
+                        }
+                    }
+                    while (sent == 0);
                 }
                 catch (std::runtime_error& e) {
                     m_running = false;

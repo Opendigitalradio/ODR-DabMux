@@ -1,6 +1,12 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2017-06-05: Matthias P. Braendli <matthias@mpb.li>
+	(v1.2.2):
+		Add support for FIG0/21 "Frequency Information".
+		Improve EDI fragment interleaver.
+		Avoid stalling the multiplexer when the TCP output is used.
+
 2017-01-29: Matthias P. Braendli <matthias@mpb.li>
 	(v1.2.1):
 		Bugfix for illegal memory access in EDI PFT layer.

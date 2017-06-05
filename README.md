@@ -23,7 +23,7 @@ Features of ODR-DabMux:
 - Monitoring using munin tool
 - Includes a Telnet and ZMQ Remote Control for setting/getting parameters
 - EDI output
-- Support for FarSync TE1 cards (G.703)
+- Support for FarSync TE1 and TE1e cards (G.703)
 - Something that will one day become a nice GUI for configuration,
   see gui/README.md
 

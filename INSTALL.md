@@ -20,7 +20,7 @@ Install odr-dabmux
     % make install                          # Install ODR-DabMux
 
 Nearly as simple install procedure using repository:
-====================================================
+----------------------------------------------------
 
 The *master* branch in the repository always points to the
 latest release. If you are looking for a new feature or bug-fix

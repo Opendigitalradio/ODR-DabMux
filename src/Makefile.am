@@ -96,6 +96,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 fig/FIG0_18.cpp fig/FIG0_18.h \
 					 fig/FIG0_19.cpp fig/FIG0_19.h \
 					 fig/FIG0_21.cpp fig/FIG0_21.h \
+					 fig/FIG0_24.cpp fig/FIG0_24.h \
 					 fig/FIG1.cpp fig/FIG1.h \
 					 fig/FIGCarousel.cpp fig/FIGCarousel.h \
 					 fig/TransitionHandler.h \

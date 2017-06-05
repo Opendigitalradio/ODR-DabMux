@@ -406,6 +406,9 @@ class DabService : public RemoteControllable
         uint16_t ASu = 0;
         std::vector<uint8_t> clusters;
 
+        // Ensembles in which this service is also available, used for FIG0/24
+        std::vector<uint16_t> other_ensembles;
+
         subchannel_type_t getType(const std::shared_ptr<dabEnsemble> ensemble) const;
         bool isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const;
         unsigned char nbComponent(const std::vector<DabComponent*>& components) const;

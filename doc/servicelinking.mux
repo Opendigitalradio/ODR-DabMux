@@ -160,6 +160,11 @@ services {
     srv-fu {
         id 0x8daa
         label "Funk"
+
+        ; If this service is present in other ensembles, it can be announced
+        ; through FIG0/24. other_ensembles is a comma separated list of
+        ; ensemble IDs (decimal or hexadecimal with 0x prefix)
+        other_ensembles "0x4ffe,0x4ffd"
     }
     srv-ri {
         id 0x8dab

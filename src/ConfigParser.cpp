@@ -511,6 +511,30 @@ void parse_ptree(
                 serviceuid;
         }
 
+        try {
+            auto oelist = pt_service.get<std::string>("other_ensembles", "");
+            vector<string> oe_string_list;
+            boost::split(oe_string_list, oelist, boost::is_any_of(","));
+
+            for (const auto& oe_string : oe_string_list) {
+                if (oe_string == "") {
+                    continue;
+                }
+                try {
+                    service->other_ensembles.push_back(hexparse(oe_string));
+                }
+                catch (std::logic_error& e) {
+                    etiLog.level(warn) << "Cannot parse '" << oelist <<
+                        "' announcement clusters for service " << serviceuid <<
+                        ": " << e.what();
+                }
+            }
+        }
+        catch (ptree_error& e) {
+            etiLog.level(info) << "No other_sensmbles information for Service " <<
+                serviceuid;
+        }
+
         int success = -5;
 
         string servicelabel = pt_service.get<string>("label");

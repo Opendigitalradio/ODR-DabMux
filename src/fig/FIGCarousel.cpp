@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -76,7 +76,8 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_fig1_5(&m_rti),
     m_fig0_18(&m_rti),
     m_fig0_19(&m_rti),
-    m_fig0_21(&m_rti)
+    m_fig0_21(&m_rti),
+    m_fig0_24(&m_rti)
 {
     /* Complete MCI except FIG0/8 should be in FIB0.
      * EN 300 401 V1.4.1 Clause 6.1
@@ -111,6 +112,7 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     load_and_allocate(m_fig0_18, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_19, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_21, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_24, FIBAllocation::FIB_ANY);
 }
 
 void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)

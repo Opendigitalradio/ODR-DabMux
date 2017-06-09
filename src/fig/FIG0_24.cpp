@@ -27,7 +27,13 @@
 #include "fig/FIG0_24.h"
 #include "utils.h"
 
-#warning "fig0/24 rate"
+/* FIG0/24 allows us to announce if a service is available in another ensemble.
+ * Things we do not support:
+ *
+ * - The CEI using length=0, because this information is not available in the
+ *   remote control, and there is no runtime changes.
+ * - Announcing information about other ensembles (OE=1)
+ */
 
 namespace FIC {
 
@@ -55,7 +61,7 @@ FIG0_24::FIG0_24(FIGRuntimeInformation *rti) :
 
 FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
 {
-#define FIG0_24_TRACE debug
+#define FIG0_24_TRACE discard
     using namespace std;
 
     FillStatus fs;
@@ -109,10 +115,11 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
 
             fig0->FIGtypeNumber = 0;
             fig0->Length = 1;
-            fig0->CN = 0;
+            // CN according to ETSI TS 103 176, Clause 5.3.4.1
+            fig0->CN = (serviceFIG0_24 == ensemble->services.begin() ? 0 : 1);
             fig0->OE = 0;
             fig0->PD = isProgramme ? 0 : 1;
-            fig0->Extension = 2;
+            fig0->Extension = 24;
             buf += 2;
             remaining -= 2;
         }

@@ -38,7 +38,7 @@ class FIG0_24 : public IFIG
     public:
         FIG0_24(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+        virtual FIG_rate repetition_rate(void) { return FIG_rate::E; }
 
         virtual const int figtype(void) const { return 0; }
         virtual const int figextension(void) const { return 24; }

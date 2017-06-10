@@ -13,8 +13,7 @@ addons: &addons
       - libtool
       - libboost1.55-all-dev
       - libcurl4-openssl-dev
-      - gcc-5
-      - g++-5
+      - g++-6
 
 env:
   - CONF=--disable-output-edi
@@ -27,6 +26,6 @@ compiler:
 script:
   - |
     ./bootstrap.sh
-    CC=gcc-5 CXX=g++-5 ./configure $CONF
+    CC=gcc-6 CXX=g++-6 ./configure $CONF
     make
 

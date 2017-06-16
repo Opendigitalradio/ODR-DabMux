@@ -25,9 +25,8 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* This file downloads the TAI-UTC bulletins from the USNO servers and/or
- * from IETF and parses them so that correct time can be communicated in EDI
- * timestamps.
+/* This file downloads the TAI-UTC bulletins from the from IETF and parses them
+ * so that correct time can be communicated in EDI timestamps.
  *
  * This file contains self-test code that can be executed by running
  * g++ -g -Wall -DTEST -DHAVE_CURL -std=c++11 -lcurl -lboost_regex -pthread \
@@ -66,16 +65,6 @@ static const char* tai_ietf_url =
 // and in the tz distribution
 static const char* tai_tz_url =
     "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list";
-// leap-seconds.list has a different format from the USNO one
-
-static const char* tai_usno_url1 =
-    "http://maia.usno.navy.mil/ser7/tai-utc.dat";
-static const char* tai_usno_url2 =
-    "http://toshi.nofs.navy.mil/ser7/tai-utc.dat";
-/* Last two lines from USNO bulletin, example:
- 2015 JUL  1 =JD 2457204.5  TAI-UTC=  36.0       S + (MJD - 41317.) X 0.0      S
- 2017 JAN  1 =JD 2457754.5  TAI-UTC=  37.0       S + (MJD - 41317.) X 0.0
- */
 
 int ClockTAI::download_offset_task()
 {
@@ -108,34 +97,6 @@ int ClockTAI::download_offset_task()
         {
             etiLog.level(warn) <<
                 "TAI-UTC offset from TZ distribution could not be retrieved: " <<
-                e.what();
-        }
-    }
-
-    if (not offset_valid) {
-        try {
-            download_tai_utc_bulletin(tai_usno_url1);
-            offset = parse_usno_bulletin();
-            offset_valid = true;
-        }
-        catch (std::runtime_error& e)
-        {
-            etiLog.level(warn) <<
-                "TAI-UTC offset from USNO server #1 could not be retrieved: " <<
-                e.what();
-        }
-    }
-
-    if (not offset_valid) {
-        try {
-            download_tai_utc_bulletin(tai_usno_url2);
-            offset = parse_usno_bulletin();
-            offset_valid = true;
-        }
-        catch (std::runtime_error& e)
-        {
-            etiLog.level(warn) <<
-                "TAI-UTC offset from USNO server #2 could not be retrieved: " <<
                 e.what();
         }
     }
@@ -302,97 +263,6 @@ int ClockTAI::parse_ietf_bulletin()
             }
 #endif
         }
-    }
-
-    if (not tai_utc_offset_valid) {
-        throw std::runtime_error("No data in TAI bulletin");
-    }
-
-    return tai_utc_offset;
-}
-
-int ClockTAI::parse_usno_bulletin()
-{
-    boost::regex regex_bulletin(
-            "([0-9]{4}) ([A-Z]{3}) +([0-9]+) =JD +[0-9.]+ +TAI-UTC= *([0-9.]+)");
-    /*  regex groups:
-     *         Year       Month       Day      Julian date            Offset
-     */
-
-    const std::array<std::string, 12> months{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
-
-    /* I'm not certain about the format they would use if the day is a
-     * two-digit number. Will they keep two spaces after the month? The regex
-     * should be resilient enough in that case.
-     */
-
-    time_t now = time(nullptr);
-    struct tm *utc_time_now = gmtime(&now);
-
-    const int year = utc_time_now->tm_year + 1900;
-    const int month = utc_time_now->tm_mon; // January is 0
-    if (month < 0 or month > 11) {
-        throw std::runtime_error("Invalid value for month");
-    }
-    const int day = utc_time_now->tm_mday;
-
-
-    int tai_utc_offset = 0;
-    bool tai_utc_offset_valid = false;
-
-    /* We cannot just take the last line, because it might
-     * be in the future, announcing an upcoming leap second.
-     *
-     * So we need to look at the current date, and compare it
-     * with the date of the leap second.
-     */
-    for (std::string line; std::getline(m_bulletin, line); ) {
-
-        boost::smatch bulletin_entry;
-
-        bool is_match = boost::regex_search(line, bulletin_entry, regex_bulletin);
-        if (is_match) {
-
-            if (bulletin_entry.size() != 5) {
-                throw std::runtime_error(
-                        "Incorrect number of matched USNO TAI bulletin entries");
-            }
-            const std::string bulletin_year(bulletin_entry[1]);
-            const std::string bulletin_month_name(bulletin_entry[2]);
-            const std::string bulletin_day(bulletin_entry[3]);
-            const std::string bulletin_offset(bulletin_entry[4]);
-
-            const auto match = std::find(months.begin(), months.end(), bulletin_month_name);
-            if (match == months.end()) {
-                std::stringstream s;
-                s << "Month " << bulletin_month_name << " not in array!";
-                std::runtime_error(s.str());
-            }
-
-            if (    (std::atoi(bulletin_year.c_str()) < year) or
-
-                    (std::atoi(bulletin_year.c_str()) == year and
-                     std::distance(months.begin(), match) < month) or
-
-                    (std::atoi(bulletin_year.c_str()) == year and
-                     std::distance(months.begin(), match) == month and
-                     std::atoi(bulletin_day.c_str()) < day) ) {
-                tai_utc_offset = std::atoi(bulletin_offset.c_str());
-                tai_utc_offset_valid = true;
-            }
-#if TEST
-            else {
-                std::cerr << "Ignoring offset " << bulletin_offset << " at date "
-                    << bulletin_year << " " << bulletin_month_name << " " <<
-                    bulletin_day << " in the future" << std::endl;
-            }
-#endif
-        }
-#if TEST
-        else {
-            std::cerr << "No match for line " << line << std::endl;
-        }
-#endif
     }
 
     if (not tai_utc_offset_valid) {

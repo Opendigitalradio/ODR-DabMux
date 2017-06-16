@@ -44,10 +44,10 @@
 // We can keep this code, maybe for future use
 #define SUPPORT_SETTING_CLOCK_TAI 0
 
-/* Loads, parses and represents TAI-UTC offset information from the USNO bulletin */
+/* Loads, parses and represents TAI-UTC offset information from the IETF bulletin */
 class ClockTAI {
     public:
-        // Fetch the bulletin from the USNO website and return the current
+        // Fetch the bulletin from the IETF website and return the current
         // TAI-UTC offset.
         // Throws runtime_error on failure.
         int get_offset(void);
@@ -76,9 +76,6 @@ class ClockTAI {
 
         // read TAI offset from m_bulletin in IETF format
         int parse_ietf_bulletin(void);
-
-        // read TAI offset from m_bulletin in USNO format
-        int parse_usno_bulletin(void);
 
         // callback that receives data from cURL
         size_t fill_bulletin(char *ptr, size_t size, size_t nmemb);

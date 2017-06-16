@@ -59,6 +59,10 @@
 static bool wait_longer = true;
 #endif
 
+// Offset between NTP time and POSIX time:
+// timestamp_unix = timestamp_ntp - ntp_unix_offset
+const int64_t ntp_unix_offset = 2208988800L;
+
 // leap seconds insertion bulletin is available at
 static const char* tai_ietf_url =
     "http://www.ietf.org/timezones/data/leap-seconds.list";
@@ -66,38 +70,56 @@ static const char* tai_ietf_url =
 static const char* tai_tz_url =
     "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list";
 
-int ClockTAI::download_offset_task()
+static const char* tai_ietf_cache_file = "/tmp/odr-dabmux-leap-seconds.cache";
+
+int ClockTAI::get_valid_offset()
 {
     int offset = 0;
     bool offset_valid = false;
 
-    // Clear the bulletin
-    m_bulletin.str("");
-    m_bulletin.clear();
-
-    try {
-        download_tai_utc_bulletin(tai_ietf_url);
+    if (bulletin_is_valid()) {
+#if TEST
+        etiLog.level(info) << "Bulletin already valid";
+#endif
         offset = parse_ietf_bulletin();
         offset_valid = true;
     }
-    catch (std::runtime_error& e)
-    {
-        etiLog.level(warn) <<
-            "TAI-UTC offset from IETF could not be retrieved: " <<
-            e.what();
-    }
+    else {
+        load_bulletin_from_file(tai_ietf_cache_file);
 
-    if (not offset_valid) {
-        try {
-            download_tai_utc_bulletin(tai_tz_url);
+        if (bulletin_is_valid()) {
+#if TEST
+            etiLog.level(info) << "Bulletin from file valid";
+#endif
             offset = parse_ietf_bulletin();
             offset_valid = true;
         }
-        catch (std::runtime_error& e)
-        {
-            etiLog.level(warn) <<
-                "TAI-UTC offset from TZ distribution could not be retrieved: " <<
-                e.what();
+        else {
+            for (const auto url : {tai_ietf_url, tai_tz_url}) {
+                try {
+                    download_tai_utc_bulletin(tai_ietf_url);
+#if TEST
+                    etiLog.level(info) << "Load bulletin from " << url;
+#endif
+                    if (bulletin_is_valid()) {
+#if TEST
+                        etiLog.level(info) << "Bulletin from " << url << " valid";
+#endif
+                        offset = parse_ietf_bulletin();
+                        offset_valid = true;
+                    }
+                }
+                catch (std::runtime_error& e) {
+                    etiLog.level(warn) <<
+                        "TAI-UTC offset could not be retrieved from " <<
+                        url << " : " << e.what();
+                }
+
+                if (offset_valid) {
+                    update_cache(tai_ietf_cache_file);
+                    break;
+                }
+            }
         }
     }
 
@@ -136,7 +158,7 @@ int ClockTAI::get_offset()
 #else
         // First time we run we must block until we know
         // the offset
-        m_offset = download_offset_task();
+        m_offset = get_valid_offset();
         m_offset_valid = true;
         m_bulletin_download_time = std::chrono::system_clock::now();
 #endif
@@ -178,7 +200,7 @@ int ClockTAI::get_offset()
             etiLog.level(debug) << " Launch async";
 #endif
             m_offset_future = std::async(std::launch::async,
-                    &ClockTAI::download_offset_task, this);
+                    &ClockTAI::get_valid_offset, this);
         }
     }
 
@@ -213,8 +235,6 @@ int ClockTAI::parse_ietf_bulletin()
     // The difference between NTP timestamps and unix epoch is 70
     // years i.e. 2208988800 seconds
 
-    const int64_t ntp_unix_offset = 2208988800L;
-
     boost::regex regex_bulletin(R"(([0-9]+)\s+([0-9]+)\s+#.*)");
 
     time_t now = time(nullptr);
@@ -222,6 +242,9 @@ int ClockTAI::parse_ietf_bulletin()
     int tai_utc_offset = 0;
 
     int tai_utc_offset_valid = false;
+
+    m_bulletin.clear();
+    m_bulletin.seekg(0);
 
     /* We cannot just take the last line, because it might
      * be in the future, announcing an upcoming leap second.
@@ -246,10 +269,6 @@ int ClockTAI::parse_ietf_bulletin()
                 std::atol(bulletin_ntp_timestamp.c_str()) - ntp_unix_offset;
 
             const int offset = std::atoi(bulletin_offset.c_str());
-#if TEST
-            std::cerr << "Match for line " << line << std::endl;
-            std::cerr << " " << timestamp_unix << " < " << now << std::endl;
-#endif
             // Ignore entries announcing leap seconds in the future
             if (timestamp_unix < now) {
                 tai_utc_offset = offset;
@@ -287,8 +306,82 @@ size_t ClockTAI::fill_bulletin_cb(
     return ((ClockTAI*)ctx)->fill_bulletin(ptr, size, nmemb);
 }
 
+void ClockTAI::load_bulletin_from_file(const char* cache_filename)
+{
+    // Clear the bulletin
+    m_bulletin.str("");
+    m_bulletin.clear();
+
+    std::ifstream f(cache_filename);
+    if (not f.good()) {
+        return;
+    }
+
+    m_bulletin << f.rdbuf();
+    f.close();
+}
+
+void ClockTAI::update_cache(const char* cache_filename)
+{
+    std::ofstream f(cache_filename);
+    if (not f.good()) {
+        throw std::runtime_error("TAI-UTC bulletin open cache for writing");
+    }
+
+    m_bulletin.clear();
+    m_bulletin.seekg(0);
+#if TEST
+    etiLog.level(info) << "Update cache, state:" <<
+        (m_bulletin.eof() ? " eof" : "") <<
+        (m_bulletin.fail() ? " fail" : "") <<
+        (m_bulletin.bad() ? " bad" : "");
+#endif
+
+    f << m_bulletin.rdbuf();
+    f.close();
+}
+
+bool ClockTAI::bulletin_is_valid()
+{
+    // The bulletin contains one line that specifies an expiration date
+    // in NTP time. If that point in time is in the future, we consider
+    // the bulletin valid.
+    //
+    // The entry looks like this:
+    //#@	3707596800
+
+    boost::regex regex_expiration(R"(#@\s+([0-9]+))");
+
+    time_t now = time(nullptr);
+
+    m_bulletin.clear();
+    m_bulletin.seekg(0);
+
+    for (std::string line; std::getline(m_bulletin, line); ) {
+        boost::smatch bulletin_entry;
+
+        bool is_match = boost::regex_search(line, bulletin_entry, regex_expiration);
+        if (is_match) {
+            if (bulletin_entry.size() != 2) {
+                throw std::runtime_error(
+                        "Incorrect number of matched TAI IETF bulletin expiration");
+            }
+            const std::string expiry_data_str(bulletin_entry[1]);
+            const int64_t expiry_unix =
+                std::atol(expiry_data_str.c_str()) - ntp_unix_offset;
+
+            return expiry_unix > now;
+        }
+    }
+    return false;
+}
+
 void ClockTAI::download_tai_utc_bulletin(const char* url)
 {
+    // Clear the bulletin
+    m_bulletin.str("");
+    m_bulletin.clear();
+
 #ifdef HAVE_CURL
     CURL *curl;
     CURLcode res;
@@ -357,10 +450,12 @@ int main(int argc, char **argv)
 
     while (wait_longer) {
         try {
-            cerr << "Offset is " << tai.get_offset() << endl;
+            etiLog.level(info) <<
+                "Offset is " << tai.get_offset();
         }
         catch (std::exception &e) {
-            cerr << "Exception " << e.what() << endl;
+            etiLog.level(error) <<
+                "Exception " << e.what();
         }
 
         std::this_thread::sleep_for(std::chrono::seconds(2));

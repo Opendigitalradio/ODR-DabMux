@@ -59,7 +59,10 @@ class ClockTAI {
 #endif
 
     private:
-        int download_offset_task(void);
+        // Either retrieve the bulletin from the cache or if necessarly
+        // download it, and calculate the TAI-UTC offset.
+        // Returns the offset.
+        int get_valid_offset(void);
 
         // Download of new bulletin is done asynchronously
         std::future<int> m_offset_future;
@@ -71,7 +74,17 @@ class ClockTAI {
         std::stringstream m_bulletin;
         std::chrono::system_clock::time_point m_bulletin_download_time;
 
-        // Load bulletin into m_bulletin
+        // Load bulletin into m_bulletin from the cache file
+        void load_bulletin_from_file(const char* cache_filename);
+
+        // Update the cache file with the current m_bulletin
+        void update_cache(const char* cache_filename);
+
+        // Verifies the expiration date in the m_bulletin. Returns
+        // true if the bulletin is valid.
+        bool bulletin_is_valid(void);
+
+        // Load bulletin into m_bulletin from the URL
         void download_tai_utc_bulletin(const char* url);
 
         // read TAI offset from m_bulletin in IETF format

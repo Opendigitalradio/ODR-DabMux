@@ -14,7 +14,7 @@
 ; The general section defines global multiplex parameters.
 general {
     ; the DAB Transmission mode (values 1-4 accepted)
-    dabmode 2
+    dabmode 1
 
     ; the number of ETI frames to generate (set to 0 to get an unlimited number)
     nbframes 10

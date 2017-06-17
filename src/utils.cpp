@@ -494,7 +494,20 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
             ensemble->label.short_label();
 
     etiLog.log(info, " (0x%x)", ensemble->label.flag());
-    etiLog.log(info, " mode:        %u", ensemble->mode);
+    switch (ensemble->transmission_mode) {
+        case TransmissionMode_e::TM_I:
+            etiLog.log(info, " mode:        TM I");
+            break;
+        case TransmissionMode_e::TM_II:
+            etiLog.log(info, " mode:        TM II");
+            break;
+        case TransmissionMode_e::TM_III:
+            etiLog.log(info, " mode:        TM III");
+            break;
+        case TransmissionMode_e::TM_IV:
+            etiLog.log(info, " mode:        TM IV");
+            break;
+    }
 
     if (ensemble->lto_auto) {
         time_t now = time(nullptr);

@@ -193,6 +193,13 @@ class DabSubchannel;
 class LinkageSet;
 struct FrequencyInformation;
 
+enum class TransmissionMode_e {
+    TM_I,
+    TM_II,
+    TM_III,
+    TM_IV
+};
+
 class dabEnsemble : public RemoteControllable {
     public:
         dabEnsemble()
@@ -213,7 +220,7 @@ class dabEnsemble : public RemoteControllable {
         uint16_t id = 0;
         uint8_t ecc = 0;
         DabLabel label;
-        uint8_t mode = 0;
+        TransmissionMode_e transmission_mode = TransmissionMode_e::TM_I;
 
         /* Use the local time to calculate the lto */
         bool lto_auto = true;

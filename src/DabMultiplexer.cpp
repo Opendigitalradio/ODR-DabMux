@@ -374,7 +374,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     vector<DabSubchannel*>::iterator subchannel;
 
     // FIC Length, DAB Mode I, II, IV -> FICL = 24, DAB Mode III -> FICL = 32
-    unsigned FICL  = (ensemble->mode == 3 ? 32 : 24);
+    unsigned FICL =
+        (ensemble->transmission_mode == TransmissionMode_e::TM_III ? 32 : 24);
 
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     edi::TagDETI edi_tagDETI;
@@ -437,7 +438,20 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     //****** MID ******//
     //Mode Identity, 2 bits, 01 ModeI, 10 modeII, 11 ModeIII, 00 ModeIV
-    fc->MID = edi_tagDETI.mid = ensemble->mode;      //mode 2 needs 3 FIB, 3*32octets = 96octets
+    switch (ensemble->transmission_mode) {
+        case TransmissionMode_e::TM_I:
+            fc->MID = edi_tagDETI.mid = 1;
+            break;
+        case TransmissionMode_e::TM_II:
+            fc->MID = edi_tagDETI.mid = 2;
+            break;
+        case TransmissionMode_e::TM_III:
+            fc->MID = edi_tagDETI.mid = 3;
+            break;
+        case TransmissionMode_e::TM_IV:
+            fc->MID = edi_tagDETI.mid = 0;
+            break;
+    }
 
     //****** FL ******//
     /* Frame Length, 11 bits, nb of words(4 bytes) in STC, EOH and MST
@@ -563,7 +577,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     // Insert all FIBs
     fig_carousel.update(currentFrame);
-    const bool fib3_present = ensemble->mode == 3;
+    const bool fib3_present = (ensemble->transmission_mode == TransmissionMode_e::TM_III);
     index += fig_carousel.write_fibs(&etiFrame[index], currentFrame % 4, fib3_present);
 
     /**********************************************************************

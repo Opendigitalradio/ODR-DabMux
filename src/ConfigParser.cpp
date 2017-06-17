@@ -345,12 +345,21 @@ void parse_ptree(
     ptree pt_general = pt.get_child("general");
 
     /* Dab mode logic */
-    ensemble->mode = pt_general.get("dabmode", 2);
-    if ((ensemble->mode < 1) || (ensemble->mode > 4)) {
-        throw runtime_error("Mode must be between 1-4");
-    }
-    if (ensemble->mode == 4) {
-        ensemble->mode = 0;
+    switch (pt_general.get("dabmode", 1)) {
+        case 1:
+            ensemble->transmission_mode = TransmissionMode_e::TM_I;
+            break;
+        case 2:
+            ensemble->transmission_mode = TransmissionMode_e::TM_II;
+            break;
+        case 3:
+            ensemble->transmission_mode = TransmissionMode_e::TM_III;
+            break;
+        case 4:
+            ensemble->transmission_mode = TransmissionMode_e::TM_IV;
+            break;
+        default:
+            throw runtime_error("Mode must be between 1-4");
     }
 
     /******************** READ ENSEMBLE PARAMETERS *************/

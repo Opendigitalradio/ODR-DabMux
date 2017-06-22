@@ -44,10 +44,10 @@
 // We can keep this code, maybe for future use
 #define SUPPORT_SETTING_CLOCK_TAI 0
 
-/* Loads, parses and represents TAI-UTC offset information from the USNO bulletin */
+/* Loads, parses and represents TAI-UTC offset information from the IETF bulletin */
 class ClockTAI {
     public:
-        // Fetch the bulletin from the USNO website and return the current
+        // Fetch the bulletin from the IETF website and return the current
         // TAI-UTC offset.
         // Throws runtime_error on failure.
         int get_offset(void);
@@ -59,7 +59,10 @@ class ClockTAI {
 #endif
 
     private:
-        int download_offset_task(void);
+        // Either retrieve the bulletin from the cache or if necessarly
+        // download it, and calculate the TAI-UTC offset.
+        // Returns the offset.
+        int get_valid_offset(void);
 
         // Download of new bulletin is done asynchronously
         std::future<int> m_offset_future;
@@ -71,14 +74,21 @@ class ClockTAI {
         std::stringstream m_bulletin;
         std::chrono::system_clock::time_point m_bulletin_download_time;
 
-        // Load bulletin into m_bulletin
+        // Load bulletin into m_bulletin from the cache file
+        void load_bulletin_from_file(const char* cache_filename);
+
+        // Update the cache file with the current m_bulletin
+        void update_cache(const char* cache_filename);
+
+        // Verifies the expiration date in the m_bulletin. Returns
+        // true if the bulletin is valid.
+        bool bulletin_is_valid(void);
+
+        // Load bulletin into m_bulletin from the URL
         void download_tai_utc_bulletin(const char* url);
 
         // read TAI offset from m_bulletin in IETF format
         int parse_ietf_bulletin(void);
-
-        // read TAI offset from m_bulletin in USNO format
-        int parse_usno_bulletin(void);
 
         // callback that receives data from cURL
         size_t fill_bulletin(char *ptr, size_t size, size_t nmemb);

@@ -362,6 +362,10 @@ outputs {
     edi {
         ; EDI uses the UDP protocol. This implementation of EDI does not support
         ; EDI Packet Resend.
+        ;
+        ; When both EDI and TIST are enabled, ODR-DabMod will download leap-second
+        ; information from the IETF website, and cache it to the file
+        ; /tmp/odr-dabmux-leap-seconds.cache
         destinations {
             ; The names you give to the destinations have no meaning,
             ; but have to be unique. You can give them meaningful names to help

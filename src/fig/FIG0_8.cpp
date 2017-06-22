@@ -117,8 +117,8 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
             }
 
             if ((*subchannel)->type == subchannel_type_t::Packet) { // Data packet
-                buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
-                buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
+                buf[2] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
+                buf[3] = ((*componentFIG0_8)->serviceId) & 0xFF;
                 fig0->Length += 2;
                 buf += 2;
                 remaining -= 2;

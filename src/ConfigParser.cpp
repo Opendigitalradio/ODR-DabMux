@@ -93,15 +93,15 @@ typedef DWORD32 uint32_t;
 #endif
 
 using namespace std;
+using boost::property_tree::ptree;
+using boost::property_tree::ptree_error;
 
 static void setup_subchannel_from_ptree(DabSubchannel* subchan,
-        const boost::property_tree::ptree &pt,
+        const ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid);
 
-static uint16_t get_announcement_flag_from_ptree(
-        boost::property_tree::ptree& pt
-        )
+static uint16_t get_announcement_flag_from_ptree(ptree& pt)
 {
     uint16_t flags = 0;
     for (size_t flag = 0; flag < 16; flag++) {
@@ -117,12 +117,9 @@ static uint16_t get_announcement_flag_from_ptree(
 }
 
 // Parse the linkage section
-static void parse_linkage(boost::property_tree::ptree& pt,
+static void parse_linkage(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
-
     auto pt_linking = pt.get_child_optional("linking");
     if (pt_linking)
     {
@@ -201,12 +198,9 @@ static void parse_linkage(boost::property_tree::ptree& pt,
 }
 
 // Parse the FI section
-static void parse_freq_info(boost::property_tree::ptree& pt,
+static void parse_freq_info(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
-
     auto pt_frequency_information = pt.get_child_optional("frequency_information");
     if (pt_frequency_information)
     {
@@ -335,12 +329,9 @@ static void parse_freq_info(boost::property_tree::ptree& pt,
     } // if FI present
 }
 
-void parse_ptree(
-        boost::property_tree::ptree& pt,
+static void parse_general(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
     /******************** READ GENERAL OPTIONS *****************/
     ptree pt_general = pt.get_child("general");
 
@@ -460,9 +451,15 @@ void parse_ptree(
         etiLog.level(info) << "No announcements defined in ensemble";
         etiLog.level(debug) << "because " << e.what();
     }
+}
+
+void parse_ptree(
+        boost::property_tree::ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
+{
+    parse_general(pt, ensemble);
 
     /******************** READ SERVICES PARAMETERS *************/
-
     map<string, shared_ptr<DabService> > allservices;
 
     /* For each service, we keep a separate SCIdS counter */
@@ -474,23 +471,23 @@ void parse_ptree(
         string serviceuid = it->first;
         ptree pt_service = it->second;
 
-        shared_ptr<DabService> service;
+        stringstream def_serviceid;
+        def_serviceid << DEFAULT_SERVICE_ID + ensemble->services.size();
+        uint32_t new_service_id = hexparse(pt_service.get("id", def_serviceid.str()));
 
-        bool service_already_existing = false;
-
+        // Ensure that both UID and service ID are unique
         for (auto srv : ensemble->services) {
             if (srv->uid == serviceuid) {
-                service = srv;
-                service_already_existing = true;
-                break;
+                throw runtime_error("Duplicate service uid " + serviceuid);
+            }
+
+            if (srv->id == new_service_id) {
+                throw runtime_error("Duplicate service id " + to_string(new_service_id));
             }
         }
 
-        if (not service_already_existing) {
-            auto new_srv = make_shared<DabService>(serviceuid);
-            ensemble->services.push_back(new_srv);
-            service = new_srv;
-        }
+        auto service = make_shared<DabService>(serviceuid);
+        ensemble->services.push_back(service);
 
         try {
             /* Parse announcements */
@@ -591,23 +588,17 @@ void parse_ptree(
                 abort();
         }
 
-        stringstream def_serviceid;
-        def_serviceid << DEFAULT_SERVICE_ID + ensemble->services.size();
-        service->id = hexparse(pt_service.get("id", def_serviceid.str()));
+        service->id = new_service_id;
         service->pty = hexparse(pt_service.get("pty", "0"));
         service->language = hexparse(pt_service.get("language", "0"));
 
-        // keep service in map, and check for uniqueness of the UID
-        if (allservices.count(serviceuid) == 0) {
-            allservices[serviceuid] = service;
+        allservices[serviceuid] = service;
 
-            // Set the service's SCIds to zero
-            SCIdS_per_service[service] = 0;
-        }
-        else {
-            stringstream ss;
-            ss << "Service with uid " << serviceuid << " not unique!";
-            throw runtime_error(ss.str());
+        // Set the service's SCIds to zero
+        SCIdS_per_service[service] = 0;
+
+        if (allservices.count(serviceuid) != 1) {
+            throw logic_error("Assertion error: duplicated service with uid " + serviceuid);
         }
     }
 
@@ -790,11 +781,9 @@ void parse_ptree(
 }
 
 static Inputs::dab_input_zmq_config_t setup_zmq_input(
-        const boost::property_tree::ptree &pt,
+        const ptree &pt,
         const std::string& subchanuid)
 {
-    using boost::property_tree::ptree_error;
-
     Inputs::dab_input_zmq_config_t zmqconfig;
 
     try {
@@ -824,13 +813,10 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
 }
 
 static void setup_subchannel_from_ptree(DabSubchannel* subchan,
-        const boost::property_tree::ptree &pt,
+        const ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
-
     string type;
     /* Read type first */
     try {

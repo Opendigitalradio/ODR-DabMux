@@ -74,6 +74,10 @@ ensemble {
                             ; or
     ;local-time-offset 1    ; in hours, supports half-hour offsets
 
+    ; If you want to run your machine in UTC time, but still take advantage of the
+    ; automatic calculation of the local time offset, set the environment variable TZ
+    ; to your timezone (e.g. TZ=Europe/Rome) before you launch ODR-DabMux
+
     ; all labels are maximum 16 characters in length
     label "OpenDigitalRadio"
     ; The short label is built from the label by erasing letters, and cannot

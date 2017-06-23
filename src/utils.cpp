@@ -524,8 +524,9 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
         etiLog.level(info) << " No announcement clusters defined";
     }
     else {
+        etiLog.level(info) << " Announcement clusters:";
         for (const auto& cluster : ensemble->clusters) {
-            etiLog.level(info) << cluster->tostring();
+            etiLog.level(info) << "  " << cluster->tostring();
         }
     }
 

@@ -172,7 +172,9 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
     }
     else { // No RS, only fragmentation
         // TS 102 821 7.2.2: s_max = MTU - h
-        const size_t max_payload_size = 1000; // TODO define properly
+        // Ethernet MTU is 1500, but maybe you are routing over a network which
+        // has some sort of packet encapsulation. Add some margin.
+        const size_t max_payload_size = 1400;
 
         // Calculate fragment count and size
         // TS 102 821 7.2.2: ceil((l + c*p + z) / s_max)

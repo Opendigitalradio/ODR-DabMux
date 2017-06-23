@@ -220,7 +220,7 @@ subchannels {
         ; input.
 
         ; by default, it is disabled, set encryption to 1 to enable
-        encryption 1
+        encryption true
 
         ; the multiplexer key pair. Keep these secret.
         secret-key "keys/mux.sec"

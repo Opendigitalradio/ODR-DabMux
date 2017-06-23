@@ -481,6 +481,10 @@ int main(int argc, char *argv[])
         etiLog.level(error) << "Caught invalid argument : " << except.what();
         returnCode = 1;
     }
+    catch (const std::out_of_range& except) {
+        etiLog.level(error) << "Caught out of range exception : " << except.what();
+        returnCode = 1;
+    }
     catch (const std::runtime_error& except) {
         etiLog.level(error) << "Caught runtime error : " << except.what();
         returnCode = 2;

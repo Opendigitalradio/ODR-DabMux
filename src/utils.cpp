@@ -538,14 +538,19 @@ long hexparse(const std::string& input)
     long value = 0;
     errno = 0;
 
+    char* endptr = nullptr;
+
+    const bool is_hex = (input.find("0x") == 0);
+
     // Do not use strtol's base=0 because
     // we do not want to accept octal.
-    if (input.find("0x") == 0) {
-        value = strtol(input.c_str() + 2, nullptr, 16);
-    }
-    else {
-        value = strtol(input.c_str(), nullptr, 10);
-    }
+    const int base = is_hex ? 16 : 10;
+
+    const char* const startptr = is_hex ?
+        input.c_str() + 2 :
+        input.c_str();
+
+    value = strtol(input.c_str(), &endptr, base);
 
     if ((value == LONG_MIN or value == LONG_MAX) and errno == ERANGE) {
         throw out_of_range("hexparse: value out of range");
@@ -554,6 +559,14 @@ long hexparse(const std::string& input)
         stringstream ss;
         ss << "hexparse: " << strerror(errno);
         throw invalid_argument(ss.str());
+    }
+
+    if (startptr == endptr) {
+        throw out_of_range("hexparse: no value found");
+    }
+
+    if (*endptr != '\0') {
+        throw out_of_range("hexparse: superfluous characters after value found: '" + input + "'");
     }
 
     return value;

@@ -131,7 +131,7 @@ static void parse_linkage(boost::property_tree::ptree& pt,
             const ptree pt_set = it.second;
 
             uint16_t lsn = hexparse(pt_set.get("lsn", "0"));
-            if (lsn == 0) {
+            if (lsn == 0 or lsn > 0xFFF) {
                 etiLog.level(error) << "LSN for linking set " <<
                     setuid << " invalid or missing";
                 throw runtime_error("Invalid service linking definition");
@@ -367,9 +367,15 @@ void parse_ptree(
 
     /* Ensemble ID */
     ensemble->id = hexparse(pt_ensemble.get("id", "0"));
+    if (ensemble->id == 0) {
+        etiLog.level(warn) << "Ensemble ID is 0!";
+    }
 
     /* Extended Country Code */
     ensemble->ecc = hexparse(pt_ensemble.get("ecc", "0"));
+    if (ensemble->ecc == 0) {
+        etiLog.level(warn) << "ECC is 0!";
+    }
 
     ensemble->international_table = pt_ensemble.get("international-table", 0);
 
@@ -438,6 +444,10 @@ void parse_ptree(
 
             auto cl = make_shared<AnnouncementCluster>(name);
             cl->cluster_id = hexparse(pt_announcement.get<string>("cluster"));
+            if (cl->cluster_id == 0 or cl->cluster_id == 0xFF) {
+                throw runtime_error("Announcement cluster id " +
+                        to_string(cl->cluster_id) + " is not allowed");
+            }
             cl->flags = get_announcement_flag_from_ptree(
                     pt_announcement.get_child("flags"));
             cl->subchanneluid = pt_announcement.get<string>("subchannel");
@@ -808,7 +818,7 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
     zmqconfig.curve_secret_keyfile = pt.get<string>("secret-key","");
     zmqconfig.curve_public_keyfile = pt.get<string>("public-key","");
 
-    zmqconfig.enable_encryption = pt.get<int>("encryption", 0);
+    zmqconfig.enable_encryption = pt.get<bool>("encryption", false);
 
     return zmqconfig;
 }
@@ -981,14 +991,15 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         }
     }
     catch (ptree_error &e) {
-        stringstream ss;
-        ss << "Error, no bitrate defined for subchannel " << subchanuid;
-        throw runtime_error(ss.str());
+        throw runtime_error("Error, no bitrate defined for subchannel " + subchanuid);
     }
 
     /* Get id */
     try {
         subchan->id = hexparse(pt.get<std::string>("id"));
+        if (subchan->id >= 64) {
+            throw runtime_error("Invalid subchannel id " + to_string(subchan->id));
+        }
     }
     catch (ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel
@@ -1014,6 +1025,12 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     }
     else if (profile == "UEP") {
         protection->form = UEP;
+    }
+    else if (profile == "") {
+        /* take defaults */
+    }
+    else {
+        throw runtime_error("Invalid protection-profile: " + profile);
     }
 
     /* Get protection level */

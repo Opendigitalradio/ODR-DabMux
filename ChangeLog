@@ -1,6 +1,16 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2017-06-30: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.0):
+		Add support for FIG0/24 to announce that a service is present
+		in another ensemble. This completes the implementation of all
+		service linking FIGs according to ETSI TS 103 176 Figure 1.
+		Allow EDI packet lengths up to 1400 bytes.
+		Add local cache for the leap second information downloaded from
+		IETF, remove download from USNO servers, as they don't give validity
+		information.
+
 2017-06-05: Matthias P. Braendli <matthias@mpb.li>
 	(v1.2.2):
 		Add support for FIG0/21 "Frequency Information".

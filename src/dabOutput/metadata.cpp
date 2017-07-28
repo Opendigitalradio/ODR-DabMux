@@ -59,6 +59,16 @@ size_t write_meta(output_metadata_id_e md, uint8_t *buf, T value)
     return 3 + len_value;
 }
 
+size_t OutputMetadataSeparation::write(uint8_t *buf)
+{
+    buf[0] = static_cast<uint8_t>(getId());
+
+    // Length 0
+    buf[1] = 0;
+    buf[2] = 0;
+    return 3;
+}
+
 size_t OutputMetadataUTCO::write(uint8_t *buf)
 {
     return write_meta(getId(), buf, utco);
@@ -68,3 +78,9 @@ size_t OutputMetadataEDITime::write(uint8_t *buf)
 {
     return write_meta(getId(), buf, seconds);
 }
+
+size_t OutputMetadataDLFC::write(uint8_t *buf)
+{
+    return write_meta(getId(), buf, dlfc);
+}
+

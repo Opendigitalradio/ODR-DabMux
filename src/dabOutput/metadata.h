@@ -39,12 +39,18 @@
  */
 
 enum class output_metadata_id_e {
+    // Contains no value, can be used to group fields
+    separation_marker = 0,
+
     // TAI-UTC offset, value is int16_t.
     utc_offset = 1,
 
     /* EDI Time is the number of SI seconds since 2000-01-01 T 00:00:00 UTC.
      * value is an uint32_t */
     edi_time = 2,
+
+    /* The DLFC field from the EDI TAG deti. value is uint16_t */
+    dlfc = 3,
 };
 
 struct OutputMetadata {
@@ -57,6 +63,14 @@ struct OutputMetadata {
      */
     virtual size_t write(uint8_t *buf) = 0;
 };
+
+struct OutputMetadataSeparation : public OutputMetadata {
+    explicit OutputMetadataSeparation() {}
+    output_metadata_id_e getId(void) const { return output_metadata_id_e::separation_marker; }
+    virtual size_t getLength(void) const { return 3; }
+    virtual size_t write(uint8_t *buf);
+};
+
 
 struct OutputMetadataUTCO : public OutputMetadata {
     explicit OutputMetadataUTCO(int16_t utco) : utco(utco) {}
@@ -74,6 +88,16 @@ struct OutputMetadataEDITime : public OutputMetadata {
     virtual size_t write(uint8_t *buf);
 
     uint32_t seconds;
+
+};
+
+struct OutputMetadataDLFC : public OutputMetadata {
+    explicit OutputMetadataDLFC(uint16_t dlfc) : dlfc(dlfc) {}
+    output_metadata_id_e getId(void) const { return output_metadata_id_e::dlfc; }
+    virtual size_t getLength(void) const { return 5; }
+    virtual size_t write(uint8_t *buf);
+
+    uint16_t dlfc;
 
 };
 

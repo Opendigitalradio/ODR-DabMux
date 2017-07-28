@@ -417,7 +417,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     //****** FCT ******//
     // Incremente for each frame, overflows at 249
     fc->FCT = currentFrame % 250;
-    edi_tagDETI.dflc = currentFrame % 5000;
+    edi_tagDETI.dlfc = currentFrame % 5000;
 
     //****** FICF ******//
     // Fast Information Channel Flag, 1 bit, =1 if FIC present
@@ -669,6 +669,10 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
                 shared_ptr<OutputMetadata> md_edi_time =
                     make_shared<OutputMetadataEDITime>(edi_tagDETI.seconds);
                 output->setMetadata(md_edi_time);
+
+                shared_ptr<OutputMetadata> md_dlfc =
+                    make_shared<OutputMetadataDLFC>(currentFrame % 5000);
+                output->setMetadata(md_dlfc);
             }
         }
     }
@@ -707,6 +711,18 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      **********************************************************************/
 
     int frame_size = (FLtmp + 1 + 1 + 1 + 1) * 4;
+
+    for (auto output : outputs) {
+        auto out_zmq = std::dynamic_pointer_cast<DabOutputZMQ>(output);
+        if (out_zmq) {
+            // The separator allows the receiver to associate the right
+            // metadata with the right ETI frame, since the output gathers
+            // four ETI frames into one message
+            shared_ptr<OutputMetadata> md_sep =
+                make_shared<OutputMetadataSeparation>();
+            out_zmq->setMetadata(md_sep);
+        }
+    }
 
     // Give the data to the outputs
     for (auto output : outputs) {

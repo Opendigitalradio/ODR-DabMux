@@ -26,7 +26,7 @@ else
 GITVERSION_FLAGS =
 endif
 
-bin_PROGRAMS=odr-dabmux zmqinput-keygen
+bin_PROGRAMS=odr-dabmux zmqinput-keygen odr-zmq2edi
 
 if HAVE_OUTPUT_RAW_TEST
 bin_PROGRAMS+=odr-zmq2farsync
@@ -123,6 +123,29 @@ odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
+
+odr_zmq2edi_SOURCES  = zmq2edi/zmq2edi.cpp \
+					   dabOutput/dabOutput.h \
+					   dabOutput/metadata.h dabOutput/metadata.cpp \
+					   dabOutput/edi/AFPacket.cpp dabOutput/edi/AFPacket.h \
+					   dabOutput/edi/TagItems.cpp dabOutput/edi/TagItems.h \
+					   dabOutput/edi/TagPacket.cpp dabOutput/edi/TagPacket.h \
+					   dabOutput/edi/PFT.cpp dabOutput/edi/PFT.h \
+					   dabOutput/edi/Interleaver.cpp dabOutput/edi/Interleaver.h \
+					   InetAddress.h InetAddress.cpp \
+					   UdpSocket.h UdpSocket.cpp \
+					   ReedSolomon.h ReedSolomon.cpp \
+					   fec/char.h fec/rs-common.h \
+					   fec/decode_rs_char.c fec/decode_rs.h \
+					   fec/encode_rs_char.c fec/encode_rs.h \
+					   fec/fec.h \
+					   fec/init_rs_char.c fec/init_rs.h \
+					   Log.h Log.cpp \
+					   crc.h crc.c \
+					   zmq.hpp
+odr_zmq2edi_LDADD    = $(ZMQ_LIBS)
+odr_zmq2edi_CFLAGS   = -Wall $(GITVERSION_FLAGS)
+odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS)
 
 EXTRA_DIST = fec/README.md \
 			 fec/LICENSE

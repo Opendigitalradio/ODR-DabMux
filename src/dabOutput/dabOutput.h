@@ -45,6 +45,7 @@
 #ifdef HAVE_OUTPUT_ZEROMQ
 #  include "zmq.hpp"
 #endif
+#include "dabOutput/metadata.h"
 
 /** Configuration for EDI output */
 
@@ -89,6 +90,8 @@ class DabOutput
         virtual ~DabOutput() {}
 
         virtual std::string get_info() const = 0;
+
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) = 0;
 };
 
 // ----- used in File and Fifo outputs
@@ -117,6 +120,7 @@ class DabOutputFile : public DabOutput
             return "file://" + filename_;
         }
 
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     protected:
         /* Set ETI type according to filename, and return
          * filename without the &type=foo part
@@ -176,6 +180,7 @@ class DabOutputRaw : public DabOutput
         std::string get_info() const {
             return "raw://" + filename_;
         }
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     private:
         std::string filename_;
         int socket_;
@@ -204,6 +209,7 @@ class DabOutputUdp : public DabOutput
         std::string get_info() const {
             return "udp://" + uri_;
         }
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     private:
         // make sure we don't copy this output around
         // the UdpPacket and UdpSocket do not support
@@ -228,7 +234,7 @@ class DabOutputTcp : public DabOutput
         std::string get_info() const {
             return "tcp://" + uri_;
         }
-
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     private:
         std::string uri_;
 
@@ -246,6 +252,7 @@ class DabOutputSimul : public DabOutput
         std::string get_info() const {
             return "simul://" + name_;
         }
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     private:
         std::string name_;
         std::chrono::steady_clock::time_point startTime_;
@@ -286,6 +293,10 @@ struct zmq_dab_message_t
      */
 
     uint8_t  buf[NUM_FRAMES_PER_ZMQ_MESSAGE*6144];
+
+    /* The packet is then followed with metadata appended to it,
+     * according to dabOutput/metadata.h
+     */
 };
 
 #define ZMQ_DAB_MESSAGE_HEAD_LENGTH (4 + NUM_FRAMES_PER_ZMQ_MESSAGE*2)
@@ -316,8 +327,9 @@ class DabOutputZMQ : public DabOutput
         int Open(const char* endpoint);
         int Write(void* buffer, int size);
         int Close();
-    private:
+        void setMetadata(std::shared_ptr<OutputMetadata> &md);
 
+    private:
         std::string endpoint_;
         std::string zmq_proto_;
         zmq::context_t zmq_context_; // handle for the zmq context
@@ -325,6 +337,8 @@ class DabOutputZMQ : public DabOutput
 
         zmq_dab_message_t zmq_message;
         int zmq_message_ix;
+
+        std::vector<std::shared_ptr<OutputMetadata> > meta_;
 };
 
 #endif

@@ -658,9 +658,19 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             edi_tagDETI.set_seconds(edi_time);
 
             // In case get_offset fails, we still want to update the EDI seconds
-            edi_tagDETI.set_tai_utc_offset(m_clock_tai.get_offset());
-        }
+            const auto utco = m_clock_tai.get_offset();
+            edi_tagDETI.set_tai_utc_offset(utco);
 
+            for (auto output : outputs) {
+                shared_ptr<OutputMetadata> md_utco =
+                    make_shared<OutputMetadataUTCO>(utco);
+                output->setMetadata(md_utco);
+
+                shared_ptr<OutputMetadata> md_edi_time =
+                    make_shared<OutputMetadataEDITime>(edi_tagDETI.seconds);
+                output->setMetadata(md_edi_time);
+            }
+        }
     }
     catch (std::runtime_error& e) {
         etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
@@ -691,8 +701,6 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         // Immediately update edi time
         edi_time += chrono::seconds(1);
     }
-
-
 
     /********************************************************************** 
      ***********   Section FRPD   *****************************************

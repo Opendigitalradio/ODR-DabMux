@@ -126,7 +126,9 @@ int DabOutputZMQ::Close()
 
 void DabOutputZMQ::setMetadata(std::shared_ptr<OutputMetadata> &md)
 {
-    meta_.push_back(md);
+    if (m_allow_metadata) {
+        meta_.push_back(md);
+    }
 }
 
 #endif

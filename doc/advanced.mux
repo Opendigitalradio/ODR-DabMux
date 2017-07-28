@@ -342,8 +342,8 @@ outputs {
     ; Please see doc/dab_output_formats.txt
     stdout "fifo:///dev/stdout?type=raw"
 
-    ; ZeroMQ output example
-    ; Listen on all interfaces, on port 9100
+    ; Legacy format for ZeroMQ output example. See example.mux
+    ; for newer format.
     ;zmq  "zmq+tcp://*:9100"
 
     ; Throttle output to real-time (one ETI frame every 24ms)

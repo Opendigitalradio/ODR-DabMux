@@ -56,7 +56,7 @@ class DabMultiplexer : public RemoteControllable {
     public:
         DabMultiplexer(
                 boost::property_tree::ptree pt);
-        void prepare(void);
+        void prepare(bool require_tai_clock);
 
         unsigned long getCurrentFrame() { return currentFrame; }
 
@@ -92,6 +92,7 @@ class DabMultiplexer : public RemoteControllable {
 
         std::shared_ptr<dabEnsemble> ensemble;
 
+        bool m_tai_clock_required;
         ClockTAI m_clock_tai;
 
 #if HAVE_OUTPUT_EDI

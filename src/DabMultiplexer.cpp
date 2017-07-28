@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -75,6 +75,7 @@ DabMultiplexer::DabMultiplexer(
     sync(0x49C5F8),
     currentFrame(0),
     ensemble(std::make_shared<dabEnsemble>()),
+    m_tai_clock_required(false),
     m_clock_tai(),
     fig_carousel(ensemble)
 {
@@ -128,7 +129,7 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 
 
 // Run a set of checks on the configuration
-void DabMultiplexer::prepare()
+void DabMultiplexer::prepare(bool require_tai_clock)
 {
     parse_ptree(m_pt, ensemble);
 
@@ -168,17 +169,16 @@ void DabMultiplexer::prepare()
 
     bool tist_enabled = m_pt.get("general.tist", false);
 
-    if (tist_enabled and edi_conf.enabled()) {
+    m_tai_clock_required = (tist_enabled and edi_conf.enabled()) or require_tai_clock;
+
+    if (m_tai_clock_required) {
         try {
             m_clock_tai.get_offset();
         }
         catch (std::runtime_error& e) {
-            const char* err_msg =
-                "Could not initialise TAI clock properly required by "
-                "EDI with timestamp. Do you have a working internet "
-                "connection?";
-
-            etiLog.level(error) << err_msg;
+            etiLog.level(error) <<
+                "Could not initialise TAI clock properly. "
+                "Do you have a working internet connection?";
             throw;
         }
     }
@@ -654,16 +654,16 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     try {
         bool tist_enabled = m_pt.get("general.tist", false);
 
-        if (tist_enabled and edi_conf.enabled()) {
+        if (tist_enabled and m_tai_clock_required) {
             edi_tagDETI.set_seconds(edi_time);
 
             // In case get_offset fails, we still want to update the EDI seconds
-            const auto utco = m_clock_tai.get_offset();
-            edi_tagDETI.set_tai_utc_offset(utco);
+            const auto tai_utc_offset = m_clock_tai.get_offset();
+            edi_tagDETI.set_tai_utc_offset(tai_utc_offset);
 
             for (auto output : outputs) {
                 shared_ptr<OutputMetadata> md_utco =
-                    make_shared<OutputMetadataUTCO>(utco);
+                    make_shared<OutputMetadataUTCO>(edi_tagDETI.utco);
                 output->setMetadata(md_utco);
 
                 shared_ptr<OutputMetadata> md_edi_time =

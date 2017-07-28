@@ -167,10 +167,20 @@ outputs {
     ; Output RAW ETI NI to standard output
     stdout "fifo:///dev/stdout?type=raw"
 
-    ; ZeroMQ output example 
+    ; ZeroMQ output example, new configuration format. Several
+    ; zeromq blocks can be added here.
     ; This output does not back-pressure the multiplexer.
-    ; Listen on all interfaces, on port 9100
-    ;zmq  "zmq+tcp://*:9100"
+    zeromq {
+        ; Listen on all interfaces, on port 9100
+        endpoint "tcp://*:9100"
+
+        ; Transmit backward compatible metadata containing
+        ; EDI time and UTC offset when TIST is enabled.
+        ; WARNING! requires ODR-DabMux to be compiled with
+        ; EDI output, and this will enable leap second download
+        ; as for the EDI output!
+        allowmetadata true
+    }
 
     ; Output ETI-over-TCP. This is like piping a RAW ETI NI data stream
     ; into a TCP socket, except that the output can handle simultaneous

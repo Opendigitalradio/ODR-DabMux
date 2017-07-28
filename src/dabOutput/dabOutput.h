@@ -305,11 +305,12 @@ struct zmq_dab_message_t
 class DabOutputZMQ : public DabOutput
 {
     public:
-        DabOutputZMQ(const std::string &zmq_proto) :
+        DabOutputZMQ(const std::string &zmq_proto, bool allow_metadata) :
             endpoint_(""),
             zmq_proto_(zmq_proto), zmq_context_(1),
             zmq_pub_sock_(zmq_context_, ZMQ_PUB),
-            zmq_message_ix(0)
+            zmq_message_ix(0),
+            m_allow_metadata(allow_metadata)
         { }
 
         DabOutputZMQ(const DabOutputZMQ& other) = delete;
@@ -338,6 +339,7 @@ class DabOutputZMQ : public DabOutput
         zmq_dab_message_t zmq_message;
         int zmq_message_ix;
 
+        bool m_allow_metadata;
         std::vector<std::shared_ptr<OutputMetadata> > meta_;
 };
 

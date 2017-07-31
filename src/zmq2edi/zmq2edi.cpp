@@ -160,11 +160,11 @@ static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_b
 
     while (remaining) {
         uint8_t id = buf[0];
-        uint16_t len = (((uint16_t)buf[0]) << 8) + buf[1];
+        uint16_t len = (((uint16_t)buf[1]) << 8) + buf[2];
 
         if (id == static_cast<uint8_t>(output_metadata_id_e::separation_marker)) {
             if (len != 0) {
-                etiLog.level(warn) << "Invalid length for metadata: separation_marker";
+                etiLog.level(warn) << "Invalid length " << len << " for metadata: separation_marker";
             }
 
             if (not utc_offset_received or not edi_time_received or not dlfc_received) {
@@ -177,42 +177,42 @@ static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_b
         }
         else if (id == static_cast<uint8_t>(output_metadata_id_e::utc_offset)) {
             if (len != 2) {
-                etiLog.level(warn) << "Invalid length for metadata: utc_offset";
+                etiLog.level(warn) << "Invalid length " << len << " for metadata: utc_offset";
             }
             if (remaining < 2) {
                 throw std::runtime_error("Insufficient data for utc_offset");
             }
             uint16_t utco;
-            std::memcpy(&utco, buf + 2, sizeof(utco));
-            md.utc_offset = ntohl(utco);
+            std::memcpy(&utco, buf + 3, sizeof(utco));
+            md.utc_offset = ntohs(utco);
             utc_offset_received = true;
             remaining -= 5;
             buf += 5;
         }
         else if (id == static_cast<uint8_t>(output_metadata_id_e::edi_time)) {
             if (len != 4) {
-                etiLog.level(warn) << "Invalid length for metadata: edi_time";
+                etiLog.level(warn) << "Invalid length " << len << " for metadata: edi_time";
             }
             if (remaining < 4) {
                 throw std::runtime_error("Insufficient data for edi_time");
             }
             uint32_t edi_time;
-            std::memcpy(&edi_time, buf + 2, sizeof(edi_time));
+            std::memcpy(&edi_time, buf + 3, sizeof(edi_time));
             md.edi_time = ntohl(edi_time);
             edi_time_received = true;
             remaining -= 7;
             buf += 7;
         }
         else if (id == static_cast<uint8_t>(output_metadata_id_e::dlfc)) {
-            if (len != 3) {
-                etiLog.level(warn) << "Invalid length for metadata: dlfc";
+            if (len != 2) {
+                etiLog.level(warn) << "Invalid length " << len << " for metadata: dlfc";
             }
             if (remaining < 2) {
                 throw std::runtime_error("Insufficient data for dlfc");
             }
             uint16_t dlfc;
-            std::memcpy(&dlfc, buf + 2, sizeof(dlfc));
-            md.dlfc = ntohl(dlfc);
+            std::memcpy(&dlfc, buf + 3, sizeof(dlfc));
+            md.dlfc = ntohs(dlfc);
             dlfc_received = true;
             remaining -= 5;
             buf += 5;
@@ -234,8 +234,13 @@ static void send_eti_frame(uint8_t* p, metadata_t metadata)
     edi_tagDETI.stat = p[0];
 
     // LIDATA FCT
-    //const int fct = p[4];
     edi_tagDETI.dlfc = metadata.dlfc;
+
+    const int fct = p[4];
+    if (metadata.dlfc % 250 != fct) {
+        etiLog.level(warn) << "Frame FCT=" << fct << " does not correspond to DLFC=" << metadata.dlfc;
+    }
+
 
     bool ficf = (p[5] & 0x80) >> 7;
 
@@ -458,6 +463,8 @@ int start(int argc, char **argv)
         return 1;
     }
 
+    edi_conf.destinations.push_back(edi_destination);
+
     print_edi_conf();
     edi_setup();
 
@@ -519,8 +526,6 @@ int start(int argc, char **argv)
 
         for (auto &f : all_frames) {
             size_t consumed_bytes = 0;
-
-            std::cerr << "MD: " << incoming.size() - offset << std::endl;
 
             f.second = get_md_one_frame(
                     static_cast<uint8_t*>(incoming.data()) + offset,

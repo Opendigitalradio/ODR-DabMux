@@ -35,7 +35,7 @@
 #endif
 
 template <typename T>
-size_t write_meta(output_metadata_id_e md, uint8_t *buf, T value)
+size_t write_meta(output_metadata_id_e md, uint8_t *buf, const T value)
 {
     buf[0] = static_cast<uint8_t>(md);
 
@@ -48,12 +48,16 @@ size_t write_meta(output_metadata_id_e md, uint8_t *buf, T value)
         buf[3] = value;
     }
     else if (len_value == 2) {
-        const uint16_t value = htons(value);
-        memcpy(buf + 3, &value, sizeof(value));
+        const uint16_t val = htons(value);
+        memcpy(buf + 3, &val, sizeof(val));
     }
     else if (len_value == 4) {
-        const uint32_t value = htons(value);
-        memcpy(buf + 3, &value, sizeof(value));
+        const uint32_t val = htonl(value);
+        memcpy(buf + 3, &val, sizeof(val));
+    }
+    else {
+        throw std::runtime_error("Unsupported metadata len " +
+                std::to_string(len_value));
     }
 
     return 3 + len_value;

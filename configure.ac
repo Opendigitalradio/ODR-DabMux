@@ -157,7 +157,7 @@ AC_DEFINE([HAVE_OUTPUT_ZEROMQ], [1], [Define if ZeroMQ output is enabled])
 AC_DEFINE([HAVE_RC_ZEROMQ], [1], [Define if ZeroMQ enabled for rc])
 
 # Link against cURL
-AM_CONDITIONAL([HAVE_CURL_TEST],
+AM_CONDITIONAL([HAVE_EDI_TEST],
 			   [test "x$enable_output_edi" = "xyes"])
 # Do not build odr-zmq2farsync if no RAW output
 AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],

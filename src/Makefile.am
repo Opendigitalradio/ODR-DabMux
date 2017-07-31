@@ -26,7 +26,7 @@ else
 GITVERSION_FLAGS =
 endif
 
-bin_PROGRAMS=odr-dabmux zmqinput-keygen odr-zmq2edi
+bin_PROGRAMS=odr-dabmux zmqinput-keygen
 
 if HAVE_OUTPUT_RAW_TEST
 bin_PROGRAMS+=odr-zmq2farsync
@@ -34,7 +34,8 @@ endif
 
 ZMQ_LIBS    =-lzmq
 
-if HAVE_CURL_TEST
+if HAVE_EDI_TEST
+bin_PROGRAMS+=odr-zmq2edi
 CURL_LIBS    =-lcurl
 else
 CURL_LIBS    =

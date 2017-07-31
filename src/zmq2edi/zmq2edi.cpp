@@ -241,8 +241,8 @@ static void send_eti_frame(uint8_t* p, metadata_t metadata)
         etiLog.level(warn) << "Frame FCT=" << fct << " does not correspond to DLFC=" << metadata.dlfc;
     }
 
-
     bool ficf = (p[5] & 0x80) >> 7;
+    edi_tagDETI.ficf = ficf;
 
     const int nst = p[5] & 0x7F;
 
@@ -267,6 +267,9 @@ static void send_eti_frame(uint8_t* p, metadata_t metadata)
     std::vector<uint32_t> stl(nst);
     // Loop over STC subchannels:
     for (int i=0; i < nst; i++) {
+        // EDI stream index is 1-indexed
+        const int edi_stream_id = i + 1;
+
         uint32_t scid = (p[8 + 4*i] & 0xFC) >> 2;
         sad[i] = (p[8+4*i] & 0x03) * 256 + p[9+4*i];
         uint32_t tpl = (p[10+4*i] & 0xFC) >> 2;
@@ -274,7 +277,7 @@ static void send_eti_frame(uint8_t* p, metadata_t metadata)
                  p[11+4*i];
 
         edi::TagESTn tag_ESTn;
-        tag_ESTn.id = i;
+        tag_ESTn.id = edi_stream_id;
         tag_ESTn.scid = scid;
         tag_ESTn.sad = sad[i];
         tag_ESTn.tpl = tpl;

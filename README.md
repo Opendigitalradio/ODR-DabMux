@@ -61,5 +61,13 @@ Matthias P. Braendli *matthias [at] mpb [dot] li*
 
 Pascal Charest *pascal [dot] charest [at] crc [dot] ca*
 
+Acknowledgements
+================
+
+David Lutton, Yoann Queret and Stefan Pöschel for bug-fix patches,
+Wim Nelis for the Xymon monitoring scripts,
+and many more for feedback and bug reports.
+
+
 - http://opendigitalradio.org/
 

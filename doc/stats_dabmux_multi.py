@@ -32,7 +32,7 @@ low.warning 1:
 multigraph over_underruns_{ident}
 graph_title Contribution {ident} over/underruns
 graph_order underruns overruns
-graph_args --base 1000
+graph_args --base 1000 --logarithmic
 graph_vlabel number of underruns/overruns during last ${{graph_period}}
 graph_category dabmux
 graph_info This graph shows the number of under/overruns for the {ident} ZMQ input

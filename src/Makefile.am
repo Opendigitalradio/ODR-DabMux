@@ -126,6 +126,7 @@ odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 
 odr_zmq2edi_SOURCES  = zmq2edi/zmq2edi.cpp \
+					   zmq2edi/EDISender.h zmq2edi/EDISender.cpp \
 					   dabOutput/dabOutput.h \
 					   dabOutput/metadata.h dabOutput/metadata.cpp \
 					   dabOutput/edi/AFPacket.cpp dabOutput/edi/AFPacket.h \
@@ -144,7 +145,8 @@ odr_zmq2edi_SOURCES  = zmq2edi/zmq2edi.cpp \
 					   Log.h Log.cpp \
 					   crc.h crc.c \
 					   zmq.hpp
-odr_zmq2edi_LDADD    = $(ZMQ_LIBS)
+odr_zmq2edi_LDADD    = $(ZMQ_LIBS) \
+					  -lpthread -lboost_thread -lboost_system
 odr_zmq2edi_CFLAGS   = -Wall $(GITVERSION_FLAGS)
 odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS)
 

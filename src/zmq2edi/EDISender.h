@@ -80,4 +80,8 @@ class EDISender {
         // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
         edi::Interleaver edi_interleaver;
 
+        // For statistics about wait time before we transmit packets,
+        // in microseconds
+        std::vector<double> wait_times;
+
 };

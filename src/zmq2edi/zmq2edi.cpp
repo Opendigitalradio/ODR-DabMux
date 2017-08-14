@@ -50,7 +50,7 @@ void usage(void)
 
     cerr << "Where the options are:" << endl;
     cerr << " <source> is a ZMQ URL that points to a ODR-DabMux ZMQ output." << endl;
-    cerr << " -w <delay> Keep every ETI frame until TIST is <delay> milliseconds before current system time." << endl;
+    cerr << " -w <delay> Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
     cerr << " -d <destination ip> sets the destination ip." << endl;
     cerr << " -p <destination port> sets the destination port." << endl;
     cerr << " -s <source port> sets the source port." << endl;
@@ -224,7 +224,7 @@ int start(int argc, char **argv)
 
     edi_conf.destinations.push_back(edi_destination);
 
-    etiLog.level(info) << "Setting up EDI Sender withe delay " << delay_ms << " ms";
+    etiLog.level(info) << "Setting up EDI Sender with delay " << delay_ms << " ms";
     edisender.start(edi_conf, delay_ms);
     edisender.print_configuration();
 
@@ -239,7 +239,6 @@ int start(int argc, char **argv)
 
     etiLog.level(info) << "Entering main loop";
     size_t frame_count = 0;
-    size_t loop_counter = 0;
     size_t error_count = 0;
     while (error_count < 10)
     {
@@ -298,12 +297,6 @@ int start(int argc, char **argv)
         for (auto &f : all_frames) {
             edisender.push_frame(f);
             frame_count++;
-        }
-
-        loop_counter++;
-        if (loop_counter > 250) {
-            etiLog.level(info) << "Transmitted " << frame_count << " ETI frames";
-            loop_counter = 0;
         }
     }
 

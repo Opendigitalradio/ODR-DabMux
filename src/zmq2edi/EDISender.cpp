@@ -357,7 +357,8 @@ void EDISender::process()
                 " min: " << *min_max.first <<
                 " max: " << *min_max.second <<
                 " mean: " << mean <<
-                " stdev: " << stdev;
+                " stdev: " << stdev <<
+                " microseconds";
 
             wait_times.clear();
         }

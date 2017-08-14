@@ -53,8 +53,8 @@
 struct edi_destination_t {
     std::string dest_addr;
     std::string source_addr;
-    unsigned int source_port;
-    unsigned int ttl;
+    unsigned int source_port = 0;
+    unsigned int ttl = 10;
 
     std::shared_ptr<UdpSocket> socket;
 };

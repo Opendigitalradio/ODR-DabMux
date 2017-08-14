@@ -222,6 +222,11 @@ int start(int argc, char **argv)
         return 1;
     }
 
+    if (edi_destination.dest_addr.empty() or edi_conf.dest_port == 0) {
+        etiLog.level(error) << "No EDI output defined";
+        return 1;
+    }
+
     edi_conf.destinations.push_back(edi_destination);
 
     etiLog.level(info) << "Setting up EDI Sender with delay " << delay_ms << " ms";

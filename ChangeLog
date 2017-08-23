@@ -1,6 +1,14 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2017-08-23: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.1):
+		Add retords.pl script for Xymon monitoring tool.
+		Add odr-zmq2edi tool, and add necessary metadata to
+		the ZMQ output of ODR-DabMux. The configuration file
+		was extended in a backward-compatible way. Handling
+		of the TAI clock subsystem has been adapted too.
+
 2017-06-30: Matthias P. Braendli <matthias@mpb.li>
 	(v1.3.0):
 		Add support for FIG0/24 to announce that a service is present

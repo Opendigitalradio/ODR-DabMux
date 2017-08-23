@@ -1,23 +1,26 @@
 # Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
+#
+# Copyright (C) 2017
+# Matthias P. Braendli, matthias.braendli@mpb.li
 
 # This file is part of ODR-DabMux.
-# 
+#
 # ODR-DabMux is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-# 
+#
 # ODR-DabMux is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [1.3.0], [matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux], [1.3.1], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])

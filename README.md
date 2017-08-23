@@ -27,11 +27,15 @@ Features of ODR-DabMux:
 - Something that will one day become a nice GUI for configuration,
   see gui/README.md
 
-The src/ directory contains the source code of ODR-DabMux.
+Additional tools: odr-zmq2edi, a tool that can convert a ZeroMQ ETI stream
+to an EDI stream. odr-zmq2farsync, a tool that can drive a FarSync card from
+a ZeroMQ ETI stream.
+
+The src/ directory contains the source code of ODR-DabMux and the additional
+tools.
 
 The doc/ directory contains the ODR-DabMux documentation, a few example
-configuration file, and the example munin script for the statistics
-server.
+configuration files, and the munin and xymon scripts for the statistics server.
 
 The lib/ directory contains source code of libraries needed to build
 ODR-DabMux.
@@ -50,7 +54,8 @@ Contributions and Contact
 =========================
 
 Contributions to this tool are welcome, you can reach users and developers
-through the CRC-mmbTools google group.
+through the
+[CRC-mmbTools google group](https://groups.google.com/forum/#!forum/crc-mmbtools).
 
 There is a list of ideas and thoughts about new possible features and improvements
 in the TODO file.

@@ -368,7 +368,7 @@ static void parse_general(ptree& pt,
         etiLog.level(warn) << "ECC is 0!";
     }
 
-    ensemble->international_table = pt_ensemble.get("international-table", 0);
+    ensemble->international_table = pt_ensemble.get("international-table", 1);
 
     string lto_auto = pt_ensemble.get("local-time-offset", "");
     if (lto_auto == "auto") {

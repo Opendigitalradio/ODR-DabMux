@@ -109,7 +109,7 @@ def connect():
 
     return sock
 
-re_state = re.compile(r"\w+ (\d+)")
+re_state = re.compile(r"\w+ \((\d+)\)")
 
 if len(sys.argv) == 1:
     sock = connect()

@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -146,35 +146,6 @@ std::string ManagementServer::getValuesJSON()
     return ss.str();
 }
 
-std::string ManagementServer::getStateJSON()
-{
-    boost::mutex::scoped_lock lock(m_statsmutex);
-
-    std::ostringstream ss;
-    ss << "{\n";
-
-    std::map<std::string,InputStat*>::iterator iter;
-    int i = 0;
-    for(iter = m_inputStats.begin(); iter != m_inputStats.end();
-            ++iter, i++)
-    {
-        const std::string& id = iter->first;
-        InputStat* stats = iter->second;
-
-        if (i > 0) {
-            ss << " ,\n";
-        }
-
-        ss << " \"" << id << "\" : ";
-        ss << stats->encodeStateJSON();
-        stats->reset();
-    }
-
-    ss << "}\n";
-
-    return ss.str();
-}
-
 void ManagementServer::restart()
 {
     m_restarter_thread = boost::thread(&ManagementServer::restart_thread,
@@ -244,9 +215,6 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         else if (data == "values") {
             answer << getValuesJSON();
         }
-        else if (data == "state") {
-            answer << getStateJSON();
-        }
         else if (data == "getptree") {
             boost::unique_lock<boost::mutex> lock(m_configmutex);
             boost::property_tree::json_parser::write_json(answer, m_pt);
@@ -305,44 +273,34 @@ std::string InputStat::encodeValuesJSON()
         "\"peak_left\": " << dB_l << ", "
         "\"peak_right\": " << dB_r << ", "
         "\"num_underruns\": " << num_underruns << ", "
-        "\"num_overruns\": " << num_overruns <<
-    " } }";
+        "\"num_overruns\": " << num_overruns << ", ";
 
-    return ss.str();
-}
-
-std::string InputStat::encodeStateJSON()
-{
-    std::ostringstream ss;
-
-    ss << "{ \"state\" : ";
+    ss << "\"state\": ";
 
     switch (determineState()) {
         case NoData:
-            ss << "\"NoData\"";
+            ss << "\"NoData (1)\"";
             break;
         case Unstable:
-            ss << "\"Unstable\"";
+            ss << "\"Unstable (2)\"";
             break;
         case Silence:
-            ss << "\"Silent\"";
+            ss << "\"Silent (3)\"";
             break;
         case Streaming:
-            ss << "\"Streaming\"";
+            ss << "\"Streaming (4)\"";
             break;
         default:
-            ss << "\"Unknown\"";
+            ss << "\"Unknown (0)\"";
     }
 
-    ss << " }";
+    ss << " } }";
 
     return ss.str();
 }
 
 input_state_t InputStat::determineState()
 {
-    boost::mutex::scoped_lock lock(m_mutex);
-
     time_t now = time(nullptr);
     input_state_t state;
 

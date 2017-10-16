@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -18,13 +18,11 @@
    The responds in JSON, and accepts the commands:
     - config
     - values
-      Inspired by the munin equivalent
-
-    - state
-      Returns the state of each input
+      Inspired by the munin equivalent, returns the configuration
+      and the statistics values for every exported stat.
 
     - getptree
-      Returns the internal boost property_tree that contains the 
+      Returns the internal boost property_tree that contains the
       multiplexer configuration DB.
 
    The server is using REQ/REP ZeroMQ sockets.
@@ -46,8 +44,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#ifndef __MANAGEMENT_SERVER_H
-#define __MANAGEMENT_SERVER_H
+#pragma once
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
@@ -278,8 +275,6 @@ class InputStat
 
         std::string encodeValuesJSON(void);
 
-        std::string encodeStateJSON(void);
-
         input_state_t determineState(void);
 
     private:
@@ -394,12 +389,6 @@ class ManagementServer
          */
         std::string getValuesJSON();
 
-        /* Return the state of each input
-         *
-         * returns: JSON encoded state
-         */
-        std::string getStateJSON();
-
         // mutex for accessing the map
         boost::mutex m_statsmutex;
 
@@ -411,6 +400,4 @@ class ManagementServer
 // If necessary construct the management server singleton and return
 // a reference to it
 ManagementServer& get_mgmt_server();
-
-#endif
 

@@ -7,9 +7,12 @@ import sys
 import json
 import zmq
 import os
+import re
 
 config_top = """
 """
+
+#default data type is GAUGE
 
 config_template = """
 multigraph buffers_{ident}
@@ -68,6 +71,19 @@ right.min -90
 right.max 0
 right.warning -40:0
 right.critical -80:0
+
+multigraph state_{ident}
+graph_title State of contribution {ident}
+graph_order state
+graph_args --base 1000 --lower-limit 0 --upper-limit 5
+graph_vlabel Current state of the input
+graph_category dabmux
+graph_info This graph shows the state for the {ident} ZMQ input
+
+state.info Input state
+state.label 0 Unknown, 1 NoData, 2 Unstable, 3 Silent, 4 Streaming
+state.warning 4:4
+state.critical 2:4
 """
 
 ctx = zmq.Context()
@@ -93,6 +109,8 @@ def connect():
 
     return sock
 
+re_state = re.compile(r"\w+ (\d+)")
+
 if len(sys.argv) == 1:
     sock = connect()
     sock.send("values")
@@ -110,6 +128,14 @@ if len(sys.argv) == 1:
         munin_values += "multigraph audio_levels_{ident}\n".format(ident=ident.replace('-', '_'))
         munin_values += "left.value {}\n".format(v['peak_left'])
         munin_values += "right.value {}\n".format(v['peak_right'])
+
+        if 'state' in v:
+            # If ODR-DabMux is v1.3.1-3 or older, it doesn't export state
+            match = re_state.match(v['state'])
+            if match:
+                munin_values += "state.value {}\n".format(match.group(1))
+            else:
+                print("Cannot parse state '{}'".format(v['state']))
 
     print(munin_values)
 

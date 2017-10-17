@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016 Matthias P. Braendli
+   Copyright (C) 2017 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -88,11 +88,11 @@ int readkey(string& keyfile, char* key)
  */
 void ZmqBase::rebind()
 {
-    if (! m_zmq_sock_bound_to.empty()) {
+    if (not m_zmq_sock_bound_to.empty()) {
         try {
             m_zmq_sock.unbind(m_zmq_sock_bound_to.c_str());
         }
-        catch (zmq::error_t& err) {
+        catch (const zmq::error_t& err) {
             etiLog.level(warn) << "ZMQ unbind for input " << m_name << " failed";
         }
     }
@@ -100,7 +100,7 @@ void ZmqBase::rebind()
     m_zmq_sock_bound_to = "";
 
     /* Load each key independently */
-    if (! m_config.curve_public_keyfile.empty()) {
+    if (not m_config.curve_public_keyfile.empty()) {
         int rc = readkey(m_config.curve_public_keyfile, m_curve_public_key);
 
         if (rc < 0) {
@@ -111,7 +111,7 @@ void ZmqBase::rebind()
         }
     }
 
-    if (! m_config.curve_secret_keyfile.empty()) {
+    if (not m_config.curve_secret_keyfile.empty()) {
         int rc = readkey(m_config.curve_secret_keyfile, m_curve_secret_key);
 
         if (rc < 0) {
@@ -122,7 +122,7 @@ void ZmqBase::rebind()
         }
     }
 
-    if (! m_config.curve_encoder_keyfile.empty()) {
+    if (not m_config.curve_encoder_keyfile.empty()) {
         int rc = readkey(m_config.curve_encoder_keyfile, m_curve_encoder_key);
 
         if (rc < 0) {
@@ -136,10 +136,10 @@ void ZmqBase::rebind()
     /* If you want encryption, you need to have defined all
      * key files
      */
-    if ( m_config.enable_encryption &&
-            ( ! (KEY_VALID(m_curve_public_key) &&
-                 KEY_VALID(m_curve_secret_key) &&
-                 KEY_VALID(m_curve_encoder_key) ) ) ) {
+    if ( m_config.enable_encryption and
+            ( not (KEY_VALID(m_curve_public_key) and
+                   KEY_VALID(m_curve_secret_key) and
+                   KEY_VALID(m_curve_encoder_key) ) ) ) {
         throw std::runtime_error("When enabling encryption, all three "
                 "keyfiles must be valid!");
     }
@@ -152,7 +152,7 @@ void ZmqBase::rebind()
             m_zmq_sock.setsockopt(ZMQ_CURVE_SERVERKEY,
                     m_curve_encoder_key, CURVE_KEYLEN);
         }
-        catch (zmq::error_t& err) {
+        catch (const zmq::error_t& err) {
             std::ostringstream os;
             os << "ZMQ set encoder key for input " << m_name << " failed" <<
                 err.what();
@@ -163,7 +163,7 @@ void ZmqBase::rebind()
             m_zmq_sock.setsockopt(ZMQ_CURVE_PUBLICKEY,
                     m_curve_public_key, CURVE_KEYLEN);
         }
-        catch (zmq::error_t& err) {
+        catch (const zmq::error_t& err) {
             std::ostringstream os;
             os << "ZMQ set public key for input " << m_name << " failed" <<
                 err.what();
@@ -174,7 +174,7 @@ void ZmqBase::rebind()
             m_zmq_sock.setsockopt(ZMQ_CURVE_SECRETKEY,
                     m_curve_secret_key, CURVE_KEYLEN);
         }
-        catch (zmq::error_t& err) {
+        catch (const zmq::error_t& err) {
             std::ostringstream os;
             os << "ZMQ set secret key for input " << m_name << " failed" <<
                 err.what();
@@ -189,7 +189,7 @@ void ZmqBase::rebind()
             const int no = 0;
             m_zmq_sock.setsockopt(ZMQ_CURVE_SERVER, &no, sizeof(no));
         }
-        catch (zmq::error_t& err) {
+        catch (const zmq::error_t& err) {
             etiLog.level(warn) << "ZMQ disable encryption keys for input " <<
                 m_name << " failed: " << err.what();
         }
@@ -200,7 +200,7 @@ void ZmqBase::rebind()
     try {
         m_zmq_sock.bind(m_inputUri.c_str());
     }
-    catch (zmq::error_t& err) {
+    catch (const zmq::error_t& err) {
         std::ostringstream os;
         os << "ZMQ bind for input " << m_name << " failed" <<
             err.what();
@@ -212,7 +212,7 @@ void ZmqBase::rebind()
     try {
         m_zmq_sock.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
     }
-    catch (zmq::error_t& err) {
+    catch (const zmq::error_t& err) {
         std::ostringstream os;
         os << "ZMQ set socket options for input " << m_name << " failed" <<
             err.what();
@@ -322,8 +322,7 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
         memset(buffer, 0, size);
         return size;
     }
-    else
-    {
+    else {
         /* Normal situation, give a frame from the frame_buffer */
         uint8_t* newframe = m_frame_buffer.front();
         memcpy(buffer, newframe, size);
@@ -344,13 +343,12 @@ int ZmqMPEG::readFromSocket(size_t framesize)
 
     try {
         messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
-        if (!messageReceived) {
+        if (not messageReceived) {
             return 0;
         }
 
     }
-    catch (zmq::error_t& err)
-    {
+    catch (const zmq::error_t& err) {
         etiLog.level(error) << "Failed to receive MPEG frame from zmq socket " <<
                 m_name << ": " << err.what();
     }
@@ -362,8 +360,8 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     /* Look for the new zmq_frame_header_t format */
     zmq_frame_header_t* frame = (zmq_frame_header_t*)msg.data();
 
-    if (msg.size() == ZMQ_FRAME_SIZE(frame) &&
-            frame->version == 1 &&
+    if (msg.size() == ZMQ_FRAME_SIZE(frame) and
+            frame->version == 1 and
             frame->encoder == ZMQ_ENCODER_TOOLAME) {
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
@@ -373,8 +371,7 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     }
 
 
-    if (datalen == framesize)
-    {
+    if (datalen == framesize) {
         if (m_frame_buffer.size() > m_config.buffer_size) {
             etiLog.level(warn) <<
                 "inputZMQ " << m_name <<
@@ -409,18 +406,17 @@ int ZmqMPEG::readFromSocket(size_t framesize)
 // and push to list
 int ZmqAAC::readFromSocket(size_t framesize)
 {
-    bool messageReceived;
+    bool messageReceived = false;
     zmq::message_t msg;
 
     try {
         messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
-        if (!messageReceived) {
+        if (not messageReceived) {
             return 0;
         }
 
     }
-    catch (zmq::error_t& err)
-    {
+    catch (const zmq::error_t& err) {
         etiLog.level(error) <<
             "Failed to receive AAC superframe from zmq socket " <<
             m_name << ": " << err.what();
@@ -433,8 +429,8 @@ int ZmqAAC::readFromSocket(size_t framesize)
     /* Look for the new zmq_frame_header_t format */
     zmq_frame_header_t* frame = (zmq_frame_header_t*)msg.data();
 
-    if (msg.size() == ZMQ_FRAME_SIZE(frame) &&
-            frame->version == 1 &&
+    if (msg.size() == ZMQ_FRAME_SIZE(frame) and
+            frame->version == 1 and
             frame->encoder == ZMQ_ENCODER_FDK) {
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
@@ -448,10 +444,8 @@ int ZmqAAC::readFromSocket(size_t framesize)
      * Audio super frames are transported in five successive DAB logical frames
      * with additional error protection.
      */
-    if (datalen)
-    {
-        if (datalen == 5*framesize)
-        {
+    if (datalen) {
+        if (datalen == 5*framesize) {
             if (m_frame_buffer.size() > m_config.buffer_size) {
                 etiLog.level(warn) <<
                     "inputZMQ " << m_name <<
@@ -549,7 +543,7 @@ void ZmqBase::set_parameter(const string& parameter,
         try {
             rebind();
         }
-        catch (std::runtime_error &e) {
+        catch (const std::runtime_error &e) {
             stringstream ss;
             ss << "Could not bind socket again with new keys." <<
                 e.what();

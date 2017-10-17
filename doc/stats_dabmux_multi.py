@@ -119,13 +119,15 @@ if len(sys.argv) == 1:
     munin_values = ""
     for ident in values:
         v = values[ident]['inputstat']
-        munin_values += "multigraph buffers_{ident}\n".format(ident=ident.replace('-', '_'))
+
+        ident_ = ident.replace('-', '_')
+        munin_values += "multigraph buffers_{ident}\n".format(ident=ident_)
         munin_values += "high.value {}\n".format(v['max_fill'])
         munin_values += "low.value {}\n".format(v['min_fill'])
-        munin_values += "multigraph over_underruns_{ident}\n".format(ident=ident.replace('-', '_'))
+        munin_values += "multigraph over_underruns_{ident}\n".format(ident=ident_)
         munin_values += "underruns.value {}\n".format(v['num_underruns'])
         munin_values += "overruns.value {}\n".format(v['num_overruns'])
-        munin_values += "multigraph audio_levels_{ident}\n".format(ident=ident.replace('-', '_'))
+        munin_values += "multigraph audio_levels_{ident}\n".format(ident=ident_)
         munin_values += "left.value {}\n".format(v['peak_left'])
         munin_values += "right.value {}\n".format(v['peak_right'])
 
@@ -133,6 +135,7 @@ if len(sys.argv) == 1:
             # If ODR-DabMux is v1.3.1-3 or older, it doesn't export state
             match = re_state.match(v['state'])
             if match:
+                munin_values += "multigraph state_{ident}\n".format(ident=ident_)
                 munin_values += "state.value {}\n".format(match.group(1))
             else:
                 print("Cannot parse state '{}'".format(v['state']))

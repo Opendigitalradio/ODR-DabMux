@@ -89,7 +89,22 @@ state.critical 2:4
 ctx = zmq.Context()
 
 if not os.environ.get("MUNIN_CAP_MULTIGRAPH"):
-    print("This needs munin version 1.4 at least")
+    sys.stderr.write("This needs munin version 1.4 at least\n")
+    sys.exit(1)
+
+def do_transaction(command, sock):
+    """To a send + receive transaction, quit whole program on timeout"""
+    sock.send(command)
+
+    poller = zmq.Poller()
+    poller.register(sock, zmq.POLLIN)
+
+    socks = dict(poller.poll(1000))
+    if socks:
+        if socks.get(sock) == zmq.POLLIN:
+            return sock.recv()
+
+    sys.stderr.write("Could not receive data for command '{}'\n".format(command))
     sys.exit(1)
 
 def connect():
@@ -98,10 +113,10 @@ def connect():
     returns: the socket"""
 
     sock = zmq.Socket(ctx, zmq.REQ)
+    sock.set(zmq.LINGER, 5)
     sock.connect("tcp://localhost:12720")
 
-    sock.send("info")
-    version = json.loads(sock.recv())
+    version = json.loads(do_transaction("info", sock))
 
     if not version['service'].startswith("ODR-DabMux"):
         sys.stderr.write("Wrong version\n")
@@ -113,8 +128,7 @@ re_state = re.compile(r"\w+ \((\d+)\)")
 
 if len(sys.argv) == 1:
     sock = connect()
-    sock.send("values")
-    values = json.loads(sock.recv())['values']
+    values = json.loads(do_transaction("values", sock))['values']
 
     munin_values = ""
     for ident in values:
@@ -138,16 +152,14 @@ if len(sys.argv) == 1:
                 munin_values += "multigraph state_{ident}\n".format(ident=ident_)
                 munin_values += "state.value {}\n".format(match.group(1))
             else:
-                print("Cannot parse state '{}'".format(v['state']))
+                sys.stderr.write("Cannot parse state '{}'\n".format(v['state']))
 
     print(munin_values)
 
 elif len(sys.argv) == 2 and sys.argv[1] == "config":
     sock = connect()
 
-    sock.send("config")
-
-    config = json.loads(sock.recv())
+    config = json.loads(do_transaction("config", sock))
 
     munin_config = config_top
 
@@ -156,5 +168,6 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 
     print(munin_config)
 else:
+    sys.stderr.write("Invalid command line arguments")
     sys.exit(1)
 

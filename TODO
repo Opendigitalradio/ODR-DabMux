@@ -13,7 +13,7 @@ to the multiplexer. Relevant spec: ETSI TS 102 693
 It would be beneficial to write and EDI decoding library that can be re-used in
 ODR-DabMod to add EDI input there too.
 
-Initial work started in http://git.mpb.li/git/odr-edilib/
+Stuff in http://git.mpb.li/git/odr-edilib/ could be helpful.
 
 There is experimental support for STI(PI, X)/RTP using UDP, which is used by
 AVT encoders. It does not properly reorder incoming UDP packets nor align
@@ -35,6 +35,11 @@ It is currently unclear what input formats and sources work for packet data,
 and which ones would make sense to add.
 
 Also, there is no documentation on the possibilites of packet data.
+
+
+Multicast support for the UDP input
+-----------------------------------
+The current UDP input implementation cannot join a multicast group.
 
 
 Clarify usage of PTy
@@ -78,3 +83,8 @@ Add support for services with different ECC than ensemble
 ---------------------------------------------------------
 FIG 0/9 can transmit an Extended field for this information. Needs change of
 configuration file, internal structures and FIG 0/9.
+
+
+Implement FIG0/20 Service List
+------------------------------
+See ETSI TS 103 176

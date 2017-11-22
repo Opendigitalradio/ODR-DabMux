@@ -59,7 +59,7 @@ int DabOutputUdp::Open(const char* name)
     const string uri_without_proto(name);
 
     regex re_url("([^:]+):([0-9]+)(.*)");
-    regex re_query("[?](?:src=([^,]+))(?:,ttl=([0-9]+))?");
+    regex re_query("[?](?:src=([^&,]+))(?:[&,]ttl=([0-9]+))?");
     smatch what;
     if (regex_match(uri_without_proto, what, re_url, match_default)) {
         string address = what[1];
@@ -118,7 +118,7 @@ int DabOutputUdp::Open(const char* name)
     else {
         etiLog.level(error) << uri_without_proto <<
             " is an invalid format for UDP address: "
-            "expected ADDRESS:PORT[?src=SOURCE,ttl=TTL]";
+            "expected ADDRESS:PORT[?src=SOURCE&ttl=TTL]";
         return -1;
     }
 

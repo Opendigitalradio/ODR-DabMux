@@ -437,7 +437,7 @@ outputs {
     ; UDP send to host:port, simple example for unicast
     ;net_udp "udp://host:port"
     ; example with source and TTL specification for multicast
-    ;net_udp "udp://237.10.0.230:7000?src=10.0.1.125,ttl=1"
+    ;net_udp "udp://237.10.0.230:7000?src=10.0.1.125&ttl=1"
 
     ; RAW for farsync ETI card
     ;farsync "raw://sync0"

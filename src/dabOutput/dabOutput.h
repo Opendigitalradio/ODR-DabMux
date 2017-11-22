@@ -197,7 +197,7 @@ class DabOutputUdp : public DabOutput
             socket_ = new UdpSocket();
         }
 
-        ~DabOutputUdp() {
+        virtual ~DabOutputUdp() {
             delete socket_;
             delete packet_;
         }
@@ -316,7 +316,7 @@ class DabOutputZMQ : public DabOutput
         DabOutputZMQ(const DabOutputZMQ& other) = delete;
         DabOutputZMQ& operator=(const DabOutputZMQ& other) = delete;
 
-        ~DabOutputZMQ()
+        virtual ~DabOutputZMQ()
         {
             zmq_pub_sock_.close();
         }

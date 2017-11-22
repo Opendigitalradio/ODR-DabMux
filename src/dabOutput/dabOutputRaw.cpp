@@ -2,8 +2,10 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2017
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    RAW output used for farsync
    */
@@ -31,6 +33,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include "utils.h"
 #include "dabOutput.h"
 #ifdef _WIN32
 #   include <fscfg.h>
@@ -81,19 +84,69 @@ const unsigned char revTable[] = {
     0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
 
-int DabOutputRaw::Open(const char* filename)
+/* Takes an URI with some parameters in the form
+ * proto://something/etc?param1=foo&param2=bar
+ * and returns a map of
+ * { "__basename": "proto://something/etc", "param1": "foo", "param2": "bar }
+ */
+static std::map<std::string, std::string> tokeniseURIParam(const std::string& uri)
 {
-    if (filename == NULL) {
-        etiLog.log(error, "Socket name must be provided!\n");
+    std::map<std::string, std::string> m;
+
+    size_t ix = uri.find('?');
+    m["__basename"] = uri.substr(0, ix);
+
+    if (ix != std::string::npos) {
+        do {
+            const size_t ix_key = ix + 1;
+
+            const size_t ix_eq = uri.find('=', ix);
+            if (ix_eq == std::string::npos) {
+                // no equals sign, not a valid query.
+                break;
+            }
+
+            const size_t ix_val = ix_eq + 1;
+
+            const std::string key = uri.substr(ix_key, ix_eq - ix_key);
+
+            ix = uri.find('&', ix);
+            const size_t len_value =
+                (ix == std::string::npos) ? std::string::npos : ix - ix_val;
+
+            const std::string value = uri.substr(ix_val, len_value);
+
+            if (m.count(key) != 0) {
+                throw std::runtime_error("Key " + key +
+                        " was given twice in parameter list");
+            }
+            m[key] = value;
+        }
+        while (ix != std::string::npos);
+    }
+
+    return m;
+}
+
+int DabOutputRaw::Open(const char* name)
+{
+    if (name == nullptr) {
+        etiLog.log(error, "Socket name must be provided!");
         return -1;
     }
 
+    const std::string name_with_params(name);
+    const auto param_map = tokeniseURIParam(name_with_params);
+    filename_ = param_map.at("__basename");
+
+    const char* filename = filename_.c_str();
+
 #ifdef _WIN32
     // Opening device
-    this->socket_ = CreateFile(filename, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+    socket_ = CreateFile(filename, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL, NULL);
-    if (this->socket_ == INVALID_HANDLE_VALUE) {
-        etiLog.log(error, "Can't open raw device '%s': %i\n",
+    if (socket_ == INVALID_HANDLE_VALUE) {
+        etiLog.log(error, "Can't open raw device '%s': %i",
             filename, GetLastError());
         return -1;
     }
@@ -101,10 +154,10 @@ int DabOutputRaw::Open(const char* filename)
     // Configuring device
     DWORD result;
     FS_TE1_CONFIG config;
-    if (!DeviceIoControl(this->socket_, IoctlCodeFarSyncGetTE1Config, NULL, 0,
+    if (!DeviceIoControl(socket_, IoctlCodeFarSyncGetTE1Config, NULL, 0,
                 &config, sizeof(config), &result, NULL)) {
         etiLog.log(error,
-                "Can't get raw device '%s' config: %i\n",
+                "Can't get raw device '%s' config: %i",
                 filename, GetLastError());
         return -1;
     }
@@ -125,25 +178,25 @@ int DabOutputRaw::Open(const char* filename)
     config.losThreshold = 2;
     config.enableIdleCode = TRUE;
     config.idleCode = 0xff;
-    if (!DeviceIoControl(this->socket_, IoctlCodeFarSyncSetTE1Config,
+    if (!DeviceIoControl(socket_, IoctlCodeFarSyncSetTE1Config,
                 &config, sizeof(config), NULL, 0, &result, NULL)) {
         etiLog.log(error,
-                "Can't set raw device '%s' config: %i\n",
+                "Can't set raw device '%s' config: %i",
                 filename, GetLastError());
         return -1;
     }
 
     // Starting device
-    if (!DeviceIoControl(this->socket_, IoctlCodeFarSyncQuickStart, NULL, 0,
+    if (!DeviceIoControl(socket_, IoctlCodeFarSyncQuickStart, NULL, 0,
                 NULL, 0, &result, NULL)) {
-        etiLog.log(error, "Can't start raw device '%s': %i\n",
+        etiLog.log(error, "Can't start raw device '%s': %i",
                 filename, GetLastError());
         return -1;
     }
 #else
-    this->socket_ = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (this->socket_ == -1) {
-        etiLog.log(error, "Are you logged as root?\n");
+    socket_ = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (socket_ == -1) {
+        etiLog.log(error, "Failed to create socket");
         perror(filename);
         return -1;
     }
@@ -157,30 +210,30 @@ int DabOutputRaw::Open(const char* filename)
     struct fstioc_info info;
     memset(&info, 0, sizeof(info));
     ifr.ifr_data = (char*)&info;
-    if (ioctl(this->socket_, FSTGETCONF, &ifr) == -1) {
-        etiLog.log(debug, "Cyclades card identified.\n");
-        this->isCyclades_ = true;
+    if (ioctl(socket_, FSTGETCONF, &ifr) == -1) {
+        etiLog.log(debug, "Cyclades card identified.");
+        isCyclades_ = true;
 
         // Set the interface MTU if needed
-        if (ioctl(this->socket_, SIOCGIFMTU, &ifr) == -1) {
-            etiLog.log(error, "Can't get raw device MTU!\n");
+        if (ioctl(socket_, SIOCGIFMTU, &ifr) == -1) {
+            etiLog.log(error, "Can't get raw device MTU!");
             perror(filename);
             return -1;
         } else {
             if (ifr.ifr_mtu != 6143) {
                 ifr.ifr_mtu = 6143;
-                if (ioctl(this->socket_, SIOCSIFMTU, &ifr) == -1) {
+                if (ioctl(socket_, SIOCSIFMTU, &ifr) == -1) {
                     etiLog.log(error,
-                            "Can't Cyclades device MTU!\n");
+                            "Can't Cyclades device MTU!");
                     perror(filename);
                     return -1;
                 }
             }
         }
     } else {
-        etiLog.log(debug, "Farsync card identified.\n");
-        etiLog.log(debug, "Using version %s of the FarSync driver\n", FST_USER_VERSION);
-        this->isCyclades_ = false;
+        etiLog.log(debug, "Farsync card identified. "
+                "Using version %s of the FarSync driver", FST_USER_VERSION);
+        isCyclades_ = false;
 
         info.lineInterface = E1;
         info.proto = FST_RAW;
@@ -195,6 +248,20 @@ int DabOutputRaw::Open(const char* filename)
         info.rxBufferSize = 6144;
         // E1 specific config
         info.clockSource = CLOCKING_SLAVE;
+
+        if (param_map.count("clocking") != 0) {
+            if (param_map.at("clocking") == "master") {
+                info.clockSource = CLOCKING_MASTER;
+            }
+            else if (param_map.at("clocking") == "slave") {
+                info.clockSource = CLOCKING_SLAVE;
+            }
+            else {
+                throw std::runtime_error("The param clocking of the RAW output "
+                        "accepts master and slave as values only");
+            }
+        }
+
         info.structure = STRUCTURE_UNFRAMED;
         info.interface = INTERFACE_BNC; //RJ48C;
         info.coding = CODING_HDB3;
@@ -202,40 +269,45 @@ int DabOutputRaw::Open(const char* filename)
         info.idleCode = 0xff;
         info.valid = FSTVAL_ALL;
 
+        if (param_map.count("extsyncclock") != 0) {
+            long long int rate = std::stoi(param_map.at("extsyncclock"));
+            info.extSyncClockEnable = 1;
+            info.extSyncClockRate = rate;
+        }
+        else {
+            info.extSyncClockEnable = 0;
+        }
+
         // Setting configuration
-        etiLog.log(debug, "Set configuration.\n");
         ifr.ifr_data = (char*)&info;
-        if (ioctl(this->socket_, FSTSETCONF, &ifr) == -1) {
+        if (ioctl(socket_, FSTSETCONF, &ifr) == -1) {
             etiLog.log(error,
-                    "Can't set Farsync configurationi!\n");
+                    "Can't set Farsync configuration!");
             perror(filename);
             return -1;
         }
 
         // Disabling notify
-        etiLog.log(debug, "Disable notify.\n");
         int notify = 0;
         ifr.ifr_data = (char*)&notify;
-        if (ioctl(this->socket_, FSTSNOTIFY, &ifr) == -1) {
-            etiLog.log(error, "Can't disable Farsync notify!\n");
+        if (ioctl(socket_, FSTSNOTIFY, &ifr) == -1) {
+            etiLog.log(error, "Can't disable Farsync notify!");
             perror(filename);
             return -1;
         }
 
         // Apply the new configuration
         // Set the interface down if needed
-        etiLog.log(debug, "Get flags.\n");
-        if (ioctl(this->socket_, SIOCGIFFLAGS, &ifr) == -1) {
-            etiLog.log(error, "Can't get Farsync flags!\n");
+        if (ioctl(socket_, SIOCGIFFLAGS, &ifr) == -1) {
+            etiLog.log(error, "Can't get Farsync flags!");
             perror(filename);
             return -1;
         } else {
             if (ifr.ifr_flags & IFF_UP) {
-                etiLog.log(debug, "Set flags.\n");
                 ifr.ifr_flags &= ~IFF_UP;
-                if (ioctl(this->socket_, SIOCSIFFLAGS, &ifr) == -1) {
+                if (ioctl(socket_, SIOCSIFFLAGS, &ifr) == -1) {
                     etiLog.log(error,
-                            "Can't turn down Farsync device!\n");
+                            "Can't turn down Farsync device!");
                     perror(filename);
                     return -1;
                 }
@@ -243,17 +315,15 @@ int DabOutputRaw::Open(const char* filename)
         }
 
         // Set the interface MTU if needed
-        etiLog.log(debug, "Get MTU.\n");
-        if (ioctl(this->socket_, SIOCGIFMTU, &ifr) == -1) {
-            etiLog.log(error, "Can't get Farsync MTU!\n");
+        if (ioctl(socket_, SIOCGIFMTU, &ifr) == -1) {
+            etiLog.log(error, "Can't get Farsync MTU!");
             perror(filename);
             return -1;
         } else {
             if (ifr.ifr_mtu != 6144) {
-                etiLog.log(debug, "Set MTU.\n");
                 ifr.ifr_mtu = 6144;
-                if (ioctl(this->socket_, SIOCSIFMTU, &ifr) == -1) {
-                    etiLog.log(error, "Can't set Farsync MTU!\n");
+                if (ioctl(socket_, SIOCSIFMTU, &ifr) == -1) {
+                    etiLog.log(error, "Can't set Farsync MTU!");
                     perror(filename);
                     return -1;
                 }
@@ -262,52 +332,48 @@ int DabOutputRaw::Open(const char* filename)
     }
 
     // Set the interface up if needed
-    etiLog.log(debug, "Get flags.\n");
-    if (ioctl(this->socket_, SIOCGIFFLAGS, &ifr) == -1) {
-        etiLog.log(error, "Can't get raw device flags!\n");
+    if (ioctl(socket_, SIOCGIFFLAGS, &ifr) == -1) {
+        etiLog.log(error, "Can't get raw device flags!");
         perror(filename);
         return -1;
     } else {
         if (!(ifr.ifr_flags & IFF_UP)) {
             ifr.ifr_flags |= IFF_UP;
-            etiLog.log(debug, "Set flags.\n");
-            if (ioctl(this->socket_, SIOCSIFFLAGS, &ifr) == -1) {
-                etiLog.log(error, "Can't turn up raw device!\n");
+            if (ioctl(socket_, SIOCSIFFLAGS, &ifr) == -1) {
+                etiLog.log(error, "Can't turn up raw device!");
                 perror(filename);
                 return -1;
             }
         }
     }
 
-    close(this->socket_);
+    close(socket_);
 
     ////////////////////
     // Opening device //
     ////////////////////
 
-    if ((this->socket_ = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_CUST))) == -1) {
-        etiLog.log(error, "Are you logged as root?\n");
+    if ((socket_ = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_CUST))) == -1) {
+        etiLog.log(error, "Are you logged as root?");
         perror(filename);
         return -1;
     }
 
     // ioctl to read the interface number
-    etiLog.log(debug, "Get index.\n");
     memset(&ifr, 0, sizeof(struct ifreq));
     strncpy(ifr.ifr_name, filename, sizeof(ifr.ifr_name));
-    if (ioctl(this->socket_, SIOCGIFINDEX, (char *) &ifr) == -1) {
+    if (ioctl(socket_, SIOCGIFINDEX, (char *) &ifr) == -1) {
         perror(filename);
         return -1;
     }
 
     // Bind to the interface name
-    etiLog.log(debug, "Bind interface.\n");
     memset(&saddr, 0, sizeof(struct sockaddr_ll));
     saddr.sll_family = AF_PACKET;
     saddr.sll_protocol = ARPHRD_RAWHDLC;
     saddr.sll_ifindex = ifr.ifr_ifindex;
-    if (bind(this->socket_, (struct sockaddr *) &saddr, sizeof(saddr)) == -1) {
-        etiLog.log(error, "Can't bind raw device!\n");
+    if (bind(socket_, (struct sockaddr *) &saddr, sizeof(saddr)) == -1) {
+        etiLog.log(error, "Can't bind raw device!");
         perror(filename);
         return -1;
     }
@@ -319,32 +385,37 @@ int DabOutputRaw::Open(const char* filename)
 
 int DabOutputRaw::Write(void* buffer, int size)
 {
+    std::vector<unsigned char> buffer_(6144);
+    if ((size_t)size > buffer_.size()) {
+        throw std::logic_error("DabOutputRaw::Write size exceeded");
+    }
+    memcpy(buffer_.data(), buffer, size);
+    memset(buffer_.data() + size, 0x55, 6144 - size);
+
     // Encoding data
-    memcpy(this->buffer_, buffer, size);
-    memset(this->buffer_ + size, 0x55, 6144 - size);
     for (int i = 0; i < 6144; ++i) {
-        this->buffer_[i] = revTable[this->buffer_[i]];
+        buffer_[i] = revTable[buffer_[i]];
     }
 
     // Writting data
 #ifdef _WIN32
     DWORD result;
-    if(!DeviceIoControl(this->socket_, IoctlCodeTxFrame, this->buffer_, 6144,
+    if(!DeviceIoControl(socket_, IoctlCodeTxFrame, buffer_.data(), 6144,
         NULL, 0, &result, NULL)) {
             goto RAW_WRITE_ERROR;
     }
 #else
     /*
-    if (write(this->socket_, this->buffer_ + 1, 6143) != 6143) {
+    if (write(socket_, buffer_.data()+ 1, 6143) != 6143) {
         goto RAW_WRITE_ERROR;
     }
     */
-    if (this->isCyclades_) {
-        if (write(this->socket_, this->buffer_ + 1, 6143) != 6143) {
+    if (isCyclades_) {
+        if (write(socket_, buffer_.data() + 1, 6143) != 6143) {
             goto RAW_WRITE_ERROR;
         }
     } else {
-        int ret = send(this->socket_, this->buffer_, 6144, 0);
+        int ret = send(socket_, buffer_.data(), 6144, 0);
         if (ret != 6144) {
             etiLog.log(info, "%i/6144 bytes written", ret);
             goto RAW_WRITE_ERROR;
@@ -366,9 +437,9 @@ RAW_WRITE_ERROR:
         (LPTSTR)&errMsg,
         0,
         NULL) == 0) {
-            fprintf(stderr, "Error while writting to raw socket: %i\n", err);
+            fprintf(stderr, "Error while writting to raw socket: %i", err);
     } else {
-        fprintf(stderr, "Error while writting to raw socket: %s\n", errMsg);
+        fprintf(stderr, "Error while writting to raw socket: %s", errMsg);
         LocalFree(errMsg);
     }
 #else
@@ -382,12 +453,12 @@ RAW_WRITE_ERROR:
 int DabOutputRaw::Close()
 {
 #ifdef _WIN32
-    CancelIo(this->socket_);
-    CloseHandle(this->socket_);
+    CancelIo(socket_);
+    CloseHandle(socket_);
     return 0;
 #else
-    if (close(this->socket_) == 0) {
-        this->socket_ = -1;
+    if (close(socket_) == 0) {
+        socket_ = -1;
         return 0;
     }
     perror("Can't close raw socket");

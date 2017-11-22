@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -152,27 +152,6 @@ class DabOutputFifo : public DabOutputFile
 class DabOutputRaw : public DabOutput
 {
     public:
-        DabOutputRaw()
-        {
-            socket_ = -1;
-            isCyclades_ = false;
-            buffer_ = new unsigned char[6144];
-        }
-
-        DabOutputRaw(const DabOutputRaw& other)
-        {
-            socket_ = other.socket_;
-            isCyclades_ = other.isCyclades_;
-            buffer_ = new unsigned char[6144];
-            memcpy(buffer_, other.buffer_, 6144);
-        }
-
-        ~DabOutputRaw() {
-            delete[] buffer_;
-        }
-
-        const DabOutputRaw operator=(const DabOutputRaw& other) = delete;
-
         int Open(const char* name);
         int Write(void* buffer, int size);
         int Close();
@@ -180,12 +159,13 @@ class DabOutputRaw : public DabOutput
         std::string get_info() const {
             return "raw://" + filename_;
         }
+
         virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
+
     private:
         std::string filename_;
-        int socket_;
-        bool isCyclades_;
-        unsigned char* buffer_;
+        int socket_ = -1;
+        bool isCyclades_ = false;
 };
 
 // -------------- UDP ------------------

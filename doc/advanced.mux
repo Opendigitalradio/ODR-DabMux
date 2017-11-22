@@ -438,6 +438,15 @@ outputs {
     ;net_udp "udp://host:port"
     ; example with source and TTL specification for multicast
     ;net_udp "udp://237.10.0.230:7000?src=10.0.1.125,ttl=1"
-    ; RAW (for farsync ETI card)
-    ;farsync "raw://device"
+
+    ; RAW for farsync ETI card
+    ;farsync "raw://sync0"
+    ; the output also supports two parameters:
+    ;  clocking=master and clocking=slave
+    ;
+    ; and extsyncclock which enables external clock sync. Its value is the
+    ; external clock frequency in Hz.
+    ; Example:
+    ;farsync "raw://sync0?clocking=master&extsyncclock=10000000"
+
 }

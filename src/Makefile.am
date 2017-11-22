@@ -121,7 +121,7 @@ odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
                            dabOutput/dabOutputRaw.cpp \
                            Log.h Log.cpp \
                            zmq.hpp
-odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
+odr_zmq2farsync_LDADD    = $(ZMQ_LIBS) -lboost_system
 odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 

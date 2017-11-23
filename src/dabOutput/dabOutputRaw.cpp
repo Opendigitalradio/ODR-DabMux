@@ -109,8 +109,7 @@ static std::map<std::string, std::string> tokeniseURIParam(const std::string& ur
             const size_t ix_val = ix_eq + 1;
 
             const std::string key = uri.substr(ix_key, ix_eq - ix_key);
-
-            ix = uri.find('&', ix);
+            ix = uri.find('&', ix_eq);
             const size_t len_value =
                 (ix == std::string::npos) ? std::string::npos : ix - ix_val;
 

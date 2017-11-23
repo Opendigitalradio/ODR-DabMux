@@ -33,7 +33,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include "utils.h"
 #include "dabOutput.h"
 #ifdef _WIN32
 #   include <fscfg.h>
@@ -43,6 +42,7 @@
 #   include <sys/types.h>
 #   include <sys/socket.h>
 #   include <sys/ioctl.h>
+/* Careful, including boost here can lead to errors because of conflicting struct definitions */
 #   include <linux/if_packet.h>
 #   include <linux/netdevice.h>
 #   include <net/if_arp.h>

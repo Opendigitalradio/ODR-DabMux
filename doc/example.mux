@@ -67,6 +67,9 @@ remotecontrol {
 
 ; Some ensemble parameters
 ensemble {
+    ; A unique 16-bit id is allocated to the ensemble and allows unambiguous
+    ; identification of the ensemble when associated with the ensemble ECC.
+    ; The id normally starts with the coutry id. (See ETSI TS 101 756)
     id 0x4fff ; you can also use decimal if you want
     ecc 0xec ; Extended Country Code
 

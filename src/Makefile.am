@@ -103,7 +103,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 fig/FIGCarousel.cpp fig/FIGCarousel.h \
 					 fig/TransitionHandler.h \
 					 mpeg.h mpeg.c \
-					 prbs.h prbs.cpp \
+					 PrbsGenerator.cpp PrbsGenerator.h \
 					 utils.cpp utils.h \
 					 zmq.hpp \
 					 fec/char.h fec/rs-common.h \

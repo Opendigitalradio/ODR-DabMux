@@ -19,7 +19,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "prbs.h"
+#include "PrbsGenerator.h"
 
 #include <string.h>
 #include <limits.h>

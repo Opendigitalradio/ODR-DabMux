@@ -66,7 +66,7 @@ TcpSocket::TcpSocket(int port, const string& name) :
         m_own_address.setAddress(name);
         m_own_address.setPort(port);
 
-        if (bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
+        if (::bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
             ::close(m_sock);
             m_sock = INVALID_SOCKET;
             throw std::runtime_error("Can't bind socket");

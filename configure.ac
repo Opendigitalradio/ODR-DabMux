@@ -159,6 +159,26 @@ AX_CHECK_COMPILE_FLAG([-Wlogical-op], [CXXFLAGS="$CXXFLAGS -Wlogical-op"])
 AX_CHECK_COMPILE_FLAG([-Wrestrict], [CXXFLAGS="$CXXFLAGS -Wrestrict"])
 AX_CHECK_COMPILE_FLAG([-Wdouble-promotion], [CXXFLAGS="$CXXFLAGS -Wdouble-promotion"])
 AX_CHECK_COMPILE_FLAG(["-Wformat=2"], [CXXFLAGS="$CXXFLAGS -Wformat=2"])
+
+# Linux defines MSG_NOSIGNAL, some other systems have SO_NOSIGPIPE instead
+AC_MSG_CHECKING(for MSG_NOSIGNAL)
+AC_COMPILE_IFELSE([ AC_LANG_PROGRAM([[
+                    #include <sys/socket.h>
+                    int f = MSG_NOSIGNAL;
+                    ]])],
+                   [ AC_MSG_RESULT(yes)
+                     AC_DEFINE(HAVE_MSG_NOSIGNAL, 1, [Define this symbol if you have MSG_NOSIGNAL]) ],
+                   [ AC_MSG_RESULT(no) ])
+
+AC_MSG_CHECKING(for SO_NOSIGPIPE)
+AC_COMPILE_IFELSE([ AC_LANG_PROGRAM([[
+                    #include <sys/socket.h>
+                    int f = SO_NOSIGPIPE;
+                    ]])],
+                   [ AC_MSG_RESULT(yes)
+                     AC_DEFINE(HAVE_SO_NOSIGPIPE, 1, [Define this symbol if you have SO_NOSIGPIPE]) ],
+                   [ AC_MSG_RESULT(no) ])
+
 AC_LANG_POP([C++])
 
 # ZeroMQ

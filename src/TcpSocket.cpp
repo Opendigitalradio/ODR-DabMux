@@ -57,7 +57,7 @@ TcpSocket::TcpSocket(int port, const string& name) :
 
 #if defined(HAVE_SO_NOSIGPIPE)
         int val = 1;
-        if (setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))
+        if (setsockopt(m_sock, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))
                 == SOCKET_ERROR) {
             throw std::runtime_error("Can't set SO_NOSIGPIPE");
         }

@@ -32,8 +32,6 @@ if HAVE_OUTPUT_RAW_TEST
 bin_PROGRAMS+=odr-zmq2farsync
 endif
 
-ZMQ_LIBS    =-lzmq
-
 if HAVE_EDI_TEST
 bin_PROGRAMS+=odr-zmq2edi
 CURL_LIBS    =-lcurl
@@ -42,7 +40,7 @@ CURL_LIBS    =
 endif
 
 odr_dabmux_CFLAGS   =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
-odr_dabmux_CXXFLAGS =-Wall -std=c++11 -I$(FARSYNC_DIR) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS)
+odr_dabmux_CXXFLAGS =-Wall -std=c++11 -I$(FARSYNC_DIR) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
 odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) $(BOOST_LDFLAGS) \
 					 -lpthread $(BOOST_SYSTEM_LIB) $(BOOST_THREAD_LIB) $(BOOST_REGEX_LIB) $(BOOST_ASIO_LIB)
 
@@ -114,7 +112,7 @@ odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 
 zmqinput_keygen_SOURCES  = zmqinput-keygen.c
 zmqinput_keygen_LDADD    = $(ZMQ_LIBS)
-zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS)
+zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS) $(ZMQ_CPPFLAGS)
 
 odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
                            dabOutput/dabOutput.h \
@@ -122,8 +120,8 @@ odr_zmq2farsync_SOURCES  = zmq2farsync/zmq2farsync.cpp \
                            Log.h Log.cpp \
                            zmq.hpp
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
-odr_zmq2farsync_CFLAGS   = -Wall $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
-odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
+odr_zmq2farsync_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
+odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) -I$(FARSYNC_DIR)
 
 odr_zmq2edi_SOURCES  = zmq2edi/zmq2edi.cpp \
 					   zmq2edi/EDISender.h zmq2edi/EDISender.cpp \
@@ -146,9 +144,9 @@ odr_zmq2edi_SOURCES  = zmq2edi/zmq2edi.cpp \
 					   crc.h crc.c \
 					   zmq.hpp
 odr_zmq2edi_LDADD    = $(ZMQ_LIBS) \
-					  -lpthread -lboost_thread -lboost_system
-odr_zmq2edi_CFLAGS   = -Wall $(GITVERSION_FLAGS)
-odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(GITVERSION_FLAGS)
+					   -lpthread -lboost_thread -lboost_system
+odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS)
+odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS)
 
 EXTRA_DIST = fec/README.md \
 			 fec/LICENSE

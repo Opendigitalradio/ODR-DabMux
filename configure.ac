@@ -186,7 +186,7 @@ AC_COMPILE_IFELSE([ AC_LANG_PROGRAM([[
 AC_LANG_POP([C++])
 
 # ZeroMQ
-AC_CHECK_LIB(zmq, zmq_init, [] , AC_MSG_ERROR(ZeroMQ libzmq is required))
+AX_ZMQ([4.0.0], [], AC_MSG_ERROR(ZeroMQ 4.0.0 is required))
 
 AC_DEFINE([HAVE_INPUT_ZEROMQ], [1], [Define if ZeroMQ input is enabled])
 AC_DEFINE([HAVE_OUTPUT_ZEROMQ], [1], [Define if ZeroMQ output is enabled])

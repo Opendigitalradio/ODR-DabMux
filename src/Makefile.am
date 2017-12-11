@@ -144,7 +144,7 @@ odr_zmq2edi_SOURCES  = zmq2edi/zmq2edi.cpp \
 					   crc.h crc.c \
 					   zmq.hpp
 odr_zmq2edi_LDADD    = $(ZMQ_LIBS) \
-					   -lpthread -lboost_thread -lboost_system
+					   -lpthread $(BOOST_THREAD_LIB) $(BOOST_SYSTEM_LIB)
 odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS)
 odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS)
 

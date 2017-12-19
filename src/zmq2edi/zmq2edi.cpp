@@ -48,20 +48,23 @@ void usage(void)
     cerr << "Usage:" << endl;
     cerr << "odr-zmq2edi [options] <source>" << endl << endl;
 
-    cerr << "Where the options are:" << endl;
+    cerr << "Options:" << endl;
+    cerr << "The following options can be given only once:" << endl;
     cerr << " <source> is a ZMQ URL that points to a ODR-DabMux ZMQ output." << endl;
     cerr << " -w <delay> Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
-    cerr << " -d <destination ip> sets the destination ip." << endl;
     cerr << " -p <destination port> sets the destination port." << endl;
-    cerr << " -s <source port> sets the source port." << endl;
-    cerr << " -S <source ip> select the source IP in case we want to use multicast." << endl;
-    cerr << " -t <ttl> set the packet's TTL." << endl;
     cerr << " -P Disable PFT and send AFPackets." << endl;
     cerr << " -f <fec> sets the FEC." << endl;
     cerr << " -i <interleave> enables the interleaved with this latency." << endl;
     cerr << " -D dumps the EDI to edi.debug file." << endl;
     cerr << " -v Enables verbose mode." << endl;
-    cerr << " -a <tagpacket alignement> sets the alignment of the TAG Packet (default 8)." << endl;
+    cerr << " -a <tagpacket alignement> sets the alignment of the TAG Packet (default 8)." << endl << endl;
+
+    cerr << "The following options can be given several times, when more than once destination is addressed:" << endl;
+    cerr << " -d <destination ip> sets the destination ip." << endl;
+    cerr << " -s <source port> sets the source port." << endl;
+    cerr << " -S <source ip> select the source IP in case we want to use multicast." << endl;
+    cerr << " -t <ttl> set the packet's TTL." << endl;
 }
 
 static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_bytes)
@@ -141,10 +144,70 @@ static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_b
     throw std::runtime_error("Insufficient data");
 }
 
+/* There is some state inside the parsing of destination arguments,
+ * because several destinations can be given.  */
+
+static edi_destination_t edi_destination;
+static bool source_port_set = false;
+static bool source_addr_set = false;
+static bool ttl_set = false;
+static bool dest_addr_set = false;
+
+static void add_edi_destination(void)
+{
+    if (not dest_addr_set) {
+        throw std::runtime_error("Destination address not specified for destination number " +
+                std::to_string(edi_conf.destinations.size() + 1));
+    }
+
+    edi_conf.destinations.push_back(edi_destination);
+    edi_destination_t newdest;
+    edi_destination = newdest;
+
+    source_port_set = false;
+    source_addr_set = false;
+    ttl_set = false;
+    dest_addr_set = false;
+}
+
+static void parse_destination_args(char option)
+{
+    switch (option) {
+        case 's':
+            if (source_port_set) {
+                add_edi_destination();
+            }
+            edi_destination.source_port = std::stoi(optarg);
+            source_port_set = true;
+            break;
+        case 'S':
+            if (source_addr_set) {
+                add_edi_destination();
+            }
+            edi_destination.source_addr = optarg;
+            source_addr_set = true;
+            break;
+        case 't':
+            if (ttl_set) {
+                add_edi_destination();
+            }
+            edi_destination.ttl = std::stoi(optarg);
+            ttl_set = true;
+            break;
+        case 'd':
+            if (dest_addr_set) {
+                add_edi_destination();
+            }
+            edi_destination.dest_addr = optarg;
+            dest_addr_set = true;
+            break;
+        default:
+            throw std::logic_error("parse_destination_args invalid");
+    }
+}
+
 int start(int argc, char **argv)
 {
-    edi_destination_t edi_destination;
-
     edi_conf.enable_pft = true;
 
     if (argc == 0) {
@@ -161,19 +224,13 @@ int start(int argc, char **argv)
             case -1:
                 break;
             case 'd':
-                edi_destination.dest_addr = optarg;
+            case 's':
+            case 'S':
+            case 't':
+                parse_destination_args(ch);
                 break;
             case 'p':
                 edi_conf.dest_port = std::stoi(optarg);
-                break;
-            case 's':
-                edi_destination.source_port = std::stoi(optarg);
-                break;
-            case 'S':
-                edi_destination.source_addr = optarg;
-                break;
-            case 't':
-                edi_destination.ttl = std::stoi(optarg);
                 break;
             case 'P':
                 edi_conf.enable_pft = false;
@@ -217,17 +274,22 @@ int start(int argc, char **argv)
         }
     }
 
+    add_edi_destination();
+
     if (optind >= argc) {
         etiLog.level(error) << "source option is missing";
         return 1;
     }
 
-    if (edi_destination.dest_addr.empty() or edi_conf.dest_port == 0) {
-        etiLog.level(error) << "No EDI output defined";
+    if (edi_conf.dest_port == 0) {
+        etiLog.level(error) << "No EDI destination port defined";
         return 1;
     }
 
-    edi_conf.destinations.push_back(edi_destination);
+    if (edi_conf.destinations.empty()) {
+        etiLog.level(error) << "No EDI destinations set";
+        return 1;
+    }
 
     etiLog.level(info) << "Setting up EDI Sender with delay " << delay_ms << " ms";
     edisender.start(edi_conf, delay_ms);

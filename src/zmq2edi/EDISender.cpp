@@ -325,11 +325,18 @@ void EDISender::process()
         frame_t frame;
         frames.wait_and_pop(frame);
 
-        if (not running.load()) {
+        if (not running.load() or frame.first.empty()) {
             break;
         }
 
-        send_eti_frame(frame.first.data(), frame.second);
+        if (frame.first.size() == 6144) {
+            send_eti_frame(frame.first.data(), frame.second);
+        }
+        else {
+            etiLog.level(warn) << "Ignoring short ETI frame, "
+                "DFLC=" << frame.second.dlfc << ", len=" <<
+                frame.first.size();
+        }
 
         if (wait_times.size() == 250) { // every six seconds
             const double n = wait_times.size();

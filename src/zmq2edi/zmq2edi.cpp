@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -37,6 +37,9 @@
 #include "EDISender.h"
 #include "dabOutput/dabOutput.h"
 
+constexpr size_t MAX_ERROR_COUNT = 10;
+constexpr long ZMQ_TIMEOUT_MS = 1000;
+
 static edi_configuration_t edi_conf;
 
 static EDISender edisender;
@@ -64,7 +67,11 @@ void usage(void)
     cerr << " -d <destination ip> sets the destination ip." << endl;
     cerr << " -s <source port> sets the source port." << endl;
     cerr << " -S <source ip> select the source IP in case we want to use multicast." << endl;
-    cerr << " -t <ttl> set the packet's TTL." << endl;
+    cerr << " -t <ttl> set the packet's TTL." << endl << endl;
+
+    cerr << "odr-zmq2edi will quit if it does not receive data for " <<
+        (int)(MAX_ERROR_COUNT * ZMQ_TIMEOUT_MS / 1000.0) << " seconds." << endl;
+    cerr << "It is best practice to run this tool under a process supervisor that will restart it automatically." << endl;
 }
 
 static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_bytes)
@@ -308,13 +315,12 @@ int start(int argc, char **argv)
     zmq_sock.connect(source_url);
     zmq_sock.setsockopt(ZMQ_SUBSCRIBE, NULL, 0); // subscribe to all messages
 
-    while (error_count < 10) {
+    while (error_count < MAX_ERROR_COUNT) {
         zmq::message_t incoming;
         zmq::pollitem_t items[1];
         items[0].socket = zmq_sock;
         items[0].events = ZMQ_POLLIN;
-        const long timeout_ms = 300;
-        const int num_events = zmq::poll(items, 1, timeout_ms);
+        const int num_events = zmq::poll(items, 1, ZMQ_TIMEOUT_MS);
         if (num_events == 0) { // timeout
             error_count++;
         }

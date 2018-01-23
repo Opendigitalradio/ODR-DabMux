@@ -1,8 +1,7 @@
 # Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
 #
-# Copyright (C) 2017
-# Matthias P. Braendli, matthias.braendli@mpb.li
+# Copyright (C) 2018 Matthias P. Braendli, http://opendigitalradio.org
 
 # This file is part of ODR-DabMux.
 #
@@ -19,35 +18,15 @@
 # You should have received a copy of the GNU General Public License
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.69)
 AC_INIT([ODR-DabMux], [1.3.1], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])
+AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/DabMux.cpp])
 AC_CONFIG_HEADER([config.h])
 AM_SILENT_RULES([yes])
-
-AC_CONFIG_MACRO_DIR([m4])
-
-case $host in
-*linux*)
-    case $target_cpu in
-    x86_64)
-        AC_DEFINE([__64BIT__], [], [__16BIT__, __32BIT__])
-        ;;
-    *)
-        AC_DEFINE([__32BIT__], [], [__16BIT__, __64BIT__])
-        AC_SUBST([BUILD_TARGET], ["CC='gcc -m32' CXX='g++ -m32' --target=i686"])
-        flags="-m32"
-    esac
-    ;;
-*)
-    AC_DEFINE([__32BIT__], [], [__16BIT__, __64BIT__])
-    AC_SUBST([GETOPT], ["xgetopt.cpp xgetopt.h"])
-    AC_SUBST([WSOCK32], ["-lwsock32"])
-    AC_SUBST([BUILD_HOST], ["--host i386-mingw32msvc"])
-esac
 
 # Checks for programs.
 AC_PROG_CXX
@@ -58,54 +37,17 @@ AC_PROG_INSTALL
 AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 
 # Checks for libraries.
-AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
+AX_PTHREAD([], AC_MSG_ERROR([requires pthread]))
 AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
 AX_BOOST_THREAD
 AX_BOOST_SYSTEM
-AX_BOOST_REGEX
 AX_BOOST_ASIO
 
-AC_CHECK_LIB([m], [sin])
+AC_SUBST([FARSYNC_DIR], ['$(top_srcdir)/lib/farsync/linux'])
 
 # Checks for header files.
-AC_MSG_CHECKING([for OS type])
-AC_PREPROC_IFELSE(
-        [AC_LANG_SOURCE([
-#ifndef _WIN32
-#error windows
-#endif
-            ])],
-        [OS=windows],
-        [OS=linux]
-        )
-AC_MSG_RESULT([$OS])
-AM_CONDITIONAL([WINDOWS], [test "x$OS" == "xwindows"])
-AC_SUBST([FARSYNC_DIR], ['$(top_srcdir)/lib/farsync/'$OS])
-
 AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_CONST
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_HEADER_TIME
-AC_STRUCT_TM
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT8_T
-AC_C_VOLATILE
-
-# Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
-AC_FUNC_REALLOC
-AC_TYPE_SIGNAL
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero gethostbyname gettimeofday inet_ntoa memchr memmove memset socket strchr strdup strerror strrchr strstr strtol strtoul])
 
 # Options
 # Outputs

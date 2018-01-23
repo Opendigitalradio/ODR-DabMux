@@ -11,6 +11,7 @@ ODR-mmbTools is available in the *guide*, available on the
 [Opendigitalradio mmbTools page](http://www.opendigitalradio.org/mmbtools).
 
 Features of ODR-DabMux:
+
 - Standards-compliant DAB multiplexer
 - Configuration file, see doc/example.mux
 - Timestamping support required for SFN
@@ -18,47 +19,48 @@ Features of ODR-DabMux:
 - ZeroMQ input that can be used with ODR-AudioEnc
   which supports CURVE authentication
 - Experimental STI-D(PI, X)/RTP input intended to be compatible
-  with AVT encoders.
+  with compliant encoders.
 - Logging to syslog
 - Monitoring using munin tool
 - Includes a Telnet and ZMQ Remote Control for setting/getting parameters
 - EDI output
 - Support for FarSync TE1 and TE1e cards (G.703)
-- Something that will one day become a nice GUI for configuration,
-  see gui/README.md
+- Something that will (with your help?) one day become a nice GUI for
+  configuration, see `gui/README.md`
 
-Additional tools: odr-zmq2edi, a tool that can convert a ZeroMQ ETI stream
-to an EDI stream. odr-zmq2farsync, a tool that can drive a FarSync card from
+Additional tools: `odr-zmq2edi`, a tool that can convert a ZeroMQ ETI stream
+to an EDI stream. `odr-zmq2farsync`, a tool that can drive a FarSync card from
 a ZeroMQ ETI stream.
 
-The src/ directory contains the source code of ODR-DabMux and the additional
+The `src/` directory contains the source code of ODR-DabMux and the additional
 tools.
 
-The doc/ directory contains the ODR-DabMux documentation, a few example
+The `doc/` directory contains the ODR-DabMux documentation, a few example
 configuration files, and the munin and xymon scripts for the statistics server.
 
-The lib/ directory contains source code of libraries needed to build
+The `lib/` directory contains source code of libraries needed to build
 ODR-DabMux.
 
 Install
 =======
 
-See the INSTALL.md file for installation instructions.
+See `INSTALL.md` file for installation instructions.
 
 Licence
 =======
 
-See the files LICENCE and COPYING
+See the files `LICENCE` and `COPYING`
 
 Contributions and Contact
 =========================
 
 Contributions to this tool are welcome, you can reach users and developers
 through the
-[CRC-mmbTools google group](https://groups.google.com/forum/#!forum/crc-mmbtools).
+[CRC-mmbTools google group](https://groups.google.com/forum/#!forum/crc-mmbtools)
+or any other channels mentioned on the ODR website.
 
 There is a list of ideas and thoughts about new possible features and improvements
-in the TODO file.
+in the `TODO` file.
 
 Developed by:
 
@@ -73,6 +75,5 @@ David Lutton, Yoann Queret and Stefan Pöschel for bug-fix patches,
 Wim Nelis for the Xymon monitoring scripts,
 and many more for feedback and bug reports.
 
-
-- http://opendigitalradio.org/
+- [http://opendigitalradio.org/](http://opendigitalradio.org/)
 

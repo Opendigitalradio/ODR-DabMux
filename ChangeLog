@@ -1,6 +1,17 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2017-01-23: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.2):
+		Add clock selection to RAW output.
+		zmq2edi: intentionnally crash after timeout.
+		Add command "state" to the monitoring interface and add to Munin
+		script.
+		Fix TAI bulletin download failure handling.
+		Improve portability for non-Linux POSIX systems, and improve
+		autoconf checks.
+		Default international-table to 1.
+
 2017-08-23: Matthias P. Braendli <matthias@mpb.li>
 	(v1.3.1):
 		Add retords.pl script for Xymon monitoring tool.

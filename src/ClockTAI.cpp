@@ -97,7 +97,7 @@ int ClockTAI::get_valid_offset()
         else {
             for (const auto url : {tai_ietf_url, tai_tz_url}) {
                 try {
-                    download_tai_utc_bulletin(tai_ietf_url);
+                    download_tai_utc_bulletin(url);
 #if TEST
                     etiLog.level(info) << "Load bulletin from " << url;
 #endif

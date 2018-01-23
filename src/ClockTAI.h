@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -59,9 +59,12 @@ class ClockTAI {
 #endif
 
     private:
+        class download_failed {};
+
         // Either retrieve the bulletin from the cache or if necessarly
         // download it, and calculate the TAI-UTC offset.
-        // Returns the offset.
+        // Returns the offset or throws download_failed or a range_error
+        // if the offset is out of bounds.
         int get_valid_offset(void);
 
         // Download of new bulletin is done asynchronously

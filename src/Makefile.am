@@ -42,7 +42,7 @@ endif
 odr_dabmux_CFLAGS   =-Wall -I$(FARSYNC_DIR) $(GITVERSION_FLAGS)
 odr_dabmux_CXXFLAGS =-Wall -std=c++11 -I$(FARSYNC_DIR) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
 odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) $(BOOST_LDFLAGS) \
-					 -lpthread $(BOOST_SYSTEM_LIB) $(BOOST_THREAD_LIB) $(BOOST_REGEX_LIB) $(BOOST_ASIO_LIB)
+					 -lpthread $(BOOST_SYSTEM_LIB) $(BOOST_THREAD_LIB) $(BOOST_ASIO_LIB)
 
 odr_dabmux_SOURCES  =DabMux.cpp DabMux.h \
 					 DabMultiplexer.cpp DabMultiplexer.h \

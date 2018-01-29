@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -397,12 +397,19 @@ class DabService : public RemoteControllable
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
             RC_ADD_PARAMETER(pty, "Programme Type");
+            RC_ADD_PARAMETER(ptysd, "PTy Static/Dynamic [static,dynamic]");
         }
 
         std::string uid;
 
         uint32_t id = 0;
-        unsigned char pty = 0;
+        struct pty_settings_t {
+            uint8_t pty = 0; // 0 means disabled
+            bool dynamic_no_static = false;
+        };
+
+        pty_settings_t pty_settings;
+
         unsigned char language = 0;
 
         /* ASu (Announcement support) flags: this 16-bit flag field shall

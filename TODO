@@ -42,16 +42,6 @@ Multicast support for the UDP input
 The current UDP input implementation cannot join a multicast group.
 
 
-Clarify usage of PTy
---------------------
-We currently transmit dynamic PTy in FIG0/17 since it can be changed in
-through the remote control. Some receivers might not display the dynamic
-PTy, but only the static PTy. Clarify if we need to add both PTy variants
-to the configuration and the code.
-
-Also, check in the latest spec what changed regarding PTy.
-
-
 Improvements for inputs
 -----------------------
 Add statistics to UDP input, in a similar way that ZeroMQ offers statistics.

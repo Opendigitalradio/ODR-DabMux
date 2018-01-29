@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -589,7 +589,19 @@ void parse_ptree(
         }
 
         service->id = new_service_id;
-        service->pty = hexparse(pt_service.get("pty", "0"));
+        service->pty_settings.pty = hexparse(pt_service.get("pty", "0"));
+        // Default to dynamic for backward compatibility
+        const string dynamic_no_static_str = pt_service.get("pty-sd", "dynamic");
+        if (dynamic_no_static_str == "dynamic") {
+            service->pty_settings.dynamic_no_static = true;
+        }
+        else if (dynamic_no_static_str == "static") {
+            service->pty_settings.dynamic_no_static = false;
+        }
+        else {
+            throw runtime_error("pty-sd setting for service " +
+                    serviceuid + " is invalid");
+        }
         service->language = hexparse(pt_service.get("language", "0"));
 
         allservices[serviceuid] = service;

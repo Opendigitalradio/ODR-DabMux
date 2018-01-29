@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -220,8 +220,10 @@ void printServices(const vector<shared_ptr<DabService> >& services)
         etiLog.log(info, " id:            0x%lx (%lu)", service->id,
                 service->id);
 
-        etiLog.log(info, " pty:           0x%x (%u)", service->pty,
-                service->pty);
+        etiLog.log(info, " pty:           0x%x (%u) %s",
+                service->pty_settings.pty,
+                service->pty_settings.pty,
+                service->pty_settings.dynamic_no_static ? "Dynamic" : "Static");
 
         etiLog.log(info, " language:      0x%x (%u)",
                 service->language, service->language);

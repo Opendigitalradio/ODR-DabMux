@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -443,9 +443,9 @@ bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
             break;
         default:
             etiLog.log(error,
-                    "Error, unknown service type: %u\n",
+                    "Error, unknown service type: %u",
                     getType(ensemble));
-            throw std::runtime_error("DabService::isProgramme unknown service type");
+            throw runtime_error("DabService::isProgramme unknown service type");
     }
 
     return ret;
@@ -462,8 +462,7 @@ unsigned char DabService::nbComponent(const vector<DabComponent*>& components) c
     return count;
 }
 
-void DabService::set_parameter(const string& parameter,
-        const string& value)
+void DabService::set_parameter(const string& parameter, const string& value)
 {
     if (parameter == "label") {
         vector<string> fields;
@@ -474,29 +473,25 @@ void DabService::set_parameter(const string& parameter,
         }
         int success = this->label.setLabel(fields[0], fields[1]);
         stringstream ss;
-        switch (success)
-        {
+        switch (success) {
             case 0:
                 break;
             case -1:
-                ss << m_name << " short label " <<
+                ss << "Short label " <<
                     fields[1] << " is not subset of label '" <<
                     fields[0] << "'";
-                etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -2:
-                ss << m_name << " short label " <<
+                ss << "Short label " <<
                     fields[1] << " is too long (max 8 characters)";
-                etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -3:
-                ss << m_name << " label " <<
+                ss << "Label " <<
                     fields[0] << " is too long (max 16 characters)";
-                etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             default:
                 ss << m_name << " short label definition: program error !";
-                etiLog.level(alert) << ss.str();
+                etiLog.level(error) << ss.str();
                 throw ParameterError(ss.str());
         }
     }
@@ -504,13 +499,21 @@ void DabService::set_parameter(const string& parameter,
         int newpty = std::stoi(value); // International code, 5 bits
 
         if (newpty >= 0 and newpty < (1<<5)) {
-            pty = newpty;
+            pty_settings.pty = newpty;
         }
         else {
-            stringstream ss;
-            ss << m_name << " pty is out of bounds";
-            etiLog.level(warn) << ss.str();
-            throw ParameterError(ss.str());
+            throw ParameterError("PTy value is out of bounds");
+        }
+    }
+    else if (parameter == "ptysd") {
+        if (value == "static") {
+            pty_settings.dynamic_no_static = false;
+        }
+        else if (value == "dynamic") {
+            pty_settings.dynamic_no_static = true;
+        }
+        else {
+            throw ParameterError("Invalid value for ptysd, use static or dynamic");
         }
     }
     else {
@@ -528,7 +531,10 @@ const string DabService::get_parameter(const string& parameter) const
         ss << label.long_label() << "," << label.short_label();
     }
     else if (parameter == "pty") {
-        ss << (int)pty;
+        ss << (int)pty_settings.pty;
+    }
+    else if (parameter == "ptysd") {
+        ss << (pty_settings.dynamic_no_static ? "dynamic" : "static");
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -536,7 +542,6 @@ const string DabService::get_parameter(const string& parameter) const
         throw ParameterError(ss.str());
     }
     return ss.str();
-
 }
 
 void dabEnsemble::set_parameter(const string& parameter, const string& value)
@@ -610,8 +615,7 @@ unsigned short DabSubchannel::getSizeCu() const
                 return (bitrate >> 1);
                 break;
             default: // Should not happens
-                etiLog.log(error, "Bad protection level on "
-                        "subchannel\n");
+                etiLog.log(error, "Bad protection level on subchannel");
                 return 0;
             }
             break;
@@ -630,13 +634,12 @@ unsigned short DabSubchannel::getSizeCu() const
                 return (bitrate * 15) >> 5;
                 break;
             default: // Should not happens
-                etiLog.log(error,
-                        "Bad protection level on subchannel\n");
+                etiLog.log(error, "Bad protection level on subchannel");
                 return 0;
             }
             break;
         default:
-            etiLog.log(error, "Invalid protection option\n");
+            etiLog.log(error, "Invalid protection option");
             return 0;
         }
     }

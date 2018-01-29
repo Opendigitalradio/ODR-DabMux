@@ -1,7 +1,7 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
-2017-01-23: Matthias P. Braendli <matthias@mpb.li>
+2018-01-23: Matthias P. Braendli <matthias@mpb.li>
 	(v1.3.2):
 		Add clock selection to RAW output.
 		zmq2edi: intentionnally crash after timeout.

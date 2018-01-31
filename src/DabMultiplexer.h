@@ -54,8 +54,11 @@
 
 class DabMultiplexer : public RemoteControllable {
     public:
-        DabMultiplexer(
-                boost::property_tree::ptree pt);
+        DabMultiplexer(boost::property_tree::ptree pt);
+        DabMultiplexer(const DabMultiplexer& other) = delete;
+        DabMultiplexer& operator=(const DabMultiplexer& other) = delete;
+        ~DabMultiplexer();
+
         void prepare(bool require_tai_clock);
 
         unsigned long getCurrentFrame() { return currentFrame; }

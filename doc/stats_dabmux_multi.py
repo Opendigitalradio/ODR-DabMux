@@ -1,7 +1,11 @@
 #!/usr/bin/env python2
 #
-# present statistics from dabmux Stats Server
-# to munin
+# present statistics from dabmux Stats Server and ZeroMQ RC
+# to munin. Expects Stats server on port 12720 and ZeroMQ RC
+# on port 12722.
+#
+# Copy this to /etc/munin/plugins/stats_dabmux_multi
+# and make it executable (chmod +x)
 
 import sys
 import json
@@ -10,7 +14,19 @@ import os
 import re
 
 config_top = """
-"""
+multigraph clocktai_expiry
+graph_title Time to expiry for TAI bulletin
+graph_order expiry
+graph_args --base 1000
+graph_vlabel Number of seconds until expiry
+graph_category dabmux
+graph_info This graph shows the number of remaining seconds this bulletin is valid
+
+expiry.info Seconds until expiry
+expiry.label Seconds until expiry
+expiry.min 0
+expiry.warning {onemonth}:
+""".format(onemonth=3600*24*30)
 
 #default data type is GAUGE
 
@@ -107,7 +123,45 @@ def do_transaction(command, sock):
     sys.stderr.write("Could not receive data for command '{}'\n".format(command))
     sys.exit(1)
 
-def connect():
+def do_multipart_transaction(message_parts, sock):
+    """To a send + receive transaction, quit whole program on timeout"""
+    if isinstance(message_parts, str):
+        sys.stderr.write("do_transaction expects a list!\n");
+        sys.exit(1)
+
+    for i, part in enumerate(message_parts):
+        if i == len(message_parts) - 1:
+            f = 0
+        else:
+            f = zmq.SNDMORE
+        sock.send(part, flags=f)
+
+    poller = zmq.Poller()
+    poller.register(sock, zmq.POLLIN)
+
+    socks = dict(poller.poll(1000))
+    if socks:
+        if socks.get(sock) == zmq.POLLIN:
+            rxpackets = sock.recv_multipart()
+            return rxpackets
+
+    raise RCException("Could not receive data for command '{}'\n".format(
+        message_parts))
+
+def get_rc_value(module, name, sock):
+    try:
+        parts = do_multipart_transaction([b"get", module.encode(), name.encode()],
+                sock)
+        if len(parts) != 1:
+            sys.stderr.write("Received unexpected multipart message {}\n".format(
+                parts))
+            sys.exit(1)
+        return parts[0].decode()
+    except RCException as e:
+        print("get {} {} fail: {}".format(module, name, e))
+        return ""
+
+def connect_to_stats():
     """Create a connection to the dabmux stats server
 
     returns: the socket"""
@@ -124,13 +178,46 @@ def connect():
 
     return sock
 
-re_state = re.compile(r"\w+ \((\d+)\)")
+def connect_to_rc():
+    """Create a connection to the dabmux RC
+
+    returns: the socket"""
+
+    sock = zmq.Socket(ctx, zmq.REQ)
+    sock.set(zmq.LINGER, 5)
+    sock.connect("tcp://localhost:12722")
+
+    try:
+        ping_answer = do_multipart_transaction([b"ping"], sock)
+
+        if not ping_answer == [b"ok"]:
+            sys.stderr.write("Wrong answer to ping\n")
+            sys.exit(1)
+    except RCException as e:
+        print("connect failed because: {}".format(e))
+        sys.exit(1)
+
+    return sock
+
+def handle_re(graph_name, re, rc_value, group_number=1):
+    match = re.search(rc_value)
+    if match:
+        return "{}.value {}\n".format(graph_name, match.group(group_number))
+    else:
+        return "{}.value U\n".format(graph_name)
 
 if len(sys.argv) == 1:
-    sock = connect()
-    values = json.loads(do_transaction("values", sock))['values']
-
     munin_values = ""
+
+    sock_rc = connect_to_rc()
+    clocktai_expiry = get_rc_value("clocktai", "expiry", sock_rc)
+    re_clocktai_expiry = re.compile(r"(\d+)", re.X)
+    munin_values += "multigraph clocktai_expiry\n"
+    munin_values += handle_re("expiry", re_clocktai_expiry, clocktai_expiry)
+
+    sock_stats = connect_to_stats()
+    values = json.loads(do_transaction("values", sock_stats))['values']
+
     for ident in values:
         v = values[ident]['inputstat']
 
@@ -147,6 +234,7 @@ if len(sys.argv) == 1:
 
         if 'state' in v:
             # If ODR-DabMux is v1.3.1-3 or older, it doesn't export state
+            re_state = re.compile(r"\w+ \((\d+)\)")
             match = re_state.match(v['state'])
             if match:
                 munin_values += "multigraph state_{ident}\n".format(ident=ident_)
@@ -157,9 +245,9 @@ if len(sys.argv) == 1:
     print(munin_values)
 
 elif len(sys.argv) == 2 and sys.argv[1] == "config":
-    sock = connect()
+    sock_stats = connect_to_stats()
 
-    config = json.loads(do_transaction("config", sock))
+    config = json.loads(do_transaction("config", sock_stats))
 
     munin_config = config_top
 

@@ -39,14 +39,18 @@
 #include <sstream>
 #include <chrono>
 #include <future>
+#include <mutex>
+#include "RemoteControl.h"
 
 // EDI needs to know UTC-TAI, but doesn't need the CLOCK_TAI to be set.
 // We can keep this code, maybe for future use
 #define SUPPORT_SETTING_CLOCK_TAI 0
 
 /* Loads, parses and represents TAI-UTC offset information from the IETF bulletin */
-class ClockTAI {
+class ClockTAI : public RemoteControllable {
     public:
+        ClockTAI();
+
         // Fetch the bulletin from the IETF website and return the current
         // TAI-UTC offset.
         // Throws runtime_error on failure.
@@ -70,11 +74,14 @@ class ClockTAI {
         // Download of new bulletin is done asynchronously
         std::future<int> m_offset_future;
 
+        // Protect all data members, as RC functions are in another thread
+        mutable std::mutex m_data_mutex;
+
         // The currently used TAI-UTC offset
         int m_offset;
         int m_offset_valid = false;
 
-        std::stringstream m_bulletin;
+        mutable std::stringstream m_bulletin;
         std::chrono::system_clock::time_point m_bulletin_download_time;
 
         // Load bulletin into m_bulletin from the cache file
@@ -86,6 +93,10 @@ class ClockTAI {
         // Verifies the expiration date in the m_bulletin. Returns
         // true if the bulletin is valid.
         bool bulletin_is_valid(void);
+
+        // In how much time will the bulletin expire?
+        // returns a value in seconds, or -1 if it is expired or invalid
+        int64_t bulletin_expiry_delay(void) const;
 
         // Load bulletin into m_bulletin from the URL
         void download_tai_utc_bulletin(const char* url);
@@ -99,5 +110,12 @@ class ClockTAI {
         // static callback wrapper for cURL
         static size_t fill_bulletin_cb(
                 char *ptr, size_t size, size_t nmemb, void *ctx);
+
+        /* Remote control */
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const std::string get_parameter(const std::string& parameter) const;
 };
 

@@ -81,6 +81,13 @@ DabMultiplexer::DabMultiplexer(
 {
     RC_ADD_PARAMETER(frames,
             "Show number of frames generated [read-only]");
+
+    rcs.enrol(&m_clock_tai);
+}
+
+DabMultiplexer::~DabMultiplexer()
+{
+    rcs.remove_controllable(&m_clock_tai);
 }
 
 void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)

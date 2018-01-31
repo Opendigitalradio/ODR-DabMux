@@ -76,6 +76,12 @@ static const char* tai_tz_url =
 
 static const char* tai_ietf_cache_file = "/tmp/odr-dabmux-leap-seconds.cache";
 
+ClockTAI::ClockTAI() :
+    RemoteControllable("clocktai")
+{
+    RC_ADD_PARAMETER(expiry, "Number of seconds until TAI Bulletin expires");
+}
+
 int ClockTAI::get_valid_offset()
 {
     int offset = 0;
@@ -151,6 +157,8 @@ int ClockTAI::get_offset()
 {
     using namespace std::chrono;
     auto time_now = system_clock::now();
+
+    std::unique_lock<std::mutex> lock(m_data_mutex);
 
     if (not m_offset_valid) {
 #ifdef TEST
@@ -353,6 +361,11 @@ void ClockTAI::update_cache(const char* cache_filename)
 
 bool ClockTAI::bulletin_is_valid()
 {
+    return bulletin_expiry_delay() > 0;
+}
+
+int64_t ClockTAI::bulletin_expiry_delay() const
+{
     // The bulletin contains one line that specifies an expiration date
     // in NTP time. If that point in time is in the future, we consider
     // the bulletin valid.
@@ -380,10 +393,12 @@ bool ClockTAI::bulletin_is_valid()
             const int64_t expiry_unix =
                 std::atol(expiry_data_str.c_str()) - ntp_unix_offset;
 
-            return expiry_unix > now;
+            if (expiry_unix > now) {
+                return expiry_unix - now;
+            }
         }
     }
-    return false;
+    return -1;
 }
 
 void ClockTAI::download_tai_utc_bulletin(const char* url)
@@ -416,6 +431,36 @@ void ClockTAI::download_tai_utc_bulletin(const char* url)
 #else
     throw runtime_error("Cannot download TAI Clock information without cURL");
 #endif // HAVE_CURL
+}
+
+void ClockTAI::set_parameter(const string& parameter, const string& value)
+{
+    if (parameter == "expiry") {
+        throw ParameterError("Parameter '" + parameter +
+            "' is not read-only in controllable " + get_rc_name());
+    }
+    else {
+        throw ParameterError("Parameter '" + parameter +
+            "' is not exported by controllable " + get_rc_name());
+    }
+}
+
+const string ClockTAI::get_parameter(const string& parameter) const
+{
+    if (parameter == "expiry") {
+        std::unique_lock<std::mutex> lock(m_data_mutex);
+        int64_t expiry = bulletin_expiry_delay();
+        if (expiry > 0) {
+            return to_string(expiry);
+        }
+        else {
+            return "Bulletin expired or invalid!";
+        }
+    }
+    else {
+        throw ParameterError("Parameter '" + parameter +
+            "' is not exported by controllable " + get_rc_name());
+    }
 }
 
 #if 0

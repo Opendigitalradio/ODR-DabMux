@@ -94,7 +94,17 @@ services {
         id 0x8daa
         label "Funk"
         shortlabel "Fu"
+
+        ; Programme Type, according to the chosen international-table above.
         pty 0
+
+        ; chose between static and dynamic PTy
+        ; static means the PTy represents to overall genre of the programme.
+        ; dynamic means the PTy follows the various items within a programme.
+        ; Use the RC interface to modify at runtime.
+        ; See EN 300 401 Clause 8.1.5
+        pty-sd static
+
         language 0
         ; also supports id
 

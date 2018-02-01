@@ -50,7 +50,8 @@ An explanation on how to use the remote control is in *remote_control.txt*, and
 control interface.
 
 Two scripts are used for monitoring systems: *stats_dabmux_multi.py* for Munin,
-and *retodrs.pl* for Xymon.
+and *retodrs.pl* for Xymon. You can use *show_dabmux_stats.py* to print the
+statistics to console.
 
 *DabMux.1* is an old manpage that describes the command line options that
 existed in past versions. It is kept for archive.

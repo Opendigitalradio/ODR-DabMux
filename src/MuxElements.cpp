@@ -30,6 +30,7 @@
 #include <algorithm>
 
 #include "MuxElements.h"
+#include "lib/charset/charset.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
@@ -44,7 +45,7 @@ const unsigned short Sub_Channel_SizeTable[64] = {
     232, 280, 160, 208, 280, 192, 280, 416
 };
 
-
+static CharsetConverter charset_converter;
 
 using namespace std;
 
@@ -177,7 +178,14 @@ int DabLabel::setLabel(const std::string& label)
 
     m_flag = 0xFF00; // truncate the label to the eight first characters
 
-    m_label = label;
+    try {
+        m_label = charset_converter.convert(label);
+    }
+    catch (const utf8::exception& e) {
+        etiLog.level(warn) << "Failed to convert label '" << label <<
+            "' to EBU Charset";
+        m_label = label;
+    }
 
     return 0;
 }
@@ -185,20 +193,43 @@ int DabLabel::setLabel(const std::string& label)
 int DabLabel::setLabel(const std::string& label, const std::string& short_label)
 {
     DabLabel newlabel;
+    newlabel.m_flag = 0xFF00;
 
-    int result = newlabel.setLabel(label);
-    if (result < 0)
-        return result;
+    try {
+        newlabel.m_label = charset_converter.convert(label);
 
-    /* First check if we can actually create the short label */
-    int flag = newlabel.setShortLabel(short_label);
-    if (flag < 0)
-        return flag;
+        int flag = newlabel.setShortLabel(charset_converter.convert(short_label));
+        if (flag < 0) {
+            return flag;
+        }
+
+        m_flag = flag & 0xFFFF;
+    }
+    catch (const utf8::exception& e) {
+        etiLog.level(warn) << "Failed to convert label '" << label <<
+            " or short label '" << short_label << "' to EBU Charset";
+
+        // Use label as-is
+
+        newlabel.m_label = label;
+        newlabel.m_flag = 0xFF00;
+
+        int result = newlabel.setLabel(label);
+        if (result < 0) {
+            return result;
+        }
+
+        /* First check if we can actually create the short label */
+        int flag = newlabel.setShortLabel(short_label);
+        if (flag < 0) {
+            return flag;
+        }
+
+        m_flag = flag & 0xFFFF;
+    }
 
     // short label is valid.
-    m_flag = flag & 0xFFFF;
     m_label = newlabel.m_label;
-
     return 0;
 }
 
@@ -258,6 +289,11 @@ int DabLabel::setShortLabel(const std::string& slabel)
     return flag;
 }
 
+const string DabLabel::long_label() const
+{
+    return charset_converter.convert_ebu_to_utf8(m_label);
+}
+
 const string DabLabel::short_label() const
 {
     stringstream shortlabel;
@@ -267,7 +303,7 @@ const string DabLabel::short_label() const
         }
     }
 
-    return shortlabel.str();
+    return charset_converter.convert_ebu_to_utf8(shortlabel.str());
 }
 
 void DabLabel::writeLabel(uint8_t* buf) const

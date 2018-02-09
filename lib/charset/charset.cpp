@@ -52,3 +52,23 @@ const char* utf8_encoded_EBU_Latin[CHARSET_TABLE_ENTRIES] = {
 "Â", "Ä", "Ê", "Ë", "Î", "Ï", "Ô", "Ö", "Û", "Ü", "ř", "č", "š", "ž", "đ", "ŀ",
 "Ã", "Å", "Æ", "Œ", "ŷ", "Ý", "Õ", "Ø", "Þ", "Ŋ", "Ŕ", "Ć", "Ś", "Ź", "Ť", "ð",
 "ã", "å", "æ", "œ", "ŵ", "ý", "õ", "ø", "þ", "ŋ", "ŕ", "ć", "ś", "ź", "ť", "ħ"};
+
+std::string CharsetConverter::convert_ebu_to_utf8(const std::string& str)
+{
+    using namespace std;
+
+    string utf8_str;
+    for (const uint8_t c : str) {
+        // Table offset because NUL is not represented
+        if (c >= CHARSET_TABLE_OFFSET) {
+            string utf8_char(utf8_encoded_EBU_Latin[c - CHARSET_TABLE_OFFSET]);
+            utf8_str += utf8_char;
+        }
+        else {
+            utf8_str += "⁇";
+        }
+    }
+
+    return utf8_str;
+}
+

@@ -81,8 +81,13 @@ ensemble {
     ; automatic calculation of the local time offset, set the environment variable TZ
     ; to your timezone (e.g. TZ=Europe/Rome) before you launch ODR-DabMux
 
-    ; all labels are maximum 16 characters in length
+    ; All labels are maximum 16 characters in length.
+    ; Labels that are valid utf-8 will be converted to EBU Latin Character set
+    ; as defined in ETSI TS 101 756, in Annex C. If it's not valid utf-8, the
+    ; label is taken as-is, byte per byte. Characters that cannot be
+    ; represented in EBU Latin will be replaced by a space character.
     label "OpenDigitalRadio"
+
     ; The short label is built from the label by erasing letters, and cannot
     ; be longer than 8 characters. If omitted, it will be truncated from the
     ; label
@@ -95,8 +100,8 @@ services {
     ; used throughout the configuration file and for the RC.
     srv-fu {
         id 0x8daa
-        label "Funk"
-        ; you can define a shortlabel too.
+        label "Fünk"
+        ; You can define a shortlabel too.
     }
     srv-ri {
         id 0x8dab

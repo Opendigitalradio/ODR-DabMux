@@ -81,9 +81,14 @@ class CharsetConverter
             return encoded_line;
         }
 
-    private:
+        /* Convert a EBU Latin byte stream to a UTF-8 encoded string.
+         * Invalid input characters are converted to ⁇ (unicode U+2047).
+         */
+        std::string convert_ebu_to_utf8(const std::string& str);
 
+    private:
         std::vector<uint32_t> m_conversion_table;
 };
+
 
 #endif

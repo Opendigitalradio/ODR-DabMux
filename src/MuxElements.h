@@ -147,7 +147,11 @@ struct dabOutput {
 class DabLabel
 {
     public:
-        /* Set a new label and short label.
+        /* Set a new label and short label. If the label parses as valid UTF-8, it
+         * will be converted to EBU Latin. If utf-8 decoding fails, the label
+         * will be used as is. Characters that cannot be converted are replaced
+         * by a space.
+         *
          * returns:  0 on success
          *          -1 if the short_label is not a representable
          *          -2 if the short_label is too long
@@ -170,7 +174,7 @@ class DabLabel
         void writeLabel(uint8_t* buf) const;
 
         uint16_t flag() const { return m_flag; }
-        const std::string long_label() const { return m_label; }
+        const std::string long_label() const;
         const std::string short_label() const;
 
     private:
@@ -182,7 +186,7 @@ class DabLabel
         /* The m_label is not padded in any way */
         std::string m_label;
 
-        /* Checks and calculates the flag */
+        /* Checks and calculates the flag. slabel must be EBU Latin Charset */
         int setShortLabel(const std::string& slabel);
 };
 

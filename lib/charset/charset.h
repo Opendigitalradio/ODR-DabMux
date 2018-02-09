@@ -51,13 +51,21 @@ class CharsetConverter
             }
         }
 
-        /*! Convert a UTF-8 encoded text line into an EBU Latin encoded byte stream
+        /*! Convert a UTF-8 encoded text line into an EBU Latin encoded byte
+         * stream. If up_to_first_error is set, convert as much text as possible.
+         * If false, raise an exception in case of conversion errors.
          */
-        std::string convert(std::string line_utf8) {
+        std::string convert(std::string line_utf8, bool up_to_first_error = true) {
             using namespace std;
 
             // check for invalid utf-8, we only convert up to the first error
-            string::iterator end_it = utf8::find_invalid(line_utf8.begin(), line_utf8.end());
+            string::iterator end_it;
+            if (up_to_first_error) {
+                end_it = utf8::find_invalid(line_utf8.begin(), line_utf8.end());
+            }
+            else {
+                end_it = line_utf8.end();
+            }
 
             // Convert it to utf-32
             vector<uint32_t> utf32line;

@@ -179,7 +179,7 @@ int DabLabel::setLabel(const std::string& label)
     m_flag = 0xFF00; // truncate the label to the eight first characters
 
     try {
-        m_label = charset_converter.convert(label);
+        m_label = charset_converter.convert(label, false);
     }
     catch (const utf8::exception& e) {
         etiLog.level(warn) << "Failed to convert label '" << label <<
@@ -196,9 +196,10 @@ int DabLabel::setLabel(const std::string& label, const std::string& short_label)
     newlabel.m_flag = 0xFF00;
 
     try {
-        newlabel.m_label = charset_converter.convert(label);
+        newlabel.m_label = charset_converter.convert(label, false);
 
-        int flag = newlabel.setShortLabel(charset_converter.convert(short_label));
+        int flag = newlabel.setShortLabel(
+                charset_converter.convert(short_label, false));
         if (flag < 0) {
             return flag;
         }

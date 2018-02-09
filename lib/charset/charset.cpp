@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2015 Matthias P. Braendli (http://opendigitalradio.org)
+    Copyright (C) 2018 Matthias P. Braendli (http://opendigitalradio.org)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,13 +16,15 @@
 */
 /*!
     \file charset.cpp
-    \brief Define the EBU charset according to ETSI TS 101 756v1.8.1 for DLS encoding
+    \brief A converter for UTF-8 to EBU Latin charset according to
+           ETSI TS 101 756 Annex C, used for DLS and Labels.
 
-    \author Matthias P. Braendli <matthias@mpb.li>
+    \author Matthias P. Braendli
     \author Lindsay Cornell
 */
 
 #include "charset.h"
+#include <algorithm>
 
 /**********************************************/
 /************* BIG FAT WARNING ****************/
@@ -34,8 +36,10 @@
 /********* END OF BIG FAT WARNING *************/
 /**********************************************/
 
+#define CHARSET_TABLE_OFFSET 1 // NUL at index 0 cannot be represented
+#define CHARSET_TABLE_ENTRIES (256 - CHARSET_TABLE_OFFSET)
 
-const char* utf8_encoded_EBU_Latin[CHARSET_TABLE_ENTRIES] = {
+static const char* utf8_encoded_EBU_Latin[CHARSET_TABLE_ENTRIES] = {
      "Ę", "Į", "Ų", "Ă", "Ė", "Ď", "Ș", "Ț", "Ċ", "\n","\v","Ġ", "Ĺ", "Ż", "Ń",
 "ą", "ę", "į", "ų", "ă", "ė", "ď", "ș", "ț", "ċ", "Ň", "Ě", "ġ", "ĺ", "ż", "\u0082",
 " ", "!", "\"","#", "ł", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/",
@@ -53,10 +57,58 @@ const char* utf8_encoded_EBU_Latin[CHARSET_TABLE_ENTRIES] = {
 "Ã", "Å", "Æ", "Œ", "ŷ", "Ý", "Õ", "Ø", "Þ", "Ŋ", "Ŕ", "Ć", "Ś", "Ź", "Ť", "ð",
 "ã", "å", "æ", "œ", "ŵ", "ý", "õ", "ø", "þ", "ŋ", "ŕ", "ć", "ś", "ź", "ť", "ħ"};
 
+using namespace std;
+
+CharsetConverter::CharsetConverter()
+{
+    /*! Build the converstion table that contains the known code points,
+     * at the indices corresponding to the EBU Latin table
+     */
+    using namespace std;
+    for (size_t i = 0; i < CHARSET_TABLE_ENTRIES; i++) {
+        string table_entry(utf8_encoded_EBU_Latin[i]);
+        string::iterator it = table_entry.begin();
+        uint32_t code_point = utf8::next(it, table_entry.end());
+        m_conversion_table.push_back(code_point);
+    }
+}
+
+std::string CharsetConverter::convert(std::string line_utf8, bool up_to_first_error)
+{
+    string::iterator end_it;
+
+    if (up_to_first_error) {
+        // check for invalid utf-8, we only convert up to the first error
+        end_it = utf8::find_invalid(line_utf8.begin(), line_utf8.end());
+    }
+    else {
+        end_it = line_utf8.end();
+    }
+
+    // Convert it to utf-32
+    vector<uint32_t> utf32line;
+    utf8::utf8to32(line_utf8.begin(), end_it, back_inserter(utf32line));
+
+    string encoded_line(utf32line.size(), '0');
+
+    // Try to convert each codepoint
+    for (size_t i = 0; i < utf32line.size(); i++) {
+        vector<uint32_t>::iterator iter = find(m_conversion_table.begin(),
+                m_conversion_table.end(), utf32line[i]);
+        if (iter != m_conversion_table.end()) {
+            size_t index = std::distance(m_conversion_table.begin(), iter);
+
+            encoded_line[i] = (char)(index + CHARSET_TABLE_OFFSET);
+        }
+        else {
+            encoded_line[i] = ' ';
+        }
+    }
+    return encoded_line;
+}
+
 std::string CharsetConverter::convert_ebu_to_utf8(const std::string& str)
 {
-    using namespace std;
-
     string utf8_str;
     for (const uint8_t c : str) {
         // Table offset because NUL is not represented

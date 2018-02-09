@@ -1,6 +1,14 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2018-02-09: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.3):
+		Add dynamic/static PTy setting to configuration.
+		Add UTF-8 to EBU Latin character set converter for labels.
+		Show TAI bulletin expiration in RC.
+		Stop using SUBDIRS in automake, and build the executable in ./ and not
+		in ./src anymore.
+
 2018-01-23: Matthias P. Braendli <matthias@mpb.li>
 	(v1.3.2):
 		Add clock selection to RAW output.

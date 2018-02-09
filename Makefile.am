@@ -39,7 +39,24 @@ CURL_LIBS    =
 endif
 
 FARSYNC_DIR=lib/farsync/linux
-INCLUDE=-I$(FARSYNC_DIR) -Ilib -Isrc
+INCLUDE=-I$(FARSYNC_DIR) -Ilib/charset -Ilib -Isrc
+
+lib_fec_sources = lib/fec/char.h \
+				  lib/fec/rs-common.h \
+				  lib/fec/decode_rs_char.c \
+				  lib/fec/decode_rs.h \
+				  lib/fec/encode_rs_char.c \
+				  lib/fec/encode_rs.h \
+				  lib/fec/fec.h \
+				  lib/fec/init_rs_char.c \
+				  lib/fec/init_rs.h
+
+lib_charset_sources = lib/charset/charset.cpp \
+					  lib/charset/charset.h \
+					  lib/charset/utf8/checked.h \
+					  lib/charset/utf8/core.h \
+					  lib/charset/utf8/unchecked.h \
+					  lib/charset/utf8.h
 
 odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(GITVERSION_FLAGS)
 odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
@@ -153,15 +170,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/utils.cpp \
 					 src/utils.h \
 					 lib/zmq.hpp \
-					 lib/fec/char.h \
-					 lib/fec/rs-common.h \
-					 lib/fec/decode_rs_char.c \
-					 lib/fec/decode_rs.h \
-					 lib/fec/encode_rs_char.c \
-					 lib/fec/encode_rs.h \
-					 lib/fec/fec.h \
-					 lib/fec/init_rs_char.c \
-					 lib/fec/init_rs.h
+					 $(lib_fec_sources) \
+					 $(lib_charset_sources)
 
 zmqinput_keygen_SOURCES  = src/zmqinput-keygen.c
 zmqinput_keygen_LDADD    = $(ZMQ_LIBS)
@@ -205,15 +215,7 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/crc.h \
 					   src/crc.c \
 					   lib/zmq.hpp \
-					   lib/fec/char.h \
-					   lib/fec/rs-common.h \
-					   lib/fec/decode_rs_char.c \
-					   lib/fec/decode_rs.h \
-					   lib/fec/encode_rs_char.c \
-					   lib/fec/encode_rs.h \
-					   lib/fec/fec.h \
-					   lib/fec/init_rs_char.c \
-					   lib/fec/init_rs.h
+					   $(lib_fec_sources)
 
 odr_zmq2edi_LDADD    = $(ZMQ_LIBS) -lpthread $(BOOST_THREAD_LIB) $(BOOST_SYSTEM_LIB)
 odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
@@ -222,5 +224,8 @@ odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(IN
 
 EXTRA_DIST	= COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO doc \
 			  lib/fec/README.md lib/fec/LICENSE \
-			  lib/farsync/linux lib/farsync/windows
+			  lib/farsync/linux lib/farsync/windows \
+			  lib/charset/README
+
+
 

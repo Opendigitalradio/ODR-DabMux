@@ -43,8 +43,6 @@ AX_BOOST_THREAD
 AX_BOOST_SYSTEM
 AX_BOOST_ASIO
 
-AC_SUBST([FARSYNC_DIR], ['$(top_srcdir)/lib/farsync/linux'])
-
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
@@ -143,11 +141,7 @@ AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],
 
 AM_CONDITIONAL([IS_GIT_REPO], [test -d '.git'])
 
-AC_CONFIG_FILES([Makefile
-                 src/Makefile
-                 lib/Makefile
-                 lib/farsync/Makefile
-                 ])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
 echo

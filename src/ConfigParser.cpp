@@ -869,11 +869,6 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
 
     dabProtection* protection = &subchan->protection;
 
-    const bool nonblock = pt.get("nonblock", false);
-    if (nonblock) {
-        etiLog.level(warn) << "The nonblock option is not supported";
-    }
-
     if (type == "dabplus" or type == "audio") {
         subchan->type = subchannel_type_t::Audio;
         subchan->bitrate = 0;
@@ -889,10 +884,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
                 throw logic_error("Incomplete handling of file input");
             }
         }
-        else if (proto == "tcp"  ||
-                 proto == "epgm" ||
-                 proto == "ipc") {
-
+        else if (proto == "tcp"  or proto == "epgm" or proto == "ipc") {
             auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             if (type == "audio") {
@@ -965,6 +957,17 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         ss << "Subchannel with uid " << subchanuid << " has unknown type!";
         throw runtime_error(ss.str());
     }
+
+    const bool nonblock = pt.get("nonblock", false);
+    if (nonblock) {
+        if (auto filein = dynamic_pointer_cast<Inputs::FileBase>(subchan->input)) {
+            filein->setNonblocking(nonblock);
+        }
+        else {
+            etiLog.level(warn) << "The nonblock option is not supported";
+        }
+    }
+
     subchan->startAddress = 0;
 
     if (type == "audio") {

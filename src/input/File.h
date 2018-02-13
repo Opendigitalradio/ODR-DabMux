@@ -81,16 +81,16 @@ class PacketFile : public FileBase {
         virtual int readFrame(uint8_t* buffer, size_t size);
 
     protected:
-        std::array<uint8_t,96> m_packetData;
-        size_t m_packetLength;
+        std::array<uint8_t, 96> m_packetData;
+        size_t m_packetLength = 0;
 
         /* Enhanced packet mode enables FEC for MSC packet mode
          * as described in EN 300 401 Clause 5.3.5
          */
         bool m_enhancedPacketEnabled = false;
         std::array<std::array<uint8_t, 204>,12> m_enhancedPacketData;
-        size_t m_enhancedPacketWaiting;
-        size_t m_enhancedPacketLength;
+        size_t m_enhancedPacketWaiting = 0;
+        size_t m_enhancedPacketLength = 0;
 };
 
 };

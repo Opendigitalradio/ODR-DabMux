@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -54,12 +54,14 @@
 #include <string>
 #include <map>
 #include <atomic>
+#include <chrono>
+#include <deque>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <ctime>
-#include <math.h>
+#include <cmath>
 
 #define MIN_FILL_BUFFER_UNDEF (-1)
 
@@ -70,32 +72,26 @@ enum input_state_t
 {
     /* The input is waiting for data, all buffers are empty */
     NoData,
-
     /* The input is running, but has seen many underruns or overruns recently */
     Unstable,
-
     /* The input is running, but the audio level is too low, or has
      * been too low recently
      */
     Silence,
-
     /* The input is running stable */
     Streaming
 };
 
 
-/* The delay after which the glitch counter is reset
- */
+/* The delay after which the glitch counter is reset */
 #define INPUT_COUNTER_RESET_TIME 30 // minutes
 
 /* How many glitches we tolerate in Streaming state before
- * we consider the input Unstable
- */
+ * we consider the input Unstable */
 #define INPUT_UNSTABLE_THRESHOLD 3
 
 /* For how long the input buffers must be empty before we move an input to the
- * NoData state.
- */
+ * NoData state.  */
 #define INPUT_NODATA_TIMEOUT 30 // seconds
 
 /* For silence detection, we count the number of occurrences the audio level
@@ -107,8 +103,7 @@ enum input_state_t
  * input will be considered silent after a cut.
  *
  * If the count reaches a certain value, the input changes state
- * to Silence.
- */
+ * to Silence.  */
 #define INPUT_AUDIO_LEVEL_THRESHOLD       -50  // dB
 #define INPUT_AUDIO_LEVEL_SILENCE_COUNT    100 // superframes (120ms)
 #define INPUT_AUDIO_LEVEL_COUNT_SATURATION 500 // superframes (120ms)
@@ -150,131 +145,25 @@ enum input_state_t
 class InputStat
 {
     public:
-        InputStat(std::string name) : m_name(name)
-        {
-            /* Statistics */
-            num_underruns = 0;
-            num_overruns = 0;
-
-            /* State handling */
-            time_t now = time(NULL);
-            m_time_last_event = now;
-            m_time_last_buffer_nonempty = 0;
-            m_buffer_empty = true;
-            m_glitch_counter = 0;
-            m_silence_counter = 0;
-
-            reset();
-        }
-
-        void registerAtServer(void);
-
+        InputStat(const std::string& name);
+        InputStat(const InputStat& other) = delete;
+        InputStat& operator=(const InputStat& other) = delete;
         ~InputStat();
+        void registerAtServer(void);
 
         // Gets called each time the statistics are transmitted,
         // and resets the counters to zero
-        void reset(void)
-        {
-            min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
-            max_fill_buffer = 0;
+        void reset(void);
 
-            peak_left = 0;
-            peak_right = 0;
-        }
-
-        std::string& get_name(void) { return m_name; }
+        std::string get_name(void) const { return m_name; }
 
         /* This function is called for every frame read by
-         * the multiplexer
-         */
-        void notifyBuffer(long bufsize)
-        {
-            boost::mutex::scoped_lock lock(m_mutex);
-
-            // Statistics
-            if (bufsize > max_fill_buffer) {
-                max_fill_buffer = bufsize;
-            }
-
-            if (bufsize < min_fill_buffer ||
-                    min_fill_buffer == MIN_FILL_BUFFER_UNDEF) {
-                min_fill_buffer = bufsize;
-            }
-
-            // State
-            m_buffer_empty = (bufsize == 0);
-            if (!m_buffer_empty) {
-                m_time_last_buffer_nonempty = time(NULL);
-            }
-        }
-
-        void notifyPeakLevels(int peak_left, int peak_right)
-        {
-            boost::mutex::scoped_lock lock(m_mutex);
-
-            // Statistics
-            if (peak_left > this->peak_left) {
-                this->peak_left = peak_left;
-            }
-
-            if (peak_right > this->peak_right) {
-                this->peak_right = peak_right;
-            }
-
-            // State
-
-            // using the smallest of the two channels
-            // allows us to detect if only one channel
-            // is silent.
-            int minpeak = peak_left < peak_right ? peak_left : peak_right;
-
-            const int16_t int16_max = std::numeric_limits<int16_t>::max();
-            int peak_dB = minpeak ?
-                round(20*log10((double)minpeak / int16_max)) :
-                -90;
-
-            if (peak_dB < INPUT_AUDIO_LEVEL_THRESHOLD) {
-                if (m_silence_counter < INPUT_AUDIO_LEVEL_COUNT_SATURATION) {
-                    m_silence_counter++;
-                }
-            }
-            else {
-                if (m_silence_counter > 0) {
-                    m_silence_counter--;
-                }
-            }
-        }
-
-        void notifyUnderrun(void)
-        {
-            boost::mutex::scoped_lock lock(m_mutex);
-
-            // Statistics
-            num_underruns++;
-
-            // State
-            m_time_last_event = time(NULL);
-            if (m_glitch_counter < INPUT_UNSTABLE_THRESHOLD) {
-                m_glitch_counter++;
-            }
-        }
-
-        void notifyOverrun(void)
-        {
-            boost::mutex::scoped_lock lock(m_mutex);
-
-            // Statistics
-            num_overruns++;
-
-            // State
-            m_time_last_event = time(NULL);
-            if (m_glitch_counter < INPUT_UNSTABLE_THRESHOLD) {
-                m_glitch_counter++;
-            }
-        }
-
+         * the multiplexer */
+        void notifyBuffer(long bufsize);
+        void notifyPeakLevels(int peak_left, int peak_right);
+        void notifyUnderrun(void);
+        void notifyOverrun(void);
         std::string encodeValuesJSON(void);
-
         input_state_t determineState(void);
 
     private:
@@ -289,9 +178,11 @@ class InputStat
         uint32_t num_underruns;
         uint32_t num_overruns;
 
-        // peak audio levels (linear 16-bit PCM) for the two channels
-        int peak_left;
-        int peak_right;
+        // Peak audio levels (linear 16-bit PCM) for the two channels.
+        // Keep a FIFO of values from the last few seconds
+        std::deque<int> peaks_left;
+        std::deque<int> peaks_right;
+        std::chrono::time_point<std::chrono::steady_clock> time_last_peak_notify;
 
         /************* STATE ***************/
         /* Variables used for determining the input state */
@@ -303,7 +194,6 @@ class InputStat
 
         // The mutex that has to be held during all notify and readout
         mutable boost::mutex m_mutex;
-
 };
 
 class ManagementServer

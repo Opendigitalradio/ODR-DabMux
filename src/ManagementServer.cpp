@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -39,6 +39,8 @@
 #include <boost/version.hpp>
 #include "ManagementServer.h"
 #include "Log.h"
+
+static constexpr auto stats_keep_duration = std::chrono::seconds(30);
 
 ManagementServer& get_mgmt_server()
 {
@@ -244,14 +246,141 @@ void ManagementServer::update_ptree(const boost::property_tree::ptree& pt)
 
 /************************************************/
 
-void InputStat::registerAtServer()
+InputStat::InputStat(const std::string& name)
+    : m_name(name)
 {
-    get_mgmt_server().registerInput(this);
+    /* Statistics */
+    num_underruns = 0;
+    num_overruns = 0;
+
+    /* State handling */
+    time_t now = time(NULL);
+    m_time_last_event = now;
+    m_time_last_buffer_nonempty = 0;
+    m_buffer_empty = true;
+    m_glitch_counter = 0;
+    m_silence_counter = 0;
+
+    reset();
 }
 
 InputStat::~InputStat()
 {
     get_mgmt_server().unregisterInput(m_name);
+}
+
+void InputStat::registerAtServer()
+{
+    get_mgmt_server().registerInput(this);
+}
+
+void InputStat::reset()
+{
+    min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
+    max_fill_buffer = 0;
+
+    peaks_left.clear();
+    peaks_right.clear();
+}
+
+void InputStat::notifyBuffer(long bufsize)
+{
+    boost::mutex::scoped_lock lock(m_mutex);
+
+    // Statistics
+    if (bufsize > max_fill_buffer) {
+        max_fill_buffer = bufsize;
+    }
+
+    if (bufsize < min_fill_buffer ||
+            min_fill_buffer == MIN_FILL_BUFFER_UNDEF) {
+        min_fill_buffer = bufsize;
+    }
+
+    // State
+    m_buffer_empty = (bufsize == 0);
+    if (!m_buffer_empty) {
+        m_time_last_buffer_nonempty = time(NULL);
+    }
+}
+
+void InputStat::notifyPeakLevels(int peak_left, int peak_right)
+{
+    boost::mutex::scoped_lock lock(m_mutex);
+
+    peaks_left.push_back(peak_left);
+    peaks_right.push_back(peak_right);
+
+    using namespace std::chrono;
+
+    const auto time_now = steady_clock::now();
+    if (peaks_left.size() > 1) {
+        auto insertion_interval = time_now - time_last_peak_notify;
+        auto peaks_total_length = insertion_interval * peaks_left.size();
+
+        if (peaks_total_length > stats_keep_duration) {
+            peaks_left.pop_front();
+            peaks_right.pop_front();
+        }
+    }
+    time_last_peak_notify = time_now;
+
+    if (peaks_left.empty() or peaks_right.empty()) {
+        throw std::logic_error("Peak statistics empty!");
+    }
+
+    const auto max_left = *max_element(peaks_left.begin(), peaks_left.end());
+    const auto max_right = *max_element(peaks_right.begin(), peaks_right.end());
+
+    // State
+
+    // using the lower of the two channels allows us to detect if only one
+    // channel is silent.
+    const int lower_peak = max_left < max_right ? max_left : max_right;
+
+    const int16_t int16_max = std::numeric_limits<int16_t>::max();
+    int peak_dB = lower_peak ?
+        round(20*log10((double)lower_peak / int16_max)) :
+        -90;
+
+    if (peak_dB < INPUT_AUDIO_LEVEL_THRESHOLD) {
+        if (m_silence_counter < INPUT_AUDIO_LEVEL_COUNT_SATURATION) {
+            m_silence_counter++;
+        }
+    }
+    else {
+        if (m_silence_counter > 0) {
+            m_silence_counter--;
+        }
+    }
+}
+
+void InputStat::notifyUnderrun(void)
+{
+    boost::mutex::scoped_lock lock(m_mutex);
+
+    // Statistics
+    num_underruns++;
+
+    // State
+    m_time_last_event = time(NULL);
+    if (m_glitch_counter < INPUT_UNSTABLE_THRESHOLD) {
+        m_glitch_counter++;
+    }
+}
+
+void InputStat::notifyOverrun(void)
+{
+    boost::mutex::scoped_lock lock(m_mutex);
+
+    // Statistics
+    num_overruns++;
+
+    // State
+    m_time_last_event = time(NULL);
+    if (m_glitch_counter < INPUT_UNSTABLE_THRESHOLD) {
+        m_glitch_counter++;
+    }
 }
 
 std::string InputStat::encodeValuesJSON()
@@ -261,6 +390,14 @@ std::string InputStat::encodeValuesJSON()
     const int16_t int16_max = std::numeric_limits<int16_t>::max();
 
     boost::mutex::scoped_lock lock(m_mutex);
+
+    int peak_left = 0;
+    int peak_right = 0;
+
+    if (not peaks_left.empty() and not peaks_right.empty()) {
+        peak_left = *max_element(peaks_left.begin(), peaks_left.end());
+        peak_right = *max_element(peaks_right.begin(), peaks_right.end());
+    }
 
     /* convert to dB */
     int dB_l = peak_left  ? round(20*log10((double)peak_left / int16_max))  : -90;

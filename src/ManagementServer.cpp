@@ -34,13 +34,15 @@
 #include <stdint.h>
 #include <limits>
 #include <sstream>
+#include <algorithm>
 #include <ctime>
 #include <boost/thread.hpp>
 #include <boost/version.hpp>
 #include "ManagementServer.h"
 #include "Log.h"
 
-static constexpr auto stats_keep_duration = std::chrono::seconds(30);
+static constexpr
+auto stats_keep_duration = std::chrono::seconds(INPUT_NODATA_TIMEOUT);
 
 ManagementServer& get_mgmt_server()
 {
@@ -140,7 +142,6 @@ std::string ManagementServer::getValuesJSON()
 
         ss << " \"" << id << "\" : ";
         ss << stats->encodeValuesJSON();
-        stats->reset();
     }
 
     ss << "}\n}\n";
@@ -256,12 +257,12 @@ InputStat::InputStat(const std::string& name)
     /* State handling */
     time_t now = time(NULL);
     m_time_last_event = now;
-    m_time_last_buffer_nonempty = 0;
-    m_buffer_empty = true;
     m_glitch_counter = 0;
     m_silence_counter = 0;
 
-    reset();
+    buffer_fill_stats.clear();
+    peaks_left.clear();
+    peaks_right.clear();
 }
 
 InputStat::~InputStat()
@@ -274,34 +275,23 @@ void InputStat::registerAtServer()
     get_mgmt_server().registerInput(this);
 }
 
-void InputStat::reset()
-{
-    min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
-    max_fill_buffer = 0;
-
-    peaks_left.clear();
-    peaks_right.clear();
-}
-
 void InputStat::notifyBuffer(long bufsize)
 {
     boost::mutex::scoped_lock lock(m_mutex);
 
-    // Statistics
-    if (bufsize > max_fill_buffer) {
-        max_fill_buffer = bufsize;
-    }
+    buffer_fill_stats.push_back(bufsize);
 
-    if (bufsize < min_fill_buffer ||
-            min_fill_buffer == MIN_FILL_BUFFER_UNDEF) {
-        min_fill_buffer = bufsize;
-    }
+    using namespace std::chrono;
+    const auto time_now = steady_clock::now();
+    if (buffer_fill_stats.size() > 1) {
+        auto insertion_interval = time_now - time_last_buffer_notify;
+        auto total_length = insertion_interval * buffer_fill_stats.size();
 
-    // State
-    m_buffer_empty = (bufsize == 0);
-    if (!m_buffer_empty) {
-        m_time_last_buffer_nonempty = time(NULL);
+        if (total_length > stats_keep_duration) {
+            buffer_fill_stats.pop_front();
+        }
     }
+    time_last_buffer_notify = time_now;
 }
 
 void InputStat::notifyPeakLevels(int peak_left, int peak_right)
@@ -403,6 +393,15 @@ std::string InputStat::encodeValuesJSON()
     int dB_l = peak_left  ? round(20*log10((double)peak_left / int16_max))  : -90;
     int dB_r = peak_right ? round(20*log10((double)peak_right / int16_max)) : -90;
 
+    long min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
+    long max_fill_buffer = 0;
+    if (not buffer_fill_stats.empty()) {
+        auto buffer_min_max_fill = minmax_element(buffer_fill_stats.begin(),
+                buffer_fill_stats.end());
+        min_fill_buffer = *buffer_min_max_fill.first;
+        max_fill_buffer = *buffer_min_max_fill.second;
+    }
+
     ss <<
     "{ \"inputstat\" : {"
         "\"min_fill\": " << min_fill_buffer << ", "
@@ -453,12 +452,14 @@ input_state_t InputStat::determineState()
 
     /* If the buffer has been empty for more than
      * INPUT_NODATA_TIMEOUT, we go to the NoData state.
+     *
+     * Consider an empty deque to be NoData too.
      */
-    if (m_buffer_empty &&
-            now - m_time_last_buffer_nonempty > INPUT_NODATA_TIMEOUT) {
+    if (std::all_of(
+                buffer_fill_stats.begin(), buffer_fill_stats.end(),
+                [](long fill) { return fill == 0; }) ) {
         state = NoData;
     }
-
     /* Otherwise, the state depends on the glitch counter */
     else if (m_glitch_counter >= INPUT_UNSTABLE_THRESHOLD) {
         state = Unstable;

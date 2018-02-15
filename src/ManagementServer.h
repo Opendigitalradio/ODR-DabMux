@@ -151,10 +151,6 @@ class InputStat
         ~InputStat();
         void registerAtServer(void);
 
-        // Gets called each time the statistics are transmitted,
-        // and resets the counters to zero
-        void reset(void);
-
         std::string get_name(void) const { return m_name; }
 
         /* This function is called for every frame read by
@@ -170,9 +166,10 @@ class InputStat
         std::string m_name;
 
         /************ STATISTICS ***********/
-        // minimum and maximum buffer fill since last reset
-        long min_fill_buffer;
-        long max_fill_buffer;
+        // Calculate minimum and maximum buffer fill from
+        // a FIFO of values from the last few seconds
+        std::deque<long> buffer_fill_stats;
+        std::chrono::time_point<std::chrono::steady_clock> time_last_buffer_notify;
 
         // counter of number of overruns and underruns since startup
         uint32_t num_underruns;
@@ -189,8 +186,6 @@ class InputStat
         int m_glitch_counter; // saturating counter
         int m_silence_counter; // saturating counter
         time_t m_time_last_event;
-        time_t m_time_last_buffer_nonempty;
-        bool m_buffer_empty;
 
         // The mutex that has to be held during all notify and readout
         mutable boost::mutex m_mutex;

@@ -172,20 +172,28 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
 
 int DabLabel::setLabel(const std::string& label)
 {
-    size_t len = label.length();
-    if (len > DABLABEL_LENGTH)
-        return -3;
-
-    m_flag = 0xFF00; // truncate the label to the eight first characters
-
     try {
-        m_label = charset_converter.convert(label, false);
+        auto ebu_label = charset_converter.convert(label, false);
+        size_t len = ebu_label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
+
+        m_label = ebu_label;
     }
     catch (const utf8::exception& e) {
         etiLog.level(warn) << "Failed to convert label '" << label <<
             "' to EBU Charset";
+
+        size_t len = label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
+
         m_label = label;
     }
+
+    m_flag = 0xFF00; // truncate the label to the eight first characters
 
     return 0;
 }
@@ -197,6 +205,11 @@ int DabLabel::setLabel(const std::string& label, const std::string& short_label)
 
     try {
         newlabel.m_label = charset_converter.convert(label, false);
+
+        size_t len = newlabel.m_label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
 
         int flag = newlabel.setShortLabel(
                 charset_converter.convert(short_label, false));
@@ -211,6 +224,11 @@ int DabLabel::setLabel(const std::string& label, const std::string& short_label)
             " or short label '" << short_label << "' to EBU Charset";
 
         // Use label as-is
+
+        size_t len = label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
 
         newlabel.m_label = label;
         newlabel.m_flag = 0xFF00;

@@ -419,6 +419,7 @@ static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)
     }
     for (const auto& fi : ensemble->frequency_information) {
         etiLog.level(info) << "  FI " << fi->uid;
+        etiLog.level(info) << "   OE=" << (fi->other_ensemble ? 1 : 0);
         for (const auto& fle : fi->frequency_information) {
             etiLog.level(info) << "    continuity " << (fle.continuity ? "true" : "false");
             switch (fle.rm) {

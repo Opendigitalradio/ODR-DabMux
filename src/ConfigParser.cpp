@@ -43,7 +43,7 @@
 #include <exception>
 #include <iostream>
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <map>
 #include <cstring>
@@ -211,9 +211,14 @@ static void parse_freq_info(ptree& pt,
             auto fi = make_shared<FrequencyInformation>();
 
             fi->uid = fi_uid;
+            fi->other_ensemble = pt_fi.get("oe", false);
 
             for (const auto& it_fle : pt_fi) {
                 const string fle_uid = it_fle.first;
+                if (fle_uid == "oe") {
+                    continue;
+                }
+
                 const ptree pt_entry = it_fle.second;
 
                 FrequencyListEntry fle;
@@ -234,7 +239,8 @@ static void parse_freq_info(ptree& pt,
                     fle.rm = RangeModulation::amss;
                 }
                 else {
-                    throw runtime_error("Invalid range_modulation: " + rm_str);
+                    throw runtime_error("Invalid range_modulation '" + rm_str +
+                            "' in FI " + fi_uid);
                 }
 
                 fle.continuity = pt_entry.get<bool>("continuity");
@@ -326,6 +332,18 @@ static void parse_freq_info(ptree& pt,
             ensemble->frequency_information.push_back(fi);
 
         } // for over fi
+
+        /* We sort all FI to have the OE=0 first and the OE=1 afterwards, to
+         * avoid having to send FIG0 headers every time it switches.  */
+        std::sort(
+                ensemble->frequency_information.begin(),
+                ensemble->frequency_information.end(),
+                [](const shared_ptr<FrequencyInformation>& first,
+                   const shared_ptr<FrequencyInformation>& second) {
+                    const int oe_first = first->other_ensemble ? 1 : 0;
+                    const int oe_second = second->other_ensemble ? 1 : 0;
+                    return oe_first < oe_second;
+                } );
     } // if FI present
 }
 

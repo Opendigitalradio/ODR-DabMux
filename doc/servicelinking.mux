@@ -105,6 +105,7 @@ linking {
 ; ETSI EN 300 401 Clause 8.1.8
 frequency_information {
     fi_1 {
+        oe false
         fi_dab_1 {
             range_modulation dab
             continuity true
@@ -129,7 +130,23 @@ frequency_information {
             frequencies "87.6 105.2"
         }
     }
+    fi_other_ensemble {
+        oe true
+        fi_dab_other {
+            range_modulation dab
+            continuity true
+            eid 0x4fee
+            frequencies {
+                entry_a {
+                    signal_mode_1 true
+                    adjacent true
+                    frequency 230.784
+                }
+            }
+        }
+    }
     fi_2 {
+        oe false
         fi_drm_3 {
             range_modulation drm
             continuity true

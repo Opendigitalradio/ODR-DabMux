@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -69,8 +69,7 @@ struct FIGtype0_21_fi_dab_entry {
 
 
 FIG0_21::FIG0_21(FIGRuntimeInformation *rti) :
-    m_rti(rti),
-    m_initialised(false)
+    m_rti(rti)
 {
 }
 
@@ -86,6 +85,10 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
     if (not m_initialised) {
         freqInfoFIG0_21 = ensemble->frequency_information.begin();
+
+        if (freqInfoFIG0_21 != ensemble->frequency_information.end()) {
+            m_last_oe = (*freqInfoFIG0_21)->other_ensemble;
+        }
         m_initialised = true;
     }
 
@@ -120,6 +123,14 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
         etiLog.level(FIG0_21_TRACE) << "FIG0_21::loop " << (*freqInfoFIG0_21)->uid;
 
+        if (m_last_oe != (*freqInfoFIG0_21)->other_ensemble) {
+            // Trigger resend of FIG0 when OE changes
+            fig0 = nullptr;
+            m_last_oe = (*freqInfoFIG0_21)->other_ensemble;
+            etiLog.level(FIG0_21_TRACE) << "FIG0_21::switch OE to " <<
+                (*freqInfoFIG0_21)->other_ensemble;
+        }
+
         if (fig0 == nullptr) {
             if (remaining < 2 + required_size) {
                 etiLog.level(FIG0_21_TRACE) << "FIG0_21::no space for fig0";
@@ -132,7 +143,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
             // Database start or continuation flag, EN 300 401 Clause 5.2.2.1 part b)
             fig0->CN =
                 (freqInfoFIG0_21 == ensemble->frequency_information.begin() ? 0 : 1);
-            fig0->OE = 0;
+            fig0->OE = (*freqInfoFIG0_21)->other_ensemble ? 1 : 0;
             fig0->PD = false;
             fig0->Extension = 21;
 

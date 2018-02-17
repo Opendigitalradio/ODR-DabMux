@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -46,7 +46,8 @@ class FIG0_21 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
 
-        bool m_initialised;
+        bool m_initialised = false;
+        bool m_last_oe = false;
 
         std::vector<std::shared_ptr<FrequencyInformation> >::iterator
             freqInfoFIG0_21;

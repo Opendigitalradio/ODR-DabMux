@@ -549,6 +549,8 @@ struct FrequencyListEntry {
 struct FrequencyInformation {
     std::string uid;
 
+    bool other_ensemble = false;
+
     // The latest draft spec does not specify the RegionId anymore, it's
     // now a reserved field.
     std::vector<FrequencyListEntry> frequency_information;

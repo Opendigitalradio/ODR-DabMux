@@ -57,13 +57,9 @@
 #include <chrono>
 #include <deque>
 #include <boost/thread.hpp>
-#include <boost/bind.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <ctime>
 #include <cmath>
-
-#define MIN_FILL_BUFFER_UNDEF (-1)
 
 /*** State handing ***/
 /* An input can be in one of the following three states:
@@ -81,62 +77,6 @@ enum input_state_t
     /* The input is running stable */
     Streaming
 };
-
-
-/* The delay after which the glitch counter is reset */
-#define INPUT_COUNTER_RESET_TIME 30 // minutes
-
-/* How many glitches we tolerate in Streaming state before
- * we consider the input Unstable */
-#define INPUT_UNSTABLE_THRESHOLD 3
-
-/* For how long the input buffers must be empty before we move an input to the
- * NoData state.  */
-#define INPUT_NODATA_TIMEOUT 30 // seconds
-
-/* For silence detection, we count the number of occurrences the audio level
- * falls below a threshold.
- *
- * The counter is decreased for each frame that has good audio level.
- *
- * The counter saturates, and this value defines for how long the
- * input will be considered silent after a cut.
- *
- * If the count reaches a certain value, the input changes state
- * to Silence.  */
-#define INPUT_AUDIO_LEVEL_THRESHOLD       -50  // dB
-#define INPUT_AUDIO_LEVEL_SILENCE_COUNT    100 // superframes (120ms)
-#define INPUT_AUDIO_LEVEL_COUNT_SATURATION 500 // superframes (120ms)
-
-/* An example of how the state changes work.
- * The timeout is set to expire in 30 minutes
- * at each under-/overrun.
- *
- * The glitch counter is increased by one for each glitch (can be a
- * saturating counter), and set to zero when the counter timeout expires.
- *
- * The state is then simply depending on the glitch counter value.
- *
- * Graphical example:
-
- state     STREAMING      | UNSTABLE | STREAMING
- xruns         U     U    U
- glitch
-  counter  0   1     2    3          0
- reset
-  timeout  \   |\    |\   |\
-            \  | \   | \  | \
-             \ |  \  |  \ |  \
-              \|   \ |   \|   \
-               `    \|    `    \
-                     `          \
-                                 \
-                                  \
-                                   \
-                                    \
-  timeout expires ___________________\
-                           <--30min-->
- */
 
 /* InputStat takes care of
  * - saving the statistics for graphing
@@ -168,24 +108,24 @@ class InputStat
         /************ STATISTICS ***********/
         // Calculate minimum and maximum buffer fill from
         // a FIFO of values from the last few seconds
-        std::deque<long> buffer_fill_stats;
-        std::chrono::time_point<std::chrono::steady_clock> time_last_buffer_notify;
+        std::deque<long> m_buffer_fill_stats;
+        std::chrono::time_point<std::chrono::steady_clock> m_time_last_buffer_notify;
 
         // counter of number of overruns and underruns since startup
-        uint32_t num_underruns;
-        uint32_t num_overruns;
+        uint32_t m_num_underruns;
+        uint32_t m_num_overruns;
 
         // Peak audio levels (linear 16-bit PCM) for the two channels.
         // Keep a FIFO of values from the last few seconds
-        std::deque<int> peaks_left;
-        std::deque<int> peaks_right;
-        std::chrono::time_point<std::chrono::steady_clock> time_last_peak_notify;
+        std::deque<int> m_peaks_left;
+        std::deque<int> m_peaks_right;
+        std::chrono::time_point<std::chrono::steady_clock> m_time_last_peak_notify;
 
         /************* STATE ***************/
         /* Variables used for determining the input state */
         int m_glitch_counter; // saturating counter
         int m_silence_counter; // saturating counter
-        time_t m_time_last_event;
+        std::chrono::time_point<std::chrono::steady_clock> m_time_last_event;
 
         // The mutex that has to be held during all notify and readout
         mutable boost::mutex m_mutex;

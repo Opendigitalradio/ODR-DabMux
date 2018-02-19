@@ -35,14 +35,81 @@
 #include <limits>
 #include <sstream>
 #include <algorithm>
-#include <ctime>
 #include <boost/thread.hpp>
 #include <boost/version.hpp>
 #include "ManagementServer.h"
 #include "Log.h"
 
-static constexpr
-auto stats_keep_duration = std::chrono::seconds(INPUT_NODATA_TIMEOUT);
+#define MIN_FILL_BUFFER_UNDEF (-1)
+
+/* For silence detection, we count the number of occurrences the audio level
+ * falls below a threshold.
+ *
+ * The counter is decreased for each frame that has good audio level.
+ *
+ * The counter saturates, and this value defines for how long the
+ * input will be considered silent after a cut.
+ *
+ * If the count reaches a certain value, the input changes state
+ * to Silence.  */
+#define INPUT_AUDIO_LEVEL_THRESHOLD       -50  // dB
+#define INPUT_AUDIO_LEVEL_SILENCE_COUNT    100 // superframes (120ms)
+#define INPUT_AUDIO_LEVEL_COUNT_SATURATION 500 // superframes (120ms)
+
+/* An example of how the state changes work.
+ * The timeout is set to expire in 30 minutes
+ * at each under-/overrun.
+ *
+ * The glitch counter is increased by one for each glitch (can be a
+ * saturating counter), and set to zero when the counter timeout expires.
+ *
+ * The state is then simply depending on the glitch counter value.
+ *
+ * Graphical example:
+
+ state     STREAMING      | UNSTABLE | STREAMING
+ xruns         U     U    U
+ glitch
+  counter  0   1     2    3          0
+ reset
+  timeout  \   |\    |\   |\
+            \  | \   | \  | \
+             \ |  \  |  \ |  \
+              \|   \ |   \|   \
+               `    \|    `    \
+                     `          \
+                                 \
+                                  \
+                                   \
+                                    \
+  timeout expires ___________________\
+                           <--30min-->
+ */
+
+/* The delay after which the glitch counter is reset */
+static constexpr auto
+INPUT_COUNTER_RESET_TIME = std::chrono::minutes(30);
+
+/* How many glitches we tolerate in Streaming state before
+ * we consider the input Unstable */
+static constexpr int
+INPUT_UNSTABLE_THRESHOLD = 3;
+
+/* For how long the input buffers must be empty before we move an input to the
+ * NoData state.  */
+static constexpr auto
+INPUT_NODATA_TIMEOUT  = std::chrono::seconds(30);
+
+/* Keep 30s of min/max buffer fill information so that we can catch meaningful
+ * values even if we have a slow poller */
+static constexpr auto
+BUFFER_STATS_KEEP_DURATION = std::chrono::seconds(30);
+
+/* Audio level information changes faster than buffer levels, so it makes sense
+ * to poll much faster. If we keep too much data, we will hide the interesting
+ * short-time fluctuations. */
+static constexpr auto
+PEAK_STATS_KEEP_DURATION = std::chrono::milliseconds(500);
 
 ManagementServer& get_mgmt_server()
 {
@@ -197,8 +264,6 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
     std::stringstream answer;
     std::string data((char*)zmq_message.data(), zmq_message.size());
 
-    etiLog.level(debug) << "ManagementServer: '" << data << "' request";
-
     try {
         if (data == "info") {
 
@@ -251,18 +316,17 @@ InputStat::InputStat(const std::string& name)
     : m_name(name)
 {
     /* Statistics */
-    num_underruns = 0;
-    num_overruns = 0;
+    m_num_underruns = 0;
+    m_num_overruns = 0;
 
     /* State handling */
-    time_t now = time(NULL);
-    m_time_last_event = now;
+    m_time_last_event = std::chrono::steady_clock::now();
     m_glitch_counter = 0;
     m_silence_counter = 0;
 
-    buffer_fill_stats.clear();
-    peaks_left.clear();
-    peaks_right.clear();
+    m_buffer_fill_stats.clear();
+    m_peaks_left.clear();
+    m_peaks_right.clear();
 }
 
 InputStat::~InputStat()
@@ -279,48 +343,48 @@ void InputStat::notifyBuffer(long bufsize)
 {
     boost::mutex::scoped_lock lock(m_mutex);
 
-    buffer_fill_stats.push_back(bufsize);
+    m_buffer_fill_stats.push_back(bufsize);
 
     using namespace std::chrono;
     const auto time_now = steady_clock::now();
-    if (buffer_fill_stats.size() > 1) {
-        auto insertion_interval = time_now - time_last_buffer_notify;
-        auto total_length = insertion_interval * buffer_fill_stats.size();
+    if (m_buffer_fill_stats.size() > 1) {
+        auto insertion_interval = time_now - m_time_last_buffer_notify;
+        auto total_length = insertion_interval * m_buffer_fill_stats.size();
 
-        if (total_length > stats_keep_duration) {
-            buffer_fill_stats.pop_front();
+        if (total_length > BUFFER_STATS_KEEP_DURATION) {
+            m_buffer_fill_stats.pop_front();
         }
     }
-    time_last_buffer_notify = time_now;
+    m_time_last_buffer_notify = time_now;
 }
 
 void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 {
     boost::mutex::scoped_lock lock(m_mutex);
 
-    peaks_left.push_back(peak_left);
-    peaks_right.push_back(peak_right);
+    m_peaks_left.push_back(peak_left);
+    m_peaks_right.push_back(peak_right);
 
     using namespace std::chrono;
 
     const auto time_now = steady_clock::now();
-    if (peaks_left.size() > 1) {
-        auto insertion_interval = time_now - time_last_peak_notify;
-        auto peaks_total_length = insertion_interval * peaks_left.size();
+    if (m_peaks_left.size() > 1) {
+        auto insertion_interval = time_now - m_time_last_peak_notify;
+        auto peaks_total_length = insertion_interval * m_peaks_left.size();
 
-        if (peaks_total_length > stats_keep_duration) {
-            peaks_left.pop_front();
-            peaks_right.pop_front();
+        if (peaks_total_length > PEAK_STATS_KEEP_DURATION) {
+            m_peaks_left.pop_front();
+            m_peaks_right.pop_front();
         }
     }
-    time_last_peak_notify = time_now;
+    m_time_last_peak_notify = time_now;
 
-    if (peaks_left.empty() or peaks_right.empty()) {
+    if (m_peaks_left.empty() or m_peaks_right.empty()) {
         throw std::logic_error("Peak statistics empty!");
     }
 
-    const auto max_left = *max_element(peaks_left.begin(), peaks_left.end());
-    const auto max_right = *max_element(peaks_right.begin(), peaks_right.end());
+    const auto max_left = *max_element(m_peaks_left.begin(), m_peaks_left.end());
+    const auto max_right = *max_element(m_peaks_right.begin(), m_peaks_right.end());
 
     // State
 
@@ -350,12 +414,18 @@ void InputStat::notifyUnderrun(void)
     boost::mutex::scoped_lock lock(m_mutex);
 
     // Statistics
-    num_underruns++;
+    m_num_underruns++;
 
     // State
-    m_time_last_event = time(NULL);
+    m_time_last_event = std::chrono::steady_clock::now();
     if (m_glitch_counter < INPUT_UNSTABLE_THRESHOLD) {
         m_glitch_counter++;
+    }
+    else {
+        // As we don't receive level notifications anymore, clear the 
+        // audio level information
+        m_peaks_left.clear();
+        m_peaks_right.clear();
     }
 }
 
@@ -364,10 +434,10 @@ void InputStat::notifyOverrun(void)
     boost::mutex::scoped_lock lock(m_mutex);
 
     // Statistics
-    num_overruns++;
+    m_num_overruns++;
 
     // State
-    m_time_last_event = time(NULL);
+    m_time_last_event = std::chrono::steady_clock::now();
     if (m_glitch_counter < INPUT_UNSTABLE_THRESHOLD) {
         m_glitch_counter++;
     }
@@ -384,9 +454,9 @@ std::string InputStat::encodeValuesJSON()
     int peak_left = 0;
     int peak_right = 0;
 
-    if (not peaks_left.empty() and not peaks_right.empty()) {
-        peak_left = *max_element(peaks_left.begin(), peaks_left.end());
-        peak_right = *max_element(peaks_right.begin(), peaks_right.end());
+    if (not m_peaks_left.empty() and not m_peaks_right.empty()) {
+        peak_left = *max_element(m_peaks_left.begin(), m_peaks_left.end());
+        peak_right = *max_element(m_peaks_right.begin(), m_peaks_right.end());
     }
 
     /* convert to dB */
@@ -395,9 +465,9 @@ std::string InputStat::encodeValuesJSON()
 
     long min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
     long max_fill_buffer = 0;
-    if (not buffer_fill_stats.empty()) {
-        auto buffer_min_max_fill = minmax_element(buffer_fill_stats.begin(),
-                buffer_fill_stats.end());
+    if (not m_buffer_fill_stats.empty()) {
+        auto buffer_min_max_fill = minmax_element(m_buffer_fill_stats.begin(),
+                m_buffer_fill_stats.end());
         min_fill_buffer = *buffer_min_max_fill.first;
         max_fill_buffer = *buffer_min_max_fill.second;
     }
@@ -408,8 +478,8 @@ std::string InputStat::encodeValuesJSON()
         "\"max_fill\": " << max_fill_buffer << ", "
         "\"peak_left\": " << dB_l << ", "
         "\"peak_right\": " << dB_r << ", "
-        "\"num_underruns\": " << num_underruns << ", "
-        "\"num_overruns\": " << num_overruns << ", ";
+        "\"num_underruns\": " << m_num_underruns << ", "
+        "\"num_overruns\": " << m_num_overruns << ", ";
 
     ss << "\"state\": ";
 
@@ -437,14 +507,14 @@ std::string InputStat::encodeValuesJSON()
 
 input_state_t InputStat::determineState()
 {
-    time_t now = time(nullptr);
+    const auto now = std::chrono::steady_clock::now();
     input_state_t state;
 
     /* if the last event was more that INPUT_COUNTER_RESET_TIME
-     * minutes ago, the timeout has expired. We can reset our
+     * ago, the timeout has expired. We can reset our
      * glitch counter.
      */
-    if (now - m_time_last_event > 60*INPUT_COUNTER_RESET_TIME) {
+    if (now - m_time_last_event > INPUT_COUNTER_RESET_TIME) {
         m_glitch_counter = 0;
     }
 
@@ -456,7 +526,7 @@ input_state_t InputStat::determineState()
      * Consider an empty deque to be NoData too.
      */
     if (std::all_of(
-                buffer_fill_stats.begin(), buffer_fill_stats.end(),
+                m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
                 [](long fill) { return fill == 0; }) ) {
         state = NoData;
     }

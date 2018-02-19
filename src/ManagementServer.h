@@ -56,7 +56,8 @@
 #include <atomic>
 #include <chrono>
 #include <deque>
-#include <boost/thread.hpp>
+#include <thread>
+#include <mutex>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <cmath>
@@ -128,7 +129,7 @@ class InputStat
         std::chrono::time_point<std::chrono::steady_clock> m_time_last_event;
 
         // The mutex that has to be held during all notify and readout
-        mutable boost::mutex m_mutex;
+        mutable std::mutex m_mutex;
 };
 
 class ManagementServer
@@ -144,8 +145,6 @@ class ManagementServer
         {
             m_running = false;
             m_fault = false;
-
-            // TODO notify
             m_thread.join();
         }
 
@@ -156,7 +155,7 @@ class ManagementServer
         {
             m_listenport = listenport;
             if (m_listenport > 0) {
-                m_thread = boost::thread(&ManagementServer::serverThread, this);
+                m_thread = std::thread(&ManagementServer::serverThread, this);
             }
         }
 
@@ -195,8 +194,8 @@ class ManagementServer
         // serverThread runs in a separate thread
         std::atomic<bool> m_running;
         std::atomic<bool> m_fault;
-        boost::thread m_thread;
-        boost::thread m_restarter_thread;
+        std::thread m_thread;
+        std::thread m_restarter_thread;
 
         /******* Statistics Data ********/
         std::map<std::string, InputStat*> m_inputStats;
@@ -215,10 +214,10 @@ class ManagementServer
         std::string getValuesJSON();
 
         // mutex for accessing the map
-        boost::mutex m_statsmutex;
+        std::mutex m_statsmutex;
 
         /******** Configuration Data *******/
-        boost::mutex m_configmutex;
+        std::mutex m_configmutex;
         boost::property_tree::ptree m_pt;
 };
 

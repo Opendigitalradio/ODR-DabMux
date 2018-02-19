@@ -35,10 +35,11 @@
 #include <limits>
 #include <sstream>
 #include <algorithm>
-#include <boost/thread.hpp>
 #include <boost/version.hpp>
 #include "ManagementServer.h"
 #include "Log.h"
+
+using namespace std;
 
 #define MIN_FILL_BUFFER_UNDEF (-1)
 
@@ -125,7 +126,7 @@ ManagementServer& get_mgmt_server()
 
 void ManagementServer::registerInput(InputStat* is)
 {
-    boost::mutex::scoped_lock lock(m_statsmutex);
+    unique_lock<mutex> lock(m_statsmutex);
 
     std::string id(is->get_name());
 
@@ -141,7 +142,7 @@ void ManagementServer::registerInput(InputStat* is)
 
 void ManagementServer::unregisterInput(std::string id)
 {
-    boost::mutex::scoped_lock lock(m_statsmutex);
+    unique_lock<mutex> lock(m_statsmutex);
 
     if (m_inputStats.count(id) == 1) {
         m_inputStats.erase(id);
@@ -151,7 +152,7 @@ void ManagementServer::unregisterInput(std::string id)
 
 bool ManagementServer::isInputRegistered(std::string& id)
 {
-    boost::mutex::scoped_lock lock(m_statsmutex);
+    unique_lock<mutex> lock(m_statsmutex);
 
     if (m_inputStats.count(id) == 0) {
         etiLog.level(error) <<
@@ -164,7 +165,7 @@ bool ManagementServer::isInputRegistered(std::string& id)
 
 std::string ManagementServer::getStatConfigJSON()
 {
-    boost::mutex::scoped_lock lock(m_statsmutex);
+    unique_lock<mutex> lock(m_statsmutex);
 
     std::ostringstream ss;
     ss << "{ \"config\" : [\n";
@@ -190,7 +191,7 @@ std::string ManagementServer::getStatConfigJSON()
 
 std::string ManagementServer::getValuesJSON()
 {
-    boost::mutex::scoped_lock lock(m_statsmutex);
+    unique_lock<mutex> lock(m_statsmutex);
 
     std::ostringstream ss;
     ss << "{ \"values\" : {\n";
@@ -218,8 +219,7 @@ std::string ManagementServer::getValuesJSON()
 
 void ManagementServer::restart()
 {
-    m_restarter_thread = boost::thread(&ManagementServer::restart_thread,
-            this, 0);
+    m_restarter_thread = thread(&ManagementServer::restart_thread, this, 0);
 }
 
 // This runs in a separate thread, because
@@ -230,11 +230,10 @@ void ManagementServer::restart_thread(long)
     m_running = false;
 
     if (m_listenport) {
-        m_thread.interrupt();
         m_thread.join();
     }
 
-    m_thread = boost::thread(&ManagementServer::serverThread, this);
+    m_thread = thread(&ManagementServer::serverThread, this);
 }
 
 void ManagementServer::serverThread()
@@ -284,7 +283,7 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
             answer << getValuesJSON();
         }
         else if (data == "getptree") {
-            boost::unique_lock<boost::mutex> lock(m_configmutex);
+            unique_lock<mutex> lock(m_configmutex);
             boost::property_tree::json_parser::write_json(answer, m_pt);
         }
         else {
@@ -305,7 +304,7 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
 void ManagementServer::update_ptree(const boost::property_tree::ptree& pt)
 {
     if (m_running) {
-        boost::unique_lock<boost::mutex> lock(m_configmutex);
+        unique_lock<mutex> lock(m_configmutex);
         m_pt = pt;
     }
 }
@@ -341,7 +340,7 @@ void InputStat::registerAtServer()
 
 void InputStat::notifyBuffer(long bufsize)
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    unique_lock<mutex> lock(m_mutex);
 
     m_buffer_fill_stats.push_back(bufsize);
 
@@ -360,7 +359,7 @@ void InputStat::notifyBuffer(long bufsize)
 
 void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    unique_lock<mutex> lock(m_mutex);
 
     m_peaks_left.push_back(peak_left);
     m_peaks_right.push_back(peak_right);
@@ -411,7 +410,7 @@ void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 
 void InputStat::notifyUnderrun(void)
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    unique_lock<mutex> lock(m_mutex);
 
     // Statistics
     m_num_underruns++;
@@ -431,7 +430,7 @@ void InputStat::notifyUnderrun(void)
 
 void InputStat::notifyOverrun(void)
 {
-    boost::mutex::scoped_lock lock(m_mutex);
+    unique_lock<mutex> lock(m_mutex);
 
     // Statistics
     m_num_overruns++;
@@ -449,7 +448,7 @@ std::string InputStat::encodeValuesJSON()
 
     const int16_t int16_max = std::numeric_limits<int16_t>::max();
 
-    boost::mutex::scoped_lock lock(m_mutex);
+    unique_lock<mutex> lock(m_mutex);
 
     int peak_left = 0;
     int peak_right = 0;

@@ -135,29 +135,12 @@ class InputStat
 class ManagementServer
 {
     public:
-        ManagementServer() :
-            m_zmq_context(),
-            m_zmq_sock(m_zmq_context, ZMQ_REP),
-            m_running(false),
-            m_fault(false) { }
-
-        ~ManagementServer()
-        {
-            m_running = false;
-            m_fault = false;
-            m_thread.join();
-        }
-
+        ManagementServer();
         ManagementServer(const ManagementServer& other) = delete;
         ManagementServer& operator=(const ManagementServer& other) = delete;
+        ~ManagementServer();
 
-        void open(int listenport)
-        {
-            m_listenport = listenport;
-            if (m_listenport > 0) {
-                m_thread = std::thread(&ManagementServer::serverThread, this);
-            }
-        }
+        void open(int listenport);
 
         /* Un-/Register a statistics data source */
         void registerInput(InputStat* is);
@@ -174,7 +157,7 @@ class ManagementServer
          */
         void update_ptree(const boost::property_tree::ptree& pt);
 
-        bool fault_detected() { return m_fault; }
+        bool fault_detected() const { return m_fault; }
         void restart(void);
 
     private:

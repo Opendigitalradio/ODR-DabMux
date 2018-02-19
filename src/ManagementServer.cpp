@@ -217,6 +217,30 @@ std::string ManagementServer::getValuesJSON()
     return ss.str();
 }
 
+ManagementServer::ManagementServer() :
+    m_zmq_context(),
+    m_zmq_sock(m_zmq_context, ZMQ_REP),
+    m_running(false),
+    m_fault(false)
+{ }
+
+ManagementServer::~ManagementServer()
+{
+    m_running = false;
+    if (m_thread.joinable()) {
+        m_thread.join();
+        m_fault = false;
+    }
+}
+
+void ManagementServer::open(int listenport)
+{
+    m_listenport = listenport;
+    if (m_listenport > 0) {
+        m_thread = std::thread(&ManagementServer::serverThread, this);
+    }
+}
+
 void ManagementServer::restart()
 {
     m_restarter_thread = thread(&ManagementServer::restart_thread, this, 0);
@@ -229,8 +253,9 @@ void ManagementServer::restart_thread(long)
 {
     m_running = false;
 
-    if (m_listenport) {
+    if (m_thread.joinable()) {
         m_thread.join();
+        m_fault = false;
     }
 
     m_thread = thread(&ManagementServer::serverThread, this);
@@ -241,20 +266,26 @@ void ManagementServer::serverThread()
     m_running = true;
     m_fault = false;
 
-    std::stringstream bind_addr;
-    bind_addr << "tcp://127.0.0.1:" << m_listenport;
-    m_zmq_sock.bind(bind_addr.str().c_str());
+    try {
+        std::string bind_addr = "tcp://127.0.0.1:" + to_string(m_listenport);
+        m_zmq_sock.bind(bind_addr.c_str());
 
-    while (m_running) {
-        zmq::message_t zmq_message;
-        if (m_zmq_sock.recv(&zmq_message, ZMQ_DONTWAIT)) {
-            handle_message(zmq_message);
-        }
-        else {
-            usleep(10000);
+        zmq::pollitem_t pollItems[] = { {m_zmq_sock, 0, ZMQ_POLLIN, 0} };
+
+        while (m_running) {
+            zmq::poll(pollItems, 1, 1000);
+
+            if (pollItems[0].revents & ZMQ_POLLIN) {
+                zmq::message_t zmq_message;
+                m_zmq_sock.recv(&zmq_message);
+                handle_message(zmq_message);
+            }
         }
     }
-
+    catch (const exception &e) {
+        etiLog.level(error) << "Exception in ManagementServer: " <<
+            e.what();
+    }
     m_fault = true;
 }
 
@@ -294,7 +325,7 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         std::string answerstr(answer.str());
         m_zmq_sock.send(answerstr.c_str(), answerstr.size());
     }
-    catch (std::exception& e) {
+    catch (const std::exception& e) {
         etiLog.level(error) <<
             "MGMT server caught exception: " <<
             e.what();

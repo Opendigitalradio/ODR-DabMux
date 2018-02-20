@@ -239,19 +239,18 @@ void printServices(const vector<shared_ptr<DabService> >& services)
     }
 }
 
-void printComponents(vector<DabComponent*>& components)
+void printComponents(const vec_sp_component& components)
 {
-    vector<DabComponent*>::const_iterator current;
     unsigned int index = 0;
 
-    for (current = components.begin(); current != components.end(); ++current) {
-        etiLog.level(info) << "Component     " << (*current)->get_rc_name();
-        printComponent(*current);
+    for (const auto component : components) {
+        etiLog.level(info) << "Component     " << component->get_rc_name();
+        printComponent(component);
         ++index;
     }
 }
 
-void printComponent(DabComponent* component)
+void printComponent(const shared_ptr<DabComponent>& component)
 {
     etiLog.log(info, " service id:             0x%x (%u)",
             component->serviceId, component->serviceId);
@@ -318,18 +317,16 @@ void printComponent(DabComponent* component)
     }
 }
 
-void printSubchannels(vector<DabSubchannel*>& subchannels)
+void printSubchannels(const vec_sp_subchannel& subchannels)
 {
-    vector<DabSubchannel*>::iterator subchannel;
     int index = 0;
 
-    for (subchannel = subchannels.begin(); subchannel != subchannels.end();
-            ++subchannel) {
-        dabProtection* protection = &(*subchannel)->protection;
-        etiLog.level(info) << "Subchannel   " << (*subchannel)->uid;
+    for (auto subchannel : subchannels) {
+        dabProtection* protection = &subchannel->protection;
+        etiLog.level(info) << "Subchannel   " << subchannel->uid;
         etiLog.log(info, " input");
-        etiLog.level(info) << "   URI:     " << (*subchannel)->inputUri;
-        switch ((*subchannel)->type) {
+        etiLog.level(info) << "   URI:     " << subchannel->inputUri;
+        switch (subchannel->type) {
             case subchannel_type_t::Audio:
                 etiLog.log(info, " type:       audio");
                 break;
@@ -347,9 +344,9 @@ void printSubchannels(vector<DabSubchannel*>& subchannels)
                 break;
         }
         etiLog.log(info, " id:         0x%x (%u)",
-                (*subchannel)->id, (*subchannel)->id);
+                subchannel->id, subchannel->id);
         etiLog.log(info, " bitrate:    %i",
-                (*subchannel)->bitrate);
+                subchannel->bitrate);
         if (protection->form == UEP) {
             etiLog.log(info, " protection: UEP %i", protection->level + 1);
             etiLog.log(info, "  index:     %i",
@@ -362,12 +359,12 @@ void printSubchannels(vector<DabSubchannel*>& subchannels)
             etiLog.log(info, "  option:    %i",
                     protection->eep.GetOption());
             etiLog.log(info, "  level:     %i",
-                    (*subchannel)->protection.level);
+                    subchannel->protection.level);
         }
         etiLog.log(info, " SAD:        %u",
-                (*subchannel)->startAddress);
+                subchannel->startAddress);
         etiLog.log(info, " size (CU):  %i",
-                (*subchannel)->getSizeCu());
+                subchannel->getSizeCu());
         ++index;
     }
 }

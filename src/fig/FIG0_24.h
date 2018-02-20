@@ -47,7 +47,7 @@ class FIG0_24 : public IFIG
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         bool m_inserting_audio_not_data;
-        std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_24;
+        vec_sp_service::iterator serviceFIG0_24;
 };
 
 }

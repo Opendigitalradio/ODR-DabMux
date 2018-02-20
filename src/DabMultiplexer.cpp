@@ -152,10 +152,9 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         throw MuxInitException();
     }
 
-    vector<DabSubchannel*>::iterator subchannel =
-        ensemble->subchannels.end() - 1;
+    auto last_subchannel = *(ensemble->subchannels.end() - 1);
 
-    if ((*subchannel)->startAddress + (*subchannel)->getSizeCu() > 864) {
+    if (last_subchannel->startAddress + last_subchannel->getSizeCu() > 864) {
         etiLog.log(error, "Total size in CU exceeds 864\n");
         printSubchannels(ensemble->subchannels);
         throw MuxInitException();
@@ -222,8 +221,8 @@ void DabMultiplexer::prepare_services_components()
     set<uint32_t> ids;
     dabProtection* protection = nullptr;
 
-    vector<DabComponent*>::iterator component;
-    vector<DabSubchannel*>::iterator subchannel;
+    vec_sp_component::iterator component;
+    vec_sp_subchannel::iterator subchannel;
 
     for (auto service : ensemble->services) {
         if (ids.find(service->id) != ids.end()) {
@@ -302,7 +301,7 @@ void DabMultiplexer::prepare_services_components()
 
         component->packet.id = cur_packetid++;
 
-        rcs.enrol(component);
+        rcs.enrol(component.get());
     }
 
 }
@@ -310,10 +309,9 @@ void DabMultiplexer::prepare_services_components()
 void DabMultiplexer::prepare_data_inputs()
 {
     dabProtection* protection = nullptr;
-    vector<DabSubchannel*>::iterator subchannel;
 
     // Prepare and check the data inputs
-    for (subchannel = ensemble->subchannels.begin();
+    for (auto subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
         protection = &(*subchannel)->protection;
@@ -376,9 +374,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     unsigned char etiFrame[6144];
     unsigned short index = 0;
 
-    vector<std::shared_ptr<DabService> >::iterator service;
-    vector<DabComponent*>::iterator component;
-    vector<DabSubchannel*>::iterator subchannel;
+    vec_sp_service::iterator service;
+    vec_sp_component::iterator component;
 
     // FIC Length, DAB Mode I, II, IV -> FICL = 24, DAB Mode III -> FICL = 32
     unsigned FICL =
@@ -467,7 +464,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      */
     unsigned short FLtmp = 1 + FICL + (fc->NST);
 
-    for (subchannel = ensemble->subchannels.begin();
+    for (auto subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
         // Add STLsbch
@@ -481,15 +478,13 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     // Stream Characterization,
     //  number of channels * 4 octets = nb octets total
     int edi_stream_id = 1;
-    for (subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
-        dabProtection* protection = &(*subchannel)->protection;
+    for (auto subchannel : ensemble->subchannels) {
+        dabProtection* protection = &subchannel->protection;
         eti_STC *sstc = (eti_STC *) & etiFrame[index];
 
-        sstc->SCID = (*subchannel)->id;
-        sstc->startAddress_high = (*subchannel)->startAddress / 256;
-        sstc->startAddress_low = (*subchannel)->startAddress % 256;
+        sstc->SCID = subchannel->id;
+        sstc->startAddress_high = subchannel->startAddress / 256;
+        sstc->startAddress_low = subchannel->startAddress % 256;
         // depends on the desired protection form
         if (protection->form == UEP) {
             sstc->TPL = 0x10 |
@@ -500,20 +495,20 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
 
         // Sub-channel Stream Length, multiple of 64 bits
-        sstc->STL_high = (*subchannel)->getSizeDWord() / 256;
-        sstc->STL_low = (*subchannel)->getSizeDWord() % 256;
+        sstc->STL_high = subchannel->getSizeDWord() / 256;
+        sstc->STL_low = subchannel->getSizeDWord() % 256;
 
         edi::TagESTn tag_ESTn;
         tag_ESTn.id = edi_stream_id++;
-        tag_ESTn.scid = (*subchannel)->id;
-        tag_ESTn.sad = (*subchannel)->startAddress;
+        tag_ESTn.scid = subchannel->id;
+        tag_ESTn.sad = subchannel->startAddress;
         tag_ESTn.tpl = sstc->TPL;
         tag_ESTn.rfa = 0; // two bits
-        tag_ESTn.mst_length = (*subchannel)->getSizeByte() / 8;
+        tag_ESTn.mst_length = subchannel->getSizeByte() / 8;
         tag_ESTn.mst_data = nullptr;
-        assert((*subchannel)->getSizeByte() % 8 == 0);
+        assert(subchannel->getSizeByte() % 8 == 0);
 
-        edi_subchannelToTag[*subchannel] = tag_ESTn;
+        edi_subchannelToTag[subchannel.get()] = tag_ESTn;
         index += 4;
     }
 
@@ -591,20 +586,17 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      ******  Input Data Reading *******************************************
      **********************************************************************/
 
-    for (subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
+    for (auto subchannel : ensemble->subchannels) {
+        edi::TagESTn& tag = edi_subchannelToTag[subchannel.get()];
 
-        edi::TagESTn& tag = edi_subchannelToTag[*subchannel];
-
-        int sizeSubchannel = (*subchannel)->getSizeByte();
-        int result = (*subchannel)->input->readFrame(
+        int sizeSubchannel = subchannel->getSizeByte();
+        int result = subchannel->input->readFrame(
                 &etiFrame[index], sizeSubchannel);
 
         if (result < 0) {
             etiLog.log(info,
                     "Subchannel %d read failed at ETI frame number: %d\n",
-                    (*subchannel)->id, currentFrame);
+                    subchannel->id, currentFrame);
         }
 
         // save pointer to Audio or Data Stream into correct TagESTn for EDI
@@ -615,10 +607,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
 
     index = (3 + fc->NST + FICL) * 4;
-    for (subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
-        index += (*subchannel)->getSizeByte();
+    for (auto subchannel : ensemble->subchannels) {
+        index += subchannel->getSizeByte();
     }
 
     /******* Section EOF **************************************************/

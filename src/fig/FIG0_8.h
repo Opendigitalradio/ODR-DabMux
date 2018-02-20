@@ -48,7 +48,7 @@ class FIG0_8 : public IFIG
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         bool m_transmit_programme;
-        std::vector<DabComponent*>::iterator componentFIG0_8;
+        vec_sp_component::iterator componentFIG0_8;
 };
 
 }

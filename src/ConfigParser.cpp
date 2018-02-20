@@ -36,67 +36,32 @@
 #   include "config.h"
 #endif
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <memory>
-#include <exception>
-#include <iostream>
-#include <vector>
-#include <cstdint>
-#include <string>
-#include <map>
-#include <cstring>
 #include "dabOutput/dabOutput.h"
-#include "input/inputs.h"
 #include "utils.h"
 #include "DabMux.h"
 #include "ManagementServer.h"
-
 #include "input/Prbs.h"
 #include "input/Zmq.h"
 #include "input/File.h"
 #include "input/Udp.h"
-
-
-#ifdef _WIN32
-#   pragma warning ( disable : 4103 )
-#   include "Eti.h"
-#   pragma warning ( default : 4103 )
-#else
-#   include "Eti.h"
-#endif
-
-
-#ifdef _WIN32
-#   include <time.h>
-#   include <process.h>
-#   include <io.h>
-#   include <conio.h>
-#   include <winsock2.h> // For types...
-typedef u_char uint8_t;
-typedef WORD uint16_t;
-typedef DWORD32 uint32_t;
-
-#   ifndef __MINGW32__
-#       include "xgetopt.h"
-#   endif
-#   define read _read
-#   define snprintf _snprintf 
-#   define sleep(a) Sleep((a) * 1000)
-#else
-#   include <unistd.h>
-#   include <sys/time.h>
-#   include <sys/wait.h>
-#   include <sys/ioctl.h>
-#   include <sys/times.h>
-#endif
+#include "Eti.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <exception>
+#include <iostream>
+#include <string>
+#include <map>
+#include <vector>
 
 using namespace std;
 using boost::property_tree::ptree;
 using boost::property_tree::ptree_error;
 
-static void setup_subchannel_from_ptree(DabSubchannel* subchan,
+static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         const ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid);
@@ -634,12 +599,12 @@ void parse_ptree(
 
 
     /******************** READ SUBCHAN PARAMETERS **************/
-    map<string, DabSubchannel*> allsubchans;
+    map<string, shared_ptr<DabSubchannel> > allsubchans;
 
     ptree pt_subchans = pt.get_child("subchannels");
     for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
-        auto subchan = new DabSubchannel(subchanuid);
+        auto subchan = make_shared<DabSubchannel>(subchanuid);
 
         ensemble->subchannels.push_back(subchan);
 
@@ -666,7 +631,7 @@ void parse_ptree(
     }
 
     /******************** READ COMPONENT PARAMETERS ************/
-    map<string, DabComponent*> allcomponents;
+    map<string, shared_ptr<DabComponent> > allcomponents;
     ptree pt_components = pt.get_child("components");
     for (ptree::iterator it = pt_components.begin(); it != pt_components.end(); ++it) {
         string componentuid = it->first;
@@ -690,7 +655,7 @@ void parse_ptree(
             throw runtime_error(ss.str());
         }
 
-        DabSubchannel* subchannel;
+        shared_ptr<DabSubchannel> subchannel;
         try {
             string subchan_uid = pt_comp.get<string>("subchannel");
             if (allsubchans.count(subchan_uid) != 1) {
@@ -712,7 +677,7 @@ void parse_ptree(
         int packet_datagroup = pt_comp.get("datagroup", false);
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
-        auto component = new DabComponent(componentuid);
+        auto component = make_shared<DabComponent>(componentuid);
 
         component->serviceId = service->id;
         component->subchId = subchannel->id;
@@ -842,7 +807,7 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
     return zmqconfig;
 }
 
-static void setup_subchannel_from_ptree(DabSubchannel* subchan,
+static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         const ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid)
@@ -884,8 +849,6 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     }
 
     subchan->inputUri = inputUri;
-
-    dabProtection* protection = &subchan->protection;
 
     if (type == "dabplus" or type == "audio") {
         subchan->type = subchannel_type_t::Audio;
@@ -988,6 +951,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
 
     subchan->startAddress = 0;
 
+    dabProtection* protection = &subchan->protection;
     if (type == "audio") {
         protection->form = UEP;
         protection->level = 2;
@@ -1022,7 +986,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     }
     catch (ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel
-            vector<DabSubchannel*>::iterator subchannel = getSubchannel(ensemble->subchannels, i);
+            auto subchannel = getSubchannel(ensemble->subchannels, i);
             if (subchannel == ensemble->subchannels.end()) {
                 subchannel = ensemble->subchannels.end() - 1;
                 subchan->id = i;

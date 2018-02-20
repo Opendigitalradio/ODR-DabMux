@@ -333,24 +333,26 @@ void DabLabel::writeLabel(uint8_t* buf) const
     }
 }
 
-vector<DabSubchannel*>::iterator getSubchannel(
-        vector<DabSubchannel*>& subchannels, int id)
+vec_sp_subchannel::iterator getSubchannel(
+        vec_sp_subchannel& subchannels,
+        int id)
 {
     return find_if(
             subchannels.begin(),
             subchannels.end(),
-            [&](const DabSubchannel* s){ return s->id == id; }
+            [&](shared_ptr<DabSubchannel>& s){ return s->id == id; }
             );
 }
 
-vector<DabComponent*>::iterator getComponent(
-        vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId,
-        vector<DabComponent*>::iterator current)
+        vec_sp_component::iterator current)
 {
     if (current == components.end()) {
         current = components.begin();
-    } else {
+    }
+    else {
         ++current;
     }
 
@@ -365,18 +367,18 @@ vector<DabComponent*>::iterator getComponent(
 }
 
 
-vector<DabComponent*>::iterator getComponent(
-        vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId) {
     return getComponent(components, serviceId, components.end());
 }
 
-std::vector<std::shared_ptr<DabService> >::iterator getService(
-        DabComponent* component,
-        std::vector<std::shared_ptr<DabService> >& services)
+vec_sp_service::iterator getService(
+        std::shared_ptr<DabComponent> component,
+        vec_sp_service& services)
 {
     size_t i = 0;
-    for (auto service : services) {
+    for (const auto service : services) {
         if (service->id == component->serviceId) {
             return services.begin() + i;
         }
@@ -386,7 +388,7 @@ std::vector<std::shared_ptr<DabService> >::iterator getService(
     throw std::runtime_error("Service not included in any component");
 }
 
-bool DabComponent::isPacketComponent(vector<DabSubchannel*>& subchannels) const
+bool DabComponent::isPacketComponent(vec_sp_subchannel& subchannels) const
 {
     if (subchId > 63) {
         etiLog.log(error,
@@ -394,16 +396,15 @@ bool DabComponent::isPacketComponent(vector<DabSubchannel*>& subchannels) const
                 "packet component before defining packet ");
         return false;
     }
-    if (getSubchannel(subchannels, subchId) == subchannels.end()) {
+    const auto subch_it = getSubchannel(subchannels, subchId);
+    if (subch_it == subchannels.cend()) {
         etiLog.log(error,
                 "Invalid subchannel id in the packet component "
                 "for defining packet ");
         return false;
     }
-    if ((*getSubchannel(subchannels, subchId))->type != subchannel_type_t::Packet) {
-        return false;
-    }
-    return true;
+
+    return (*subch_it)->type == subchannel_type_t::Packet;
 }
 
 void DabComponent::set_parameter(const string& parameter,
@@ -467,16 +468,16 @@ const string DabComponent::get_parameter(const string& parameter) const
 
 }
 
-subchannel_type_t DabService::getType(const std::shared_ptr<dabEnsemble> ensemble) const
+subchannel_type_t DabService::getType(
+        const std::shared_ptr<dabEnsemble> ensemble) const
 {
-    vector<DabSubchannel*>::iterator subchannel;
     auto component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
         throw std::runtime_error("No component found for service");
     }
 
-    subchannel = getSubchannel(ensemble->subchannels, (*component)->subchId);
+    auto subchannel = getSubchannel(ensemble->subchannels, (*component)->subchId);
     if (subchannel == ensemble->subchannels.end()) {
         throw std::runtime_error("Could not find subchannel associated with service");
     }
@@ -507,10 +508,11 @@ bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
 }
 
 
-unsigned char DabService::nbComponent(const vector<DabComponent*>& components) const
+unsigned char DabService::nbComponent(const vec_sp_component& components) const
 {
     size_t count = std::count_if(components.begin(), components.end(),
-            [&](const DabComponent* c) { return c->serviceId == id;} );
+            [&](const shared_ptr<DabComponent>& c) { return c->serviceId == id;} );
+
     if (count > 0xFF) {
         throw std::logic_error("Invalid number of components in service");
     }

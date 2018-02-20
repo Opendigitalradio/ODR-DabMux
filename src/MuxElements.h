@@ -197,6 +197,11 @@ class DabSubchannel;
 class LinkageSet;
 struct FrequencyInformation;
 
+using vec_sp_component = std::vector<std::shared_ptr<DabComponent> >;
+using vec_sp_service = std::vector<std::shared_ptr<DabService> >;
+using vec_sp_subchannel = std::vector<std::shared_ptr<DabSubchannel> >;
+
+
 enum class TransmissionMode_e {
     TM_I,
     TM_II,
@@ -236,9 +241,9 @@ class dabEnsemble : public RemoteControllable {
         // 2 corresponds to program types used in north america
         int international_table = 1;
 
-        std::vector<std::shared_ptr<DabService> > services;
-        std::vector<DabComponent*> components;
-        std::vector<DabSubchannel*> subchannels;
+        vec_sp_service services;
+        vec_sp_component components;
+        vec_sp_subchannel subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
         std::vector<std::shared_ptr<LinkageSet> > linkagesets;
@@ -349,7 +354,6 @@ struct dabPacketComponent {
     bool datagroup;
 };
 
-
 class DabComponent : public RemoteControllable
 {
     public:
@@ -373,7 +377,7 @@ class DabComponent : public RemoteControllable
         dabFidcComponent fidc;
         dabPacketComponent packet;
 
-        bool isPacketComponent(std::vector<DabSubchannel*>& subchannels) const;
+        bool isPacketComponent(vec_sp_subchannel& subchannels) const;
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -381,15 +385,7 @@ class DabComponent : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
-
-        virtual ~DabComponent() {}
-
-    private:
-        const DabComponent& operator=(const DabComponent& other);
-        DabComponent(const DabComponent& other);
 };
-
-
 
 class DabService : public RemoteControllable
 {
@@ -429,7 +425,7 @@ class DabService : public RemoteControllable
 
         subchannel_type_t getType(const std::shared_ptr<dabEnsemble> ensemble) const;
         bool isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const;
-        unsigned char nbComponent(const std::vector<DabComponent*>& components) const;
+        unsigned char nbComponent(const vec_sp_component& components) const;
 
         DabLabel label;
 
@@ -439,12 +435,6 @@ class DabService : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
-
-        virtual ~DabService() {}
-
-    private:
-        const DabService& operator=(const DabService& other);
-        DabService(const DabService& other);
 };
 
 enum class ServiceLinkType {DAB, FM, DRM, AMSS};
@@ -556,19 +546,20 @@ struct FrequencyInformation {
     std::vector<FrequencyListEntry> frequency_information;
 };
 
-std::vector<DabSubchannel*>::iterator getSubchannel(
-        std::vector<DabSubchannel*>& subchannels, int id);
+vec_sp_subchannel::iterator getSubchannel(
+        vec_sp_subchannel& subchannels,
+        int id);
 
-std::vector<DabComponent*>::iterator getComponent(
-        std::vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId,
-        std::vector<DabComponent*>::iterator current);
+        vec_sp_component::iterator current);
 
-std::vector<DabComponent*>::iterator getComponent(
-        std::vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId);
 
-std::vector<std::shared_ptr<DabService> >::iterator getService(
-        DabComponent* component,
-        std::vector<std::shared_ptr<DabService> >& services);
+vec_sp_service::iterator getService(
+        std::shared_ptr<DabComponent> component,
+        vec_sp_service& services);
 

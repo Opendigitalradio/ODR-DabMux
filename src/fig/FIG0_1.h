@@ -45,8 +45,8 @@ class FIG0_1 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        std::vector<DabSubchannel*>           subchannels;
-        std::vector<DabSubchannel*>::iterator subchannelFIG0_1;
+        vec_sp_subchannel           subchannels;
+        vec_sp_subchannel::iterator subchannelFIG0_1;
 
         uint8_t m_watermarkData[128];
         size_t  m_watermarkSize;

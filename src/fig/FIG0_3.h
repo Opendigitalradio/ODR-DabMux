@@ -46,7 +46,7 @@ class FIG0_3 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        std::vector<DabComponent*>::iterator componentFIG0_3;
+        vec_sp_component::iterator componentFIG0_3;
 };
 
 }

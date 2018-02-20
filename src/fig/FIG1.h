@@ -64,7 +64,7 @@ class FIG1_1 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        std::vector<std::shared_ptr<DabService> >::iterator service;
+        vec_sp_service::iterator service;
 };
 
 // FIG type 1/4, service component label
@@ -82,7 +82,7 @@ class FIG1_4 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        std::vector<DabComponent*>::iterator component;
+        vec_sp_component::iterator component;
 };
 
 // FIG type 1/5, data service label
@@ -100,7 +100,7 @@ class FIG1_5 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        std::vector<std::shared_ptr<DabService> >::iterator service;
+        vec_sp_service::iterator service;
 };
 
 #ifdef _WIN32

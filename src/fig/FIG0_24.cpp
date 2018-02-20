@@ -32,7 +32,6 @@
  *
  * - The CEI using length=0, because this information is not available in the
  *   remote control, and there is no runtime changes.
- * - Announcing information about other ensembles (OE=1)
  */
 
 namespace FIC {
@@ -61,7 +60,7 @@ FIG0_24::FIG0_24(FIGRuntimeInformation *rti) :
 
 FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
 {
-#define FIG0_24_TRACE discard
+#define FIG0_24_TRACE debug
     using namespace std;
 
     FillStatus fs;
@@ -74,34 +73,52 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
         " ********************************";
 
     if (not m_initialised) {
-        serviceFIG0_24 = ensemble->services.begin();
+        serviceFIG0_24 = ensemble->service_other_ensemble.begin();
         m_initialised = true;
     }
 
-    const auto last_service = ensemble->services.end();
+    const auto last_service = ensemble->service_other_ensemble.end();
+
+    bool last_oe = false;
 
     // Rotate through the subchannels until there is no more
     // space
     for (; serviceFIG0_24 != last_service; ++serviceFIG0_24) {
-        const auto type = (*serviceFIG0_24)->getType(ensemble);
-        const auto isProgramme = (*serviceFIG0_24)->isProgramme(ensemble);
 
-        etiLog.log(FIG0_24_TRACE, "FIG0_24::fill  loop SId=%04x %s/%s",
-                (*serviceFIG0_24)->id,
+        shared_ptr<DabService> service;
+        for (const auto& local_service : ensemble->services) {
+            if (local_service->id == serviceFIG0_24->service_id) {
+                service = local_service;
+                break;
+            }
+        }
+
+        subchannel_type_t type = subchannel_type_t::Audio;
+        bool isProgramme = true;
+        bool oe = true;
+
+        if (service) {
+            oe = false;
+            type = service->getType(ensemble);
+            isProgramme = service->isProgramme(ensemble);
+        }
+
+        etiLog.log(FIG0_24_TRACE, "FIG0_24::fill  loop OE=%d SId=%04x %s/%s",
+                oe,
+                serviceFIG0_24->service_id,
                 m_inserting_audio_not_data ? "AUDIO" : "DATA",
                 type == subchannel_type_t::Audio ? "Audio" :
                 type == subchannel_type_t::Packet ? "Packet" :
                 type == subchannel_type_t::DataDmb ? "DataDmb" :
                 type == subchannel_type_t::Fidc ? "Fidc" : "?");
 
-        // Skip services that are not in other ensembles
-        if ((*serviceFIG0_24)->other_ensembles.empty()) {
-            continue;
+        if (last_oe != oe) {
+            fig0 = nullptr;
         }
 
         const ssize_t required_size =
             (isProgramme ? 2 : 4) + 1 +
-            (*serviceFIG0_24)->other_ensembles.size() * 2;
+            serviceFIG0_24->other_ensembles.size() * 2;
 
 
         if (fig0 == nullptr) {
@@ -116,8 +133,9 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
             fig0->FIGtypeNumber = 0;
             fig0->Length = 1;
             // CN according to ETSI TS 103 176, Clause 5.3.4.1
-            fig0->CN = (serviceFIG0_24 == ensemble->services.begin() ? 0 : 1);
-            fig0->OE = 0;
+            bool isFirst = serviceFIG0_24 == ensemble->service_other_ensemble.begin();
+            fig0->CN = (isFirst ? 0 : 1);
+            fig0->OE = oe;
             fig0->PD = isProgramme ? 0 : 1;
             fig0->Extension = 24;
             buf += 2;
@@ -132,33 +150,33 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
         if (type == subchannel_type_t::Audio) {
             auto fig0_2serviceAudio = (FIGtype0_24_audioservice*)buf;
 
-            fig0_2serviceAudio->SId = htons((*serviceFIG0_24)->id);
+            fig0_2serviceAudio->SId = htons(serviceFIG0_24->service_id);
             fig0_2serviceAudio->rfa = 0;
             fig0_2serviceAudio->CAId = 0;
-            fig0_2serviceAudio->Length = (*serviceFIG0_24)->other_ensembles.size();
+            fig0_2serviceAudio->Length = serviceFIG0_24->other_ensembles.size();
             buf += 3;
             fig0->Length += 3;
             remaining -= 3;
 
             etiLog.log(FIG0_24_TRACE, "FIG0_24::fill  audio SId=%04x",
-               (*serviceFIG0_24)->id);
+               serviceFIG0_24->service_id);
         }
         else {
             auto fig0_2serviceData = (FIGtype0_24_dataservice*)buf;
 
-            fig0_2serviceData->SId = htonl((*serviceFIG0_24)->id);
+            fig0_2serviceData->SId = htonl(serviceFIG0_24->service_id);
             fig0_2serviceData->rfa = 0;
             fig0_2serviceData->CAId = 0;
-            fig0_2serviceData->Length = (*serviceFIG0_24)->other_ensembles.size();
+            fig0_2serviceData->Length = serviceFIG0_24->other_ensembles.size();
             buf += 4;
             fig0->Length += 4;
             remaining -= 4;
 
             etiLog.log(FIG0_24_TRACE, "FIG0_24::fill  data SId=%04x",
-               (*serviceFIG0_24)->id);
+               serviceFIG0_24->service_id);
         }
 
-        for (const uint16_t oe : (*serviceFIG0_24)->other_ensembles) {
+        for (const uint16_t oe : serviceFIG0_24->other_ensembles) {
             buf[0] = oe >> 8;
             buf[1] = oe & 0xFF;
 
@@ -174,8 +192,9 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
         m_initialised = false;
     }
 
-    etiLog.log(FIG0_24_TRACE, "FIG0_24::loop end complete=%d",
-            fs.complete_fig_transmitted ? 1 : 0);
+    etiLog.log(FIG0_24_TRACE, "FIG0_24::loop end complete=%d %d",
+            fs.complete_fig_transmitted ? 1 : 0,
+            max_size - remaining);
 
     fs.num_bytes_written = max_size - remaining;
     return fs;

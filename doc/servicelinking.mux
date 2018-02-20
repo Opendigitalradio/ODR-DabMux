@@ -177,15 +177,37 @@ services {
     srv-fu {
         id 0x8daa
         label "Funk"
+    }
+    srv-ri {
+        id 0x8dab
+        label "Rick"
+    }
+}
+
+; We can announce the presence of a service in another ensemble using FIG0/24,
+; both for services we carry in this ensemble (OE=0) and for services that
+; only exist in another ensemble (OE=1)
+other-services {
+    ; you can freely chose the unique id
+    srv-fu {
+        ; If this ensemble contains a service with this id, OE will be set to 0.
+        ; Otherwise, OE=1
+        id 0x8daa
 
         ; If this service is present in other ensembles, it can be announced
         ; through FIG0/24. other_ensembles is a comma separated list of
         ; ensemble IDs (decimal or hexadecimal with 0x prefix)
         other_ensembles "0x4ffe,0x4ffd"
     }
-    srv-ri {
-        id 0x8dab
-        label "Rick"
+
+    ; For a more efficient usage of the FIC capacity, it is better to first enumerate
+    ; the services that we carry in the ensemble (OE=0), followed by the foreign services.
+    ; This avoids having to send FIG0 headers every time the OE flag switches.
+    srv-foreign {
+        id 0x8daf
+        other_ensembles "0x4ffd"
+
+        ; Only Audio type services are supported
     }
 }
 

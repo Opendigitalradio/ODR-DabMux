@@ -286,7 +286,7 @@ static void parse_freq_info(ptree& pt,
                             } break;
                     } // switch(rm)
                 }
-                catch (ptree_error &e) {
+                catch (const ptree_error &e) {
                     throw runtime_error("invalid configuration for FI " + fle_uid);
                 }
 
@@ -310,6 +310,53 @@ static void parse_freq_info(ptree& pt,
                     return oe_first < oe_second;
                 } );
     } // if FI present
+}
+
+static void parse_other_service_linking(ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
+{
+    auto pt_other_services = pt.get_child_optional("other-services");
+    if (pt_other_services)
+    {
+        for (const auto& it_service : *pt_other_services) {
+            const string srv_uid = it_service.first;
+            const ptree pt_srv = it_service.second;
+
+            ServiceOtherEnsembleInfo info;
+            try {
+                info.service_id = hexparse(pt_srv.get<string>("id"));
+
+                auto oelist = pt_srv.get<std::string>("other_ensembles", "");
+
+                if (not oelist.empty()) {
+                    vector<string> oe_string_list;
+                    boost::split(oe_string_list, oelist, boost::is_any_of(","));
+
+                    for (const auto& oe_string : oe_string_list) {
+                        if (oe_string == "") {
+                            continue;
+                        }
+                        try {
+                            info.other_ensembles.push_back(hexparse(oe_string));
+                        }
+                        catch (const std::exception& e) {
+                            etiLog.level(warn) << "Cannot parse '" << oelist <<
+                                "' other_ensembles for service " << srv_uid <<
+                                ": " << e.what();
+                        }
+                    }
+
+                    ensemble->service_other_ensemble.push_back(move(info));
+                }
+            }
+            catch (const std::exception &e) {
+                etiLog.level(warn) <<
+                    "Cannot parse other_ensembles for service " << srv_uid <<
+                    ": " << e.what();
+            }
+
+        } // for over services
+    } // if other-services present
 }
 
 static void parse_general(ptree& pt,
@@ -381,7 +428,7 @@ static void parse_general(ptree& pt,
         ensemble_short_label = pt_ensemble.get<string>("shortlabel");
         success = ensemble->label.setLabel(ensemble_label, ensemble_short_label);
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         etiLog.level(warn) << "Ensemble short label undefined, "
             "truncating label " << ensemble_label;
 
@@ -430,9 +477,9 @@ static void parse_general(ptree& pt,
             ensemble->clusters.push_back(cl);
         }
     }
-    catch (ptree_error& e) {
-        etiLog.level(info) << "No announcements defined in ensemble";
-        etiLog.level(debug) << "because " << e.what();
+    catch (const ptree_error& e) {
+        etiLog.level(info) <<
+            "No announcements defined in ensemble because " << e.what();
     }
 }
 
@@ -490,7 +537,7 @@ void parse_ptree(
                 try {
                     service->clusters.push_back(hexparse(cluster_s));
                 }
-                catch (std::logic_error& e) {
+                catch (const std::exception& e) {
                     etiLog.level(warn) << "Cannot parse '" << clusterlist <<
                         "' announcement clusters for service " << serviceuid <<
                         ": " << e.what();
@@ -502,35 +549,11 @@ void parse_ptree(
                     "is empty, but announcements are defined";
             }
         }
-        catch (ptree_error& e) {
+        catch (const ptree_error& e) {
             service->ASu = 0;
             service->clusters.clear();
 
             etiLog.level(info) << "No announcements defined in service " <<
-                serviceuid;
-        }
-
-        try {
-            auto oelist = pt_service.get<std::string>("other_ensembles", "");
-            vector<string> oe_string_list;
-            boost::split(oe_string_list, oelist, boost::is_any_of(","));
-
-            for (const auto& oe_string : oe_string_list) {
-                if (oe_string == "") {
-                    continue;
-                }
-                try {
-                    service->other_ensembles.push_back(hexparse(oe_string));
-                }
-                catch (std::logic_error& e) {
-                    etiLog.level(warn) << "Cannot parse '" << oelist <<
-                        "' announcement clusters for service " << serviceuid <<
-                        ": " << e.what();
-                }
-            }
-        }
-        catch (ptree_error& e) {
-            etiLog.level(info) << "No other_sensmbles information for Service " <<
                 serviceuid;
         }
 
@@ -542,7 +565,7 @@ void parse_ptree(
             serviceshortlabel = pt_service.get<string>("shortlabel");
             success = service->label.setLabel(servicelabel, serviceshortlabel);
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             etiLog.level(warn) << "Service short label undefined, "
                 "truncating label " << servicelabel;
 
@@ -587,6 +610,43 @@ void parse_ptree(
         }
         service->language = hexparse(pt_service.get("language", "0"));
 
+        try {
+            auto oelist = pt_service.get<std::string>("other_ensembles", "");
+
+            if (not oelist.empty()) {
+                etiLog.level(warn) <<
+                    "You are using the deprecated other_ensembles inside "
+                    "'services' specification. Please see doc/servicelinking.mux "
+                    "for the new syntax.";
+
+                vector<string> oe_string_list;
+                boost::split(oe_string_list, oelist, boost::is_any_of(","));
+
+                ServiceOtherEnsembleInfo oe_info;
+                oe_info.service_id = service->id;
+
+                for (const auto& oe_string : oe_string_list) {
+                    if (oe_string == "") {
+                        continue;
+                    }
+                    try {
+                        oe_info.other_ensembles.push_back(hexparse(oe_string));
+                    }
+                    catch (const std::exception& e) {
+                        etiLog.level(warn) << "Cannot parse '" << oelist <<
+                            "' other_ensembles for service " << serviceuid <<
+                            ": " << e.what();
+                    }
+                }
+
+                ensemble->service_other_ensemble.push_back(move(oe_info));
+            }
+        }
+        catch (const ptree_error& e) {
+            etiLog.level(info) << "No other_ensembles information for Service " <<
+                serviceuid;
+        }
+
         allservices[serviceuid] = service;
 
         // Set the service's SCIds to zero
@@ -612,7 +672,7 @@ void parse_ptree(
             setup_subchannel_from_ptree(subchan, it->second, ensemble,
                     subchanuid);
         }
-        catch (runtime_error &e) {
+        catch (const runtime_error &e) {
             etiLog.log(error,
                     "%s\n", e.what());
             throw;
@@ -649,7 +709,7 @@ void parse_ptree(
             }
             service = allservices[service_uid];
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             stringstream ss;
             ss << "Component with uid " << componentuid << " is missing service definition!";
             throw runtime_error(ss.str());
@@ -666,7 +726,7 @@ void parse_ptree(
             }
             subchannel = allsubchans[subchan_uid];
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             stringstream ss;
             ss << "Component with uid " << componentuid << " is missing subchannel definition!";
             throw runtime_error(ss.str());
@@ -691,7 +751,7 @@ void parse_ptree(
             componentshortlabel = pt_comp.get<string>("shortlabel");
             success = component->label.setLabel(componentlabel, componentshortlabel);
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             if (not componentlabel.empty()) {
                 etiLog.level(warn) << "Component short label undefined, "
                     "truncating label " << componentlabel;
@@ -773,6 +833,7 @@ void parse_ptree(
 
     parse_linkage(pt, ensemble);
     parse_freq_info(pt, ensemble);
+    parse_other_service_linking(pt, ensemble);
 }
 
 static Inputs::dab_input_zmq_config_t setup_zmq_input(
@@ -784,7 +845,7 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
     try {
         zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel " << subchanuid << ": " << "no zmq-buffer defined!";
         throw runtime_error(ss.str());
@@ -792,7 +853,7 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
     try {
         zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel " << subchanuid << ": " << "no zmq-prebuffer defined!";
         throw runtime_error(ss.str());
@@ -817,7 +878,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
     try {
         type = pt.get<string>("type");
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel with uid " << subchanuid << " has no type defined!";
         throw runtime_error(ss.str());
@@ -832,7 +893,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         try {
             inputUri = pt.get<string>("inputfile");
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid << " has no inputUri defined!";
             throw runtime_error(ss.str());
@@ -973,7 +1034,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
             throw runtime_error(ss.str());
         }
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         throw runtime_error("Error, no bitrate defined for subchannel " + subchanuid);
     }
 
@@ -984,7 +1045,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
             throw runtime_error("Invalid subchannel id " + to_string(subchan->id));
         }
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel
             auto subchannel = getSubchannel(ensemble->subchannels, i);
             if (subchannel == ensemble->subchannels.end()) {
@@ -1040,7 +1101,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         }
         protection->level = level - 1;
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel with uid " << subchanuid <<
             ": protection level undefined!";

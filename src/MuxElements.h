@@ -196,6 +196,7 @@ class DabComponent;
 class DabSubchannel;
 class LinkageSet;
 struct FrequencyInformation;
+struct ServiceOtherEnsembleInfo;
 
 using vec_sp_component = std::vector<std::shared_ptr<DabComponent> >;
 using vec_sp_service = std::vector<std::shared_ptr<DabService> >;
@@ -248,6 +249,7 @@ class dabEnsemble : public RemoteControllable {
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
         std::vector<std::shared_ptr<LinkageSet> > linkagesets;
         std::vector<std::shared_ptr<FrequencyInformation> > frequency_information;
+        std::vector<ServiceOtherEnsembleInfo> service_other_ensemble;
 };
 
 
@@ -420,9 +422,6 @@ class DabService : public RemoteControllable
         uint16_t ASu = 0;
         std::vector<uint8_t> clusters;
 
-        // Ensembles in which this service is also available, used for FIG0/24
-        std::vector<uint16_t> other_ensembles;
-
         subchannel_type_t getType(const std::shared_ptr<dabEnsemble> ensemble) const;
         bool isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const;
         unsigned char nbComponent(const vec_sp_component& components) const;
@@ -435,6 +434,13 @@ class DabService : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+};
+
+/* Represent an entry for FIG0/24 */
+struct ServiceOtherEnsembleInfo {
+    uint32_t service_id = 0;
+    // Ensembles in which this service is also available
+    std::vector<uint16_t> other_ensembles;
 };
 
 enum class ServiceLinkType {DAB, FM, DRM, AMSS};

@@ -60,7 +60,7 @@ FIG0_24::FIG0_24(FIGRuntimeInformation *rti) :
 
 FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
 {
-#define FIG0_24_TRACE debug
+#define FIG0_24_TRACE discard
     using namespace std;
 
     FillStatus fs;

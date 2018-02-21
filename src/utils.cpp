@@ -406,6 +406,28 @@ static void printLinking(const shared_ptr<dabEnsemble>& ensemble)
             }
         }
     }
+
+    etiLog.log(info, " Services in other ensembles");
+    if (ensemble->service_other_ensemble.empty()) {
+        etiLog.level(info) << "  None ";
+    }
+
+    for (const auto& s_oe : ensemble->service_other_ensemble) {
+        int oe = 1;
+
+        for (const auto& local_service : ensemble->services) {
+            if (local_service->id == s_oe.service_id) {
+                oe = 0;
+                break;
+            }
+        }
+
+        etiLog.log(info, "  Service 0x%lx", s_oe.service_id);
+        for (const auto oe : s_oe.other_ensembles) {
+            etiLog.log(info, "   Available in ensemble 0x%04x", oe);
+        }
+        etiLog.log(info, "   OE=%d", oe);
+    }
 }
 
 static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)

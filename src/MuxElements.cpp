@@ -666,6 +666,15 @@ bool dabEnsemble::validate_linkage_sets()
                     keyserviceuid.c_str(), ls->lsn);
             return false;
         }
+
+        // need to add key service to num_ids
+        const size_t num_ids = 1 + ls->id_list.size();
+        if (num_ids > 0x0F) {
+            etiLog.log(error,
+                    "Too many links for linkage set 0x%04x",
+                    ls->lsn);
+            return false;
+        }
     }
 
     return true;

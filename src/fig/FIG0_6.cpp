@@ -83,6 +83,13 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         // need to add key service to num_ids
         const size_t num_ids = 1 + linkageSetFIG0_6->id_list.size();
 
+        if (num_ids > 0x0F) {
+            etiLog.log(error,
+                    "Too many links for linkage set 0x%04x",
+                    linkageSetFIG0_6->lsn);
+            continue;
+        }
+
         const size_t headersize = sizeof(struct FIGtype0_6_header);
         const int required_size = sizeof(struct FIGtype0_6) + headersize +
             (num_ids > 0 ?
@@ -123,11 +130,6 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         if (num_ids > 0) {
             FIGtype0_6_header *header = (FIGtype0_6_header*)buf;
             header->rfu = 0;
-            if (num_ids > 0x0F) {
-                etiLog.log(error, "Too large number of links for linkage set 0x%04x",
-                        linkageSetFIG0_6->lsn);
-                throw MuxInitException();
-            }
 
             // update() guarantees us that all entries in a linkage set
             // have the same type
@@ -135,7 +137,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 if (l.type != linkageSetFIG0_6->id_list.front().type) {
                     etiLog.log(error, "INTERNAL ERROR: invalid linkage subset 0x%04x",
                         linkageSetFIG0_6->lsn);
-                    throw std::runtime_error("INTERNAL ERROR");
+                    throw std::logic_error("FIG0_6 INTERNAL ERROR");
                 }
             }
 
@@ -161,9 +163,10 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                     });
 
             if (keyservice == ensemble->services.end()) {
-                etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
-                        keyserviceuid.c_str(), linkageSetFIG0_6->lsn);
-                throw MuxInitException();
+                std::stringstream ss;
+                ss << "Invalid key service " << keyserviceuid <<
+                        " in linkage set 0x" << std::hex << linkageSetFIG0_6->lsn;
+                throw MuxInitException(ss.str());
             }
 
             if (not PD and not ILS) {

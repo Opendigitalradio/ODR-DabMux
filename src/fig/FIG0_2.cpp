@@ -111,7 +111,8 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
         // Exclude Fidc type services, TODO unsupported
         auto type = s->getType(ensemble);
         if (type == subchannel_type_t::Fidc) {
-            throw invalid_argument("FIG0/2 does not support FIDC");
+            etiLog.log(warn, "FIG0/2 does not support FIDC");
+            continue;
         }
     }
 
@@ -250,9 +251,9 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             if (subchannel == ensemble->subchannels.end()) {
                 etiLog.log(error,
                         "Subchannel %i does not exist for component "
-                        "of service %i\n",
+                        "of service %i",
                         (*component)->subchId, (*component)->serviceId);
-                throw MuxInitException();
+                continue;
             }
 
             switch ((*subchannel)->type) {
@@ -286,9 +287,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
                     }
                     break;
                 default:
-                    etiLog.log(error,
-                            "Component type not supported\n");
-                    throw MuxInitException();
+                    throw logic_error("Component type not supported");
             }
             buf += 2;
             fig0_2->Length += 2;
@@ -296,7 +295,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             if (remaining < 0) {
                 etiLog.log(error,
                         "Sorry, no space left in FIG 0/2 to insert "
-                        "component %i of program service %i.\n",
+                        "component %i of program service %i.",
                         curCpnt, cur);
                 throw MuxInitException();
             }

@@ -85,10 +85,11 @@ FillStatus FIG0_3::fill(uint8_t *buf, size_t max_size)
 
         if (subchannel == ensemble->subchannels.end()) {
             etiLog.log(error,
-                    "Subchannel %i does not exist for component "
-                    "of service %i\n",
-                    (*componentFIG0_3)->subchId, (*componentFIG0_3)->serviceId);
-            throw MuxInitException();
+                    "FIG0/3: Subchannel %i does not exist "
+                    "for component of service %i",
+                    (*componentFIG0_3)->subchId,
+                    (*componentFIG0_3)->serviceId);
+            continue;
         }
 
         if ((*subchannel)->type != subchannel_type_t::Packet)

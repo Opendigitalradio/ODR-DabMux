@@ -146,16 +146,20 @@ void DabMultiplexer::prepare(bool require_tai_clock)
     prepare_subchannels();
     prepare_services_components();
     prepare_data_inputs();
+    if (not ensemble->validate_linkage_sets()) {
+        etiLog.log(error, "Linkage set definition error");
+        throw MuxInitException();
+    }
 
     if (ensemble->subchannels.size() == 0) {
-        etiLog.log(error, "can't multiplex no subchannel!\n");
+        etiLog.log(error, "can't multiplex no subchannel!");
         throw MuxInitException();
     }
 
     auto last_subchannel = *(ensemble->subchannels.end() - 1);
 
     if (last_subchannel->startAddress + last_subchannel->getSizeCu() > 864) {
-        etiLog.log(error, "Total size in CU exceeds 864\n");
+        etiLog.log(error, "Total size in CU exceeds 864");
         printSubchannels(ensemble->subchannels);
         throw MuxInitException();
     }
@@ -207,7 +211,7 @@ void DabMultiplexer::prepare_subchannels()
     for (auto subchannel : ensemble->subchannels) {
         if (ids.find(subchannel->id) != ids.end()) {
             etiLog.log(error,
-                    "Subchannel %u is set more than once!\n",
+                    "Subchannel %u is set more than once!",
                     subchannel->id);
             throw MuxInitException();
         }
@@ -227,7 +231,7 @@ void DabMultiplexer::prepare_services_components()
     for (auto service : ensemble->services) {
         if (ids.find(service->id) != ids.end()) {
             etiLog.log(error,
-                    "Service id 0x%x (%u) is set more than once!\n",
+                    "Service id 0x%x (%u) is set more than once!",
                     service->id, service->id);
             throw MuxInitException();
         }
@@ -236,7 +240,7 @@ void DabMultiplexer::prepare_services_components()
         component = getComponent(ensemble->components, service->id);
         if (component == ensemble->components.end()) {
             etiLog.log(error,
-                    "Service id 0x%x (%u) includes no component!\n",
+                    "Service id 0x%x (%u) includes no component!",
                     service->id, service->id);
             throw MuxInitException();
         }
@@ -249,7 +253,7 @@ void DabMultiplexer::prepare_services_components()
                 getSubchannel(ensemble->subchannels, (*component)->subchId);
             if (subchannel == ensemble->subchannels.end()) {
                 etiLog.log(error, "Error, service %u component "
-                        "links to the invalid subchannel %u\n",
+                        "links to the invalid subchannel %u",
                         (*component)->serviceId, (*component)->subchId);
                 throw MuxInitException();
             }
@@ -277,7 +281,7 @@ void DabMultiplexer::prepare_services_components()
                     break;
                 default:
                     etiLog.log(error,
-                            "Error, unknown subchannel type\n");
+                            "Error, unknown subchannel type");
                     throw MuxInitException();
             }
             component = getComponent(ensemble->components,
@@ -293,7 +297,7 @@ void DabMultiplexer::prepare_services_components()
         if (subchannel == ensemble->subchannels.end()) {
             etiLog.log(error,
                     "Subchannel %i does not exist for component "
-                    "of service %i\n",
+                    "of service %i",
                     component->subchId, component->serviceId);
             throw MuxInitException();
         }
@@ -595,7 +599,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
         if (result < 0) {
             etiLog.log(info,
-                    "Subchannel %d read failed at ETI frame number: %d\n",
+                    "Subchannel %d read failed at ETI frame number: %d",
                     subchannel->id, currentFrame);
         }
 
@@ -752,7 +756,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(edi_afpacket);
 
             if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragment before interleaver %zu\n",
+                fprintf(stderr, "EDI number of PFT fragment before interleaver %zu",
                         edi_fragments.size());
             }
 
@@ -777,7 +781,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             }
 
             if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragments %zu\n",
+                fprintf(stderr, "EDI number of PFT fragments %zu",
                         edi_fragments.size());
             }
         }
@@ -805,12 +809,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      **********************************************************************/
     if (currentFrame % 100 == 0) {
         if (enableTist) {
-            etiLog.log(info, "ETI frame number %i Timestamp: %d + %f\n",
+            etiLog.log(info, "ETI frame number %i Timestamp: %d + %f",
                     currentFrame, mnsc_time.tv_sec,
                     (timestamp & 0xFFFFFF) / 16384000.0);
         }
         else {
-            etiLog.log(info, "ETI frame number %i Time: %d, no TIST\n",
+            etiLog.log(info, "ETI frame number %i Time: %d, no TIST",
                     currentFrame, mnsc_time.tv_sec);
         }
     }

@@ -226,6 +226,9 @@ class dabEnsemble : public RemoteControllable {
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
 
+        /* Check if the Linkage Sets are valid */
+        bool validate_linkage_sets(void);
+
         /* all fields are public, since this was a struct before */
         uint16_t id = 0;
         uint8_t ecc = 0;

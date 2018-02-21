@@ -650,6 +650,27 @@ const string dabEnsemble::get_parameter(const string& parameter) const
     return ss.str();
 }
 
+bool dabEnsemble::validate_linkage_sets()
+{
+    for (const auto& ls : linkagesets) {
+        const std::string keyserviceuid = ls->keyservice;
+        const auto& keyservice = std::find_if(
+                services.cbegin(),
+                services.cend(),
+                [&](const std::shared_ptr<DabService>& srv) {
+                    return srv->uid == keyserviceuid;
+                });
+
+        if (keyservice == services.end()) {
+            etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
+                    keyserviceuid.c_str(), ls->lsn);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 unsigned short DabSubchannel::getSizeCu() const
 {
     if (protection.form == UEP) {

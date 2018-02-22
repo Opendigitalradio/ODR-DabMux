@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -35,7 +35,7 @@
 #include <list>
 #include <vector>
 #include <atomic>
-#include <boost/thread.hpp>
+#include <thread>
 #include "ThreadsafeQueue.h"
 #include "TcpSocket.h"
 
@@ -60,12 +60,13 @@ class TCPConnection
                 auto addr = m_sock.getRemoteAddress();
                 etiLog.level(debug) << "New TCP Connection from " <<
                     addr.getHostAddress() << ":" << addr.getPort();
-                m_sender_thread = boost::thread(&TCPConnection::process, this, 0);
+                m_sender_thread = std::thread(&TCPConnection::process, this, 0);
             }
 
         ~TCPConnection() {
             m_running = false;
-            m_sender_thread.interrupt();
+            vec_u8 termination_marker;
+            queue.push(termination_marker);
             m_sender_thread.join();
         }
 
@@ -80,13 +81,18 @@ class TCPConnection
         TCPConnection& operator=(const TCPConnection& other) = delete;
 
         atomic<bool> m_running;
-        boost::thread m_sender_thread;
+        std::thread m_sender_thread;
         TcpSocket m_sock;
 
         void process(long) {
             while (m_running) {
                 vec_u8 data;
                 queue.wait_and_pop(data);
+
+                if (data.empty()) {
+                    // empty vector is the termination marker
+                    break;
+                }
 
                 try {
                     ssize_t sent = 0;
@@ -127,7 +133,7 @@ class TCPDataDispatcher
             m_listener_socket = move(sock);
 
             m_running = true;
-            m_listener_thread = boost::thread(&TCPDataDispatcher::process, this, 0);
+            m_listener_thread = std::thread(&TCPDataDispatcher::process, this, 0);
         }
 
         void Write(const vec_u8& data) {
@@ -160,7 +166,7 @@ class TCPDataDispatcher
         }
 
         atomic<bool> m_running;
-        boost::thread m_listener_thread;
+        std::thread m_listener_thread;
         TcpSocket m_listener_socket;
         std::list<TCPConnection> m_connections;
 };

@@ -203,6 +203,9 @@ static void parse_freq_info(ptree& pt,
                 else if (rm_str == "amss") {
                     fle.rm = RangeModulation::amss;
                 }
+                else if (rm_str == "") {
+                    throw runtime_error("Missing range_modulation in FI " + fi_uid);
+                }
                 else {
                     throw runtime_error("Invalid range_modulation '" + rm_str +
                             "' in FI " + fi_uid);

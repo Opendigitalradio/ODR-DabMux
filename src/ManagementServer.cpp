@@ -514,20 +514,18 @@ std::string InputStat::encodeValuesJSON()
     ss << "\"state\": ";
 
     switch (determineState()) {
-        case NoData:
+        case input_state_t::NoData:
             ss << "\"NoData (1)\"";
             break;
-        case Unstable:
+        case input_state_t::Unstable:
             ss << "\"Unstable (2)\"";
             break;
-        case Silence:
+        case input_state_t::Silence:
             ss << "\"Silent (3)\"";
             break;
-        case Streaming:
+        case input_state_t::Streaming:
             ss << "\"Streaming (4)\"";
             break;
-        default:
-            ss << "\"Unknown (0)\"";
     }
 
     ss << " } }";
@@ -558,20 +556,20 @@ input_state_t InputStat::determineState()
     if (std::all_of(
                 m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
                 [](long fill) { return fill == 0; }) ) {
-        state = NoData;
+        state = input_state_t::NoData;
     }
     /* Otherwise, the state depends on the glitch counter */
     else if (m_glitch_counter >= INPUT_UNSTABLE_THRESHOLD) {
-        state = Unstable;
+        state = input_state_t::Unstable;
     }
     else {
         /* The input is streaming, check if the audio level is too low */
 
         if (m_silence_counter > INPUT_AUDIO_LEVEL_SILENCE_COUNT) {
-            state = Silence;
+            state = input_state_t::Silence;
         }
         else {
-            state = Streaming;
+            state = input_state_t::Streaming;
         }
     }
 

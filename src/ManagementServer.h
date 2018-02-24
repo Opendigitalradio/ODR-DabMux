@@ -65,7 +65,7 @@
 /*** State handing ***/
 /* An input can be in one of the following three states:
  */
-enum input_state_t
+enum class input_state_t
 {
     /* The input is waiting for data, all buffers are empty */
     NoData,

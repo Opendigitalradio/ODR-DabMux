@@ -4,7 +4,7 @@
 # to munin. Expects Stats server on port 12720 and ZeroMQ RC
 # on port 12722.
 #
-# Copy this to /etc/munin/plugins/stats_dabmux_multi
+# Copy this to /etc/munin/plugins/stats_dabmux_munin
 # and make it executable (chmod +x)
 
 import sys

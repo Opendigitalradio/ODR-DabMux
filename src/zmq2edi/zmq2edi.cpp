@@ -224,7 +224,7 @@ int start(int argc, char **argv)
 
     int delay_ms = 500;
 
-    char ch = 0;
+    int ch = 0;
     while (ch != -1) {
         ch = getopt(argc, argv, "d:p:s:S:t:Pf:i:Dva:w:");
         switch (ch) {

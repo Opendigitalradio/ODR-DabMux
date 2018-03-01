@@ -188,8 +188,9 @@ other-services {
 
         ; If this service is present in other ensembles, it can be announced
         ; through FIG0/24. other_ensembles is a comma separated list of
-        ; ensemble IDs (decimal or hexadecimal with 0x prefix)
-        other_ensembles "0x4ffe,0x4ffd"
+        ; ensemble IDs (decimal or hexadecimal with 0x prefix).
+        ; Add the current ensemble Id to the list if you carry this service too.
+        other_ensembles "0x4ffe,0x4ffd,0x4fff"
     }
 
     ; For a more efficient usage of the FIC capacity, it is better to first enumerate

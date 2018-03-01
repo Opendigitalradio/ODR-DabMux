@@ -297,7 +297,43 @@ static void parse_freq_info(ptree& pt,
 
             } // for over fle
 
+            size_t required_fi_size = 0; // Without RegionId + length of FI list
+            for (const auto& fle : fi->frequency_information) {
+                size_t list_entry_size = 3; // size of FIG0/21 FI list header
+                switch (fle.rm) {
+                    case RangeModulation::dab_ensemble:
+                        list_entry_size += fle.fi_dab.frequencies.size() * 3;
+                        break;
+                    case RangeModulation::fm_with_rds:
+                        list_entry_size += fle.fi_fm.frequencies.size() * 1;
+                        break;
+                    case RangeModulation::amss:
+                        list_entry_size += 1; // Id field 2
+                        list_entry_size += fle.fi_amss.frequencies.size() * 2;
+                        break;
+                    case RangeModulation::drm:
+                        list_entry_size += 1; // Id field 2
+                        list_entry_size += fle.fi_drm.frequencies.size() * 2;
+                        break;
+                }
+                required_fi_size += list_entry_size;
+            }
+
+            /* Length of FI list: this 5-bit field, expressed as an unsigned
+             * binary number, shall represent the length in bytes of the field
+             * containing FI list q to FI list g (maximum 26 bytes).
+             *
+             * ETSI EN 300 401 Clause 8.1.8
+             */
+            if (required_fi_size > 26) {
+                throw runtime_error("Too much information carried in FI " +
+                        fi_uid + ": " + to_string(required_fi_size) +
+                        " bytes needed out of 26 available");
+            }
+
             ensemble->frequency_information.push_back(fi);
+
+
 
         } // for over fi
 

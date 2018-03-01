@@ -1,6 +1,16 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2018-03-01: Matthias P. Braendli <matthias@mpb.li>
+	(v2.0.0):
+		Configuration file syntax changed for Frequency Information
+		and Other Services settings.
+		Statistics server changes: audio-level peak information is
+		measured over the last second, and not anymore since the last
+		request. Same for buffers, where min/max are measured over
+		thirty seconds.
+		Make nonblock available again for file inputs.
+
 2018-02-09: Matthias P. Braendli <matthias@mpb.li>
 	(v1.3.3):
 		Add dynamic/static PTy setting to configuration.

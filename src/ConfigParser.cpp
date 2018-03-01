@@ -595,41 +595,12 @@ void parse_ptree(
         }
         service->language = hexparse(pt_service.get("language", "0"));
 
-        try {
-            auto oelist = pt_service.get<std::string>("other_ensembles", "");
-
-            if (not oelist.empty()) {
-                etiLog.level(warn) <<
-                    "You are using the deprecated other_ensembles inside "
-                    "'services' specification. Please see doc/servicelinking.mux "
-                    "for the new syntax.";
-
-                vector<string> oe_string_list;
-                boost::split(oe_string_list, oelist, boost::is_any_of(","));
-
-                ServiceOtherEnsembleInfo oe_info;
-                oe_info.service_id = service->id;
-
-                for (const auto& oe_string : oe_string_list) {
-                    if (oe_string == "") {
-                        continue;
-                    }
-                    try {
-                        oe_info.other_ensembles.push_back(hexparse(oe_string));
-                    }
-                    catch (const std::exception& e) {
-                        etiLog.level(warn) << "Cannot parse '" << oelist <<
-                            "' other_ensembles for service " << serviceuid <<
-                            ": " << e.what();
-                    }
-                }
-
-                ensemble->service_other_ensemble.push_back(move(oe_info));
-            }
-        }
-        catch (const ptree_error& e) {
-            etiLog.level(info) << "No other_ensembles information for Service " <<
-                serviceuid;
+        auto oelist = pt_service.get<std::string>("other_ensembles", "");
+        if (not oelist.empty()) {
+            throw runtime_error(
+                "You are using the deprecated other_ensembles inside "
+                "'services' specification. Please see doc/servicelinking.mux "
+                "for the new syntax.");
         }
 
         allservices[serviceuid] = service;

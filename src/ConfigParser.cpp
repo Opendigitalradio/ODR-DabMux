@@ -244,7 +244,7 @@ static void parse_freq_info(ptree& pt,
                                     }
                                     fle.fi_dab.frequencies.push_back(el);
                                 }
-                                if (fle.fi_dab.frequencies.size() > 7) {
+                                if (fle.fi_dab.frequencies.size() > 2) {
                                     throw runtime_error("Too many frequency entries in FI " + fle.uid);
                                 }
                             } break;
@@ -270,7 +270,7 @@ static void parse_freq_info(ptree& pt,
                                 for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
                                     fle.fi_drm.frequencies.push_back(std::stof(freq));
                                 }
-                                if (fle.fi_drm.frequencies.size() > 7) {
+                                if (fle.fi_drm.frequencies.size() > 3) {
                                     throw runtime_error("Too many frequency entries in FI " + fle.uid);
                                 }
                             } break;
@@ -283,7 +283,7 @@ static void parse_freq_info(ptree& pt,
                                 for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
                                     fle.fi_amss.frequencies.push_back(std::stof(freq));
                                 }
-                                if (fle.fi_amss.frequencies.size() > 7) {
+                                if (fle.fi_amss.frequencies.size() > 3) {
                                     throw runtime_error("Too many frequency entries in FI " + fle.uid);
                                 }
                             } break;

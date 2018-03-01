@@ -27,6 +27,8 @@
 #include "fig/FIG0_21.h"
 #include "utils.h"
 
+using namespace std;
+
 namespace FIC {
 
 struct FIGtype0_21_header {
@@ -49,6 +51,14 @@ struct FIGtype0_21_fi_list_header {
     void setId(uint16_t id) {
         idHigh = id >> 8;
         idLow = id & 0xFF;
+    }
+
+    void addToLength(uint8_t increment) {
+        const uint32_t newlen = length_freq_list + increment;
+        if (newlen > 0x7) {
+            throw logic_error("FI freq list too long: " + to_string(newlen));
+        }
+        length_freq_list = newlen;
     }
 } PACKED;
 
@@ -209,7 +219,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         field->setFreq(static_cast<uint32_t>(
                                     freq.frequency * 1000.0f / 16.0f));
 
-                        fi_list_header->length_freq_list += 3;
+                        fi_list_header->addToLength(3);
                         fig0->Length += 3;
                         buf += 3;
                         remaining -= 3;
@@ -226,7 +236,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         // Do the whole calculation in kHz:
                         *buf = (freq * 1000.0f - 87500.0f) / 100.0f;
 
-                        fi_list_header->length_freq_list += 1;
+                        fi_list_header->addToLength(1);
                         fig0->Length += 1;
                         buf += 1;
                         remaining -= 1;
@@ -240,7 +250,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                     // Id field 2
                     *buf = (fle.fi_drm.drm_service_id >> 16) & 0xFF;
 
-                    fi_list_header->length_freq_list += 1;
+                    fi_list_header->addToLength(1);
                     fig0->Length += 1;
                     buf += 1;
                     remaining -= 1;
@@ -250,7 +260,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         buf[0] = freq_field >> 8;
                         buf[1] = freq_field & 0xFF;
 
-                        fi_list_header->length_freq_list += 2;
+                        fi_list_header->addToLength(2);
                         fig0->Length += 2;
                         buf += 2;
                         remaining -= 2;
@@ -264,7 +274,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                     // Id field 2
                     *buf = (fle.fi_amss.amss_service_id >> 16) & 0xFF;
 
-                    fi_list_header->length_freq_list += 1;
+                    fi_list_header->addToLength(1);
                     fig0->Length += 1;
                     buf += 1;
                     remaining -= 1;
@@ -274,7 +284,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         buf[0] = freq_field >> 8;
                         buf[1] = freq_field & 0xFF;
 
-                        fi_list_header->length_freq_list += 2;
+                        fi_list_header->addToLength(2);
                         fig0->Length += 2;
                         buf += 2;
                         remaining -= 2;

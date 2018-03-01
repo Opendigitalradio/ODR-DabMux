@@ -111,6 +111,7 @@ frequency_information {
             continuity true
             eid 0x4fff
             frequencies {
+                ; In DAB, max 2 frequency entries
                 entry_a {
                     signal_mode_1 true
                     adjacent true
@@ -127,6 +128,7 @@ frequency_information {
             range_modulation fm
             continuity true
             pi_code 0x1234
+            ; in FM, max 7 entries
             frequencies "87.6 105.2"
         }
     }

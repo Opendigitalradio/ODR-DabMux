@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017 Matthias P. Braendli
+   Copyright (C) 2018 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -360,7 +360,8 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     /* Look for the new zmq_frame_header_t format */
     zmq_frame_header_t* frame = (zmq_frame_header_t*)msg.data();
 
-    if (msg.size() == ZMQ_FRAME_SIZE(frame) and
+    if (    msg.size() >= sizeof(zmq_frame_header_t) and
+            msg.size() == ZMQ_FRAME_SIZE(frame) and
             frame->version == 1 and
             frame->encoder == ZMQ_ENCODER_TOOLAME) {
         datalen = frame->datasize;
@@ -429,7 +430,8 @@ int ZmqAAC::readFromSocket(size_t framesize)
     /* Look for the new zmq_frame_header_t format */
     zmq_frame_header_t* frame = (zmq_frame_header_t*)msg.data();
 
-    if (msg.size() == ZMQ_FRAME_SIZE(frame) and
+    if (    msg.size() >= sizeof(zmq_frame_header_t) and
+            msg.size() == ZMQ_FRAME_SIZE(frame) and
             frame->version == 1 and
             frame->encoder == ZMQ_ENCODER_FDK) {
         datalen = frame->datasize;

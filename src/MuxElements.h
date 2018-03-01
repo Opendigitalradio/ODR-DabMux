@@ -463,6 +463,7 @@ class LinkageSet {
     public:
         LinkageSet(const std::string& name,
                 uint16_t lsn,
+                bool active,
                 bool hard,
                 bool international);
 

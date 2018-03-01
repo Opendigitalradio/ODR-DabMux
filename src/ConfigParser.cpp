@@ -99,6 +99,7 @@ static void parse_linkage(ptree& pt,
                 throw runtime_error("Invalid service linking definition");
             }
 
+            bool active = pt_set.get("active", true);
             bool hard = pt_set.get("hard", true);
             bool international = pt_set.get("international", false);
 
@@ -109,7 +110,7 @@ static void parse_linkage(ptree& pt,
                 throw runtime_error("Invalid service linking definition");
             }
 
-            auto linkageset = make_shared<LinkageSet>(setuid, lsn, hard, international);
+            auto linkageset = make_shared<LinkageSet>(setuid, lsn, active, hard, international);
             linkageset->keyservice = service_uid; // TODO check if it exists
 
             auto pt_list = pt_set.get_child_optional("list");

@@ -33,6 +33,9 @@ linking {
         ; that the programmes are related in some way. (default true)
         hard true
 
+        ; Linkage actuator flag. Se to false to disable a link
+        active true
+
         ; Whether this linkage set affects only one country or several. Linkage sets that
         ; include AMSS or DRM services need to have this set to true. (default false)
         international false

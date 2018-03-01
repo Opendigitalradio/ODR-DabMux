@@ -750,10 +750,11 @@ unsigned short DabSubchannel::getSizeDWord() const
 
 LinkageSet::LinkageSet(const std::string& name,
         uint16_t lsn,
+        bool active,
         bool hard,
         bool international) :
     lsn(lsn),
-    active(true),
+    active(active),
     hard(hard),
     international(international),
     m_name(name)
@@ -762,7 +763,7 @@ LinkageSet::LinkageSet(const std::string& name,
 
 LinkageSet LinkageSet::filter_type(const ServiceLinkType type)
 {
-    LinkageSet lsd(m_name, lsn, hard, international);
+    LinkageSet lsd(m_name, lsn, active, hard, international);
 
     lsd.active = active;
     lsd.keyservice = keyservice;

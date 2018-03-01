@@ -755,7 +755,8 @@ LinkageSet::LinkageSet(const std::string& name,
     lsn(lsn),
     active(true),
     hard(hard),
-    international(international)
+    international(international),
+    m_name(name)
 {}
 
 

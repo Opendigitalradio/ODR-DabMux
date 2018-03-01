@@ -7,7 +7,7 @@
 ;
 general {
     dabmode 1
-    nbframes 0
+    nbframes 20000
 
     syslog false
     tist false
@@ -101,88 +101,75 @@ linking {
 }
 
 ; According to ETSI TR 101 496-2 Clause 3.6.10.
-; The configuration structure reflects the FIG 0/21 of
+; Each entry corresponds to one frequence information
+; database entry. The multiplexer then transmits this
+; information inside FIG 0/21 defined in
 ; ETSI EN 300 401 Clause 8.1.8
 frequency_information {
-    fi_1 {
+    fi_dab_4fff {
+        ; The database key comprises oe, range_modulation and
+        ; either eid, pi_code, drm_id or amss_id.
+        ; The database key must be unique among all the fi entries.
+        ; RegionId and signalling FI for data services are not implemented.
         oe false
-        fi_dab_1 {
-            range_modulation dab
-            continuity true
-            eid 0x4fff
-            frequencies {
-                ; In DAB, max 2 frequency entries
-                entry_a {
-                    signal_mode_1 true
-                    adjacent true
-                    frequency 234.208
-                }
-                entry_b {
-                    signal_mode_1 true
-                    adjacent true
-                    frequency 188.928
-                }
+        range_modulation dab
+        eid 0x4fff
+
+        continuity true
+        frequencies {
+            freq_a {
+                signal_mode_1 true
+                adjacent true
+                frequency 234.208
+            }
+            freq_b {
+                signal_mode_1 true
+                adjacent true
+                frequency 188.928
+            }
+            freq_c {
+                signal_mode_1 true
+                adjacent false
+                frequency 230.784
             }
         }
-        fi_fm_1 {
-            range_modulation fm
-            continuity true
-            pi_code 0x1234
-            ; in FM, max 7 entries
-            frequencies "87.6 105.2"
-        }
     }
-    fi_other_ensemble {
+    fi_fm_1234 {
+        oe false
+        range_modulation fm
+        pi_code 0x1234
+
+        continuity true
+        frequencies "87.6 105.2"
+    }
+    fi_dab_4fee {
         oe true
-        fi_dab_other {
-            range_modulation dab
-            continuity true
-            eid 0x4fee
-            frequencies {
-                entry_a {
-                    signal_mode_1 true
-                    adjacent true
-                    frequency 230.784
-                }
+        range_modulation dab
+        eid 0x4fee
+
+        continuity true
+        frequencies {
+            freq_a {
+                signal_mode_1 true
+                adjacent false
+                frequency 230.784
             }
         }
     }
-    fi_2 {
+    fi_drm_12ab45 {
         oe false
-        fi_drm_3 {
-            range_modulation drm
-            continuity true
-            drm_id 0x12ab45
-            frequencies "15.21 22.4"
-        }
-        fi_amss_4 {
-            range_modulation amss
-            continuity true
-            amss_id 0x33cc88
-            frequencies "14.8"
-        }
+        range_modulation drm
+        drm_id 0x12ab45
+
+        continuity true
+        frequencies "15.21 22.4"
     }
-}
+    fi_amss_33cc88 {
+        range_modulation amss
+        amss_id 0x33cc88
 
-; For information about the ensemble, service, subchannels, components and outputs,
-; please see doc/example.mux and doc/advanced.mux
-ensemble {
-    id 0x4fff
-    ecc 0xec
-
-    local-time-offset auto
-    label "OpenDigitalRadio"
-    shortlabel "ODR"
-}
-
-services {
-    srv-fu {
-        id 0x8daa
-        label "Funk"
-    }
-    srv-ri {
-        id 0x8dab
-        label "Rick"
+        continuity true
+        frequencies "14.8"
     }
 }
 
@@ -210,6 +197,28 @@ other-services {
         other_ensembles "0x4ffd"
 
         ; Only Audio type services are supported
+    }
+}
+
+; For information about the ensemble, service, subchannels, components and outputs,
+; please see doc/example.mux and doc/advanced.mux
+ensemble {
+    id 0x4fff
+    ecc 0xec
+
+    local-time-offset auto
+    label "OpenDigitalRadio"
+    shortlabel "ODR"
+}
+
+services {
+    srv-fu {
+        id 0x8daa
+        label "Funk"
+    }
+    srv-ri {
+        id 0x8dab
+        label "Rick"
     }
 }
 

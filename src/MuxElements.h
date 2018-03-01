@@ -251,7 +251,7 @@ class dabEnsemble : public RemoteControllable {
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
         std::vector<std::shared_ptr<LinkageSet> > linkagesets;
-        std::vector<std::shared_ptr<FrequencyInformation> > frequency_information;
+        std::vector<FrequencyInformation> frequency_information;
         std::vector<ServiceOtherEnsembleInfo> service_other_ensemble;
 };
 
@@ -531,11 +531,17 @@ struct FrequencyInfoAmss {
     std::vector<float> frequencies;
 };
 
-struct FrequencyListEntry {
+/* One FI database entry. DB key are oe, rm, and idfield, which is
+ * inside the fi_XXX field
+ */
+struct FrequencyInformation {
     std::string uid;
+    bool other_ensemble = false;
 
-    RangeModulation rm;
-    bool continuity;
+    // The latest draft spec does not specify the RegionId anymore, it's
+    // now a reserved field.
+    RangeModulation rm = RangeModulation::dab_ensemble;
+    bool continuity = false;
 
     // Only one of those must contain information, which
     // must be consistent with RangeModulation
@@ -543,16 +549,6 @@ struct FrequencyListEntry {
     FrequencyInfoDrm fi_drm;
     FrequencyInfoFm fi_fm;
     FrequencyInfoAmss fi_amss;
-};
-
-struct FrequencyInformation {
-    std::string uid;
-
-    bool other_ensemble = false;
-
-    // The latest draft spec does not specify the RegionId anymore, it's
-    // now a reserved field.
-    std::vector<FrequencyListEntry> frequency_information;
 };
 
 vec_sp_subchannel::iterator getSubchannel(

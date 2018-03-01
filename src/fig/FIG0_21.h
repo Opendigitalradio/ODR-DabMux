@@ -49,8 +49,8 @@ class FIG0_21 : public IFIG
         bool m_initialised = false;
         bool m_last_oe = false;
 
-        std::vector<std::shared_ptr<FrequencyInformation> >::iterator
-            freqInfoFIG0_21;
+        std::vector<FrequencyInformation>::iterator freqInfoFIG0_21;
+        size_t fi_frequency_index = 0;
 };
 
 }

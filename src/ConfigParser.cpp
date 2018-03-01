@@ -163,8 +163,7 @@ static void parse_linkage(ptree& pt,
 }
 
 // Parse the FI section
-static void parse_freq_info(ptree& pt,
-        std::shared_ptr<dabEnsemble> ensemble)
+static void parse_freq_info(ptree& pt, std::shared_ptr<dabEnsemble> ensemble)
 {
     auto pt_frequency_information = pt.get_child_optional("frequency_information");
     if (pt_frequency_information)
@@ -173,168 +172,115 @@ static void parse_freq_info(ptree& pt,
             const string fi_uid = it_fi.first;
             const ptree pt_fi = it_fi.second;
 
-            auto fi = make_shared<FrequencyInformation>();
+            FrequencyInformation fi;
 
-            fi->uid = fi_uid;
-            fi->other_ensemble = pt_fi.get("oe", false);
+            fi.uid = fi_uid;
 
-            for (const auto& it_fle : pt_fi) {
-                const string fle_uid = it_fle.first;
-                if (fle_uid == "oe") {
-                    continue;
-                }
+            fi.other_ensemble = pt_fi.get("oe", false);
+            string rm_str = pt_fi.get("range_modulation", "");
+            if (rm_str == "dab") {
+                fi.rm = RangeModulation::dab_ensemble;
+            }
+            else if (rm_str == "fm") {
+                fi.rm = RangeModulation::fm_with_rds;
+            }
+            else if (rm_str == "drm") {
+                fi.rm = RangeModulation::drm;
+            }
+            else if (rm_str == "amss") {
+                fi.rm = RangeModulation::amss;
+            }
+            else if (rm_str == "") {
+                throw runtime_error("Missing range_modulation in FI " + fi_uid);
+            }
+            else {
+                throw runtime_error("Invalid range_modulation '" + rm_str +
+                        "' in FI " + fi_uid);
+            }
 
-                const ptree pt_entry = it_fle.second;
+            fi.continuity = pt_fi.get<bool>("continuity");
 
-                FrequencyListEntry fle;
-
-                fle.uid = fle_uid;
-
-                string rm_str = pt_entry.get("range_modulation", "");
-                if (rm_str == "dab") {
-                    fle.rm = RangeModulation::dab_ensemble;
-                }
-                else if (rm_str == "fm") {
-                    fle.rm = RangeModulation::fm_with_rds;
-                }
-                else if (rm_str == "drm") {
-                    fle.rm = RangeModulation::drm;
-                }
-                else if (rm_str == "amss") {
-                    fle.rm = RangeModulation::amss;
-                }
-                else if (rm_str == "") {
-                    throw runtime_error("Missing range_modulation in FI " + fi_uid);
-                }
-                else {
-                    throw runtime_error("Invalid range_modulation '" + rm_str +
-                            "' in FI " + fi_uid);
-                }
-
-                fle.continuity = pt_entry.get<bool>("continuity");
-
-                try {
-                    switch (fle.rm) {
-                        case RangeModulation::dab_ensemble:
-                            {
-                                fle.fi_dab.eid = hexparse(pt_entry.get<string>("eid"));
-
-                                for (const auto& list_it : pt_entry.get_child("frequencies")) {
-                                    const string fi_list_uid = list_it.first;
-                                    const ptree pt_list_entry = list_it.second;
-
-                                    FrequencyInfoDab::ListElement el;
-                                    el.uid = fi_list_uid;
-                                    el.frequency = pt_list_entry.get<float>("frequency");
-
-                                    bool signal_mode_1 = pt_list_entry.get("signal_mode_1", false);
-                                    bool adjacent = pt_list_entry.get("adjacent", false);
-
-                                    if (adjacent and signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::adjacent_mode1;
-                                    }
-                                    else if (adjacent and not signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::adjacent_no_mode;
-                                    }
-                                    if (not adjacent and signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::disjoint_mode1;
-                                    }
-                                    else if (not adjacent and not signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::disjoint_no_mode;
-                                    }
-                                    fle.fi_dab.frequencies.push_back(el);
-                                }
-                                if (fle.fi_dab.frequencies.size() > 2) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
-                                }
-                            } break;
-                        case RangeModulation::fm_with_rds:
-                            {
-                                fle.fi_fm.pi_code = hexparse(pt_entry.get<string>("pi_code"));
-
-                                std::stringstream frequencies_ss;
-                                frequencies_ss << pt_entry.get<string>("frequencies");
-                                for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
-                                    fle.fi_fm.frequencies.push_back(std::stof(freq));
-                                }
-                                if (fle.fi_fm.frequencies.size() > 7) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
-                                }
-                            } break;
-                        case RangeModulation::drm:
-                            {
-                                fle.fi_drm.drm_service_id = hexparse(pt_entry.get<string>("drm_id"));
-
-                                std::stringstream frequencies_ss;
-                                frequencies_ss << pt_entry.get<string>("frequencies");
-                                for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
-                                    fle.fi_drm.frequencies.push_back(std::stof(freq));
-                                }
-                                if (fle.fi_drm.frequencies.size() > 3) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
-                                }
-                            } break;
-                        case RangeModulation::amss:
-                            {
-                                fle.fi_amss.amss_service_id = hexparse(pt_entry.get<string>("amss_id"));
-
-                                std::stringstream frequencies_ss;
-                                frequencies_ss << pt_entry.get<string>("frequencies");
-                                for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
-                                    fle.fi_amss.frequencies.push_back(std::stof(freq));
-                                }
-                                if (fle.fi_amss.frequencies.size() > 3) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
-                                }
-                            } break;
-                    } // switch(rm)
-                }
-                catch (const ptree_error &e) {
-                    throw runtime_error("invalid configuration for FI " + fle_uid);
-                }
-
-                fi->frequency_information.push_back(fle);
-
-            } // for over fle
-
-            size_t required_fi_size = 0; // Without RegionId + length of FI list
-            for (const auto& fle : fi->frequency_information) {
-                size_t list_entry_size = 3; // size of FIG0/21 FI list header
-                switch (fle.rm) {
+            try {
+                switch (fi.rm) {
                     case RangeModulation::dab_ensemble:
-                        list_entry_size += fle.fi_dab.frequencies.size() * 3;
-                        break;
+                        {
+                            fi.fi_dab.eid = hexparse(pt_fi.get<string>("eid"));
+
+                            for (const auto& list_it : pt_fi.get_child("frequencies")) {
+                                const string fi_list_uid = list_it.first;
+                                const ptree pt_list_entry = list_it.second;
+
+                                FrequencyInfoDab::ListElement el;
+                                el.uid = fi_list_uid;
+                                el.frequency = pt_list_entry.get<float>("frequency");
+
+                                bool signal_mode_1 = pt_list_entry.get("signal_mode_1", false);
+                                bool adjacent = pt_list_entry.get("adjacent", false);
+
+                                if (adjacent and signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::adjacent_mode1;
+                                }
+                                else if (adjacent and not signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::adjacent_no_mode;
+                                }
+                                if (not adjacent and signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::disjoint_mode1;
+                                }
+                                else if (not adjacent and not signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::disjoint_no_mode;
+                                }
+                                fi.fi_dab.frequencies.push_back(el);
+                            }
+                            if (fi.fi_dab.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
                     case RangeModulation::fm_with_rds:
-                        list_entry_size += fle.fi_fm.frequencies.size() * 1;
-                        break;
-                    case RangeModulation::amss:
-                        list_entry_size += 1; // Id field 2
-                        list_entry_size += fle.fi_amss.frequencies.size() * 2;
-                        break;
+                        {
+                            fi.fi_fm.pi_code = hexparse(pt_fi.get<string>("pi_code"));
+
+                            std::stringstream frequencies_ss;
+                            frequencies_ss << pt_fi.get<string>("frequencies");
+                            for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                                fi.fi_fm.frequencies.push_back(std::stof(freq));
+                            }
+                            if (fi.fi_fm.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
                     case RangeModulation::drm:
-                        list_entry_size += 1; // Id field 2
-                        list_entry_size += fle.fi_drm.frequencies.size() * 2;
-                        break;
-                }
-                required_fi_size += list_entry_size;
+                        {
+                            fi.fi_drm.drm_service_id = hexparse(pt_fi.get<string>("drm_id"));
+
+                            std::stringstream frequencies_ss;
+                            frequencies_ss << pt_fi.get<string>("frequencies");
+                            for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                                fi.fi_drm.frequencies.push_back(std::stof(freq));
+                            }
+                            if (fi.fi_drm.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
+                    case RangeModulation::amss:
+                        {
+                            fi.fi_amss.amss_service_id = hexparse(pt_fi.get<string>("amss_id"));
+
+                            std::stringstream frequencies_ss;
+                            frequencies_ss << pt_fi.get<string>("frequencies");
+                            for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                                fi.fi_amss.frequencies.push_back(std::stof(freq));
+                            }
+                            if (fi.fi_amss.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
+                } // switch(rm)
+            }
+            catch (const ptree_error &e) {
+                throw runtime_error("invalid configuration for FI " + fi_uid);
             }
 
-            /* Length of FI list: this 5-bit field, expressed as an unsigned
-             * binary number, shall represent the length in bytes of the field
-             * containing FI list q to FI list g (maximum 26 bytes).
-             *
-             * ETSI EN 300 401 Clause 8.1.8
-             */
-            if (required_fi_size > 26) {
-                throw runtime_error("Too much information carried in FI " +
-                        fi_uid + ": " + to_string(required_fi_size) +
-                        " bytes needed out of 26 available");
-            }
-
-            ensemble->frequency_information.push_back(fi);
-
-
-
+            ensemble->frequency_information.emplace_back(move(fi));
         } // for over fi
 
         /* We sort all FI to have the OE=0 first and the OE=1 afterwards, to
@@ -342,10 +288,10 @@ static void parse_freq_info(ptree& pt,
         std::sort(
                 ensemble->frequency_information.begin(),
                 ensemble->frequency_information.end(),
-                [](const shared_ptr<FrequencyInformation>& first,
-                   const shared_ptr<FrequencyInformation>& second) {
-                    const int oe_first = first->other_ensemble ? 1 : 0;
-                    const int oe_second = second->other_ensemble ? 1 : 0;
+                [](const FrequencyInformation& first,
+                   const FrequencyInformation& second) {
+                    const int oe_first = first.other_ensemble ? 1 : 0;
+                    const int oe_second = second.other_ensemble ? 1 : 0;
                     return oe_first < oe_second;
                 } );
     } // if FI present

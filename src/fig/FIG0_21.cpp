@@ -109,7 +109,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
         size_t required_fi_size = 2; // RegionId + length of FI list
         for (const auto& fle : (*freqInfoFIG0_21)->frequency_information) {
-            size_t list_entry_size = sizeof(FIGtype0_21_fi_list_header);
+            size_t list_entry_size = sizeof(struct FIGtype0_21_fi_list_header);
             switch (fle.rm) {
                 case RangeModulation::dab_ensemble:
                     list_entry_size += fle.fi_dab.frequencies.size() * 3;
@@ -143,8 +143,13 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
         if (fig0 == nullptr) {
             if (remaining < 2 + required_size) {
-                etiLog.level(FIG0_21_TRACE) << "FIG0_21::no space for fig0";
+                etiLog.level(FIG0_21_TRACE) << "FIG0_21::no space for fig0: remain " <<
+                    remaining << " require " << 2 + required_size;
                 break;
+            }
+            else {
+                etiLog.level(FIG0_21_TRACE) << "FIG0_21::inserting fig0: remain " <<
+                    remaining << " require " << 2 + required_size;
             }
             fig0 = (FIGtype0*)buf;
             fig0->FIGtypeNumber = 0;
@@ -165,11 +170,16 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
+        auto *fig0_21_header = (FIGtype0_21_header*)buf;
+        fig0_21_header->rfaHigh = 0;
+        fig0_21_header->rfaLow = 0;
+        fig0_21_header->length_fi = sizeof(struct FIGtype0_21_fi_list_header);
+
+        fig0->Length += sizeof(struct FIGtype0_21_header);
+        buf += sizeof(struct FIGtype0_21_header);
+        remaining -= sizeof(struct FIGtype0_21_header);
+
         for (const auto& fle : (*freqInfoFIG0_21)->frequency_information) {
-            auto *fig0_21_header = (FIGtype0_21_header*)buf;
-            fig0_21_header->rfaHigh = 0;
-            fig0_21_header->rfaLow = 0;
-            fig0_21_header->length_fi = sizeof(struct FIGtype0_21_fi_list_header);
             switch (fle.rm) {
                 case RangeModulation::dab_ensemble:
                     fig0_21_header->length_fi += 3 * fle.fi_dab.frequencies.size();
@@ -194,10 +204,6 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         fle.fi_amss.frequencies.size();
                     break;
             }
-
-            fig0->Length += sizeof(struct FIGtype0_21_header);
-            buf += sizeof(struct FIGtype0_21_header);
-            remaining -= sizeof(struct FIGtype0_21_header);
 
             auto *fi_list_header = (FIGtype0_21_fi_list_header*)buf;
             fig0->Length += sizeof(struct FIGtype0_21_fi_list_header);
@@ -224,7 +230,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                         buf += 3;
                         remaining -= 3;
                         etiLog.level(FIG0_21_TRACE) << "FIG0_21::freq " <<
-                            freq.frequency;
+                            freq.frequency << " rem " << remaining;
                     }
                     break;
                 case RangeModulation::fm_with_rds:

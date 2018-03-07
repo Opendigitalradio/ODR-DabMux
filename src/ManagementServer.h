@@ -117,10 +117,13 @@ class InputStat
         uint32_t m_num_overruns;
 
         // Peak audio levels (linear 16-bit PCM) for the two channels.
-        // Keep a FIFO of values from the last few seconds
+        // Keep a FIFO of values from the last minutes, apply
+        // a short window to also see short-term fluctuations.
         std::deque<int> m_peaks_left;
         std::deque<int> m_peaks_right;
         std::chrono::time_point<std::chrono::steady_clock> m_time_last_peak_notify;
+
+        size_t m_short_window_length = 0;
 
         /************* STATE ***************/
         /* Variables used for determining the input state */

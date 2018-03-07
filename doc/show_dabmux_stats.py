@@ -46,13 +46,15 @@ if len(sys.argv) == 1:
             data = sock.recv()
             values = json.loads(data)['values']
 
-            tmpl = "{ident:20}{maxfill:>8}{minfill:>8}{under:>8}{over:>8}{peakleft:>8}{peakright:>8}{state:>16}"
+            tmpl = "{ident:20}{maxfill:>8}{minfill:>8}{under:>8}{over:>8}{audioleft:>8}{audioright:>8}{peakleft:>8}{peakright:>8}{state:>16}"
             print(tmpl.format(
                 ident="id",
                 maxfill="max",
                 minfill="min",
                 under="under",
                 over="over",
+                audioleft="audio L",
+                audioright="audio R",
                 peakleft="peak L",
                 peakright="peak R",
                 state="state"))
@@ -69,8 +71,10 @@ if len(sys.argv) == 1:
                     minfill=v['min_fill'],
                     under=v['num_underruns'],
                     over=v['num_overruns'],
-                    peakleft=v['peak_left'],
-                    peakright=v['peak_right'],
+                    audioleft=v['peak_left'],
+                    audioright=v['peak_right'],
+                    peakleft=v['peak_left_slow'],
+                    peakright=v['peak_right_slow'],
                     state=v['state']))
 
 

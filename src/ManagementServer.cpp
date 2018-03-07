@@ -107,10 +107,13 @@ static constexpr auto
 BUFFER_STATS_KEEP_DURATION = std::chrono::seconds(30);
 
 /* Audio level information changes faster than buffer levels, so it makes sense
- * to poll much faster. If we keep too much data, we will hide the interesting
- * short-time fluctuations. */
+ * to poll much faster. If we take the peak over too much data, we will hide
+ * the interesting short-time fluctuations. At the same time, we want to have a
+ * statistic that also catches the rare peaks, for slow pollers. */
 static constexpr auto
-PEAK_STATS_KEEP_DURATION = std::chrono::milliseconds(500);
+PEAK_STATS_SHORT_WINDOW = std::chrono::milliseconds(500);
+static constexpr auto
+PEAK_STATS_KEEP_DURATION = std::chrono::minutes(5);
 
 ManagementServer& get_mgmt_server()
 {
@@ -383,7 +386,7 @@ void InputStat::notifyBuffer(long bufsize)
 {
     unique_lock<mutex> lock(m_mutex);
 
-    m_buffer_fill_stats.push_back(bufsize);
+    m_buffer_fill_stats.push_front(bufsize);
 
     using namespace std::chrono;
     const auto time_now = steady_clock::now();
@@ -392,7 +395,7 @@ void InputStat::notifyBuffer(long bufsize)
         auto total_length = insertion_interval * m_buffer_fill_stats.size();
 
         if (total_length > BUFFER_STATS_KEEP_DURATION) {
-            m_buffer_fill_stats.pop_front();
+            m_buffer_fill_stats.pop_back();
         }
     }
     m_time_last_buffer_notify = time_now;
@@ -402,49 +405,56 @@ void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 {
     unique_lock<mutex> lock(m_mutex);
 
-    m_peaks_left.push_back(peak_left);
-    m_peaks_right.push_back(peak_right);
+    m_peaks_left.push_front(peak_left);
+    m_peaks_right.push_front(peak_right);
 
     using namespace std::chrono;
 
     const auto time_now = steady_clock::now();
-    if (m_peaks_left.size() > 1) {
-        auto insertion_interval = time_now - m_time_last_peak_notify;
-        auto peaks_total_length = insertion_interval * m_peaks_left.size();
 
-        if (peaks_total_length > PEAK_STATS_KEEP_DURATION) {
-            m_peaks_left.pop_front();
-            m_peaks_right.pop_front();
-        }
-    }
-    m_time_last_peak_notify = time_now;
-
-    if (m_peaks_left.empty() or m_peaks_right.empty()) {
-        throw std::logic_error("Peak statistics empty!");
-    }
-
-    const auto max_left = *max_element(m_peaks_left.begin(), m_peaks_left.end());
-    const auto max_right = *max_element(m_peaks_right.begin(), m_peaks_right.end());
-
-    // State
-
-    // using the lower of the two channels allows us to detect if only one
-    // channel is silent.
-    const int lower_peak = max_left < max_right ? max_left : max_right;
-
-    const int16_t int16_max = std::numeric_limits<int16_t>::max();
-    int peak_dB = lower_peak ?
-        round(20*log10((double)lower_peak / int16_max)) :
-        -90;
-
-    if (peak_dB < INPUT_AUDIO_LEVEL_THRESHOLD) {
-        if (m_silence_counter < INPUT_AUDIO_LEVEL_COUNT_SATURATION) {
-            m_silence_counter++;
-        }
+    if (m_peaks_left.size() < 2) {
+        m_time_last_peak_notify = time_now;
     }
     else {
-        if (m_silence_counter > 0) {
-            m_silence_counter--;
+        const auto insertion_interval = time_now - m_time_last_peak_notify;
+        const auto peaks_total_length = insertion_interval * m_peaks_left.size();
+
+        if (peaks_total_length > PEAK_STATS_KEEP_DURATION) {
+            m_peaks_left.pop_back();
+            m_peaks_right.pop_back();
+        }
+
+        m_time_last_peak_notify = time_now;
+
+        // Calculate the peak over the short window
+        m_short_window_length = PEAK_STATS_SHORT_WINDOW / insertion_interval;
+        const size_t short_window = std::max(
+                m_peaks_left.size(), m_short_window_length);
+        const auto max_left = *max_element(m_peaks_left.begin(),
+                m_peaks_left.begin() + short_window);
+        const auto max_right = *max_element(m_peaks_right.begin(),
+                m_peaks_right.begin() + short_window);
+
+        // State
+
+        // using the lower of the two channels allows us to detect if only one
+        // channel is silent.
+        const int lower_peak = max_left < max_right ? max_left : max_right;
+
+        const int16_t int16_max = std::numeric_limits<int16_t>::max();
+        int peak_dB = lower_peak ?
+            round(20*log10((double)lower_peak / int16_max)) :
+            -90;
+
+        if (peak_dB < INPUT_AUDIO_LEVEL_THRESHOLD) {
+            if (m_silence_counter < INPUT_AUDIO_LEVEL_COUNT_SATURATION) {
+                m_silence_counter++;
+            }
+        }
+        else {
+            if (m_silence_counter > 0) {
+                m_silence_counter--;
+            }
         }
     }
 }
@@ -462,7 +472,7 @@ void InputStat::notifyUnderrun(void)
         m_glitch_counter++;
     }
     else {
-        // As we don't receive level notifications anymore, clear the 
+        // As we don't receive level notifications anymore, clear the
         // audio level information
         m_peaks_left.clear();
         m_peaks_right.clear();
@@ -491,17 +501,27 @@ std::string InputStat::encodeValuesJSON()
 
     unique_lock<mutex> lock(m_mutex);
 
+    int peak_left_short = 0;
+    int peak_right_short = 0;
     int peak_left = 0;
     int peak_right = 0;
 
     if (not m_peaks_left.empty() and not m_peaks_right.empty()) {
         peak_left = *max_element(m_peaks_left.begin(), m_peaks_left.end());
         peak_right = *max_element(m_peaks_right.begin(), m_peaks_right.end());
-    }
 
-    /* convert to dB */
-    int dB_l = peak_left  ? round(20*log10((double)peak_left / int16_max))  : -90;
-    int dB_r = peak_right ? round(20*log10((double)peak_right / int16_max)) : -90;
+        if (m_peaks_left.size() >= m_short_window_length and
+            m_peaks_right.size() >= m_short_window_length) {
+            peak_left_short = *max_element(m_peaks_left.begin(),
+                    m_peaks_left.begin() + m_short_window_length);
+            peak_right_short = *max_element(m_peaks_right.begin(),
+                    m_peaks_right.begin() + m_short_window_length);
+        }
+        else {
+            peak_left_short = peak_left;
+            peak_right_short = peak_right;
+        }
+    }
 
     long min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
     long max_fill_buffer = 0;
@@ -512,12 +532,23 @@ std::string InputStat::encodeValuesJSON()
         max_fill_buffer = *buffer_min_max_fill.second;
     }
 
+    /* convert to dB */
+    auto to_dB = [](int p) {
+        int dB = -90;
+        if (p) {
+            dB = round(20*log10((double)p / int16_max));
+        }
+        return dB;
+    };
+
     ss <<
     "{ \"inputstat\" : {"
         "\"min_fill\": " << min_fill_buffer << ", "
         "\"max_fill\": " << max_fill_buffer << ", "
-        "\"peak_left\": " << dB_l << ", "
-        "\"peak_right\": " << dB_r << ", "
+        "\"peak_left\": " << to_dB(peak_left_short) << ", "
+        "\"peak_right\": " << to_dB(peak_right_short) << ", "
+        "\"peak_left_slow\": " << to_dB(peak_left) << ", "
+        "\"peak_right_slow\": " << to_dB(peak_right) << ", "
         "\"num_underruns\": " << m_num_underruns << ", "
         "\"num_overruns\": " << m_num_overruns << ", ";
 

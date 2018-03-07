@@ -69,24 +69,36 @@ overruns.type COUNTER
 
 multigraph audio_levels_{ident}
 graph_title Contribution {ident} audio level (peak)
-graph_order left right
+graph_order left left_slow right right_slow
 graph_args --base 1000
 graph_vlabel peak audio level during last ${{graph_period}}
 graph_category encoders
-graph_info This graph shows the audio level of both channels of the {ident} ZMQ input
+graph_info This graph shows the audio level and peak of both channels of the {ident} ZMQ input
 
 left.info Left channel audio level
-left.label Left channel audio level
+left.label Left level
 left.min -90
 left.max 0
 left.warning -40:0
 left.critical -80:0
+left_slow.info Left channel audio peak over last 5 minutes
+left_slow.label Left peak
+left_slow.min -90
+left_slow.max 0
+left_slow.warning -40:0
+left_slow.critical -80:0
 right.info Right channel audio level
-right.label Right channel audio level
+right.label Right level
 right.min -90
 right.max 0
 right.warning -40:0
 right.critical -80:0
+right_slow.info Right channel audio peak over last 5 minutes
+right_slow.label Right peak
+right_slow.min -90
+right_slow.max 0
+right_slow.warning -40:0
+right_slow.critical -80:0
 
 multigraph state_{ident}
 graph_title State of contribution {ident}
@@ -234,6 +246,11 @@ if len(sys.argv) == 1:
         munin_values += "multigraph audio_levels_{ident}\n".format(ident=ident_)
         munin_values += "left.value {}\n".format(v['peak_left'])
         munin_values += "right.value {}\n".format(v['peak_right'])
+
+        if 'peak_left_slow' in v:
+            # If ODR-DabMux is v2.0.0-3 or older, it doesn't export the slow peaks
+            munin_values += "left_slow.value {}\n".format(v['peak_left_slow'])
+            munin_values += "right_slow.value {}\n".format(v['peak_right_slow'])
 
         if 'state' in v:
             # If ODR-DabMux is v1.3.1-3 or older, it doesn't export state

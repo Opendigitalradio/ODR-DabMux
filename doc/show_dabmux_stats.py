@@ -22,10 +22,12 @@ def connect():
     sock.connect("tcp://localhost:12720")
 
     sock.send("info")
-    version = json.loads(sock.recv())
+    infojson = json.loads(sock.recv())
 
-    if not version['service'].startswith("ODR-DabMux"):
-        sys.stderr.write("Wrong version\n")
+    sys.stderr.write("Statistics from ODR-DabMux {}\n".format(infojson['version']))
+
+    if not infojson['service'].startswith("ODR-DabMux"):
+        sys.stderr.write("This is not ODR-DabMux: {}\n".format(infojson['service']))
         sys.exit(1)
 
     return sock

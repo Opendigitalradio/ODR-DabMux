@@ -298,14 +298,24 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         if (data == "info") {
 
             answer <<
-                "{ \"service\": \"" <<
+                "{ " <<
+                "\"service\": \"" <<
                 PACKAGE_NAME << " " <<
 #if defined(GITVERSION)
                 GITVERSION <<
 #else
                 PACKAGE_VERSION <<
 #endif
-                " MGMT Server\" }\n";
+                " MGMT Server\", "
+                <<
+                "\"version\": \"" <<
+#if defined(GITVERSION)
+                GITVERSION <<
+#else
+                PACKAGE_VERSION <<
+#endif
+                "\" "
+                << "}\n";
         }
         else if (data == "config") {
             answer << getStatConfigJSON();

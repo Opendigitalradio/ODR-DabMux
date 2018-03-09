@@ -396,7 +396,7 @@ int DabOutputRaw::Write(void* buffer, int size)
         buffer_[i] = revTable[buffer_[i]];
     }
 
-    // Writting data
+    // Writing data
 #ifdef _WIN32
     DWORD result;
     if(!DeviceIoControl(socket_, IoctlCodeTxFrame, buffer_.data(), 6144,
@@ -436,13 +436,13 @@ RAW_WRITE_ERROR:
         (LPTSTR)&errMsg,
         0,
         NULL) == 0) {
-            fprintf(stderr, "Error while writting to raw socket: %i", err);
+            fprintf(stderr, "Error while writing to raw socket: %i", err);
     } else {
-        fprintf(stderr, "Error while writting to raw socket: %s", errMsg);
+        fprintf(stderr, "Error while writing to raw socket: %s", errMsg);
         LocalFree(errMsg);
     }
 #else
-    perror("Error while writting to raw socket");
+    perror("Error while writing to raw socket");
 #endif
 
     return -1;

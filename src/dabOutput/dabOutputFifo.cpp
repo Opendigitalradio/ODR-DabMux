@@ -79,7 +79,7 @@ int DabOutputFifo::Write(void* buffer, int size)
                     goto FIFO_WRITE_ERROR;
             }
         case ETI_FILE_TYPE_STREAMED:
-            // Writting frame length
+            // Writing frame length
             if (write(this->file_, &size, 2) == -1)
                 goto FIFO_WRITE_ERROR;
             // Appending data
@@ -104,6 +104,6 @@ int DabOutputFifo::Write(void* buffer, int size)
     return size;
 
 FIFO_WRITE_ERROR:
-    perror("Error while writting to file");
+    perror("Error while writing to fifo");
     return -1;
 }

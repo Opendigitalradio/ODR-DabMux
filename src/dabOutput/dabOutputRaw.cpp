@@ -46,7 +46,7 @@
 #   include <linux/if_packet.h>
 #   include <linux/netdevice.h>
 #   include <net/if_arp.h>
-#   include <farsync.h>
+#   include "farsync.h"
 #endif
 
 const unsigned char revTable[] = {
@@ -388,15 +388,17 @@ int DabOutputRaw::Write(void* buffer, int size)
     if ((size_t)size > buffer_.size()) {
         throw std::logic_error("DabOutputRaw::Write size exceeded");
     }
-    memcpy(buffer_.data(), buffer, size);
-    memset(buffer_.data() + size, 0x55, 6144 - size);
 
-    // Encoding data
-    for (int i = 0; i < 6144; ++i) {
-        buffer_[i] = revTable[buffer_[i]];
+    // Encode data, extend our frame with 0x55 padding
+    int i = 0;
+    for (; i < size; i++) {
+        buffer_[i] = revTable[reinterpret_cast<uint8_t*>(buffer)[i]];
+    }
+    for (; i < 6144; i++) {
+        buffer_[i] = revTable[0x55];
     }
 
-    // Writing data
+    // Write data
 #ifdef _WIN32
     DWORD result;
     if(!DeviceIoControl(socket_, IoctlCodeTxFrame, buffer_.data(), 6144,
@@ -404,20 +406,16 @@ int DabOutputRaw::Write(void* buffer, int size)
             goto RAW_WRITE_ERROR;
     }
 #else
-    /*
-    if (write(socket_, buffer_.data()+ 1, 6143) != 6143) {
-        goto RAW_WRITE_ERROR;
-    }
-    */
     if (isCyclades_) {
         if (write(socket_, buffer_.data() + 1, 6143) != 6143) {
             goto RAW_WRITE_ERROR;
         }
-    } else {
+    }
+    else {
         int ret = send(socket_, buffer_.data(), 6144, 0);
         if (ret != 6144) {
-            etiLog.log(info, "%i/6144 bytes written", ret);
-            goto RAW_WRITE_ERROR;
+            etiLog.log(error, "%i/6144 bytes written", ret);
+            return -1;
         }
     }
 #endif
@@ -442,7 +440,8 @@ RAW_WRITE_ERROR:
         LocalFree(errMsg);
     }
 #else
-    perror("Error while writing to raw socket");
+    etiLog.level(error) << "Error while writing to raw socket: " <<
+        strerror(errno);
 #endif
 
     return -1;

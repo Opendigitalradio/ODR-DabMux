@@ -1,6 +1,11 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2018-03-27: Matthias P. Braendli <matthias@mpb.li>
+	(v2.1.1):
+		Fix segmentation fault in peak audio statistics
+		calculation.
+
 2018-03-23: Matthias P. Braendli <matthias@mpb.li>
 	(v2.1.0):
 		Add version string to management server.

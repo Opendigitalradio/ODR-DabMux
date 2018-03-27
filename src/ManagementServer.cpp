@@ -428,7 +428,7 @@ void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 
         // Calculate the peak over the short window
         m_short_window_length = PEAK_STATS_SHORT_WINDOW / insertion_interval;
-        const size_t short_window = std::max(
+        const size_t short_window = std::min(
                 m_peaks_left.size(), m_short_window_length);
         const auto max_left = *max_element(m_peaks_left.begin(),
                 m_peaks_left.begin() + short_window);

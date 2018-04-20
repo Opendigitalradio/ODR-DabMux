@@ -42,12 +42,23 @@ RemoteControllerTelnet::~RemoteControllerTelnet()
 {
     m_active = false;
     m_io_service.stop();
-    m_child_thread.join();
+
+    if (m_restarter_thread.joinable()) {
+        m_restarter_thread.join();
+    }
+
+    if (m_child_thread.joinable()) {
+        m_child_thread.join();
+    }
 }
 
 void RemoteControllerTelnet::restart()
 {
-    m_restarter_thread = boost::thread(
+    if (m_restarter_thread.joinable()) {
+        m_restarter_thread.join();
+    }
+
+    m_restarter_thread = std::thread(
             &RemoteControllerTelnet::restart_thread,
             this, 0);
 }
@@ -97,9 +108,11 @@ void RemoteControllerTelnet::restart_thread(long)
     m_active = false;
     m_io_service.stop();
 
-    m_child_thread.join();
+    if (m_child_thread.joinable()) {
+        m_child_thread.join();
+    }
 
-    m_child_thread = boost::thread(&RemoteControllerTelnet::process, this, 0);
+    m_child_thread = std::thread(&RemoteControllerTelnet::process, this, 0);
 }
 
 void RemoteControllerTelnet::handle_accept(
@@ -327,15 +340,22 @@ RemoteControllerZmq::~RemoteControllerZmq() {
     m_active = false;
     m_fault = false;
 
-    if (!m_endpoint.empty()) {
-        m_child_thread.interrupt();
+    if (m_restarter_thread.joinable()) {
+        m_restarter_thread.join();
+    }
+
+    if (m_child_thread.joinable()) {
         m_child_thread.join();
     }
 }
 
 void RemoteControllerZmq::restart()
 {
-    m_restarter_thread = boost::thread(&RemoteControllerZmq::restart_thread, this);
+    if (m_restarter_thread.joinable()) {
+        m_restarter_thread.join();
+    }
+
+    m_restarter_thread = std::thread(&RemoteControllerZmq::restart_thread, this);
 }
 
 // This runs in a separate thread, because
@@ -345,12 +365,11 @@ void RemoteControllerZmq::restart_thread()
 {
     m_active = false;
 
-    if (!m_endpoint.empty()) {
-        m_child_thread.interrupt();
+    if (m_child_thread.joinable()) {
         m_child_thread.join();
     }
 
-    m_child_thread = boost::thread(&RemoteControllerZmq::process, this);
+    m_child_thread = std::thread(&RemoteControllerZmq::process, this);
 }
 
 void RemoteControllerZmq::recv_all(zmq::socket_t& pSocket, std::vector<std::string> &message)
@@ -388,7 +407,6 @@ void RemoteControllerZmq::send_fail_reply(zmq::socket_t &pSocket, const std::str
 void RemoteControllerZmq::process()
 {
     // create zmq reply socket for receiving ctrl parameters
-    etiLog.level(info) << "Starting zmq remote control thread";
     try {
         zmq::socket_t repSocket(m_zmqContext, ZMQ_REP);
 
@@ -422,11 +440,11 @@ void RemoteControllerZmq::process()
 
                         std::string msg_s = ss.str();
 
-                        zmq::message_t msg(ss.str().size());
-                        memcpy ((void*) msg.data(), msg_s.data(), msg_s.size());
+                        zmq::message_t zmsg(ss.str().size());
+                        memcpy ((void*) zmsg.data(), msg_s.data(), msg_s.size());
 
                         int flag = (--cohort_size > 0) ? ZMQ_SNDMORE : 0;
-                        repSocket.send(msg, flag);
+                        repSocket.send(zmsg, flag);
                     }
                 }
                 else if (msg.size() == 2 && command == "show") {
@@ -437,11 +455,11 @@ void RemoteControllerZmq::process()
                         for (auto &param_val : r) {
                             std::stringstream ss;
                             ss << param_val[0] << ": " << param_val[1] << endl;
-                            zmq::message_t msg(ss.str().size());
-                            memcpy(msg.data(), ss.str().data(), ss.str().size());
+                            zmq::message_t zmsg(ss.str().size());
+                            memcpy(zmsg.data(), ss.str().data(), ss.str().size());
 
                             int flag = (--r_size > 0) ? ZMQ_SNDMORE : 0;
-                            repSocket.send(msg, flag);
+                            repSocket.send(zmsg, flag);
                         }
                     }
                     catch (ParameterError &e) {
@@ -454,9 +472,9 @@ void RemoteControllerZmq::process()
 
                     try {
                         std::string value = rcs.get_param(module, parameter);
-                        zmq::message_t msg(value.size());
-                        memcpy ((void*) msg.data(), value.data(), value.size());
-                        repSocket.send(msg, 0);
+                        zmq::message_t zmsg(value.size());
+                        memcpy ((void*) zmsg.data(), value.data(), value.size());
+                        repSocket.send(zmsg, 0);
                     }
                     catch (ParameterError &err) {
                         send_fail_reply(repSocket, err.what());
@@ -480,13 +498,9 @@ void RemoteControllerZmq::process()
                             "Unsupported command. commands: list, show, get, set");
                 }
             }
-
-            // check if thread is interrupted
-            boost::this_thread::interruption_point();
         }
         repSocket.close();
     }
-    catch (boost::thread_interrupted&) {}
     catch (zmq::error_t &e) {
         etiLog.level(error) << "ZMQ RC error: " << std::string(e.what());
     }

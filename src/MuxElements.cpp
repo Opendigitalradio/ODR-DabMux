@@ -424,23 +424,23 @@ void DabComponent::set_parameter(const string& parameter,
             case 0:
                 break;
             case -1:
-                ss << m_name << " short label " <<
+                ss << m_rc_name << " short label " <<
                     fields[1] << " is not subset of label '" <<
                     fields[0] << "'";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -2:
-                ss << m_name << " short label " <<
+                ss << m_rc_name << " short label " <<
                     fields[1] << " is too long (max 8 characters)";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -3:
-                ss << m_name << " label " <<
+                ss << m_rc_name << " label " <<
                     fields[0] << " is too long (max 16 characters)";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             default:
-                ss << m_name << " short label definition: program error !";
+                ss << m_rc_name << " short label definition: program error !";
                 etiLog.level(alert) << ss.str();
                 throw ParameterError(ss.str());
         }
@@ -547,7 +547,7 @@ void DabService::set_parameter(const string& parameter, const string& value)
                     fields[0] << " is too long (max 16 characters)";
                 throw ParameterError(ss.str());
             default:
-                ss << m_name << " short label definition: program error !";
+                ss << m_rc_name << " short label definition: program error !";
                 etiLog.level(error) << ss.str();
                 throw ParameterError(ss.str());
         }

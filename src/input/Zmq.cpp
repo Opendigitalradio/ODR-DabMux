@@ -93,7 +93,7 @@ void ZmqBase::rebind()
             m_zmq_sock.unbind(m_zmq_sock_bound_to.c_str());
         }
         catch (const zmq::error_t& err) {
-            etiLog.level(warn) << "ZMQ unbind for input " << m_name << " failed";
+            etiLog.level(warn) << "ZMQ unbind for input " << m_rc_name << " failed";
         }
     }
 
@@ -105,7 +105,7 @@ void ZmqBase::rebind()
 
         if (rc < 0) {
             etiLog.level(warn) << "Invalid public key for input " <<
-                m_name;
+                m_rc_name;
 
             INVALIDATE_KEY(m_curve_public_key);
         }
@@ -116,7 +116,7 @@ void ZmqBase::rebind()
 
         if (rc < 0) {
             etiLog.level(warn) << "Invalid secret key for input " <<
-                m_name;
+                m_rc_name;
 
             INVALIDATE_KEY(m_curve_secret_key);
         }
@@ -127,7 +127,7 @@ void ZmqBase::rebind()
 
         if (rc < 0) {
             etiLog.level(warn) << "Invalid encoder key for input " <<
-                m_name;
+                m_rc_name;
 
             INVALIDATE_KEY(m_curve_encoder_key);
         }
@@ -154,7 +154,7 @@ void ZmqBase::rebind()
         }
         catch (const zmq::error_t& err) {
             std::ostringstream os;
-            os << "ZMQ set encoder key for input " << m_name << " failed" <<
+            os << "ZMQ set encoder key for input " << m_rc_name << " failed" <<
                 err.what();
             throw std::runtime_error(os.str());
         }
@@ -165,7 +165,7 @@ void ZmqBase::rebind()
         }
         catch (const zmq::error_t& err) {
             std::ostringstream os;
-            os << "ZMQ set public key for input " << m_name << " failed" <<
+            os << "ZMQ set public key for input " << m_rc_name << " failed" <<
                 err.what();
             throw std::runtime_error(os.str());
         }
@@ -176,7 +176,7 @@ void ZmqBase::rebind()
         }
         catch (const zmq::error_t& err) {
             std::ostringstream os;
-            os << "ZMQ set secret key for input " << m_name << " failed" <<
+            os << "ZMQ set secret key for input " << m_rc_name << " failed" <<
                 err.what();
             throw std::runtime_error(os.str());
         }
@@ -191,7 +191,7 @@ void ZmqBase::rebind()
         }
         catch (const zmq::error_t& err) {
             etiLog.level(warn) << "ZMQ disable encryption keys for input " <<
-                m_name << " failed: " << err.what();
+                m_rc_name << " failed: " << err.what();
         }
 
     }
@@ -202,7 +202,7 @@ void ZmqBase::rebind()
     }
     catch (const zmq::error_t& err) {
         std::ostringstream os;
-        os << "ZMQ bind for input " << m_name << " failed" <<
+        os << "ZMQ bind for input " << m_rc_name << " failed" <<
             err.what();
         throw std::runtime_error(os.str());
     }
@@ -214,7 +214,7 @@ void ZmqBase::rebind()
     }
     catch (const zmq::error_t& err) {
         std::ostringstream os;
-        os << "ZMQ set socket options for input " << m_name << " failed" <<
+        os << "ZMQ set socket options for input " << m_rc_name << " failed" <<
             err.what();
         throw std::runtime_error(os.str());
     }
@@ -300,7 +300,7 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
             m_prebuf_current--;
         if (m_prebuf_current == 0)
             etiLog.log(info, "inputZMQ %s input pre-buffering complete\n",
-                m_name.c_str());
+                m_rc_name.c_str());
 
         /* During prebuffering, give a zeroed frame to the mux */
         m_stats.notifyUnderrun();
@@ -313,7 +313,7 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
 
     if (m_frame_buffer.empty()) {
         etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
-                m_name.c_str());
+                m_rc_name.c_str());
         // reset prebuffering
         m_prebuf_current = m_config.prebuffering;
 
@@ -350,7 +350,7 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     }
     catch (const zmq::error_t& err) {
         etiLog.level(error) << "Failed to receive MPEG frame from zmq socket " <<
-                m_name << ": " << err.what();
+                m_rc_name << ": " << err.what();
     }
 
     /* This is the old 'one superframe per ZMQ message' format */
@@ -375,7 +375,7 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     if (datalen == framesize) {
         if (m_frame_buffer.size() > m_config.buffer_size) {
             etiLog.level(warn) <<
-                "inputZMQ " << m_name <<
+                "inputZMQ " << m_rc_name <<
                 " buffer full (" << m_frame_buffer.size() << "),"
                 " dropping incoming frame !";
             messageReceived = false;
@@ -392,7 +392,7 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     }
     else {
         etiLog.level(error) <<
-            "inputZMQ " << m_name <<
+            "inputZMQ " << m_rc_name <<
             " verify bitrate: recv'd " << msg.size() << " B" <<
             ", need " << framesize << ".";
         messageReceived = false;
@@ -420,7 +420,7 @@ int ZmqAAC::readFromSocket(size_t framesize)
     catch (const zmq::error_t& err) {
         etiLog.level(error) <<
             "Failed to receive AAC superframe from zmq socket " <<
-            m_name << ": " << err.what();
+            m_rc_name << ": " << err.what();
     }
 
     /* This is the old 'one superframe per ZMQ message' format */
@@ -450,7 +450,7 @@ int ZmqAAC::readFromSocket(size_t framesize)
         if (datalen == 5*framesize) {
             if (m_frame_buffer.size() > m_config.buffer_size) {
                 etiLog.level(warn) <<
-                    "inputZMQ " << m_name <<
+                    "inputZMQ " << m_rc_name <<
                     " buffer full (" << m_frame_buffer.size() << "),"
                     " dropping incoming superframe !";
                 datalen = 0;
@@ -471,7 +471,7 @@ int ZmqAAC::readFromSocket(size_t framesize)
         }
         else {
             etiLog.level(error) <<
-                "inputZMQ " << m_name <<
+                "inputZMQ " << m_rc_name <<
                 " verify bitrate: recv'd " << msg.size() << " B" <<
                 ", need " << 5*framesize << ".";
 
@@ -480,7 +480,7 @@ int ZmqAAC::readFromSocket(size_t framesize)
     }
     else {
         etiLog.level(error) <<
-            "inputZMQ " << m_name <<
+            "inputZMQ " << m_rc_name <<
             " invalid frame received";
     }
 

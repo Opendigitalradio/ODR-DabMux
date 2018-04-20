@@ -47,7 +47,7 @@
 #include <boost/asio.hpp>
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 #include <stdexcept>
 
 #include "Log.h"

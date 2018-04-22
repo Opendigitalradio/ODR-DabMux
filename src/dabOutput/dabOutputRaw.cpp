@@ -31,8 +31,6 @@
 
 #if defined(HAVE_OUTPUT_RAW)
 
-#include <cstdio>
-#include <cstring>
 #include "dabOutput.h"
 #ifdef _WIN32
 #   include <fscfg.h>
@@ -48,6 +46,11 @@
 #   include <net/if_arp.h>
 #   include "farsync.h"
 #endif
+
+#include <cstdio>
+#include <cstring>
+#include <map>
+
 
 const unsigned char revTable[] = {
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,

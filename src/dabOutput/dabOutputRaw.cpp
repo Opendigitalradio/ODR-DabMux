@@ -206,7 +206,9 @@ int DabOutputRaw::Open(const char* name)
     struct ifreq ifr;
     struct sockaddr_ll saddr;
     memset(&ifr, 0, sizeof(struct ifreq));
-    (void)strncpy(ifr.ifr_name, filename, sizeof(ifr.ifr_name));
+    if (sizeof(ifr.ifr_name) > 0) {
+        strncpy(ifr.ifr_name, filename, sizeof(ifr.ifr_name) - 1);
+    }
 
     // Get current Farsync configuration
     struct fstioc_info info;
@@ -363,7 +365,10 @@ int DabOutputRaw::Open(const char* name)
 
     // ioctl to read the interface number
     memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, filename, sizeof(ifr.ifr_name));
+    if (sizeof(ifr.ifr_name) > 0) {
+        strncpy(ifr.ifr_name, filename, sizeof(ifr.ifr_name) - 1);
+    }
+
     if (ioctl(socket_, SIOCGIFINDEX, (char *) &ifr) == -1) {
         perror(filename);
         return -1;

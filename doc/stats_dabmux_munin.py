@@ -119,10 +119,6 @@ ctx = zmq.Context()
 class RCException(Exception):
     pass
 
-if not os.environ.get("MUNIN_CAP_MULTIGRAPH"):
-    sys.stderr.write("This needs munin version 1.4 at least\n")
-    sys.exit(1)
-
 def do_transaction(command, sock):
     """To a send + receive transaction, quit whole program on timeout"""
     sock.send(command)

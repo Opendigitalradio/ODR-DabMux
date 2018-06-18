@@ -234,8 +234,6 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
 
     const auto t_release = t_frame + milliseconds(tist_delay_ms);
     const auto t_now = system_clock::now();
-    const auto wait_time = t_release - t_now;
-    const auto duration_0 = milliseconds(0);
 
     /*
     etiLog.level(debug) << "seconds " << seconds + posix_timestamp_1_jan_2000;
@@ -243,7 +241,8 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
     etiLog.level(debug) << "wait " << wait_time.count();
     */
 
-    if (wait_time > duration_0) {
+    if (t_release > t_now) {
+        const auto wait_time = t_release - t_now;
         std::this_thread::sleep_for(wait_time);
         wait_times.push_back(duration_cast<microseconds>(wait_time).count());
     }

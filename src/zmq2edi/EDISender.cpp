@@ -241,14 +241,11 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
     etiLog.level(debug) << "wait " << wait_time.count();
     */
 
+    const auto wait_time = t_release - t_now;
     if (t_release > t_now) {
-        const auto wait_time = t_release - t_now;
         std::this_thread::sleep_for(wait_time);
-        wait_times.push_back(duration_cast<microseconds>(wait_time).count());
     }
-    else {
-        wait_times.push_back(0);
-    }
+    wait_times.push_back(duration_cast<microseconds>(wait_time).count());
 
     edi_tagDETI.tsta = tist;
     edi_tagDETI.atstf = 1;
@@ -342,6 +339,8 @@ void EDISender::process()
             const double n = wait_times.size();
 
             double sum = accumulate(wait_times.begin(), wait_times.end(), 0);
+            size_t num_late = std::count_if(wait_times.begin(), wait_times.end(),
+                    [](double v){ return v < 0; });
             double mean = sum / n;
 
             double sq_sum = 0;
@@ -360,12 +359,14 @@ void EDISender::process()
             etiLog.level(debug) << ss.str();
             */
 
-            etiLog.level(info) << "Wait time statistics:"
+            etiLog.level(info) << "Wait time statistics [microseconds]:"
                 " min: " << *min_max.first <<
                 " max: " << *min_max.second <<
                 " mean: " << mean <<
                 " stdev: " << stdev <<
-                " microseconds";
+                " late: " <<
+                num_late << " of " << wait_times.size() << " (" <<
+                num_late * 100.0 / n << "%)";
 
             wait_times.clear();
         }

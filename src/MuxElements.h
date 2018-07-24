@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <functional>
 #include <exception>
@@ -110,16 +111,14 @@ class AnnouncementCluster : public RemoteControllable {
         bool is_active(void);
 
     private:
+        mutable std::mutex m_active_mutex;
         bool m_active = false;
-
         boost::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_start_time;
-
         boost::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_stop_time;
-
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,

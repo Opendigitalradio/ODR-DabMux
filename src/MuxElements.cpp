@@ -55,16 +55,20 @@ std::string AnnouncementCluster::tostring() const
     ss << "cluster id(" << (int)cluster_id;
     ss << ", flags 0x" << boost::format("%04x") % flags;
     ss << ", subchannel " << subchanneluid;
-    if (m_active) {
-        ss << " active ";
-    }
 
-    if (m_deferred_start_time) {
-        ss << " start pending";
-    }
+    {
+        lock_guard<mutex> lock(m_active_mutex);
+        if (m_active) {
+            ss << " active ";
+        }
 
-    if (m_deferred_stop_time) {
-        ss << " stop pending";
+        if (m_deferred_start_time) {
+            ss << " start pending";
+        }
+
+        if (m_deferred_stop_time) {
+            ss << " stop pending";
+        }
     }
 
     ss << " )";
@@ -74,8 +78,9 @@ std::string AnnouncementCluster::tostring() const
 
 bool AnnouncementCluster::is_active()
 {
-    if (m_deferred_start_time)
-    {
+    lock_guard<mutex> lock(m_active_mutex);
+
+    if (m_deferred_start_time) {
         const auto now = std::chrono::steady_clock::now();
 
         if (*m_deferred_start_time <= now) {
@@ -85,8 +90,7 @@ bool AnnouncementCluster::is_active()
         }
     }
 
-    if (m_deferred_stop_time)
-    {
+    if (m_deferred_stop_time) {
         const auto now = std::chrono::steady_clock::now();
 
         if (*m_deferred_stop_time <= now) {
@@ -105,6 +109,8 @@ void AnnouncementCluster::set_parameter(const string& parameter,
     if (parameter == "active") {
         stringstream ss;
         ss << value;
+
+        lock_guard<mutex> lock(m_active_mutex);
         ss >> m_active;
     }
     else if (parameter == "start_in") {
@@ -114,6 +120,7 @@ void AnnouncementCluster::set_parameter(const string& parameter,
         int start_in_ms;
         ss >> start_in_ms;
 
+        lock_guard<mutex> lock(m_active_mutex);
         using namespace std::chrono;
         m_deferred_start_time = steady_clock::now() + milliseconds(start_in_ms);
     }
@@ -124,6 +131,7 @@ void AnnouncementCluster::set_parameter(const string& parameter,
         int stop_in_ms;
         ss >> stop_in_ms;
 
+        lock_guard<mutex> lock(m_active_mutex);
         using namespace std::chrono;
         m_deferred_stop_time = steady_clock::now() + milliseconds(stop_in_ms);
     }
@@ -141,9 +149,11 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
 
     stringstream ss;
     if (parameter == "active") {
+        lock_guard<mutex> lock(m_active_mutex);
         ss << m_active;
     }
     else if (parameter == "start_in") {
+        lock_guard<mutex> lock(m_active_mutex);
         if (m_deferred_start_time) {
             const auto diff = *m_deferred_start_time - steady_clock::now();
             ss << duration_cast<milliseconds>(diff).count();
@@ -153,6 +163,7 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
         }
     }
     else if (parameter == "stop_in") {
+        lock_guard<mutex> lock(m_active_mutex);
         if (m_deferred_stop_time) {
             const auto diff = *m_deferred_stop_time - steady_clock::now();
             ss << duration_cast<milliseconds>(diff).count();

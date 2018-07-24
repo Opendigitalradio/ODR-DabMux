@@ -44,7 +44,8 @@ void FIGCarouselElement::reduce_deadline()
     deadline -= 24; //ms
 
     if (deadline < 0) {
-        etiLog.level(debug) << "Could not respect repetition rate for FIG " <<
+        etiLog.level(debug) <<
+            "Could not respect repetition rate for FIG " <<
             fig->name() << " (" << deadline << "ms late)";
     }
 }
@@ -187,17 +188,18 @@ size_t FIGCarousel::carousel(
 
     FIBAllocation fibix;
 
-    if (fib == 0) {
-        fibix = FIBAllocation::FIB0;
-    }
-    else if (fib == 1) {
-        fibix = FIBAllocation::FIB1;
-    }
-    else if (fib == 2) {
-        fibix = FIBAllocation::FIB2;
-    }
-    else {
-        throw std::invalid_argument("FIGCarousel::carousel called with invalid fib");
+    switch (fib) {
+        case 0:
+            fibix = FIBAllocation::FIB0;
+            break;
+        case 1:
+            fibix = FIBAllocation::FIB1;
+            break;
+        case 2:
+            fibix = FIBAllocation::FIB2;
+            break;
+        default:
+            throw std::invalid_argument("FIGCarousel::carousel called with invalid fib");
     }
 
     // Create our list of FIGs to consider for this FIB

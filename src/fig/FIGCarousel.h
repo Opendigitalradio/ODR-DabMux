@@ -39,13 +39,20 @@
 
 namespace FIC {
 
-struct FIGCarouselElement {
-    IFIG* fig;
-    int   deadline; // unit: ms
+class FIGCarouselElement {
+    public:
+        IFIG* fig;
+        int   deadline; // unit: ms
 
-    void reduce_deadline(void);
+        void reduce_deadline();
+        void increase_deadline();
 
-    void increase_deadline(void);
+        /* Returns true if the repetition rate changed and the
+         * deadline was recalculated */
+        bool check_deadline();
+
+    private:
+        FIG_rate m_last_rate = FIG_rate::A;
 };
 
 enum class FIBAllocation {

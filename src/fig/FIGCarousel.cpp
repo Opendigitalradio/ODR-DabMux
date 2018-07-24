@@ -55,6 +55,22 @@ void FIGCarouselElement::increase_deadline()
     deadline = rate_increment_ms(fig->repetition_rate());
 }
 
+bool FIGCarouselElement::check_deadline()
+{
+    const auto new_rate = fig->repetition_rate();
+    const bool rate_changed = (m_last_rate != new_rate);
+
+    if (rate_changed) {
+        const auto new_deadline = rate_increment_ms(new_rate);
+        if (deadline > new_deadline) {
+            deadline = new_deadline;
+        }
+        m_last_rate = new_rate;
+    }
+
+    return rate_changed;
+}
+
 
 /**************** FIGCarousel *****************/
 
@@ -209,6 +225,18 @@ size_t FIGCarousel::carousel(
     }
     for (auto& fig : m_fibs[FIBAllocation::FIB_ANY]) {
         sorted_figs.push_back(&fig);
+    }
+
+    /* Some FIGs might have changed rate since we last
+     * set the deadline */
+    for (auto& fig : sorted_figs) {
+        if (fig->check_deadline()) {
+#if CAROUSELDEBUG
+            std::cerr << " FIG" << fig->fig->figtype() << "/" <<
+                fig->fig->figextension() << " deadline changed" <<
+                std::endl;
+#endif
+        }
     }
 
     /* Sort the FIGs in the FIB according to their deadline */

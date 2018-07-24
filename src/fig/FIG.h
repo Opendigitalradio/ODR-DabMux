@@ -90,12 +90,12 @@ class IFIG
     public:
         virtual FillStatus fill(uint8_t *buf, size_t max_size) = 0;
 
-        virtual FIG_rate repetition_rate(void) = 0;
+        virtual FIG_rate repetition_rate() const = 0;
 
-        virtual const int figtype(void) const = 0;
-        virtual const int figextension(void) const = 0;
+        virtual int figtype() const = 0;
+        virtual int figextension() const = 0;
 
-        virtual const std::string name(void) const
+        virtual const std::string name() const
         {
             std::stringstream ss;
             ss << figtype() << "/" << figextension();

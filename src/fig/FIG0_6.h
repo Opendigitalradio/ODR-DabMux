@@ -53,17 +53,17 @@ class FIG0_6 : public IFIG
     public:
         FIG0_6(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::E; }
+        virtual FIG_rate repetition_rate() const { return FIG_rate::E; }
 
-        virtual const int figtype(void) const { return 0; }
-        virtual const int figextension(void) const { return 6; }
+        virtual int figtype() const { return 0; }
+        virtual int figextension() const { return 6; }
 
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
 
         /* Update the linkageSubsets */
-        void update(void);
+        void update();
 
         /* A LinkageSet can contain links of different types
          * (DAB, FM, DRM, AMSS), but the FIG needs to send

@@ -143,7 +143,7 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
-FIG_rate FIG0_19::repetition_rate(void)
+FIG_rate FIG0_19::repetition_rate() const
 {
     if (    m_transition.new_entries.size() > 0 or
             m_transition.disabled_entries.size() ) {

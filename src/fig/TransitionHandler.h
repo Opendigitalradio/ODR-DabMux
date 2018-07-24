@@ -30,6 +30,7 @@
 #include <set>
 #include <vector>
 #include <memory>
+#include <chrono>
 
 namespace FIC {
 
@@ -40,11 +41,15 @@ namespace FIC {
 template<class T>
 class TransitionHandler {
     public:
-        // update_state must be called once per ETI frame, and will
-        // move entries from new to repeated to disabled depending
-        // on their is_active() return value.
-        void update_state(int timeout, std::vector<std::shared_ptr<T> > all_entries)
+        using duration = std::chrono::steady_clock::duration;
+
+        // update_state will move entries from new to repeated to disabled
+        // depending on their is_active() return value.
+        void update_state(duration timeout, std::vector<std::shared_ptr<T> > all_entries)
         {
+            using namespace std::chrono;
+            auto now = steady_clock::now();
+
             for (const auto& entry : all_entries) {
                 if (entry->is_active()) {
                     if (repeated_entries.count(entry) > 0) {
@@ -55,8 +60,7 @@ class TransitionHandler {
                     if (new_entries.count(entry) > 0) {
                         // We are currently announcing this entry at a
                         // fast rate. Handle timeout:
-                        new_entries[entry] -= 1;
-                        if (new_entries[entry] <= 0) {
+                        if (new_entries[entry] <= now) {
                             repeated_entries.insert(entry);
                             new_entries.erase(entry);
                         }
@@ -65,18 +69,17 @@ class TransitionHandler {
 
                     // unlikely
                     if (disabled_entries.count(entry) > 0) {
-                        new_entries[entry] = timeout;
+                        new_entries[entry] = now + timeout;
                         disabled_entries.erase(entry);
                         continue;
                     }
 
                     // It's a new entry!
-                    new_entries[entry] = timeout;
+                    new_entries[entry] = now + timeout;
                 }
                 else { // Not active
                     if (disabled_entries.count(entry) > 0) {
-                        disabled_entries[entry] -= 1;
-                        if (disabled_entries[entry] <= 0) {
+                        if (disabled_entries[entry] <= now) {
                             disabled_entries.erase(entry);
                         }
                         continue;
@@ -84,7 +87,7 @@ class TransitionHandler {
 
                     if (repeated_entries.count(entry) > 0) {
                         // We are currently announcing this entry
-                        disabled_entries[entry] = timeout;
+                        disabled_entries[entry] = now + timeout;
                         repeated_entries.erase(entry);
                         continue;
                     }
@@ -93,7 +96,7 @@ class TransitionHandler {
                     if (new_entries.count(entry) > 0) {
                         // We are currently announcing this entry at a
                         // fast rate. We must stop announcing it
-                        disabled_entries[entry] = timeout;
+                        disabled_entries[entry] = now + timeout;
                         new_entries.erase(entry);
                         continue;
                     }
@@ -103,16 +106,16 @@ class TransitionHandler {
         // The FIG that needs the information about what state an entry is in
         // can read from the following data structures. It shall not modify them.
 
-        /* Map to frame count */
+        using time_point = std::chrono::steady_clock::time_point;
+
         std::map<
-            std::shared_ptr<T>,int> new_entries;
+            std::shared_ptr<T>, time_point> new_entries;
 
         std::set<
             std::shared_ptr<T> > repeated_entries;
 
-        /* Map to frame count */
         std::map<
-            std::shared_ptr<T>,int> disabled_entries;
+            std::shared_ptr<T>, time_point> disabled_entries;
 };
 
 } // namespace FIC

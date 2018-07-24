@@ -51,10 +51,7 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
 
     auto ensemble = m_rti->ensemble;
 
-    // We are called every 24ms, and must timeout after 2s
-    const int timeout = 2000/24;
-
-    m_transition.update_state(timeout, ensemble->clusters);
+    m_transition.update_state(std::chrono::seconds(2), ensemble->clusters);
 
     FillStatus fs;
     ssize_t remaining = max_size;

@@ -43,6 +43,8 @@ FIG0_19::FIG0_19(FIGRuntimeInformation *rti) :
     m_rti(rti)
 { }
 
+#define FIG0_19_TRACE discard
+
 FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
 {
     using namespace std;
@@ -73,11 +75,15 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
 
     const int length_0_19 = 4;
     fs.complete_fig_transmitted = true;
+    etiLog.level(FIG0_19_TRACE) << "FIG0_19::loop with " << allclusters.size() <<
+        " clusters";
     for (auto& cluster : allclusters) {
+        etiLog.level(FIG0_19_TRACE) << "FIG0_19::cluster " << cluster->cluster_id;
 
         if (fig0 == NULL) {
             if (remaining < 2 + length_0_19) {
                 fs.complete_fig_transmitted = false;
+                etiLog.level(FIG0_19_TRACE) << "FIG0_19::no space FIG0";
                 break;
             }
 
@@ -92,6 +98,7 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
             remaining -= 2;
         }
         else if (remaining < length_0_19) {
+            etiLog.level(FIG0_19_TRACE) << "FIG0_19::no space FIG0/19";
             fs.complete_fig_transmitted = false;
             break;
         }
@@ -124,12 +131,15 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
             continue;
         }
 
+        etiLog.level(FIG0_19_TRACE) << "FIG0_19::advance " << length_0_19;
+
         fig0->Length += length_0_19;
         buf += length_0_19;
         remaining -= length_0_19;
     }
 
     fs.num_bytes_written = max_size - remaining;
+    etiLog.level(FIG0_19_TRACE) << "FIG0_19::out " << fs.num_bytes_written;
     return fs;
 }
 

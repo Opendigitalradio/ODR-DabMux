@@ -321,6 +321,8 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
 {
     int index = 0;
 
+    int total_num_cu = 0;
+
     for (auto subchannel : subchannels) {
         dabProtection* protection = &subchannel->protection;
         etiLog.level(info) << "Subchannel   " << subchannel->uid;
@@ -365,8 +367,11 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
                 subchannel->startAddress);
         etiLog.log(info, " size (CU):  %i",
                 subchannel->getSizeCu());
+        total_num_cu += subchannel->getSizeCu();
         ++index;
     }
+
+    etiLog.log(info, "Total ensemble size (CU):  %i", total_num_cu);
 }
 
 static void printLinking(const shared_ptr<dabEnsemble>& ensemble)

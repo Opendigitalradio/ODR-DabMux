@@ -1,6 +1,12 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2018-07-31: Matthias P. Braendli <matthias@mpb.li>
+	(v2.2.0):
+		Fix delays and FIG repetition burst on announcement switching.
+		Add support for services with different ECC (Signalled in FIG0/9).
+		Improve ODR-ZMQ2EDI statistics.
+
 2018-05-29: Matthias P. Braendli <matthias@mpb.li>
 	(v2.1.2):
 		A couple of internal changes and fixes for

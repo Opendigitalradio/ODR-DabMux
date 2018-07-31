@@ -407,6 +407,12 @@ class DabService : public RemoteControllable
         std::string uid;
 
         uint32_t id = 0;
+
+        /* Services with different ECC than the ensemble must be signalled in FIG0/9.
+         * here, leave at 0 if they have the same as the ensemble
+         */
+        uint8_t ecc = 0;
+
         struct pty_settings_t {
             uint8_t pty = 0; // 0 means disabled
             bool dynamic_no_static = false;

@@ -69,12 +69,6 @@ TIST, and the ClockTAI class can get the information from the Internet, but it
 is not used in FIG0/10.
 
 
-Add support for services with different ECC than ensemble
----------------------------------------------------------
-FIG 0/9 can transmit an Extended field for this information. Needs change of
-configuration file, internal structures and FIG 0/9.
-
-
 Implement FIG0/20 Service List
 ------------------------------
 See ETSI TS 103 176

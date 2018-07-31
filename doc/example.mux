@@ -70,8 +70,10 @@ ensemble {
     ; A unique 16-bit id is allocated to the ensemble and allows unambiguous
     ; identification of the ensemble when associated with the ensemble ECC.
     ; The id normally starts with the coutry id. (See ETSI TS 101 756)
+
+    ; Example for Switzerland, with country id=4 and ECC=E1
     id 0x4fff ; you can also use decimal if you want
-    ecc 0xec ; Extended Country Code
+    ecc 0xe1 ; Extended Country Code
 
     local-time-offset auto  ; autmatically calculate from system local time
                             ; or
@@ -99,12 +101,15 @@ services {
     ; Each service has it's own unique identifier, that is
     ; used throughout the configuration file and for the RC.
     srv-fu {
-        id 0x8daa
+        id 0x4daa
         label "Fünk"
         ; You can define a shortlabel too.
     }
     srv-ri {
-        id 0x8dab
+        ; If your ensemble contains a service from another country,
+        ; specify its ECC here. Example is for Italy, country id=5, ECC=E0
+        id 0x5dab
+        ecc 0xe0
         label "Rick"
     }
 }

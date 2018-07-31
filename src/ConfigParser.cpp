@@ -581,6 +581,7 @@ void parse_ptree(
         }
 
         service->id = new_service_id;
+        service->ecc = hexparse(pt_service.get("ecc", "0"));
         service->pty_settings.pty = hexparse(pt_service.get("pty", "0"));
         // Default to dynamic for backward compatibility
         const string dynamic_no_static_str = pt_service.get("pty-sd", "dynamic");

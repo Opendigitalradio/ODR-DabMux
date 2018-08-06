@@ -55,6 +55,7 @@ void usage(void)
     cerr << "The following options can be given only once:" << endl;
     cerr << " <source> is a ZMQ URL that points to a ODR-DabMux ZMQ output." << endl;
     cerr << " -w <delay> Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
+    cerr << " -x Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
     cerr << " -p <destination port> sets the destination port." << endl;
     cerr << " -P Disable PFT and send AFPackets." << endl;
     cerr << " -f <fec> sets the FEC." << endl;
@@ -223,10 +224,11 @@ int start(int argc, char **argv)
     }
 
     int delay_ms = 500;
+    bool drop_late_packets = false;
 
     int ch = 0;
     while (ch != -1) {
-        ch = getopt(argc, argv, "d:p:s:S:t:Pf:i:Dva:w:");
+        ch = getopt(argc, argv, "d:p:s:S:t:Pf:i:Dva:w:x");
         switch (ch) {
             case -1:
                 break;
@@ -274,6 +276,9 @@ int start(int argc, char **argv)
             case 'w':
                 delay_ms = std::stoi(optarg);
                 break;
+            case 'x':
+                drop_late_packets = true;
+                break;
             case 'h':
             default:
                 usage();
@@ -298,8 +303,9 @@ int start(int argc, char **argv)
         return 1;
     }
 
-    etiLog.level(info) << "Setting up EDI Sender with delay " << delay_ms << " ms";
-    edisender.start(edi_conf, delay_ms);
+    etiLog.level(info) << "Setting up EDI Sender with delay " << delay_ms << " ms. " <<
+        (drop_late_packets ? "Will" : "Will not") << " drop late packets";
+    edisender.start(edi_conf, delay_ms, drop_late_packets);
     edisender.print_configuration();
 
     const char* source_url = argv[optind];

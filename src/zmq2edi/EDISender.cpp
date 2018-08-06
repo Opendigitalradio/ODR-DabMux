@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -47,10 +47,12 @@ EDISender::~EDISender()
     }
 }
 
-void EDISender::start(const edi_configuration_t& conf, int delay_ms)
+void EDISender::start(const edi_configuration_t& conf,
+        int delay_ms, bool drop_late_packets)
 {
     edi_conf = conf;
     tist_delay_ms = delay_ms;
+    drop_late = drop_late_packets;
 
     if (edi_conf.verbose) {
         etiLog.log(info, "Setup EDI");
@@ -242,10 +244,14 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
     */
 
     const auto wait_time = t_release - t_now;
+    wait_times.push_back(duration_cast<microseconds>(wait_time).count());
+
     if (t_release > t_now) {
         std::this_thread::sleep_for(wait_time);
     }
-    wait_times.push_back(duration_cast<microseconds>(wait_time).count());
+    else if (drop_late) {
+        return;
+    }
 
     edi_tagDETI.tsta = tist;
     edi_tagDETI.atstf = 1;

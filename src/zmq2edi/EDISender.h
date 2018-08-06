@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -55,7 +55,8 @@ class EDISender {
         EDISender(const EDISender& other) = delete;
         EDISender& operator=(const EDISender& other) = delete;
         ~EDISender();
-        void start(const edi_configuration_t& conf, int delay_ms);
+        void start(const edi_configuration_t& conf,
+                int delay_ms, bool drop_late_packets);
         void push_frame(const frame_t& frame);
         void print_configuration(void);
 
@@ -64,6 +65,7 @@ class EDISender {
         void process(void);
 
         int tist_delay_ms;
+        bool drop_late;
         std::atomic<bool> running;
         std::thread process_thread;
         edi_configuration_t edi_conf;

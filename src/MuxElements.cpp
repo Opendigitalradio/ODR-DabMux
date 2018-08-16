@@ -665,26 +665,35 @@ bool dabEnsemble::validate_linkage_sets()
 {
     for (const auto& ls : linkagesets) {
         const std::string keyserviceuid = ls->keyservice;
-        const auto& keyservice = std::find_if(
-                services.cbegin(),
-                services.cend(),
-                [&](const std::shared_ptr<DabService>& srv) {
-                    return srv->uid == keyserviceuid;
-                });
-
-        if (keyservice == services.end()) {
-            etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
-                    keyserviceuid.c_str(), ls->lsn);
-            return false;
+        if (keyserviceuid.empty()) {
+            if (not ls->id_list.empty()) {
+                etiLog.log(error, "Linkage set 0x%04x with empty key service "
+                        "should have an empty list.", ls->lsn);
+                return false;
+            }
         }
+        else {
+            const auto& keyservice = std::find_if(
+                    services.cbegin(),
+                    services.cend(),
+                    [&](const std::shared_ptr<DabService>& srv) {
+                    return srv->uid == keyserviceuid;
+                    });
 
-        // need to add key service to num_ids
-        const size_t num_ids = 1 + ls->id_list.size();
-        if (num_ids > 0x0F) {
-            etiLog.log(error,
-                    "Too many links for linkage set 0x%04x",
-                    ls->lsn);
-            return false;
+            if (keyservice == services.end()) {
+                etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
+                        keyserviceuid.c_str(), ls->lsn);
+                return false;
+            }
+
+            // need to add key service to num_ids
+            const size_t num_ids = 1 + ls->id_list.size();
+            if (num_ids > 0x0F) {
+                etiLog.log(error,
+                        "Too many links for linkage set 0x%04x",
+                        ls->lsn);
+                return false;
+            }
         }
     }
 

@@ -42,10 +42,14 @@ linking {
         ; set this to true.
         international false
 
-        ; Every linkage set has to contain a service from the current ensemble (mandatory)
+        ; If the keyservice and list are absent, a FIG with an empty list will be transmitted for
+        ; this linkage set. This instructs receivers to delete their corresponding database entry
+        ; (Change Event Indicator for FIG0/6)
+
+        ; Every linkage set has to contain a service from the current ensemble. keyservice may be omitted.
         keyservice srv-fu
 
-        ; List of services to be included (mandatory)
+        ; List of services to be included (mandatory if keyservice given)
         list {
             ; Every service has a uid that can be used as a human-readable description
 

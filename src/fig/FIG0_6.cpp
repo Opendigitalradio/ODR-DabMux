@@ -80,8 +80,11 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         const bool PD = false;
         const bool ILS = linkageSetFIG0_6->international;
 
-        // need to add key service to num_ids
-        const size_t num_ids = 1 + linkageSetFIG0_6->id_list.size();
+        // need to add key service to num_ids, unless it is empty which means we
+        // send a CEI
+        const size_t num_ids = linkageSetFIG0_6->keyservice.empty() ?
+            // do not transmit list if keyservice empty, it should anyway be empty
+            0 : (1 + linkageSetFIG0_6->id_list.size());
 
         if (num_ids > 0x0F) {
             etiLog.log(error,
@@ -117,7 +120,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
 
         FIGtype0_6 *fig0_6 = (FIGtype0_6*)buf;
 
-        fig0_6->IdListFlag = (num_ids > 0);
+        fig0_6->IdListFlag = (num_ids > 0); // C/N=0 and IdListFlag=0 is CEI
         fig0_6->LA = linkageSetFIG0_6->active;
         fig0_6->SH = linkageSetFIG0_6->hard;
         fig0_6->ILS = ILS;
@@ -126,6 +129,10 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         fig0->Length += sizeof(struct FIGtype0_6);
         buf += sizeof(struct FIGtype0_6);
         remaining -= sizeof(struct FIGtype0_6);
+
+        etiLog.log(debug,
+                "Linkage set 0x%04x wrote %d",
+                linkageSetFIG0_6->lsn, fig0->Length);
 
         if (num_ids > 0) {
             FIGtype0_6_header *header = (FIGtype0_6_header*)buf;
@@ -243,7 +250,10 @@ void FIG0_6::update()
     for (const auto& linkageset : m_rti->ensemble->linkagesets) {
         const auto lsn = linkageset->lsn;
 
-        for (const auto& link : linkageset->id_list) {
+        if (linkageset->keyservice.empty()) {
+            linkageSubsets.push_back(*linkageset);
+        }
+        else for (const auto& link : linkageset->id_list) {
             const auto type = link.type;
 
             const auto subset =

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -185,7 +185,8 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 }
             }
             else if (not PD and ILS) {
-                buf[0] = ensemble->ecc;
+                buf[0] = ((*keyservice)->ecc == 0) ?
+                    ensemble->ecc : (*keyservice)->ecc;
                 buf[1] = (*keyservice)->id >> 8;
                 buf[2] = (*keyservice)->id & 0xFF;
                 fig0->Length += 3;

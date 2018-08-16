@@ -38,6 +38,8 @@ linking {
 
         ; Whether this linkage set affects only one country or several. Linkage sets that
         ; include AMSS or DRM services need to have this set to true. (default false)
+        ; Linkage sets whose key service has a different ECC than the ensemble ECC need to
+        ; set this to true.
         international false
 
         ; Every linkage set has to contain a service from the current ensemble (mandatory)

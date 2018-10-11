@@ -375,19 +375,7 @@ outputs {
     edi {
         ; EDI uses the UDP protocol. This implementation of EDI does not support
         ; EDI Packet Resend.
-        ;
-        ; When both EDI and TIST are enabled, ODR-DabMux will download leap-second
-        ; information from the IETF website, and cache it locally in /tmp.
-        ;
-        ; If your system doesn't have access to internet, you have to take care
-        ; to create the file before ODR-DabMux startup. Get it from
-        ; http://www.ietf.org/timezones/data/leap-seconds.list
-        ; and save it to
-        ; /tmp/odr-dabmux-leap-seconds.cache
-        ;
-        ; Use the RC interface 'get clocktai expiry' command to check how long
-        ; your file is still valid. Refresh the file before expiry otherwise
-        ; ODR-DabMux will abort.
+        ; If TIST is enabled, requires leap-second information (see example.mux)
         destinations {
             ; The names you give to the destinations have no meaning,
             ; but have to be unique. You can give them meaningful names to help

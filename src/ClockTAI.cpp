@@ -71,9 +71,20 @@ const int64_t ntp_unix_offset = 2208988800L;
 // distribution
 static array<const char*, 2> tai_urls = {
     "http://www.ietf.org/timezones/data/leap-seconds.list",
-    "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list"};
+    "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list",
+};
 
-static const char* tai_ietf_cache_file = "/tmp/odr-dabmux-leap-seconds.cache";
+// A downloaded bulletin will be saved in the first location of tai_cache_locations
+static array<const char*, 2> tai_cache_locations = {
+    // According to the Filesystem Hierarchy Standard, the data in
+    // /var/tmp "must not be deleted when the system is booted.". This is why
+    // this location has been added.
+    "/var/tmp/odr-dabmux-leap-seconds.cache",
+
+    // The old location in /tmp is less appropriate, as /tmp can get cleared
+    // on a reboot.
+    "/tmp/odr-dabmux-leap-seconds.cache",
+};
 
 ClockTAI::ClockTAI() :
     RemoteControllable("clocktai")
@@ -94,7 +105,12 @@ int ClockTAI::get_valid_offset()
         offset_valid = true;
     }
     else {
-        load_bulletin_from_file(tai_ietf_cache_file);
+        for (const auto& cache_file : tai_cache_locations) {
+            load_bulletin_from_file(cache_file);
+            if (bulletin_is_valid()) {
+                break;
+            }
+        }
 
         if (bulletin_is_valid()) {
 #if TEST
@@ -125,7 +141,7 @@ int ClockTAI::get_valid_offset()
                 }
 
                 if (offset_valid) {
-                    update_cache(tai_ietf_cache_file);
+                    update_cache(tai_cache_locations[0]);
                     break;
                 }
             }

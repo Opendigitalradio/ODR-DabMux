@@ -31,6 +31,23 @@ general {
 
     ; Enable timestamp definition necessary for SFN
     ; This also enables time encoding using the MNSC.
+    ;
+    ; When TIST is enabled, and either EDI or a ZMQ output with metadata is used,
+    ; ODR-DabMux will download leap-second information from the IETF website,
+    ; and cache it locally in /var/tmp. It will refresh the data by itself
+    ; before it expires.
+    ;
+    ; If it cannot load this information, ODR-DabMux cannot start up!
+    ;
+    ; If your system doesn't have access to internet, you have to take care
+    ; to create the file before ODR-DabMux startup. Get it from
+    ; http://www.ietf.org/timezones/data/leap-seconds.list
+    ; and save it to
+    ; /var/tmp/odr-dabmux-leap-seconds.cache
+    ; Refresh the file before expiry otherwise ODR-DabMux will abort!
+    ;
+    ; Use the RC interface 'get clocktai expiry' command to check how long
+    ; your file is still valid.
     tist false
 
     ; The management server is a simple TCP server that can present
@@ -189,6 +206,9 @@ outputs {
 
         ; Transmit backward compatible metadata containing
         ; EDI time and UTC offset when TIST is enabled.
+        ;
+        ; If TIST is enabled, requires leap-second information (see example.mux)
+        ;
         ; WARNING! requires ODR-DabMux to be compiled with
         ; EDI output, and this will enable leap second download
         ; as for the EDI output!

@@ -67,12 +67,11 @@ constexpr int download_retry_interval_hours = 1;
 // timestamp_unix = timestamp_ntp - ntp_unix_offset
 const int64_t ntp_unix_offset = 2208988800L;
 
-// leap seconds insertion bulletin is available at
-static const char* tai_ietf_url =
-    "http://www.ietf.org/timezones/data/leap-seconds.list";
-// and in the tz distribution
-static const char* tai_tz_url =
-    "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list";
+// leap seconds insertion bulletin is available from the IETF and in the TZ
+// distribution
+static array<const char*, 2> tai_urls = {
+    "http://www.ietf.org/timezones/data/leap-seconds.list",
+    "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list"};
 
 static const char* tai_ietf_cache_file = "/tmp/odr-dabmux-leap-seconds.cache";
 
@@ -105,7 +104,7 @@ int ClockTAI::get_valid_offset()
             offset_valid = true;
         }
         else {
-            for (const auto url : {tai_ietf_url, tai_tz_url}) {
+            for (const auto url : tai_urls) {
                 try {
                     download_tai_utc_bulletin(url);
 #if TEST

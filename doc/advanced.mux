@@ -147,7 +147,7 @@ services {
 ;                       dabplus, packet
 ;
 ; Type 'packet' expects to receive data in the format described
-; in EN 300 401 Clause 3.5.2.
+; in EN 300 401 Clause 5.3.2.
 ;
 ; 'enhancedpacket' mode will calculate FEC for MSC packet mode
 ; as described in EN 300 401 Clause 5.3.5.

@@ -78,7 +78,7 @@ class ClockTAI : public RemoteControllable {
         mutable std::mutex m_data_mutex;
 
         // The currently used TAI-UTC offset
-        int m_offset;
+        int m_offset = 0;
         int m_offset_valid = false;
 
         mutable std::stringstream m_bulletin;

@@ -62,8 +62,6 @@ void setInetError(const char* description);
 class InetAddress {
  public:
   InetAddress(int port = 0, const char* name = NULL);
-  InetAddress(const InetAddress &addr);
-  ~InetAddress();
 
   sockaddr *getAddress();
   const char *getHostAddress();

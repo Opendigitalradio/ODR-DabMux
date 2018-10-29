@@ -63,22 +63,6 @@ InetAddress::InetAddress(int port, const char* name) {
 }
 
 
-/**
- *  Constructs a copy of inet
- *  @param inet The address to be copied
- */
-InetAddress::InetAddress(const InetAddress &inet) {
-    TRACE_CLASS("InetAddress", "InetAddress(InetAddress)");
-    memcpy(&addr, &inet.addr, sizeof(addr));
-}
-
-
-/// Destructor
-InetAddress::~InetAddress() {
-    TRACE_CLASS("InetAddress" ,"~InetAddress()");
-}
-
-
 /// Returns the raw IP address of this InetAddress object.
 sockaddr *InetAddress::getAddress() {
     TRACE_CLASS("InetAddress", "getAddress()");

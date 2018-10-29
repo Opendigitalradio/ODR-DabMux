@@ -52,7 +52,7 @@ RemoteControllerTelnet::~RemoteControllerTelnet()
     }
 }
 
-void RemoteControllerTelnet::restart()
+void RemoteControllerTelnet::internal_restart()
 {
     if (m_restarter_thread.joinable()) {
         m_restarter_thread.join();

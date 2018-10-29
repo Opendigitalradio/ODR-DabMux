@@ -210,7 +210,9 @@ class RemoteControllerTelnet : public BaseRemoteController {
             m_fault(false),
             m_port(port)
         {
-            restart();
+            // Don't call virtual functions from the ctor
+            // https://isocpp.org/wiki/faq/strange-inheritance#calling-virtuals-from-ctors
+            internal_restart();
         }
 
 
@@ -221,9 +223,10 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         virtual bool fault_detected() { return m_fault; }
 
-        virtual void restart();
+        virtual void restart() { internal_restart(); }
 
     private:
+        void internal_restart();
         void restart_thread(long);
 
         void process(long);

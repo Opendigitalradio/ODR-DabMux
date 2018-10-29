@@ -355,21 +355,10 @@ void ManagementServer::update_ptree(const boost::property_tree::ptree& pt)
 
 /************************************************/
 
-InputStat::InputStat(const std::string& name)
-    : m_name(name)
+InputStat::InputStat(const std::string& name) :
+    m_name(name),
+    m_time_last_event(std::chrono::steady_clock::now())
 {
-    /* Statistics */
-    m_num_underruns = 0;
-    m_num_overruns = 0;
-
-    /* State handling */
-    m_time_last_event = std::chrono::steady_clock::now();
-    m_glitch_counter = 0;
-    m_silence_counter = 0;
-
-    m_buffer_fill_stats.clear();
-    m_peaks_left.clear();
-    m_peaks_right.clear();
 }
 
 InputStat::~InputStat()
@@ -386,61 +375,65 @@ void InputStat::notifyBuffer(long bufsize)
 {
     unique_lock<mutex> lock(m_mutex);
 
-    m_buffer_fill_stats.push_front(bufsize);
-
     using namespace std::chrono;
     const auto time_now = steady_clock::now();
-    if (m_buffer_fill_stats.size() > 1) {
-        auto insertion_interval = time_now - m_time_last_buffer_notify;
-        auto total_length = insertion_interval * m_buffer_fill_stats.size();
+    m_buffer_fill_stats.push_front({time_now, bufsize});
 
-        if (total_length > BUFFER_STATS_KEEP_DURATION) {
-            m_buffer_fill_stats.pop_back();
-        }
-    }
-    m_time_last_buffer_notify = time_now;
+    // Keep only stats whose timestamp are more recent than
+    // BUFFER_STATS_KEEP_DURATION ago
+    m_buffer_fill_stats.erase(remove_if(
+                m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
+                [&](const fill_stat_t& fs) {
+                    return fs.timestamp + BUFFER_STATS_KEEP_DURATION < time_now;
+                }),
+                m_buffer_fill_stats.end());
 }
 
 void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 {
     unique_lock<mutex> lock(m_mutex);
 
-    m_peaks_left.push_front(peak_left);
-    m_peaks_right.push_front(peak_right);
-
     using namespace std::chrono;
-
     const auto time_now = steady_clock::now();
 
-    if (m_peaks_left.size() < 2) {
-        m_time_last_peak_notify = time_now;
-    }
-    else {
-        const auto insertion_interval = time_now - m_time_last_peak_notify;
-        const auto peaks_total_length = insertion_interval * m_peaks_left.size();
+    m_peak_stats.push_front({time_now, peak_left, peak_right});
 
-        if (peaks_total_length > PEAK_STATS_KEEP_DURATION) {
-            m_peaks_left.pop_back();
-            m_peaks_right.pop_back();
-        }
+    // Keep only stats whose timestamp are more recent than
+    // BUFFER_STATS_KEEP_DURATION ago
+    m_peak_stats.erase(remove_if(
+                m_peak_stats.begin(), m_peak_stats.end(),
+                [&](const peak_stat_t& ps) {
+                    return ps.timestamp + PEAK_STATS_KEEP_DURATION < time_now;
+                }),
+                m_peak_stats.end());
 
-        m_time_last_peak_notify = time_now;
-
+    if (m_peak_stats.size() >= 2) {
         // Calculate the peak over the short window
-        m_short_window_length = PEAK_STATS_SHORT_WINDOW / insertion_interval;
-        const size_t short_window = std::min(
-                m_peaks_left.size(), m_short_window_length);
-        const auto max_left = *max_element(m_peaks_left.begin(),
-                m_peaks_left.begin() + short_window);
-        const auto max_right = *max_element(m_peaks_right.begin(),
-                m_peaks_right.begin() + short_window);
+        vector<peak_stat_t> short_peaks;
+        copy_if(m_peak_stats.begin(), m_peak_stats.end(),
+                back_inserter(short_peaks),
+                [&](const peak_stat_t& ps) {
+                    return ps.timestamp + PEAK_STATS_SHORT_WINDOW >= time_now;
+                });
+
+        const auto& short_left_peak_max = max_element(
+                short_peaks.begin(), short_peaks.end(),
+                [](const peak_stat_t& lhs, const peak_stat_t& rhs) {
+                    return lhs.peak_left < rhs.peak_left;
+                });
+
+        const auto& short_right_peak_max = max_element(
+                short_peaks.begin(), short_peaks.end(),
+                [](const peak_stat_t& lhs, const peak_stat_t& rhs) {
+                    return lhs.peak_right < rhs.peak_right;
+                });
+
+        // Using the lower of the two channels allows us to detect if only one
+        // channel is silent.
+        const int lower_peak = min(
+                short_left_peak_max->peak_left, short_right_peak_max->peak_right);
 
         // State
-
-        // using the lower of the two channels allows us to detect if only one
-        // channel is silent.
-        const int lower_peak = max_left < max_right ? max_left : max_right;
-
         const int16_t int16_max = std::numeric_limits<int16_t>::max();
         int peak_dB = lower_peak ?
             round(20*log10((double)lower_peak / int16_max)) :
@@ -474,8 +467,7 @@ void InputStat::notifyUnderrun(void)
     else {
         // As we don't receive level notifications anymore, clear the
         // audio level information
-        m_peaks_left.clear();
-        m_peaks_right.clear();
+        m_peak_stats.clear();
     }
 }
 
@@ -506,16 +498,28 @@ std::string InputStat::encodeValuesJSON()
     int peak_left = 0;
     int peak_right = 0;
 
-    if (not m_peaks_left.empty() and not m_peaks_right.empty()) {
-        peak_left = *max_element(m_peaks_left.begin(), m_peaks_left.end());
-        peak_right = *max_element(m_peaks_right.begin(), m_peaks_right.end());
+    if (not m_peak_stats.empty()) {
+        peak_left = max_element(m_peak_stats.begin(), m_peak_stats.end(),
+                [](const peak_stat_t& lhs, const peak_stat_t& rhs) {
+                    return lhs.peak_left < rhs.peak_left;
+                })->peak_left;
+        peak_right = max_element(m_peak_stats.begin(), m_peak_stats.end(),
+                [](const peak_stat_t& lhs, const peak_stat_t& rhs) {
+                    return lhs.peak_right < rhs.peak_right;
+                })->peak_right;
 
-        if (m_peaks_left.size() >= m_short_window_length and
-            m_peaks_right.size() >= m_short_window_length) {
-            peak_left_short = *max_element(m_peaks_left.begin(),
-                    m_peaks_left.begin() + m_short_window_length);
-            peak_right_short = *max_element(m_peaks_right.begin(),
-                    m_peaks_right.begin() + m_short_window_length);
+        if (m_peak_stats.size() > m_short_window_length) {
+            peak_left_short = max_element(m_peak_stats.begin(),
+                    m_peak_stats.begin() + m_short_window_length,
+                [](const peak_stat_t& lhs, const peak_stat_t& rhs) {
+                    return lhs.peak_left < rhs.peak_left;
+                })->peak_left;
+
+            peak_right_short = max_element(m_peak_stats.begin(),
+                    m_peak_stats.begin() + m_short_window_length,
+                [](const peak_stat_t& lhs, const peak_stat_t& rhs) {
+                    return lhs.peak_right < rhs.peak_right;
+                })->peak_right;
         }
         else {
             peak_left_short = peak_left;
@@ -526,10 +530,13 @@ std::string InputStat::encodeValuesJSON()
     long min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
     long max_fill_buffer = 0;
     if (not m_buffer_fill_stats.empty()) {
-        auto buffer_min_max_fill = minmax_element(m_buffer_fill_stats.begin(),
-                m_buffer_fill_stats.end());
-        min_fill_buffer = *buffer_min_max_fill.first;
-        max_fill_buffer = *buffer_min_max_fill.second;
+        const auto& buffer_min_max_fill = minmax_element(
+                m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
+                [](const fill_stat_t& lhs, const fill_stat_t& rhs) {
+                    return lhs.bufsize < rhs.bufsize;
+                });
+        min_fill_buffer = buffer_min_max_fill.first->bufsize;
+        max_fill_buffer = buffer_min_max_fill.second->bufsize;
     }
 
     /* convert to dB */
@@ -596,7 +603,7 @@ input_state_t InputStat::determineState()
      */
     if (std::all_of(
                 m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
-                [](long fill) { return fill == 0; }) ) {
+                [](const fill_stat_t& fs) { return fs.bufsize == 0; }) ) {
         state = input_state_t::NoData;
     }
     /* Otherwise, the state depends on the glitch counter */

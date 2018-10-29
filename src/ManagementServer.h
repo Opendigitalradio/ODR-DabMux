@@ -107,28 +107,34 @@ class InputStat
         std::string m_name;
 
         /************ STATISTICS ***********/
-        // Calculate minimum and maximum buffer fill from
-        // a FIFO of values from the last few seconds
-        std::deque<long> m_buffer_fill_stats;
-        std::chrono::time_point<std::chrono::steady_clock> m_time_last_buffer_notify;
+        // Keep track of buffer fill with timestamps, so that we
+        // can calculate the correct state from it.
+        struct fill_stat_t {
+            std::chrono::time_point<std::chrono::steady_clock> timestamp;
+            long bufsize;
+        };
+        std::deque<fill_stat_t> m_buffer_fill_stats;
 
         // counter of number of overruns and underruns since startup
-        uint32_t m_num_underruns;
-        uint32_t m_num_overruns;
+        uint32_t m_num_underruns = 0;
+        uint32_t m_num_overruns = 0;
 
         // Peak audio levels (linear 16-bit PCM) for the two channels.
         // Keep a FIFO of values from the last minutes, apply
         // a short window to also see short-term fluctuations.
-        std::deque<int> m_peaks_left;
-        std::deque<int> m_peaks_right;
-        std::chrono::time_point<std::chrono::steady_clock> m_time_last_peak_notify;
+        struct peak_stat_t {
+            std::chrono::time_point<std::chrono::steady_clock> timestamp;
+            int peak_left;
+            int peak_right;
+        };
+        std::deque<peak_stat_t> m_peak_stats;
 
         size_t m_short_window_length = 0;
 
         /************* STATE ***************/
         /* Variables used for determining the input state */
-        int m_glitch_counter; // saturating counter
-        int m_silence_counter; // saturating counter
+        int m_glitch_counter = 0; // saturating counter
+        int m_silence_counter = 0; // saturating counter
         std::chrono::time_point<std::chrono::steady_clock> m_time_last_event;
 
         // The mutex that has to be held during all notify and readout

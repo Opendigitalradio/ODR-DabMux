@@ -1,6 +1,16 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2018-10-30: Matthias P. Braendli <matthias@mpb.li>
+	(v2.3.0):
+		Correct FIG0/6 output for services with different ECC.
+		Add support for transmitting empty Linkage Sets.
+		Save leap-second cache to /var/tmp, which doesn't get
+		cleared across reboots.
+		Rework audio level measurement in the statistics server to
+		alleviate some timing-related issues.
+		odr-zmq2edi: Add option to drop late packets.
+
 2018-07-31: Matthias P. Braendli <matthias@mpb.li>
 	(v2.2.0):
 		Fix delays and FIG repetition burst on announcement switching.

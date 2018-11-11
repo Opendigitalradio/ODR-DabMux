@@ -29,8 +29,8 @@
  * so that correct time can be communicated in EDI timestamps.
  *
  * This file contains self-test code that can be executed by running
- * g++ -g -Wall -DTEST -DHAVE_CURL -std=c++11 -lcurl -pthread \
- *   ClockTAI.cpp Log.cpp -o taitest && ./taitest
+ *  g++ -g -Wall -DTEST -DHAVE_CURL -std=c++11 -lcurl -pthread \
+ *  ClockTAI.cpp Log.cpp RemoteControl.cpp -lboost_system -o taitest && ./taitest
  */
 
 #ifdef HAVE_CONFIG_H
@@ -299,7 +299,7 @@ int ClockTAI::parse_ietf_bulletin()
             const string bulletin_offset(bulletin_entry[2]);
 
             const int64_t timestamp_unix =
-                std::atol(bulletin_ntp_timestamp.c_str()) - ntp_unix_offset;
+                std::atoll(bulletin_ntp_timestamp.c_str()) - ntp_unix_offset;
 
             const int offset = std::atoi(bulletin_offset.c_str());
             // Ignore entries announcing leap seconds in the future
@@ -406,7 +406,7 @@ int64_t ClockTAI::bulletin_expiry_delay() const
             }
             const string expiry_data_str(bulletin_entry[1]);
             const int64_t expiry_unix =
-                std::atol(expiry_data_str.c_str()) - ntp_unix_offset;
+                std::atoll(expiry_data_str.c_str()) - ntp_unix_offset;
 
             if (expiry_unix > now) {
                 return expiry_unix - now;

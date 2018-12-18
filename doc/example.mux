@@ -50,6 +50,13 @@ general {
     ; your file is still valid.
     tist false
 
+    ; The URLs used to fetch the TAI bulletin can be overridden if needed.
+    ; URLs are given as a pipe-separated list, and the default value is:
+    ;tai_clock_bulletins "https://www.ietf.org/timezones/data/leap-seconds.list|https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list"
+    ;
+    ; You may also use a file:// URL if you take care of updating the file
+    ; yourself and store it locally.
+
     ; The management server is a simple TCP server that can present
     ; statistics data (buffers, overruns, underruns, etc)
     ; which can then be graphed a tool like Munin

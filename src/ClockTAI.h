@@ -40,6 +40,8 @@
 #include <chrono>
 #include <future>
 #include <mutex>
+#include <string>
+#include <vector>
 #include "RemoteControl.h"
 
 // EDI needs to know UTC-TAI, but doesn't need the CLOCK_TAI to be set.
@@ -49,7 +51,7 @@
 /* Loads, parses and represents TAI-UTC offset information from the IETF bulletin */
 class ClockTAI : public RemoteControllable {
     public:
-        ClockTAI();
+        ClockTAI(const std::vector<std::string>& bulletin_urls);
 
         // Fetch the bulletin from the IETF website and return the current
         // TAI-UTC offset.
@@ -80,6 +82,8 @@ class ClockTAI : public RemoteControllable {
         // The currently used TAI-UTC offset
         int m_offset = 0;
         int m_offset_valid = false;
+
+        std::vector<std::string> m_bulletin_urls;
 
         mutable std::stringstream m_bulletin;
         std::chrono::system_clock::time_point m_bulletin_download_time;

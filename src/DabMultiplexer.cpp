@@ -66,6 +66,19 @@ const unsigned short BitRateTable[64] = {
     384, 384, 384
 };
 
+static vector<string> split_pipe_separated_string(const std::string& s)
+{
+    stringstream ss;
+    ss << s;
+
+    string elem;
+    vector<string> components;
+    while (getline(ss, elem, '|')) {
+        components.push_back(elem);
+    }
+    return components;
+}
+
 DabMultiplexer::DabMultiplexer(
         boost::property_tree::ptree pt) :
     RemoteControllable("mux"),
@@ -76,7 +89,7 @@ DabMultiplexer::DabMultiplexer(
     currentFrame(0),
     ensemble(std::make_shared<dabEnsemble>()),
     m_tai_clock_required(false),
-    m_clock_tai(),
+    m_clock_tai(split_pipe_separated_string(pt.get("general.tai_clock_bulletins", ""))),
     fig_carousel(ensemble)
 {
     RC_ADD_PARAMETER(frames,

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -99,7 +99,7 @@ void header_message()
     fprintf(stderr,
             "(Communications Research Centre Canada)\n\n");
     fprintf(stderr,
-            "Copyright (C) 2018 Matthias P. Braendli\n");
+            "Copyright (C) 2019 Matthias P. Braendli\n");
     fprintf(stderr,
             "LICENCE: GPLv3+\n\n");
     fprintf(stderr,

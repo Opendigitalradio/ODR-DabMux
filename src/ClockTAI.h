@@ -85,35 +85,12 @@ class ClockTAI : public RemoteControllable {
 
         std::vector<std::string> m_bulletin_urls;
 
-        mutable std::stringstream m_bulletin;
+        std::string m_bulletin;
         std::chrono::system_clock::time_point m_bulletin_download_time;
-
-        // Load bulletin into m_bulletin from the cache file
-        void load_bulletin_from_file(const char* cache_filename);
 
         // Update the cache file with the current m_bulletin
         void update_cache(const char* cache_filename);
 
-        // Verifies the expiration date in the m_bulletin. Returns
-        // true if the bulletin is valid.
-        bool bulletin_is_valid(void);
-
-        // In how much time will the bulletin expire?
-        // returns a value in seconds, or -1 if it is expired or invalid
-        int64_t bulletin_expiry_delay(void) const;
-
-        // Load bulletin into m_bulletin from the URL
-        void download_tai_utc_bulletin(const char* url);
-
-        // read TAI offset from m_bulletin in IETF format
-        int parse_ietf_bulletin(void);
-
-        // callback that receives data from cURL
-        size_t fill_bulletin(char *ptr, size_t size, size_t nmemb);
-
-        // static callback wrapper for cURL
-        static size_t fill_bulletin_cb(
-                char *ptr, size_t size, size_t nmemb, void *ctx);
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,

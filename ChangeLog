@@ -1,6 +1,15 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2019-01-07: Matthias P. Braendli <matthias@mpb.li>
+	(v2.3.1):
+		Happy new year!
+		Fix TAI bulletin parsing on systems where long is 32 bit.
+		Add configurable URLs to download TAI clock bulletin and
+		rework the download logic.
+		Do not read TAI clock cache file from /tmp anymore, only
+		use /var/tmp.
+
 2018-10-30: Matthias P. Braendli <matthias@mpb.li>
 	(v2.3.0):
 		Correct FIG0/6 output for services with different ECC.

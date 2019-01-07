@@ -74,17 +74,9 @@ static array<const char*, 2> default_tai_urls = {
     "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list",
 };
 
-// A downloaded bulletin will be saved in the first location of tai_cache_locations
-static array<const char*, 2> tai_cache_locations = {
-    // According to the Filesystem Hierarchy Standard, the data in
-    // /var/tmp "must not be deleted when the system is booted.". This is why
-    // this location has been added.
-    "/var/tmp/odr-dabmux-leap-seconds.cache",
-
-    // The old location in /tmp is less appropriate, as /tmp can get cleared
-    // on a reboot.
-    "/tmp/odr-dabmux-leap-seconds.cache",
-};
+// According to the Filesystem Hierarchy Standard, the data in
+// /var/tmp "must not be deleted when the system is booted."
+static const char *tai_cache_location = "/var/tmp/odr-dabmux-leap-seconds.cache";
 
 struct bulletin_state {
     bool valid = false;
@@ -295,17 +287,11 @@ int ClockTAI::get_valid_offset()
         offset_valid = true;
     }
     else {
-        for (const auto& cache_file : tai_cache_locations) {
-            const auto cache_bulletin = load_bulletin_from_file(cache_file);
-            if (parse_bulletin(cache_bulletin).usable()) {
-                m_bulletin = cache_bulletin;
-                break;
-            }
-        }
-
-        if (parse_bulletin(m_bulletin).usable()) {
+        const auto cache_bulletin = load_bulletin_from_file(tai_cache_location);
+        if (parse_bulletin(cache_bulletin).usable()) {
+            m_bulletin = cache_bulletin;
 #if TEST
-            etiLog.level(info) << "Bulletin from file valid";
+            etiLog.level(info) << "Bulletin from cache valid";
 #endif
             offset = parse_ietf_bulletin(m_bulletin);
             offset_valid = true;
@@ -337,7 +323,7 @@ int ClockTAI::get_valid_offset()
                 }
 
                 if (offset_valid) {
-                    update_cache(tai_cache_locations[0]);
+                    update_cache(tai_cache_location);
                     break;
                 }
             }

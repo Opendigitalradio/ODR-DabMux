@@ -31,6 +31,11 @@ general {
     ; This also enables time encoding using the MNSC.
     tist false
 
+    ; On startup, EDI time is initialised to system time. If you want
+    ; to add an offset, uncomment the following line and give a number
+    ; in seconds.
+    ; tist_edioffset 0
+
     ; The management server is a simple TCP server that can present
     ; statistics data (buffers, overruns, underruns, etc)
     ; which can then be graphed a tool like Munin

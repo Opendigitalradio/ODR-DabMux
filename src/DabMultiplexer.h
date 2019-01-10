@@ -95,6 +95,7 @@ class DabMultiplexer : public RemoteControllable {
 
         std::shared_ptr<dabEnsemble> ensemble;
 
+        int m_tist_edioffset = 0;
         bool m_tai_clock_required;
         ClockTAI m_clock_tai;
 

@@ -92,8 +92,8 @@ DabMultiplexer::DabMultiplexer(
     m_clock_tai(split_pipe_separated_string(pt.get("general.tai_clock_bulletins", ""))),
     fig_carousel(ensemble)
 {
-    RC_ADD_PARAMETER(frames,
-            "Show number of frames generated [read-only]");
+    RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
+    RC_ADD_PARAMETER(tist_edioffset, "EDI Time offset in seconds");
 
     rcs.enrol(&m_clock_tai);
 }
@@ -191,6 +191,7 @@ void DabMultiplexer::prepare(bool require_tai_clock)
     // Try to load offset once
 
     bool tist_enabled = m_pt.get("general.tist", false);
+    m_tist_edioffset = m_pt.get<int>("general.tist_edioffset", 0);
 
     m_tai_clock_required = (tist_enabled and edi_conf.enabled()) or require_tai_clock;
 
@@ -666,10 +667,11 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.seconds = 0;
 #if HAVE_OUTPUT_EDI
     try {
-        bool tist_enabled = m_pt.get("general.tist", false);
+        const bool tist_enabled = m_pt.get("general.tist", false);
 
         if (tist_enabled and m_tai_clock_required) {
-            edi_tagDETI.set_seconds(edi_time);
+            edi_tagDETI.set_seconds(edi_time +
+                    std::chrono::seconds(m_tist_edioffset));
 
             // In case get_offset fails, we still want to update the EDI seconds
             const auto tai_utc_offset = m_clock_tai.get_offset();
@@ -863,6 +865,9 @@ void DabMultiplexer::set_parameter(const std::string& parameter,
             " is read-only";
         throw ParameterError(ss.str());
     }
+    else if (parameter == "tist_edioffset") {
+        m_tist_edioffset = std::stoi(value);
+    }
     else {
         stringstream ss;
         ss << "Parameter '" << parameter <<
@@ -877,6 +882,9 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
     stringstream ss;
     if (parameter == "frames") {
         ss << currentFrame;
+    }
+    else if (parameter == "tist_edioffset") {
+        ss << m_tist_edioffset;
     }
     else {
         ss << "Parameter '" << parameter <<

@@ -85,14 +85,14 @@ class TagDETI : public TagItem
          */
         uint8_t utco = 0;
 
-        void set_tai_utc_offset(int tai_utc_offset) { utco = tai_utc_offset - 32; }
+        /* Update the EDI time. t is in UTC */
+        void set_edi_time(const std::chrono::system_clock::time_point &t, int tai_utc_offset);
 
         /* The number of SI seconds since 2000-01-01 T 00:00:00 UTC as an
-         * unsigned 32-bit quantity
+         * unsigned 32-bit quantity. Contrary to POSIX, this value also
+         * counts leap seconds.
          */
         uint32_t seconds = 0;
-
-        void set_seconds(std::chrono::system_clock::time_point t);
 
         /* TSTA: Shall be the 24 least significant bits of the Time Stamp
          * (TIST) field from the STI-D(LI) Frame. The full definition for the

@@ -662,20 +662,18 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         edi_tagDETI.tsta = 0xffffff;
     }
 
-    edi_tagDETI.atstf = 1;
-    edi_tagDETI.utco = 0;
-    edi_tagDETI.seconds = 0;
 #if HAVE_OUTPUT_EDI
-    try {
-        const bool tist_enabled = m_pt.get("general.tist", false);
+    const bool tist_enabled = m_pt.get("general.tist", false);
 
-        if (tist_enabled and m_tai_clock_required) {
-            edi_tagDETI.set_seconds(edi_time +
-                    std::chrono::seconds(m_tist_edioffset));
-
-            // In case get_offset fails, we still want to update the EDI seconds
+    if (tist_enabled and m_tai_clock_required) {
+        try {
             const auto tai_utc_offset = m_clock_tai.get_offset();
-            edi_tagDETI.set_tai_utc_offset(tai_utc_offset);
+
+            edi_tagDETI.set_edi_time(edi_time +
+                    std::chrono::seconds(m_tist_edioffset),
+                    tai_utc_offset);
+
+            edi_tagDETI.atstf = true;
 
             for (auto output : outputs) {
                 shared_ptr<OutputMetadata> md_utco =
@@ -691,9 +689,9 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
                 output->setMetadata(md_dlfc);
             }
         }
-    }
-    catch (std::runtime_error& e) {
-        etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
+        catch (const std::runtime_error& e) {
+            etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
+        }
     }
 #endif
 

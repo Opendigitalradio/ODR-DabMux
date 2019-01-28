@@ -294,15 +294,7 @@ class DabSubchannel
 {
 public:
     DabSubchannel(std::string& uid) :
-            uid(uid),
-            input(),
-            id(0),
-            type(subchannel_type_t::Audio),
-            startAddress(0),
-            bitrate(0),
-            protection()
-    {
-    }
+            uid(uid) { }
 
     // Calculate subchannel size in number of CU
     unsigned short getSizeCu(void) const;
@@ -320,20 +312,17 @@ public:
 
     std::string inputUri;
     std::shared_ptr<Inputs::InputBase> input;
-    unsigned char id;
-    subchannel_type_t type;
-    uint16_t startAddress;
-    uint16_t bitrate;
-    dabProtection protection;
+    unsigned char id = 0;
+    subchannel_type_t type = subchannel_type_t::Audio;
+    uint16_t startAddress = 0;
+    uint16_t bitrate = 0;
+    struct dabProtection protection;
 };
 
 
 
 struct dabAudioComponent {
-    dabAudioComponent() :
-        uaType(0xFFFF) {}
-
-    uint16_t uaType; // User Application Type
+    uint16_t uaType = 0xFFFF; // User Application Type
 };
 
 
@@ -346,16 +335,10 @@ struct dabFidcComponent {
 
 
 struct dabPacketComponent {
-    dabPacketComponent() :
-        id(0),
-        address(0),
-        appType(0xFFFF),
-        datagroup(false) { }
-
-    uint16_t id;
-    uint16_t address;
-    uint16_t appType;
-    bool datagroup;
+    uint16_t id = 0;
+    uint16_t address = 0;
+    uint16_t appType = 0xFFFF;
+    bool datagroup = false;
 };
 
 class DabComponent : public RemoteControllable
@@ -371,10 +354,10 @@ class DabComponent : public RemoteControllable
         std::string uid;
 
         DabLabel label;
-        uint32_t serviceId;
-        uint8_t subchId;
-        uint8_t type;
-        uint8_t SCIdS;
+        uint32_t serviceId = 0;
+        uint8_t subchId = 0;
+        uint8_t type = 0;
+        uint8_t SCIdS = 0;
 
         dabAudioComponent audio;
         dabDataComponent data;

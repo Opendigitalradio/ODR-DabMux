@@ -139,8 +139,9 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
 
     if (ensemble->lto_auto) {
         time_t now = time(NULL);
-        struct tm* ltime = localtime(&now);
-        time_t now2 = timegm(ltime);
+        struct tm ltime;
+        localtime_r(&now, &ltime);
+        time_t now2 = timegm(&ltime);
         ensemble->lto = (now2 - now) / 1800;
     }
 

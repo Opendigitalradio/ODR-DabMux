@@ -101,22 +101,22 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
     buf += 2;
     remaining -= 2;
 
-    tm* timeData;
+    struct tm timeData;
     time_t dab_time_seconds = 0;
     uint32_t dab_time_millis = 0;
     get_dab_time(&dab_time_seconds, &dab_time_millis);
-    timeData = gmtime(&dab_time_seconds);
+    gmtime_r(&dab_time_seconds, &timeData);
 
     fig0_10->RFU = 0;
-    fig0_10->setMJD(gregorian2mjd(timeData->tm_year + 1900,
-                timeData->tm_mon + 1,
-                timeData->tm_mday));
+    fig0_10->setMJD(gregorian2mjd(timeData.tm_year + 1900,
+                timeData.tm_mon + 1,
+                timeData.tm_mday));
     fig0_10->LSI = 0;
     fig0_10->ConfInd = 1;
     fig0_10->UTC = 1;
-    fig0_10->setHours(timeData->tm_hour);
-    fig0_10->Minutes = timeData->tm_min;
-    fig0_10->Seconds = timeData->tm_sec;
+    fig0_10->setHours(timeData.tm_hour);
+    fig0_10->Minutes = timeData.tm_min;
+    fig0_10->Seconds = timeData.tm_sec;
     fig0_10->setMilliseconds(dab_time_millis);
     buf += 6;
     remaining -= 6;

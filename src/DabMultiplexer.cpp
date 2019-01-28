@@ -92,6 +92,8 @@ DabMultiplexer::DabMultiplexer(
     m_clock_tai(split_pipe_separated_string(pt.get("general.tai_clock_bulletins", ""))),
     fig_carousel(ensemble)
 {
+    gettimeofday(&mnsc_time, nullptr);
+
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
     RC_ADD_PARAMETER(tist_edioffset, "EDI Time offset in seconds");
 
@@ -169,7 +171,7 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         throw MuxInitException();
     }
 
-    auto last_subchannel = *(ensemble->subchannels.end() - 1);
+    const auto last_subchannel = *(ensemble->subchannels.end() - 1);
 
     if (last_subchannel->startAddress + last_subchannel->getSizeCu() > 864) {
         etiLog.log(error, "Total size in CU exceeds 864");
@@ -199,7 +201,7 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         try {
             m_clock_tai.get_offset();
         }
-        catch (std::runtime_error& e) {
+        catch (const std::runtime_error& e) {
             etiLog.level(error) <<
                 "Could not initialise TAI clock properly. "
                 "Do you have a working internet connection?";
@@ -392,9 +394,6 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     unsigned char etiFrame[6144];
     unsigned short index = 0;
 
-    vec_sp_service::iterator service;
-    vec_sp_component::iterator component;
-
     // FIC Length, DAB Mode I, II, IV -> FICL = 24, DAB Mode III -> FICL = 32
     unsigned FICL =
         (ensemble->transmission_mode == TransmissionMode_e::TM_III ? 32 : 24);
@@ -538,7 +537,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     eoh->MNSC = 0;
 
-    struct tm *time_tm = gmtime(&mnsc_time.tv_sec);
+    struct tm time_tm;
+    gmtime_r(&mnsc_time.tv_sec, &time_tm);
     switch (fc->FP & 0x3)
     {
         case 0:
@@ -559,7 +559,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         case 1:
             {
                 eti_MNSC_TIME_1 *mnsc = (eti_MNSC_TIME_1 *) &eoh->MNSC;
-                mnsc->setFromTime(time_tm);
+                mnsc->setFromTime(&time_tm);
                 mnsc->accuracy = 1;
                 mnsc->sync_to_frame = 1;
             }
@@ -567,13 +567,13 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         case 2:
             {
                 eti_MNSC_TIME_2 *mnsc = (eti_MNSC_TIME_2 *) &eoh->MNSC;
-                mnsc->setFromTime(time_tm);
+                mnsc->setFromTime(&time_tm);
             }
             break;
         case 3:
             {
                 eti_MNSC_TIME_3 *mnsc = (eti_MNSC_TIME_3 *) &eoh->MNSC;
-                mnsc->setFromTime(time_tm);
+                mnsc->setFromTime(&time_tm);
             }
             break;
     }

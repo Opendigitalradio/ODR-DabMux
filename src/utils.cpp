@@ -536,8 +536,9 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
 
     if (ensemble->lto_auto) {
         time_t now = time(nullptr);
-        struct tm* ltime = localtime(&now);
-        time_t now2 = timegm(ltime);
+        struct tm ltime;
+        localtime_r(&now, &ltime);
+        time_t now2 = timegm(&ltime);
         etiLog.log(info, " lto:         %2.1f hours", 0.5 * (now2 - now) / 1800);
     }
     else {

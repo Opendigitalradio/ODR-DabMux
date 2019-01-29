@@ -160,6 +160,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG0_24.h \
 					 src/fig/FIG1.cpp \
 					 src/fig/FIG1.h \
+					 src/fig/FIG2.cpp \
+					 src/fig/FIG2.h \
 					 src/fig/FIGCarousel.cpp \
 					 src/fig/FIGCarousel.h \
 					 src/fig/TransitionHandler.h \

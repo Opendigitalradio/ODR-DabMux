@@ -23,78 +23,105 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __FIG1_H_
-#define __FIG1_H_
+#ifndef __FIG2_H_
+#define __FIG2_H_
 
 #include <cstdint>
+#include <map>
 
 #include "fig/FIG.h"
 
 namespace FIC {
 
-// FIG type 1/0, Multiplex Configuration Info (MCI),
+class FIG2_Segments {
+    public:
+        void clear();
+        void load(const std::string& label);
+
+        size_t segment_count() const;
+        std::vector<uint8_t> advance_segment();
+        size_t current_segment_length() const;
+        size_t current_segment_index() const;
+
+        bool ready() const;
+        bool complete() const;
+        int toggle_flag() const;
+
+    private:
+        using vv = std::vector<std::vector<uint8_t> >;
+        vv segments;
+        vv::iterator current_segment_it;
+
+        std::string label_on_last_load;
+        bool toggle = true;
+};
+
+// FIG type 2/0, Multiplex Configuration Info (MCI),
 // Ensemble information
-class FIG1_0 : public IFIG
+class FIG2_0 : public IFIG
 {
     public:
-        FIG1_0(FIGRuntimeInformation* rti) :
+        FIG2_0(FIGRuntimeInformation* rti) :
             m_rti(rti) {}
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual int figtype() const { return 1; }
+        virtual int figtype() const { return 2; }
         virtual int figextension() const { return 0; }
 
     private:
         FIGRuntimeInformation *m_rti;
+        FIG2_Segments m_segments;
 };
 
-// FIG type 1/1, programme service label
-class FIG1_1 : public IFIG
+// FIG type 2/1, programme service label
+class FIG2_1 : public IFIG
 {
     public:
-        FIG1_1(FIGRuntimeInformation* rti) :
+        FIG2_1(FIGRuntimeInformation* rti) :
             m_rti(rti), m_initialised(false) {}
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual int figtype() const { return 1; }
+        virtual int figtype() const { return 2; }
         virtual int figextension() const { return 1; }
 
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         vec_sp_service::iterator service;
+        std::map<uint32_t, FIG2_Segments> segment_per_service;
 };
 
-// FIG type 1/4, service component label
-class FIG1_4 : public IFIG
+// FIG type 2/4, service component label
+class FIG2_4 : public IFIG
 {
     public:
-        FIG1_4(FIGRuntimeInformation* rti) :
+        FIG2_4(FIGRuntimeInformation* rti) :
             m_rti(rti), m_initialised(false) {}
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual int figtype() const { return 1; }
+        virtual int figtype() const { return 2; }
         virtual int figextension() const { return 4; }
 
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         vec_sp_component::iterator component;
+        std::map<std::pair<uint32_t, uint8_t>, FIG2_Segments> segment_per_component;
 };
 
-// FIG type 1/5, data service label
-class FIG1_5 : public IFIG
+// FIG type 2/5, data service label
+class FIG2_5 : public IFIG
 {
     public:
-        FIG1_5(FIGRuntimeInformation* rti) :
+        FIG2_5(FIGRuntimeInformation* rti) :
             m_rti(rti), m_initialised(false) {}
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual int figtype() const { return 1; }
+        virtual int figtype() const { return 2; }
         virtual int figextension() const { return 5; }
 
     private:
@@ -107,63 +134,37 @@ class FIG1_5 : public IFIG
 #   pragma pack(push)
 #endif
 
-struct FIGtype1_0 {
+struct FIGtype2 {
     uint8_t Length:5;
     uint8_t FIGtypeNumber:3;
-    uint8_t Extension:3;
-    uint8_t OE:1;
-    uint8_t Charset:4;
 
-    uint16_t EId;
+    uint8_t Extension:3;
+    uint8_t Rfu:1;
+    uint8_t SegmentIndex:3;
+    uint8_t ToggleFlag:1;
 } PACKED;
 
-
-struct FIGtype1_1 {
-    uint8_t Length:5;
-    uint8_t FIGtypeNumber:3;
-    uint8_t Extension:3;
-    uint8_t OE:1;
-    uint8_t Charset:4;
-
-    uint16_t Sld;
-} PACKED;
-
-
-struct FIGtype1_5 {
-    uint8_t Length:5;
-    uint8_t FIGtypeNumber:3;
-    uint8_t Extension:3;
-    uint8_t OE:1;
-    uint8_t Charset:4;
-    uint32_t SId;
-} PACKED;
-
-
-struct FIGtype1_4_programme {
-    uint8_t Length:5;
-    uint8_t FIGtypeNumber:3;
-    uint8_t Extension:3;
-    uint8_t OE:1;
-    uint8_t Charset:4;
+struct FIGtype2_4_Programme_Identifier {
     uint8_t SCIdS:4;
     uint8_t rfa:3;
     uint8_t PD:1;
     uint16_t SId;
 } PACKED;
 
-
-struct FIGtype1_4_data {
-    uint8_t Length:5;
-    uint8_t FIGtypeNumber:3;
-    uint8_t Extension:3;
-    uint8_t OE:1;
-    uint8_t Charset:4;
+struct FIGtype2_4_Data_Identifier {
     uint8_t SCIdS:4;
     uint8_t rfa:3;
     uint8_t PD:1;
     uint32_t SId;
 } PACKED;
 
+struct FIG2_Extended_Label {
+    uint8_t Rfa:4;
+    uint8_t SegmentCount:3;
+    uint8_t EncodingFlag:1;
+
+    uint16_t CharacterFlag;
+} PACKED;
 
 #ifdef _WIN32
 #   pragma pack(pop)
@@ -171,5 +172,5 @@ struct FIGtype1_4_data {
 
 } // namespace FIC
 
-#endif // __FIG1_H_
+#endif // __FIG2_H_
 

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2015
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of FIG1
@@ -36,6 +36,12 @@ FillStatus FIG1_0::fill(uint8_t *buf, size_t max_size)
     FillStatus fs;
     auto ensemble = m_rti->ensemble;
     size_t remaining = max_size;
+
+    if (not ensemble->label.has_fig1_label()) {
+        fs.complete_fig_transmitted = true;
+        fs.num_bytes_written = 0;
+        return fs;
+    }
 
     if (remaining < 22) {
         fs.num_bytes_written = 0;
@@ -83,15 +89,15 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more
     // space
-    for (; service != ensemble->services.end();
-            ++service) {
-
+    for (; service != ensemble->services.end(); ++service) {
         if (remaining < 4 + 16 + 2) {
             break;
         }
 
-        if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
-            auto fig1_1 = (FIGtype1_1 *)buf;
+        if ((*service)->getType(ensemble) == subchannel_type_t::Audio and
+                (*service)->label.has_fig1_label()) {
+
+            auto fig1_1 = (FIGtype1_1*)buf;
 
             fig1_1->FIGtypeNumber = 1;
             fig1_1->Length = 21;
@@ -148,9 +154,8 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
         /* We check in the config parser if the primary component has
          * a label, which is forbidden since V2.1.1 */
 
-        if (not (*component)->label.long_label().empty() ) {
+        if ((*component)->label.has_fig1_label() ) {
             if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
-
                 if (remaining < 5 + 16 + 2) {
                     break;
                 }
@@ -173,7 +178,6 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
                 remaining -= 5;
             }
             else {    // Data
-
                 if (remaining < 7 + 16 + 2) {
                     break;
                 }
@@ -237,7 +241,8 @@ FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        if ((*service)->getType(ensemble) != subchannel_type_t::Audio) {
+        if ((*service)->getType(ensemble) != subchannel_type_t::Audio and
+                (*service)->label.has_fig1_label()) {
             auto fig1_5 = (FIGtype1_5 *)buf;
             fig1_5->FIGtypeNumber = 1;
             fig1_5->Length = 23;

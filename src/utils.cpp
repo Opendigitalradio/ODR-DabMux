@@ -211,12 +211,11 @@ void printServices(const vector<shared_ptr<DabService> >& services)
     for (auto service : services) {
 
         etiLog.level(info) << "Service       " << service->get_rc_name();
-        etiLog.level(info) << " label:       " <<
-                service->label.long_label();
-        etiLog.level(info) << " short label: " <<
-                service->label.short_label();
-
+        etiLog.level(info) << " label:       " << service->label.long_label();
+        etiLog.level(info) << " short label: " << service->label.short_label();
         etiLog.log(info, " (0x%x)", service->label.flag());
+        etiLog.level(info) << " FIG2 label:  " << service->label.fig2_label();
+
         etiLog.log(info, " id:            0x%lx (%lu)", service->id,
                 service->id);
 
@@ -244,7 +243,7 @@ void printComponents(const vec_sp_component& components)
     unsigned int index = 0;
 
     for (const auto component : components) {
-        etiLog.level(info) << "Component     " << component->get_rc_name();
+        etiLog.level(info) << "Component                " << component->get_rc_name();
         printComponent(component);
         ++index;
     }
@@ -256,12 +255,11 @@ void printComponent(const shared_ptr<DabComponent>& component)
             component->serviceId, component->serviceId);
     etiLog.log(info, " subchannel id:          0x%x (%u)",
             component->subchId, component->subchId);
-    etiLog.level(info) << " label:                  " <<
-            component->label.long_label();
-    etiLog.level(info) << " short label:            " <<
-            component->label.short_label();
-
+    etiLog.level(info) << " label:                  " << component->label.long_label();
+    etiLog.level(info) << " short label:            " << component->label.short_label();
     etiLog.log(info, " (0x%x)", component->label.flag());
+    etiLog.level(info) << " FIG2 label:             " << component->label.fig2_label();
+
     etiLog.log(info, " service component type: 0x%x (%u)", component->type,
             component->type);
 
@@ -513,12 +511,11 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);
     etiLog.log(info, " ecc:         0x%x (%u)", ensemble->ecc, ensemble->ecc);
-    etiLog.level(info) << " label:       " <<
-            ensemble->label.long_label();
-    etiLog.level(info) << " short label: " <<
-            ensemble->label.short_label();
-
+    etiLog.level(info) << " label:       " << ensemble->label.long_label();
+    etiLog.level(info) << " short label: " << ensemble->label.short_label();
     etiLog.log(info, " (0x%x)", ensemble->label.flag());
+    etiLog.level(info) << " FIG2 label:  " << ensemble->label.fig2_label();
+
     switch (ensemble->transmission_mode) {
         case TransmissionMode_e::TM_I:
             etiLog.log(info, " mode:        TM I");

@@ -32,6 +32,7 @@
 #include "fig/FIG.h"
 #include "fig/FIG0.h"
 #include "fig/FIG1.h"
+#include "fig/FIG2.h"
 #include <list>
 #include <map>
 #include <memory>
@@ -110,6 +111,9 @@ class FIGCarousel {
         FIG0_19 m_fig0_19;
         FIG0_21 m_fig0_21;
         FIG0_24 m_fig0_24;
+        FIG2_0 m_fig2_0;
+        FIG2_1 m_fig2_1;
+        FIG2_4 m_fig2_4;
 };
 
 } // namespace FIC

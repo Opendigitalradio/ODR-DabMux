@@ -166,27 +166,50 @@ class DabLabel
          */
         int setLabel(const std::string& label);
 
+        /* Set the FIG2 label. label must be UTF-8.
+         *
+         * returns:  0 on success
+         */
+        int setFIG2Label(const std::string& label);
+
         /* Write the label to the 16-byte buffer given in buf
          * In the DAB standard, the label is 16 bytes long, and is
          * padded using spaces.
          */
         void writeLabel(uint8_t* buf) const;
 
-        uint16_t flag() const { return m_flag; }
+        // For FIG 1
+        bool has_fig1_label() const { return not m_fig1_label.empty(); };
+        uint16_t flag() const { return m_fig1_flag; }
         const std::string long_label() const;
         const std::string short_label() const;
 
+        // For FIG 2
+        bool has_fig2_label() const { return not m_fig2_label.empty(); };
+        const std::string fig2_label() const;
+
+        /* FIG 2 labels are either in UCS-2 or in UTF-8. Because there are upcoming
+         * changes in the spec regarding the encoding of FIG2 (currently in draft
+         * ETSI TS 103 176 v2.2.1), the character flag is not implemented yet.
+         *
+         * Both FIG 1 and FIG 2 labels can be sent, and receiver will show the one
+         * they support.
+         */
+
     private:
+        /* The m_fig1_label is not padded in any way. Stored in EBU Latin Charset */
+        std::string m_fig1_label;
+
         /* The flag field selects which label characters make
          * up the short label
          */
-        uint16_t m_flag = 0xFFFF;
+        uint16_t m_fig1_flag = 0xFFFF;
 
-        /* The m_label is not padded in any way */
-        std::string m_label;
+        /* FIG2 label, stored in UTF-8. TODO: support UCS-2 */
+        std::string m_fig2_label;
 
         /* Checks and calculates the flag. slabel must be EBU Latin Charset */
-        int setShortLabel(const std::string& slabel);
+        int setFIG1ShortLabel(const std::string& slabel);
 };
 
 

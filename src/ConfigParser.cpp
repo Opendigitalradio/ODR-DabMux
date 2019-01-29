@@ -412,7 +412,7 @@ static void parse_general(ptree& pt,
     }
 
     int success = -5;
-    string ensemble_label = pt_ensemble.get<string>("label");
+    string ensemble_label = pt_ensemble.get<string>("label", "");
     string ensemble_short_label(ensemble_label);
     try {
         ensemble_short_label = pt_ensemble.get<string>("shortlabel");
@@ -446,6 +446,8 @@ static void parse_general(ptree& pt,
                 "Ensemble short label definition: program error !";
             abort();
     }
+
+    ensemble->label.setFIG2Label(pt_ensemble.get<string>("fig2_label", ""));
 
     try {
         ptree pt_announcements = pt_ensemble.get_child("announcements");
@@ -549,7 +551,7 @@ void parse_ptree(
 
         int success = -5;
 
-        string servicelabel = pt_service.get<string>("label");
+        string servicelabel = pt_service.get<string>("label", "");
         string serviceshortlabel(servicelabel);
         try {
             serviceshortlabel = pt_service.get<string>("shortlabel");
@@ -583,6 +585,8 @@ void parse_ptree(
                     "Service short label definition: program error !";
                 abort();
         }
+
+        service->label.setFIG2Label(pt_service.get<string>("fig2_label", ""));
 
         service->id = new_service_id;
         service->ecc = hexparse(pt_service.get("ecc", "0"));
@@ -743,6 +747,8 @@ void parse_ptree(
                     "Component short label definition: program error !";
                 abort();
         }
+
+        component->label.setFIG2Label(pt_comp.get<string>("fig2_label", ""));
 
         if (component->SCIdS == 0 and not component->label.long_label().empty()) {
             etiLog.level(warn) << "Primary component " << component->uid <<

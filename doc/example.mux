@@ -107,6 +107,8 @@ ensemble {
     ; automatic calculation of the local time offset, set the environment variable TZ
     ; to your timezone (e.g. TZ=Europe/Rome) before you launch ODR-DabMux
 
+    ; FIG1 labels are given with the 'label' and 'shortlabel' keys.
+    ;
     ; All labels are maximum 16 characters in length.
     ; Labels that are valid utf-8 will be converted to EBU Latin Character set
     ; as defined in ETSI TS 101 756, in Annex C. If it's not valid utf-8, the
@@ -118,6 +120,11 @@ ensemble {
     ; be longer than 8 characters. If omitted, it will be truncated from the
     ; label
     shortlabel "ODR"
+
+    ; The FIG2 label can be up to 16 characters long, and is in UTF-8.
+    ;fig2_label "ÓpêñÐigıtålRadiō"
+
+    ; There is no FIG2 short label for the moment.
 }
 
 ; Definition of DAB services
@@ -127,7 +134,7 @@ services {
     srv-fu {
         id 0x4daa
         label "Fünk"
-        ; You can define a shortlabel too.
+        ; You can define a shortlabel and a fig2_label too.
     }
     srv-ri {
         ; If your ensemble contains a service from another country,

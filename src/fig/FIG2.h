@@ -74,21 +74,26 @@ class FIG2_0 : public IFIG
         FIG2_Segments m_segments;
 };
 
-// FIG type 2/1, programme service label
-class FIG2_1 : public IFIG
+// FIG type 2/1, programme service label and FIG type 2/5, data service label
+// share this code.
+class FIG2_1_and_5 : public IFIG
 {
     public:
-        FIG2_1(FIGRuntimeInformation* rti) :
-            m_rti(rti), m_initialised(false) {}
+        FIG2_1_and_5(FIGRuntimeInformation* rti, bool programme) :
+            m_rti(rti),
+            m_initialised(false),
+            m_programme(programme) {}
+
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
         virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual int figtype() const { return 2; }
-        virtual int figextension() const { return 1; }
+        virtual int figtype() const { return 2;}
+        virtual int figextension() const { return m_programme ? 1 : 5; }
 
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
+        bool m_programme;
         vec_sp_service::iterator service;
         std::map<uint32_t, FIG2_Segments> segment_per_service;
 };
@@ -110,24 +115,6 @@ class FIG2_4 : public IFIG
         bool m_initialised;
         vec_sp_component::iterator component;
         std::map<std::pair<uint32_t, uint8_t>, FIG2_Segments> segment_per_component;
-};
-
-// FIG type 2/5, data service label
-class FIG2_5 : public IFIG
-{
-    public:
-        FIG2_5(FIGRuntimeInformation* rti) :
-            m_rti(rti), m_initialised(false) {}
-        virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
-
-        virtual int figtype() const { return 2; }
-        virtual int figextension() const { return 5; }
-
-    private:
-        FIGRuntimeInformation *m_rti;
-        bool m_initialised;
-        vec_sp_service::iterator service;
 };
 
 #ifdef _WIN32

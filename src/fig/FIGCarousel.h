@@ -112,7 +112,8 @@ class FIGCarousel {
         FIG0_21 m_fig0_21;
         FIG0_24 m_fig0_24;
         FIG2_0 m_fig2_0;
-        FIG2_1 m_fig2_1;
+        FIG2_1_and_5 m_fig2_1;
+        FIG2_1_and_5 m_fig2_5;
         FIG2_4 m_fig2_4;
 };
 

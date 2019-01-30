@@ -96,7 +96,8 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_21(&m_rti),
     m_fig0_24(&m_rti),
     m_fig2_0(&m_rti),
-    m_fig2_1(&m_rti),
+    m_fig2_1(&m_rti, true),
+    m_fig2_5(&m_rti, false),
     m_fig2_4(&m_rti)
 {
     /* Complete MCI except FIG0/8 should be in FIB0.
@@ -136,6 +137,7 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
 
     load_and_allocate(m_fig2_0, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig2_1, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig2_5, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig2_4, FIBAllocation::FIB_ANY);
 }
 

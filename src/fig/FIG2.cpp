@@ -186,8 +186,8 @@ FillStatus FIG2_0::fill(uint8_t *buf, size_t max_size)
     return fs;
 }
 
-// Programme service label
-FillStatus FIG2_1::fill(uint8_t *buf, size_t max_size)
+// Programme service label and data service label
+FillStatus FIG2_1_and_5::fill(uint8_t *buf, size_t max_size)
 {
     FillStatus fs;
 
@@ -202,8 +202,9 @@ FillStatus FIG2_1::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more space
     while (service != ensemble->services.end()) {
-        if ((*service)->getType(ensemble) == subchannel_type_t::Audio and
-                (*service)->label.has_fig2_label()) {
+        const bool is_programme = (*service)->getType(ensemble) == subchannel_type_t::Audio;
+
+        if (not (m_programme xor is_programme) and (*service)->label.has_fig2_label()) {
 
             auto& segments = segment_per_service[(*service)->id];
 
@@ -215,9 +216,10 @@ FillStatus FIG2_1::fill(uint8_t *buf, size_t max_size)
                 }
             }
 
-            const ssize_t required_bytes = (segments.current_segment_index() == 0) ?
-                sizeof(FIGtype2) + 2 + sizeof(FIG2_Extended_Label) + segments.current_segment_length() :
-                sizeof(FIGtype2) + 2 + segments.current_segment_length();
+            const size_t id_length = (is_programme ? 2 : 4);
+
+            const ssize_t required_bytes = sizeof(FIGtype2) + id_length + segments.current_segment_length() +
+                ((segments.current_segment_index() == 0) ? sizeof(FIG2_Extended_Label) : 0);
 
             if (remaining < required_bytes) {
                 break;
@@ -228,7 +230,7 @@ FillStatus FIG2_1::fill(uint8_t *buf, size_t max_size)
             fig2->Length = required_bytes - 1;
             fig2->FIGtypeNumber = 2;
 
-            fig2->Extension = 1;
+            fig2->Extension = figextension();
             fig2->Rfu = 0;
             fig2->SegmentIndex = segments.current_segment_index();
             fig2->ToggleFlag = segments.toggle_flag();
@@ -237,10 +239,18 @@ FillStatus FIG2_1::fill(uint8_t *buf, size_t max_size)
             remaining -= sizeof(FIGtype2);
 
             // Identifier field
-            buf[0] = (*service)->id >> 8;
-            buf[1] = (*service)->id & 0xFF;
-            buf += 2;
-            remaining -= 2;
+            if (is_programme) {
+                buf[0] = (*service)->id >> 8;
+                buf[1] = (*service)->id & 0xFF;
+            }
+            else {
+                buf[0] = ((*service)->id >> 24) & 0xFF;
+                buf[1] = ((*service)->id >> 16) & 0xFF;
+                buf[2] = ((*service)->id >> 8) & 0xFF;
+                buf[3] = (*service)->id & 0xFF;
+            }
+            buf += id_length;
+            remaining -= id_length;
 
             if (segments.current_segment_index() == 0) {
                 auto ext = (FIG2_Extended_Label*)buf;
@@ -307,7 +317,9 @@ FillStatus FIG2_4::fill(uint8_t *buf, size_t max_size)
 
             const bool is_programme = (*service)->getType(ensemble) == subchannel_type_t::Audio;
 
-            const size_t id_length = is_programme ? 2 : 4;
+            const size_t id_length = is_programme ?
+                sizeof(FIGtype2_4_Programme_Identifier) :
+                sizeof(FIGtype2_4_Data_Identifier);
 
             const ssize_t required_bytes = sizeof(FIGtype2) + id_length + segments.current_segment_length() +
                 ((segments.current_segment_index() == 0) ? sizeof(FIG2_Extended_Label) : 0);
@@ -381,31 +393,6 @@ FillStatus FIG2_4::fill(uint8_t *buf, size_t max_size)
 
     if (component == ensemble->components.end()) {
         component = ensemble->components.begin();
-        fs.complete_fig_transmitted = true;
-    }
-
-    fs.num_bytes_written = max_size - remaining;
-    return fs;
-}
-
-// Data service label
-FillStatus FIG2_5::fill(uint8_t *buf, size_t max_size)
-{
-    FillStatus fs;
-
-    ssize_t remaining = max_size;
-
-    if (not m_initialised) {
-        service = m_rti->ensemble->services.end();
-        m_initialised = true;
-    }
-
-    auto ensemble = m_rti->ensemble;
-
-    service = ensemble->services.end(); // TODO
-
-    if (service == ensemble->services.end()) {
-        service = ensemble->services.begin();
         fs.complete_fig_transmitted = true;
     }
 

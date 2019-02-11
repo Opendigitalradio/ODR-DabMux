@@ -273,7 +273,7 @@ void DabMultiplexer::prepare_services_components()
 
             protection = &(*subchannel)->protection;
             switch ((*subchannel)->type) {
-                case subchannel_type_t::Audio:
+                case subchannel_type_t::DABPlusAudio:
                     {
                         if (protection->form == EEP) {
                             /* According to ETSI TS 102 563 Clause 7.1 FIC signalling:
@@ -285,6 +285,15 @@ void DabMultiplexer::prepare_services_components()
                              * 1 1 1 1 1 1."
                              */
                             (*component)->type = 0x3f;
+                        }
+                    }
+                    break;
+                case subchannel_type_t::DABAudio:
+                    {
+                        if (protection->form == EEP) {
+                            /* ASCTy change to 0x0, because DAB mp2 is using
+                             */
+                            (*component)->type = 0x0;
                         }
                     }
                     break;
@@ -720,7 +729,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         edi_time += chrono::seconds(1);
     }
 
-    /********************************************************************** 
+    /**********************************************************************
      ***********   Section FRPD   *****************************************
      **********************************************************************/
 
@@ -748,7 +757,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     }
 
 #if HAVE_OUTPUT_EDI
-    /********************************************************************** 
+    /**********************************************************************
      ***********   Finalise and send EDI   ********************************
      **********************************************************************/
 
@@ -817,7 +826,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 #endif // HAVE_OUTPUT_EDI
 
 #if _DEBUG
-    /********************************************************************** 
+    /**********************************************************************
      ***********   Output a small message *********************************
      **********************************************************************/
     if (currentFrame % 100 == 0) {

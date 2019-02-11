@@ -90,7 +90,7 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
+        if ((*service)->getType(ensemble) == subchannel_type_t::DABPlusAudio || (*service)->getType(ensemble) == subchannel_type_t::DABAudio) {
             auto fig1_1 = (FIGtype1_1 *)buf;
 
             fig1_1->FIGtypeNumber = 1;
@@ -149,7 +149,7 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
          * a label, which is forbidden since V2.1.1 */
 
         if (not (*component)->label.long_label().empty() ) {
-            if ((*service)->getType(ensemble) == subchannel_type_t::Audio) {
+            if ((*service)->getType(ensemble) == subchannel_type_t::DABPlusAudio || (*service)->getType(ensemble) == subchannel_type_t::DABAudio) {
 
                 if (remaining < 5 + 16 + 2) {
                     break;
@@ -237,7 +237,7 @@ FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        if ((*service)->getType(ensemble) != subchannel_type_t::Audio) {
+        if ((*service)->getType(ensemble) == subchannel_type_t::DABPlusAudio || (*service)->getType(ensemble) == subchannel_type_t::DABAudio) {
             auto fig1_5 = (FIGtype1_5 *)buf;
             fig1_5->FIGtypeNumber = 1;
             fig1_5->Length = 23;

@@ -90,7 +90,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
         }
 
         if (    m_transmit_programme &&
-                (*subchannel)->type == subchannel_type_t::Audio &&
+                ((*subchannel)->type == subchannel_type_t::DABPlusAudio || (*subchannel)->type == subchannel_type_t::DABAudio) &&
                 (*componentFIG0_13)->audio.uaType != 0xffff) {
 
             const int required_size = 3+4+11;

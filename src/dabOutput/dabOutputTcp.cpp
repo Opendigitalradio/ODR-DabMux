@@ -107,7 +107,7 @@ class TCPConnection
                     }
                     while (sent == 0);
                 }
-                catch (std::runtime_error& e) {
+                catch (const std::runtime_error& e) {
                     m_running = false;
                 }
             }
@@ -159,7 +159,7 @@ class TCPDataDispatcher
                     }
                 }
             }
-            catch (std::runtime_error& e) {
+            catch (const std::runtime_error& e) {
                 etiLog.level(error) << "TCPDataDispatcher caught runtime error: " << e.what();
                 m_running = false;
             }
@@ -218,19 +218,10 @@ int DabOutputTcp::Open(const char* name)
 
     if (success) {
         dispatcher_ = make_shared<TCPDataDispatcher>();
-        try {
-            dispatcher_->start(port, address);
-        }
-        catch (std::runtime_error& e) {
-            stringstream ss;
-            ss << "Caught error during socket open of TCP output " << name;
-            throw e;
-        }
+        dispatcher_->start(port, address);
     }
     else {
-        stringstream ss;
-        ss << "Could not parse TCP output address " << name;
-        throw std::runtime_error(ss.str());
+        throw runtime_error(string("Could not parse TCP output address ") + name);
     }
     return 0;
 }

@@ -58,10 +58,10 @@ class MuxInitException : public std::exception
 
 
 enum class subchannel_type_t {
-    DABAudio = 0,
-    DABPlusAudio = 1,
-    DataDmb = 2,
-    Packet = 4
+    DABAudio,
+    DABPlusAudio,
+    DataDmb,
+    Packet
 };
 
 

@@ -193,7 +193,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        if (type == subchannel_type_t::DABPlusAudio || type == subchannel_type_t::DABAudio) {
+        if (type == subchannel_type_t::DABPlusAudio or type == subchannel_type_t::DABAudio) {
             auto fig0_2serviceAudio = (FIGtype0_2_Service*)buf;
 
             fig0_2serviceAudio->SId = htons((*serviceFIG0_2)->id);

@@ -94,10 +94,9 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        const auto type = (*service)->getType(ensemble);
+        const bool is_programme = (*service)->isProgramme(ensemble);
 
-        if ( (type == subchannel_type_t::DABPlusAudio or type == subchannel_type_t::DABAudio) and
-                (*service)->label.has_fig1_label()) {
+        if (is_programme and (*service)->label.has_fig1_label()) {
             auto fig1_1 = (FIGtype1_1 *)buf;
 
             fig1_1->FIGtypeNumber = 1;
@@ -155,10 +154,8 @@ FillStatus FIG1_4::fill(uint8_t *buf, size_t max_size)
         /* We check in the config parser if the primary component has
          * a label, which is forbidden since V2.1.1 */
 
-        const auto type = (*service)->getType(ensemble);
-
         if (not (*component)->label.long_label().empty() ) {
-            if (type == subchannel_type_t::DABAudio or type == subchannel_type_t::DABPlusAudio) {
+            if ((*service)->isProgramme(ensemble)) {
 
                 if (remaining < 5 + 16 + 2) {
                     break;

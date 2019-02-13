@@ -509,26 +509,17 @@ subchannel_type_t DabService::getType(
 
 bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
 {
-    bool ret = false;
     switch (getType(ensemble)) {
-        case subchannel_type_t::DABAudio: // DAB
-            ret = true;
-            break;
-        case subchannel_type_t::DABPlusAudio: // DABPlus
-            ret = true;
-            break;
+        case subchannel_type_t::DABAudio:
+        case subchannel_type_t::DABPlusAudio:
+            return true;
         case subchannel_type_t::DataDmb:
         case subchannel_type_t::Packet:
-            ret = false;
-            break;
+            return false;
         default:
-            etiLog.log(error,
-                    "Error, unknown service type: %u",
-                    getType(ensemble));
-            throw runtime_error("DabService::isProgramme unknown service type");
+            etiLog.log(error, "Error, unknown service type: %u", getType(ensemble));
+            throw logic_error("DabService::isProgramme unknown service type");
     }
-
-    return ret;
 }
 
 

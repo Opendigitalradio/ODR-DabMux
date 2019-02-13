@@ -202,8 +202,7 @@ FillStatus FIG2_1_and_5::fill(uint8_t *buf, size_t max_size)
 
     // Rotate through the subchannels until there is no more space
     while (service != ensemble->services.end()) {
-        const bool is_programme = (*service)->getType(ensemble) == subchannel_type_t::DABAudio or
-                ((*service)->getType(ensemble) == subchannel_type_t::DABPlusAudio);
+        const bool is_programme = (*service)->isProgramme(ensemble);
 
         if (not (m_programme xor is_programme) and (*service)->label.has_fig2_label()) {
 
@@ -316,8 +315,7 @@ FillStatus FIG2_4::fill(uint8_t *buf, size_t max_size)
                 }
             }
 
-            const bool is_programme = (*service)->getType(ensemble) == subchannel_type_t::DABAudio or
-                    ((*service)->getType(ensemble) == subchannel_type_t::DABPlusAudio);
+            const bool is_programme = (*service)->isProgramme(ensemble);
 
             const size_t id_length = is_programme ?
                 sizeof(FIGtype2_4_Programme_Identifier) :

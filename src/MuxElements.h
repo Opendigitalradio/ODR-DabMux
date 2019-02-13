@@ -58,10 +58,11 @@ class MuxInitException : public std::exception
 
 
 enum class subchannel_type_t {
-    Audio = 0,
-    DataDmb = 1,
-    Fidc = 2,
-    Packet = 3
+    DABAudio = 0,
+    DABPlusAudio = 1,
+    DataDmb = 2,
+    Fidc = 3,
+    Packet = 4
 };
 
 
@@ -336,7 +337,7 @@ public:
     std::string inputUri;
     std::shared_ptr<Inputs::InputBase> input;
     unsigned char id = 0;
-    subchannel_type_t type = subchannel_type_t::Audio;
+    subchannel_type_t type = subchannel_type_t::DABAudio;
     uint16_t startAddress = 0;
     uint16_t bitrate = 0;
     struct dabProtection protection;

@@ -93,7 +93,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
             }
         }
 
-        subchannel_type_t type = subchannel_type_t::Audio;
+        subchannel_type_t type = subchannel_type_t::DABAudio;
         bool isProgramme = true;
         bool oe = true;
 
@@ -107,7 +107,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
                 oe,
                 serviceFIG0_24->service_id,
                 m_inserting_audio_not_data ? "AUDIO" : "DATA",
-                type == subchannel_type_t::Audio ? "Audio" :
+                type == subchannel_type_t::DABAudio ? "Audio" :
                 type == subchannel_type_t::Packet ? "Packet" :
                 type == subchannel_type_t::DataDmb ? "DataDmb" :
                 type == subchannel_type_t::Fidc ? "Fidc" : "?");
@@ -147,7 +147,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        if (type == subchannel_type_t::Audio) {
+        if (type == subchannel_type_t::DABAudio) {
             auto fig0_2serviceAudio = (FIGtype0_24_audioservice*)buf;
 
             fig0_2serviceAudio->SId = htons(serviceFIG0_24->service_id);

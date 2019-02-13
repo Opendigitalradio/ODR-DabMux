@@ -880,7 +880,12 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
     subchan->inputUri = inputUri;
 
     if (type == "dabplus" or type == "audio") {
-        subchan->type = subchannel_type_t::Audio;
+        if(type == "dabplus") {
+            subchan->type = subchannel_type_t::DABPlusAudio;
+        } else {
+            subchan->type = subchannel_type_t::DABAudio;
+        }
+
         subchan->bitrate = 0;
 
         if (proto == "file") {

@@ -511,7 +511,10 @@ bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
 {
     bool ret = false;
     switch (getType(ensemble)) {
-        case subchannel_type_t::Audio: // Audio
+        case subchannel_type_t::DABAudio: // DAB
+            ret = true;
+            break;
+        case subchannel_type_t::DABPlusAudio: // DABPlus
             ret = true;
             break;
         case subchannel_type_t::DataDmb:

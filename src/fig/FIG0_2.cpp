@@ -161,7 +161,8 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
         etiLog.log(FIG0_2_TRACE, "FIG0_2::fill  loop SId=%04x %s/%s",
                 (*serviceFIG0_2)->id,
                 m_inserting_audio_not_data ? "AUDIO" : "DATA",
-                type == subchannel_type_t::Audio ? "Audio" :
+                type == subchannel_type_t::DABPlusAudio ? "DABPlusAudio" :
+                type == subchannel_type_t::DABAudio ? "DABAudio" :
                 type == subchannel_type_t::Packet ? "Packet" :
                 type == subchannel_type_t::DataDmb ? "DataDmb" :
                 type == subchannel_type_t::Fidc ? "Fidc" : "?");
@@ -202,7 +203,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        if (type == subchannel_type_t::Audio) {
+        if (type == subchannel_type_t::DABPlusAudio || type == subchannel_type_t::DABAudio) {
             auto fig0_2serviceAudio = (FIGtype0_2_Service*)buf;
 
             fig0_2serviceAudio->SId = htons((*serviceFIG0_2)->id);
@@ -257,7 +258,17 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
             }
 
             switch ((*subchannel)->type) {
-                case subchannel_type_t::Audio:
+                case (subchannel_type_t::DABAudio):
+                    {
+                        auto audio_description = (FIGtype0_2_audio_component*)buf;
+                        audio_description->TMid    = 0;
+                        audio_description->ASCTy   = (*component)->type;
+                        audio_description->SubChId = (*subchannel)->id;
+                        audio_description->PS      = ((curCpnt == 0) ? 1 : 0);
+                        audio_description->CA_flag = 0;
+                    }
+                    break;
+                case (subchannel_type_t::DABPlusAudio):
                     {
                         auto audio_description = (FIGtype0_2_audio_component*)buf;
                         audio_description->TMid    = 0;

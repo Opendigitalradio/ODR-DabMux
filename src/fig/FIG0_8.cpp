@@ -133,7 +133,7 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
                 buf += 3;             // 8 minus rfa
                 remaining -= 3;
             }
-            else {    // Audio, data stream or FIDC
+            else {    // Audio, data stream
                 buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
                 buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
 
@@ -195,7 +195,7 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
                 buf += 3;             // 8 minus rfa
                 remaining -= 3;
             }
-            else {    // Audio, data stream or FIDC
+            else {    // Audio, data stream
                 buf[0] = ((*componentFIG0_8)->serviceId >> 24) & 0xFF;
                 buf[1] = ((*componentFIG0_8)->serviceId >> 16) & 0xFF;
                 buf[2] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;

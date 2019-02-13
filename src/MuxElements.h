@@ -61,7 +61,6 @@ enum class subchannel_type_t {
     DABAudio = 0,
     DABPlusAudio = 1,
     DataDmb = 2,
-    Fidc = 3,
     Packet = 4
 };
 
@@ -354,9 +353,6 @@ struct dabDataComponent {
 };
 
 
-struct dabFidcComponent {
-};
-
 
 struct dabPacketComponent {
     uint16_t id = 0;
@@ -385,7 +381,6 @@ class DabComponent : public RemoteControllable
 
         dabAudioComponent audio;
         dabDataComponent data;
-        dabFidcComponent fidc;
         dabPacketComponent packet;
 
         bool isPacketComponent(vec_sp_subchannel& subchannels) const;

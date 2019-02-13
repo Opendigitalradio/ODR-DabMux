@@ -16,24 +16,24 @@ program services and 11 for data services. A service component is a link to one
 subchannel (or Fast Information Data Channel). A subchannel is the physical
 space used within the common interleaved frame.
 
-                         __________________________________________________
-     ENSEMBLE           |                   ODR-Ensemble                   |
-                        |__________________________________________________|
-                                |                 |                 |
-                                |                 |                 |
-                         _______V______    _______V______    _______V______
-     SERVICES           | ODR-Service1 |  | ODR-Service2 |  | ODR-Service3 |
-                        |______________|  |______________|  |______________|
-                           |        |        |        | |______         |
-                           |        |        |        |        |        |
-                         __V__    __V__    __V__    __V__    __V__    __V__
-     SERVICE            | SC1 |  | SC2 |  | SC3 |  | SC4 |  | SC5 |  | SC6 |
-     COMPONENTS         |_____|  |_____|  |_____|  |_____|  |_____|  |_____|
-                           |        |   _____|        |        |    ____|
-                           |        |  |              |        |   |
-     _________________   __V________V__V______________V________V___V_______
-    | MCI | SI | FIDC | | SubCh1 | SubCh9 |  ...  | SubCh3 | SubCh60 | ... |
-    |_____|____|______| |________|________|_______|________|_________|_____|
+                  __________________________________________________
+     ENSEMBLE    |                   ODR-Ensemble                   |
+                 |__________________________________________________|
+                         |                 |                 |
+                         |                 |                 |
+                  _______V______    _______V______    _______V______
+     SERVICES    | ODR-Service1 |  | ODR-Service2 |  | ODR-Service3 |
+                 |______________|  |______________|  |______________|
+                    |        |        |        | |______         |
+                    |        |        |        |        |        |
+                  __V__    __V__    __V__    __V__    __V__    __V__
+     SERVICE     | SC1 |  | SC2 |  | SC3 |  | SC4 |  | SC5 |  | SC6 |
+     COMPONENTS  |_____|  |_____|  |_____|  |_____|  |_____|  |_____|
+                    |        |   _____|        |        |    ____|
+                    |        |  |              |        |   |
+     __________   __V________V__V______________V________V___V_______
+    | MCI | SI | | SubCh1 | SubCh9 |  ...  | SubCh3 | SubCh60 | ... |
+    |_____|____| |________|________|_______|________|_________|_____|
     Fast Information Ch.                 Main Service Channel
                       COMMON   INTERLEAVED   FRAME
 

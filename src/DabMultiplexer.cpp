@@ -301,7 +301,6 @@ void DabMultiplexer::prepare_services_components()
                     }
                     break;
                 case subchannel_type_t::DataDmb:
-                case subchannel_type_t::Fidc:
                 case subchannel_type_t::Packet:
                     break;
                 default:

@@ -518,7 +518,6 @@ bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
             ret = true;
             break;
         case subchannel_type_t::DataDmb:
-        case subchannel_type_t::Fidc:
         case subchannel_type_t::Packet:
             ret = false;
             break;

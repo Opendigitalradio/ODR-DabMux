@@ -336,9 +336,6 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
             case subchannel_type_t::DataDmb:
                 etiLog.log(info, " type:       data");
                 break;
-            case subchannel_type_t::Fidc:
-                etiLog.log(info, " type:       fidc");
-                break;
             case subchannel_type_t::Packet:
                 etiLog.log(info, " type:       packet");
                 break;

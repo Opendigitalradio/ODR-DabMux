@@ -109,8 +109,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
                 m_inserting_audio_not_data ? "AUDIO" : "DATA",
                 type == subchannel_type_t::DABAudio ? "Audio" :
                 type == subchannel_type_t::Packet ? "Packet" :
-                type == subchannel_type_t::DataDmb ? "DataDmb" :
-                type == subchannel_type_t::Fidc ? "Fidc" : "?");
+                type == subchannel_type_t::DataDmb ? "DataDmb" : "?");
 
         if (last_oe != oe) {
             fig0 = nullptr;

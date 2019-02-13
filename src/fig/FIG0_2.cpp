@@ -107,15 +107,6 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
     etiLog.level(FIG0_2_TRACE) << "FIG0_2::fill init " << (m_initialised ? 1 : 0) <<
         " ********************************";
 
-    for (const auto& s : ensemble->services) {
-        // Exclude Fidc type services, TODO unsupported
-        auto type = s->getType(ensemble);
-        if (type == subchannel_type_t::Fidc) {
-            etiLog.log(warn, "FIG0/2 does not support FIDC");
-            continue;
-        }
-    }
-
     if (not m_initialised) {
         m_audio_services.clear();
         copy_if(ensemble->services.begin(),
@@ -164,8 +155,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
                 type == subchannel_type_t::DABPlusAudio ? "DABPlusAudio" :
                 type == subchannel_type_t::DABAudio ? "DABAudio" :
                 type == subchannel_type_t::Packet ? "Packet" :
-                type == subchannel_type_t::DataDmb ? "DataDmb" :
-                type == subchannel_type_t::Fidc ? "Fidc" : "?");
+                type == subchannel_type_t::DataDmb ? "DataDmb" : "?");
 
         // filter out services which have no components
         if ((*serviceFIG0_2)->nbComponent(ensemble->components) == 0) {

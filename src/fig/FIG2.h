@@ -145,12 +145,18 @@ struct FIGtype2_4_Data_Identifier {
     uint32_t SId;
 } PACKED;
 
-struct FIG2_Extended_Label {
+struct FIG2_Extended_Label_WithCharacterFlag {
     uint8_t Rfa:4;
     uint8_t SegmentCount:3;
     uint8_t EncodingFlag:1;
 
     uint16_t CharacterFlag;
+} PACKED;
+
+struct FIG2_Extended_Label_WithTextControl {
+    uint8_t TextControl:4;
+    uint8_t SegmentCount:3;
+    uint8_t EncodingFlag:1;
 } PACKED;
 
 #ifdef _WIN32

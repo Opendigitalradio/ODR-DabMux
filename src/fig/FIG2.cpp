@@ -34,6 +34,44 @@ namespace FIC {
 
 using namespace std;
 
+static void write_fig2_segment_field(
+        uint8_t *buf, ssize_t& remaining, FIG2_Segments& segments, const DabLabel& label)
+{
+    if (segments.current_segment_index() == 0) {
+        // EN 300 401 5.2.2.3.3 "The second segment shall be carried in a following
+        // FIG type 2 data field ...", i.e. do not insert the header anymore.
+        if (label.fig2_uses_text_control()) {
+            auto ext = (FIG2_Extended_Label_WithTextControl*)buf;
+            auto tc = label.fig2_text_control();
+            ext->TextControl =
+                (tc.bidi_flag ? 0x8 : 0) |
+                (tc.base_direction_is_rtl ? 0x4 : 0) |
+                (tc.contextual_flag ? 0x2 : 0) |
+                (tc.combining_flag ? 0x1 : 0);
+            ext->SegmentCount = segments.segment_count();
+            ext->EncodingFlag = 0; // UTF-8
+
+            buf += sizeof(FIG2_Extended_Label_WithTextControl);
+            remaining -= sizeof(FIG2_Extended_Label_WithTextControl);
+        }
+        else {
+            auto ext = (FIG2_Extended_Label_WithCharacterFlag*)buf;
+            ext->Rfa = 0;
+            ext->SegmentCount = segments.segment_count();
+            ext->EncodingFlag = 0; // UTF-8
+            ext->CharacterFlag = htons(label.fig2_character_field());
+
+            buf += sizeof(FIG2_Extended_Label_WithCharacterFlag);
+            remaining -= sizeof(FIG2_Extended_Label_WithCharacterFlag);
+        }
+    }
+
+    const auto character_field = segments.advance_segment();
+    copy(character_field.begin(), character_field.end(), buf);
+    buf += character_field.size();
+    remaining -= character_field.size();
+}
+
 void FIG2_Segments::clear()
 {
     segments.clear();
@@ -132,8 +170,12 @@ FillStatus FIG2_0::fill(uint8_t *buf, size_t max_size)
         }
     }
 
+    const size_t segment_header_length = ensemble->label.fig2_uses_text_control() ?
+        sizeof(FIG2_Extended_Label_WithTextControl) :
+        sizeof(FIG2_Extended_Label_WithCharacterFlag);
+
     const ssize_t required_bytes = (m_segments.current_segment_index() == 0) ?
-        sizeof(FIGtype2) + 2 + sizeof(FIG2_Extended_Label) + m_segments.current_segment_length() :
+        sizeof(FIGtype2) + 2 + segment_header_length + m_segments.current_segment_length() :
         sizeof(FIGtype2) + 2 + m_segments.current_segment_length();
 
     if (remaining < required_bytes) {
@@ -147,7 +189,7 @@ FillStatus FIG2_0::fill(uint8_t *buf, size_t max_size)
     fig2->FIGtypeNumber = 2;
 
     fig2->Extension = 0;
-    fig2->Rfu = 0;
+    fig2->Rfu = ensemble->label.fig2_uses_text_control() ? 1 : 0;
     fig2->SegmentIndex = m_segments.current_segment_index();
     fig2->ToggleFlag = m_segments.toggle_flag();
 
@@ -160,23 +202,7 @@ FillStatus FIG2_0::fill(uint8_t *buf, size_t max_size)
     buf += 2;
     remaining -= 2;
 
-    if (m_segments.current_segment_index() == 0) {
-        // EN 300 401 5.2.2.3.3 "The second segment shall be carried in a following
-        // FIG type 2 data field ...", i.e. do not insert the header anymore.
-        auto ext = (FIG2_Extended_Label*)buf;
-        ext->Rfa = 0;
-        ext->SegmentCount = m_segments.segment_count();
-        ext->EncodingFlag = 0; // UTF-8
-        ext->CharacterFlag = htons(0xFF00); // Short label always truncation
-
-        buf += sizeof(FIG2_Extended_Label);
-        remaining -= sizeof(FIG2_Extended_Label);
-    }
-
-    const auto character_field = m_segments.advance_segment();
-    copy(character_field.begin(), character_field.end(), buf);
-    buf += character_field.size();
-    remaining -= character_field.size();
+    write_fig2_segment_field(buf, remaining, m_segments, ensemble->label);
 
     if (m_segments.complete()) {
         fs.complete_fig_transmitted = true;
@@ -218,8 +244,13 @@ FillStatus FIG2_1_and_5::fill(uint8_t *buf, size_t max_size)
 
             const size_t id_length = (is_programme ? 2 : 4);
 
-            const ssize_t required_bytes = sizeof(FIGtype2) + id_length + segments.current_segment_length() +
-                ((segments.current_segment_index() == 0) ? sizeof(FIG2_Extended_Label) : 0);
+            const size_t segment_header_length = ensemble->label.fig2_uses_text_control() ?
+                sizeof(FIG2_Extended_Label_WithTextControl) :
+                sizeof(FIG2_Extended_Label_WithCharacterFlag);
+
+            const ssize_t required_bytes = sizeof(FIGtype2) + id_length +
+                segments.current_segment_length() +
+                ((segments.current_segment_index() == 0) ? segment_header_length : 0);
 
             if (remaining < required_bytes) {
                 break;
@@ -231,7 +262,7 @@ FillStatus FIG2_1_and_5::fill(uint8_t *buf, size_t max_size)
             fig2->FIGtypeNumber = 2;
 
             fig2->Extension = figextension();
-            fig2->Rfu = 0;
+            fig2->Rfu = (*service)->label.fig2_uses_text_control() ? 1 : 0;
             fig2->SegmentIndex = segments.current_segment_index();
             fig2->ToggleFlag = segments.toggle_flag();
 
@@ -252,21 +283,7 @@ FillStatus FIG2_1_and_5::fill(uint8_t *buf, size_t max_size)
             buf += id_length;
             remaining -= id_length;
 
-            if (segments.current_segment_index() == 0) {
-                auto ext = (FIG2_Extended_Label*)buf;
-                ext->Rfa = 0;
-                ext->SegmentCount = segments.segment_count();
-                ext->EncodingFlag = 0; // UTF-8
-                ext->CharacterFlag = htons(0xFF00); // Short label always truncation
-
-                buf += sizeof(FIG2_Extended_Label);
-                remaining -= sizeof(FIG2_Extended_Label);
-            }
-
-            const auto character_field = segments.advance_segment();
-            copy(character_field.begin(), character_field.end(), buf);
-            buf += character_field.size();
-            remaining -= character_field.size();
+            write_fig2_segment_field(buf, remaining, segments, (*service)->label);
 
             if (segments.complete()) {
                 segments.clear();
@@ -321,8 +338,12 @@ FillStatus FIG2_4::fill(uint8_t *buf, size_t max_size)
                 sizeof(FIGtype2_4_Programme_Identifier) :
                 sizeof(FIGtype2_4_Data_Identifier);
 
+            const size_t segment_header_length = (*component)->label.fig2_uses_text_control() ?
+                    sizeof(FIG2_Extended_Label_WithTextControl) :
+                    sizeof(FIG2_Extended_Label_WithCharacterFlag);
+
             const ssize_t required_bytes = sizeof(FIGtype2) + id_length + segments.current_segment_length() +
-                ((segments.current_segment_index() == 0) ? sizeof(FIG2_Extended_Label) : 0);
+                ((segments.current_segment_index() == 0) ? segment_header_length : 0);
 
             if (remaining < required_bytes) {
                 break;
@@ -334,7 +355,7 @@ FillStatus FIG2_4::fill(uint8_t *buf, size_t max_size)
             fig2->FIGtypeNumber = 2;
 
             fig2->Extension = 4;
-            fig2->Rfu = 0;
+            fig2->Rfu = (*component)->label.fig2_uses_text_control() ? 1 : 0;
             fig2->SegmentIndex = segments.current_segment_index();
             fig2->ToggleFlag = segments.toggle_flag();
 
@@ -365,21 +386,7 @@ FillStatus FIG2_4::fill(uint8_t *buf, size_t max_size)
                 remaining -= sizeof(FIGtype2_4_Data_Identifier);
             }
 
-            if (segments.current_segment_index() == 0) {
-                auto ext = (FIG2_Extended_Label*)buf;
-                ext->Rfa = 0;
-                ext->SegmentCount = segments.segment_count();
-                ext->EncodingFlag = 0; // UTF-8
-                ext->CharacterFlag = htons(0xFF00); // Short label always truncation
-
-                buf += sizeof(FIG2_Extended_Label);
-                remaining -= sizeof(FIG2_Extended_Label);
-            }
-
-            const auto character_field = segments.advance_segment();
-            copy(character_field.begin(), character_field.end(), buf);
-            buf += character_field.size();
-            remaining -= character_field.size();
+            write_fig2_segment_field(buf, remaining, segments, (*component)->label);
 
             if (segments.complete()) {
                 segments.clear();

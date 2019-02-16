@@ -347,6 +347,18 @@ int DabLabel::setFIG2Label(const std::string& label)
     return 0;
 }
 
+void DabLabel::setFIG2CharacterField(uint16_t character_field)
+{
+    m_fig2_use_text_control = false;
+    m_fig2_character_field = character_field;
+}
+
+void DabLabel::setFIG2TextControl(FIG2TextControl tc)
+{
+    m_fig2_use_text_control = true;
+    m_fig2_text_control = tc;
+}
+
 void DabLabel::writeLabel(uint8_t* buf) const
 {
     memset(buf, ' ', DABLABEL_LENGTH);

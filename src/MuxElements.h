@@ -143,6 +143,13 @@ struct dabOutput {
 
 #define DABLABEL_LENGTH 16
 
+struct FIG2TextControl {
+    bool bidi_flag = false;
+    bool base_direction_is_rtl = false;
+    bool contextual_flag = false;
+    bool combining_flag = false;
+};
+
 class DabLabel
 {
     public:
@@ -172,20 +179,34 @@ class DabLabel
          */
         int setFIG2Label(const std::string& label);
 
+        /* FIG2 can either be sent with a character field (old spec)
+         * or with a text control (draftETSI TS 103 176 v2.2.1).
+         *
+         * Setting one clears the other, and selects the value of the
+         * Rfu bit in the FIG 2 Data Field
+         */
+        void setFIG2CharacterField(uint16_t character_field);
+        void setFIG2TextControl(FIG2TextControl tc);
+
+        // For FIG 1
+
         /* Write the label to the 16-byte buffer given in buf
          * In the DAB standard, the label is 16 bytes long, and is
          * padded using spaces.
          */
         void writeLabel(uint8_t* buf) const;
 
-        // For FIG 1
-        bool has_fig1_label() const { return not m_fig1_label.empty(); };
+        bool has_fig1_label() const { return not m_fig1_label.empty(); }
         uint16_t flag() const { return m_fig1_flag; }
         const std::string long_label() const;
         const std::string short_label() const;
 
         // For FIG 2
-        bool has_fig2_label() const { return not m_fig2_label.empty(); };
+        bool has_fig2_label() const { return not m_fig2_label.empty(); }
+        bool fig2_uses_text_control() const { return m_fig2_use_text_control; }
+        FIG2TextControl fig2_text_control() const { return m_fig2_text_control; }
+        uint16_t fig2_character_field() const { return m_fig2_character_field; }
+
         const std::string fig2_label() const;
 
         /* FIG 2 labels are either in UCS-2 or in UTF-8. Because there are upcoming
@@ -207,6 +228,10 @@ class DabLabel
 
         /* FIG2 label, stored in UTF-8. TODO: support UCS-2 */
         std::string m_fig2_label;
+
+        bool m_fig2_use_text_control = true; // Default to the new variant
+        uint16_t m_fig2_character_field = 0xFF00;
+        FIG2TextControl m_fig2_text_control;
 
         /* Checks and calculates the flag. slabel must be EBU Latin Charset */
         int setFIG1ShortLabel(const std::string& slabel);

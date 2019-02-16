@@ -81,13 +81,42 @@ static uint16_t get_announcement_flag_from_ptree(ptree& pt)
     return flags;
 }
 
+static void parse_fig2_label(ptree& pt, DabLabel& label) {
+    label.setFIG2Label(pt.get<string>("fig2_label", ""));
+
+    uint16_t character_field = hexparse(pt.get("fig2_label_character_flag", "0"));
+    if (character_field) {
+        label.setFIG2CharacterField(character_field);
+    }
+
+    auto pt_tc = pt.get_child_optional("fig2_label_text_control");
+    if (pt_tc) {
+        FIG2TextControl tc;
+        tc.bidi_flag = pt_tc->get<bool>("bidi", tc.bidi_flag);
+        auto base_direction = pt_tc->get<string>("bidi", "LTR");
+
+        if (not(base_direction == "LTR" or base_direction == "RTL")) {
+            tc.base_direction_is_rtl = (base_direction == "RTL");
+        }
+        else {
+            etiLog.level(error) << "Invalid value " << base_direction <<
+                " for fig2 text control base direction";
+            throw runtime_error("Invalid FIG2 text control definition");
+        }
+
+        tc.contextual_flag = pt_tc->get<bool>("contextual", tc.contextual_flag);
+        tc.combining_flag = pt_tc->get<bool>("combining", tc.combining_flag);
+
+        label.setFIG2TextControl(tc);
+    }
+}
+
 // Parse the linkage section
 static void parse_linkage(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
     auto pt_linking = pt.get_child_optional("linking");
-    if (pt_linking)
-    {
+    if (pt_linking) {
         for (const auto& it : *pt_linking) {
             const string setuid = it.first;
             const ptree pt_set = it.second;
@@ -447,7 +476,7 @@ static void parse_general(ptree& pt,
             abort();
     }
 
-    ensemble->label.setFIG2Label(pt_ensemble.get<string>("fig2_label", ""));
+    parse_fig2_label(pt_ensemble, ensemble->label);
 
     try {
         ptree pt_announcements = pt_ensemble.get_child("announcements");
@@ -586,7 +615,7 @@ void parse_ptree(
                 abort();
         }
 
-        service->label.setFIG2Label(pt_service.get<string>("fig2_label", ""));
+        parse_fig2_label(pt_service, service->label);
 
         service->id = new_service_id;
         service->ecc = hexparse(pt_service.get("ecc", "0"));
@@ -748,7 +777,7 @@ void parse_ptree(
                 abort();
         }
 
-        component->label.setFIG2Label(pt_comp.get<string>("fig2_label", ""));
+        parse_fig2_label(pt_comp, component->label);
 
         if (component->SCIdS == 0 and not component->label.long_label().empty()) {
             etiLog.level(warn) << "Primary component " << component->uid <<

@@ -124,7 +124,19 @@ ensemble {
     ; The FIG2 label can be up to 16 characters long, and is in UTF-8.
     ;fig2_label "ÓpêñÐigıtålRadiō"
 
-    ; There is no FIG2 short label for the moment.
+    ; FIG2 labels can either be sent with a character field (old spec)
+    ; or with a text control (new draftETSI TS 103 176 v2.2.1).
+    ; If unspecified, defaults to setting the text control with the values
+    ; shown in the example below.
+    ;
+    ;fig2_label_character_flag "0xFF00"
+    ;
+    ;fig2_label_text_control {
+    ; bidi false
+    ; base_direction "LTR"
+    ; contextual false
+    ; combining false
+    ;}
 }
 
 ; Definition of DAB services

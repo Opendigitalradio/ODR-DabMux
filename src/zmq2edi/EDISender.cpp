@@ -229,19 +229,12 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
 
     using namespace std::chrono;
 
-    const auto seconds = metadata.edi_time;
     const auto pps_offset = milliseconds(std::lrint((tist & 0xFFFFFF) / 16384.0));
     const auto t_frame = system_clock::from_time_t(
-            seconds + posix_timestamp_1_jan_2000) + pps_offset;
+            metadata.edi_time + posix_timestamp_1_jan_2000 - metadata.utc_offset) + pps_offset;
 
     const auto t_release = t_frame + milliseconds(tist_delay_ms);
     const auto t_now = system_clock::now();
-
-    /*
-    etiLog.level(debug) << "seconds " << seconds + posix_timestamp_1_jan_2000;
-    etiLog.level(debug) << "now " << system_clock::to_time_t(t_now);
-    etiLog.level(debug) << "wait " << wait_time.count();
-    */
 
     const auto wait_time = t_release - t_now;
     wait_times.push_back(duration_cast<microseconds>(wait_time).count());

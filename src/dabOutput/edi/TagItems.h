@@ -1,12 +1,12 @@
 /*
-   Copyright (C) 2016
-   Matthias P. Braendli, matthias.braendli@mpb.li
-
-    http://www.opendigitalradio.org
-
    EDI output.
     This defines a few TAG items as defined ETSI TS 102 821 and
     ETSI TS 102 693
+
+   Copyright (C) 2019
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    */
 /*

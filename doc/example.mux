@@ -236,7 +236,7 @@ outputs {
         ; If TIST is enabled, requires leap-second information (see example.mux)
         ;
         ; WARNING! requires ODR-DabMux to be compiled with
-        ; EDI output, and this will enable leap second download
+        ; cURL support, and this will enable leap second download
         ; as for the EDI output!
         allowmetadata true
     }

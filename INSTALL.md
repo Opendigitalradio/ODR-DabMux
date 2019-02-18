@@ -4,7 +4,7 @@ Required dependencies:
 * A C++11 compiler
 * Boost 1.48 or later
 * ZeroMQ 4 or later
-* (optional) cURL to download the TAI-UTC bulletin, needed for the EDI output.
+* (optional) cURL to download the TAI-UTC bulletin, needed for timestamps in EDI and ZMQ output.
 
 Dependencies on Debian
 ----------------------

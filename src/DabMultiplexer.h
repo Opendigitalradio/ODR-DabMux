@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -80,26 +80,25 @@ class DabMultiplexer : public RemoteControllable {
         void prepare_subchannels(void);
         void prepare_services_components(void);
         void prepare_data_inputs(void);
+        void increment_timestamp(void);
 
         boost::property_tree::ptree m_pt;
 
-        unsigned timestamp;
-        bool MNSC_increment_time;
-        struct timeval mnsc_time;
-        std::chrono::system_clock::time_point edi_time;
+        unsigned timestamp = 0;
+        std::time_t edi_time;
+        std::time_t edi_time_latched_for_mnsc;
 
         edi_configuration_t edi_conf;
 
-        uint32_t sync;
-        unsigned long currentFrame;
+        uint32_t sync = 0x49C5F8;
+        unsigned long currentFrame = 0;
 
         std::shared_ptr<dabEnsemble> ensemble;
 
-        int m_tist_edioffset = 0;
-        bool m_tai_clock_required;
+        int m_tist_offset = 0;
+        bool m_tai_clock_required = false;
         ClockTAI m_clock_tai;
 
-#if HAVE_OUTPUT_EDI
         std::ofstream edi_debug_file;
 
         // The TagPacket will then be placed into an AFPacket
@@ -110,7 +109,6 @@ class DabMultiplexer : public RemoteControllable {
 
         // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
         edi::Interleaver edi_interleaver;
-#endif // HAVE_OUTPUT_EDI
 
         /* New FIG Carousel */
         FIC::FIGCarousel fig_carousel;

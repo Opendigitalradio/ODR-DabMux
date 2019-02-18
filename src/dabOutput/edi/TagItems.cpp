@@ -132,13 +132,13 @@ std::vector<uint8_t> TagDETI::Assemble()
     return packet;
 }
 
-void TagDETI::set_edi_time(const std::chrono::system_clock::time_point& t, int tai_utc_offset)
+void TagDETI::set_edi_time(const std::time_t t, int tai_utc_offset)
 {
     utco = tai_utc_offset - 32;
 
     const std::time_t posix_timestamp_1_jan_2000 = 946684800;
 
-    seconds = std::chrono::system_clock::to_time_t(t) - posix_timestamp_1_jan_2000 + utco;
+    seconds = t - posix_timestamp_1_jan_2000 + utco;
 }
 
 std::vector<uint8_t> TagESTn::Assemble()

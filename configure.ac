@@ -85,16 +85,15 @@ AC_ARG_ENABLE([output_simul],
 AS_IF([test "x$enable_output_simul" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_SIMUL, [1], [Define if SIMUL output is enabled])])
 
-# EDI
-AC_ARG_ENABLE([output_edi],
-        [AS_HELP_STRING([--disable-output-edi], [Disable EDI output])],
-        [], [enable_output_edi=yes])
-AS_IF([test "x$enable_output_edi" = "xyes"],
-       AC_CHECK_LIB(curl, curl_easy_init, [true], [AC_MSG_ERROR([cURL is required for EDI output])]))
-AS_IF([test "x$enable_output_edi" = "xyes"],
-        [AC_DEFINE(HAVE_OUTPUT_EDI, [1], [Define if EDI output is enabled])])
-AS_IF([test "x$enable_output_edi" = "xyes"],
-        [AC_DEFINE(HAVE_CURL, [1], [Define if cURL is available])])
+# EDI and ZMQ output metadata require TAI-UTC offset, which requires downloading the IETF TAI bulletin
+AC_CHECK_LIB(curl, curl_easy_init)
+have_curl=$ac_cv_lib_curl_curl_easy_init
+
+AS_IF([test "x$have_curl" = "xyes"],
+             [AC_DEFINE(HAVE_CURL, [1], [Define if cURL is available])])
+
+AS_IF([test "x$have_curl" = "xno"],
+             [AC_MSG_WARN([cURL not found, timestamps will not work])])
 
 AC_LANG_PUSH([C++])
 AX_CHECK_COMPILE_FLAG([-Wduplicated-cond], [CXXFLAGS="$CXXFLAGS -Wduplicated-cond"], [], ["-Werror"])
@@ -132,9 +131,6 @@ AC_DEFINE([HAVE_INPUT_ZEROMQ], [1], [Define if ZeroMQ input is enabled])
 AC_DEFINE([HAVE_OUTPUT_ZEROMQ], [1], [Define if ZeroMQ output is enabled])
 AC_DEFINE([HAVE_RC_ZEROMQ], [1], [Define if ZeroMQ enabled for rc])
 
-# Link against cURL
-AM_CONDITIONAL([HAVE_EDI_TEST],
-			   [test "x$enable_output_edi" = "xyes"])
 # Do not build odr-zmq2farsync if no RAW output
 AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],
 			   [test "x$enable_output_raw" = "xyes"])
@@ -157,7 +153,7 @@ echo
 echo "Outputs:"
 enabled=""
 disabled=""
-for output in file fifo udp tcp raw simul edi
+for output in file fifo udp tcp raw simul
 do
     eval var=\$enable_output_$output
     AS_IF([test "x$var" = "xyes"],
@@ -166,6 +162,13 @@ do
 done
 echo "  Enabled: $enabled zmq"
 echo "  Disabled: $disabled"
+
+if test "$have_curl" = "no" ; then
+echo
+echo "WARNING! cURL not found: ODR-DabMux will not support timestamps"
+echo
+fi
+
 
 echo
 echo "***********************************************"

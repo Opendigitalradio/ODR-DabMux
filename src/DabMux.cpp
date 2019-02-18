@@ -291,7 +291,6 @@ int main(int argc, char *argv[])
             }
 
             if (outputuid == "edi") {
-#if HAVE_OUTPUT_EDI
                 ptree pt_edi = pt_outputs.get_child("edi");
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
                     edi_destination_t dest;
@@ -330,9 +329,6 @@ int main(int argc, char *argv[])
                 edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);
 
                 mux.set_edi_config(edi_conf);
-#else
-                throw runtime_error("EDI output not compiled in");
-#endif
             }
             else if (outputuid == "zeromq") {
 #if defined(HAVE_OUTPUT_ZEROMQ)
@@ -463,7 +459,6 @@ int main(int argc, char *argv[])
         etiLog.log(info, "--- Output list ---");
         printOutputs(outputs);
 
-#if HAVE_OUTPUT_EDI
         if (edi_conf.enabled()) {
             etiLog.level(info) << "EDI";
             etiLog.level(info) << " verbose     " << edi_conf.verbose;
@@ -479,7 +474,6 @@ int main(int argc, char *argv[])
                 etiLog.level(info) << " interleave     " << edi_conf.latency_frames * 24 << " ms";
             }
         }
-#endif
 
         size_t limit = pt.get("general.nbframes", 0);
 

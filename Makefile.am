@@ -25,17 +25,10 @@ else
 GITVERSION_FLAGS =
 endif
 
-bin_PROGRAMS=odr-dabmux zmqinput-keygen
+bin_PROGRAMS=odr-dabmux zmqinput-keygen odr-zmq2edi
 
 if HAVE_OUTPUT_RAW_TEST
 bin_PROGRAMS+=odr-zmq2farsync
-endif
-
-if HAVE_EDI_TEST
-bin_PROGRAMS+=odr-zmq2edi
-CURL_LIBS    =-lcurl
-else
-CURL_LIBS    =
 endif
 
 FARSYNC_DIR=lib/farsync/linux
@@ -60,7 +53,7 @@ lib_charset_sources = lib/charset/charset.cpp \
 
 odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(GITVERSION_FLAGS)
 odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
-odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) $(BOOST_LDFLAGS) \
+odr_dabmux_LDADD    =$(ZMQ_LIBS) $(BOOST_LDFLAGS) \
 					 -lpthread $(BOOST_SYSTEM_LIB) $(BOOST_THREAD_LIB) $(BOOST_ASIO_LIB)
 
 odr_dabmux_SOURCES  =src/DabMux.cpp \

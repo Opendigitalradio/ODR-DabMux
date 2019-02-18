@@ -86,7 +86,7 @@ class TagDETI : public TagItem
         uint8_t utco = 0;
 
         /* Update the EDI time. t is in UTC */
-        void set_edi_time(const std::chrono::system_clock::time_point &t, int tai_utc_offset);
+        void set_edi_time(const std::time_t t, int tai_utc_offset);
 
         /* The number of SI seconds since 2000-01-01 T 00:00:00 UTC as an
          * unsigned 32-bit quantity. Contrary to POSIX, this value also

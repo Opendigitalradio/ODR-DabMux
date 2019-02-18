@@ -28,13 +28,13 @@ general {
     writescca false
 
     ; Enable timestamp definition necessary for SFN
-    ; This also enables time encoding using the MNSC.
+    ; This also enables time encoding using the MNSC and in EDI.
     tist false
 
-    ; On startup, EDI time is initialised to system time. If you want
+    ; On startup, the timestamp is initialised to system time. If you want
     ; to add an offset, uncomment the following line and give a number
     ; in seconds.
-    ; tist_edioffset 0
+    ; tist_offset 0
 
     ; The management server is a simple TCP server that can present
     ; statistics data (buffers, overruns, underruns, etc)

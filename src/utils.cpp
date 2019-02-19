@@ -574,22 +574,28 @@ long hexparse(const std::string& input)
         input.c_str() + 2 :
         input.c_str();
 
-    value = strtol(input.c_str(), &endptr, base);
+    // Comments taken from manpage
 
+    value = strtol(startptr, &endptr, base);
     if ((value == LONG_MIN or value == LONG_MAX) and errno == ERANGE) {
+        // If an underflow occurs, strtol() returns LONG_MIN.
+        // If an overflow occurs, strtol() returns LONG_MAX.
+        // In both cases, errno is set to ERANGE.
         throw out_of_range("hexparse: value out of range");
     }
     else if (value == 0 and errno != 0) {
+        // The implementation may also set errno to EINVAL in case no
+        // conversion was performed (no digits seen, and 0 returned).
         stringstream ss;
         ss << "hexparse: " << strerror(errno);
         throw invalid_argument(ss.str());
     }
-
-    if (startptr == endptr) {
+    else if (startptr == endptr) {
+        // If there were no digits at all, strtol() stores the original value
+        // of nptr in *endptr (and returns 0).
         throw out_of_range("hexparse: no value found");
     }
-
-    if (*endptr != '\0') {
+    else if (*endptr != '\0') {
         throw out_of_range("hexparse: superfluous characters after value found: '" + input + "'");
     }
 

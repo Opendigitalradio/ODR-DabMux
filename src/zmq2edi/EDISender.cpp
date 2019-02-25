@@ -192,8 +192,8 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
         edi_subchannelToTag[i] = tag_ESTn;
     }
 
-    const uint16_t mnsc = p[8 + 4*nst] * 256 + \
-                          p[8 + 4*nst + 1];
+    uint16_t mnsc = 0;
+    std::memcpy(&mnsc, p + 8 + 4*nst, sizeof(uint16_t));
     edi_tagDETI.mnsc = mnsc;
 
     /*const uint16_t crc1 = p[8 + 4*nst + 2]*256 + \

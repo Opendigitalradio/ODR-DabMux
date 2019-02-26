@@ -39,7 +39,6 @@ AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 # Checks for libraries.
 AX_PTHREAD([], AC_MSG_ERROR([requires pthread]))
 AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
-AX_BOOST_THREAD
 AX_BOOST_SYSTEM
 AX_BOOST_ASIO
 

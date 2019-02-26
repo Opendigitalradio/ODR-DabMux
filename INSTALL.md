@@ -10,7 +10,7 @@ Dependencies on Debian
 ----------------------
 
 On Debian you will need to install the following packages:
-build-essential, libzmq3-dev, libzmq3, automake, libtool, libboost-all-dev, libcurl4-openssl-dev
+build-essential, libzmq5-dev, automake, libboost-system-dev, libcurl4-openssl-dev
 
 Dependencies on CentOS
 ----------------------

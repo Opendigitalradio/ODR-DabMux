@@ -3,7 +3,7 @@
    Her Majesty the Queen in Right of Canada (Communications Research
    Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -134,48 +134,12 @@ class RemoteControllable {
  */
 class RemoteControllers {
     public:
-        void add_controller(std::shared_ptr<BaseRemoteController> rc) {
-            m_controllers.push_back(rc);
-        }
-
-        void enrol(RemoteControllable *rc) {
-            controllables.push_back(rc);
-        }
-
-        void remove_controllable(RemoteControllable *rc) {
-            controllables.remove(rc);
-        }
-
-        void check_faults() {
-            for (auto &controller : m_controllers) {
-                if (controller->fault_detected())
-                {
-                    etiLog.level(warn) <<
-                            "Detected Remote Control fault, restarting it";
-                    controller->restart();
-                }
-            }
-        }
-
-        std::list< std::vector<std::string> >
-            get_param_list_values(const std::string& name) {
-            RemoteControllable* controllable = get_controllable_(name);
-
-            std::list< std::vector<std::string> > allparams;
-            for (auto &param : controllable->get_supported_parameters()) {
-                std::vector<std::string> item;
-                item.push_back(param);
-                item.push_back(controllable->get_parameter(param));
-
-                allparams.push_back(item);
-            }
-            return allparams;
-        }
-
-        std::string get_param(const std::string& name, const std::string& param) {
-            RemoteControllable* controllable = get_controllable_(name);
-            return controllable->get_parameter(param);
-        }
+        void add_controller(std::shared_ptr<BaseRemoteController> rc);
+        void enrol(RemoteControllable *rc);
+        void remove_controllable(RemoteControllable *rc);
+        void check_faults();
+        std::list< std::vector<std::string> > get_param_list_values(const std::string& name);
+        std::string get_param(const std::string& name, const std::string& param);
 
         void set_param(
                 const std::string& name,
@@ -191,7 +155,6 @@ class RemoteControllers {
 };
 
 extern RemoteControllers rcs;
-
 
 /* Implements a Remote controller based on a simple telnet CLI
  * that listens on localhost
@@ -210,9 +173,7 @@ class RemoteControllerTelnet : public BaseRemoteController {
             m_fault(false),
             m_port(port)
         {
-            // Don't call virtual functions from the ctor
-            // https://isocpp.org/wiki/faq/strange-inheritance#calling-virtuals-from-ctors
-            internal_restart();
+            restart();
         }
 
 
@@ -223,10 +184,9 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         virtual bool fault_detected() { return m_fault; }
 
-        virtual void restart() { internal_restart(); }
+        virtual void restart();
 
     private:
-        void internal_restart();
         void restart_thread(long);
 
         void process(long);
@@ -240,16 +200,6 @@ class RemoteControllerTelnet : public BaseRemoteController {
                 const boost::system::error_code& boost_error,
                 boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
                 boost::asio::ip::tcp::acceptor& acceptor);
-        std::vector<std::string> tokenise_(std::string message) {
-            std::vector<std::string> all_tokens;
-
-            boost::char_separator<char> sep(" ");
-            boost::tokenizer< boost::char_separator<char> > tokens(message, sep);
-            BOOST_FOREACH (const std::string& t, tokens) {
-                all_tokens.push_back(t);
-            }
-            return all_tokens;
-        }
 
         std::atomic<bool> m_active;
 

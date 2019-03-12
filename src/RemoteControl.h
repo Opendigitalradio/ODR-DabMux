@@ -47,7 +47,7 @@
 #include <boost/asio.hpp>
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 #include <stdexcept>
 
 #include "Log.h"
@@ -94,7 +94,7 @@ class BaseRemoteController {
 class RemoteControllable {
     public:
         RemoteControllable(const std::string& name) :
-            m_name(name) {}
+            m_rc_name(name) {}
 
         RemoteControllable(const RemoteControllable& other) = delete;
         RemoteControllable& operator=(const RemoteControllable& other) = delete;
@@ -105,7 +105,7 @@ class RemoteControllable {
          * It might be used in the commands the user has to type, so keep
          * it short
          */
-        virtual std::string get_rc_name() const { return m_name; }
+        virtual std::string get_rc_name() const { return m_rc_name; }
 
         /* Return a list of possible parameters that can be set */
         virtual std::list<std::string> get_supported_parameters() const;
@@ -126,7 +126,7 @@ class RemoteControllable {
         virtual const std::string get_parameter(const std::string& parameter) const = 0;
 
     protected:
-        std::string m_name;
+        std::string m_rc_name;
         std::list< std::vector<std::string> > m_parameters;
 };
 
@@ -210,7 +210,9 @@ class RemoteControllerTelnet : public BaseRemoteController {
             m_fault(false),
             m_port(port)
         {
-            restart();
+            // Don't call virtual functions from the ctor
+            // https://isocpp.org/wiki/faq/strange-inheritance#calling-virtuals-from-ctors
+            internal_restart();
         }
 
 
@@ -221,9 +223,10 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         virtual bool fault_detected() { return m_fault; }
 
-        virtual void restart();
+        virtual void restart() { internal_restart(); }
 
     private:
+        void internal_restart();
         void restart_thread(long);
 
         void process(long);
@@ -254,9 +257,9 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         /* This is set to true if a fault occurred */
         std::atomic<bool> m_fault;
-        boost::thread m_restarter_thread;
+        std::thread m_restarter_thread;
 
-        boost::thread m_child_thread;
+        std::thread m_child_thread;
 
         int m_port;
 };
@@ -299,12 +302,12 @@ class RemoteControllerZmq : public BaseRemoteController {
 
         /* This is set to true if a fault occurred */
         std::atomic<bool> m_fault;
-        boost::thread m_restarter_thread;
+        std::thread m_restarter_thread;
 
         zmq::context_t m_zmqContext;
 
         std::string m_endpoint;
-        boost::thread m_child_thread;
+        std::thread m_child_thread;
 };
 #endif
 

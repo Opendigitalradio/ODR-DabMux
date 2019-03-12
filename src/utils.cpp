@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -99,7 +99,7 @@ void header_message()
     fprintf(stderr,
             "(Communications Research Centre Canada)\n\n");
     fprintf(stderr,
-            "Copyright (C) 2017 Matthias P. Braendli\n");
+            "Copyright (C) 2019 Matthias P. Braendli\n");
     fprintf(stderr,
             "LICENCE: GPLv3+\n\n");
     fprintf(stderr,
@@ -220,8 +220,10 @@ void printServices(const vector<shared_ptr<DabService> >& services)
         etiLog.log(info, " id:            0x%lx (%lu)", service->id,
                 service->id);
 
-        etiLog.log(info, " pty:           0x%x (%u)", service->pty,
-                service->pty);
+        etiLog.log(info, " pty:           0x%x (%u) %s",
+                service->pty_settings.pty,
+                service->pty_settings.pty,
+                service->pty_settings.dynamic_no_static ? "Dynamic" : "Static");
 
         etiLog.log(info, " language:      0x%x (%u)",
                 service->language, service->language);
@@ -237,19 +239,18 @@ void printServices(const vector<shared_ptr<DabService> >& services)
     }
 }
 
-void printComponents(vector<DabComponent*>& components)
+void printComponents(const vec_sp_component& components)
 {
-    vector<DabComponent*>::const_iterator current;
     unsigned int index = 0;
 
-    for (current = components.begin(); current != components.end(); ++current) {
-        etiLog.level(info) << "Component     " << (*current)->get_rc_name();
-        printComponent(*current);
+    for (const auto component : components) {
+        etiLog.level(info) << "Component     " << component->get_rc_name();
+        printComponent(component);
         ++index;
     }
 }
 
-void printComponent(DabComponent* component)
+void printComponent(const shared_ptr<DabComponent>& component)
 {
     etiLog.log(info, " service id:             0x%x (%u)",
             component->serviceId, component->serviceId);
@@ -316,18 +317,18 @@ void printComponent(DabComponent* component)
     }
 }
 
-void printSubchannels(vector<DabSubchannel*>& subchannels)
+void printSubchannels(const vec_sp_subchannel& subchannels)
 {
-    vector<DabSubchannel*>::iterator subchannel;
     int index = 0;
 
-    for (subchannel = subchannels.begin(); subchannel != subchannels.end();
-            ++subchannel) {
-        dabProtection* protection = &(*subchannel)->protection;
-        etiLog.level(info) << "Subchannel   " << (*subchannel)->uid;
+    int total_num_cu = 0;
+
+    for (auto subchannel : subchannels) {
+        dabProtection* protection = &subchannel->protection;
+        etiLog.level(info) << "Subchannel   " << subchannel->uid;
         etiLog.log(info, " input");
-        etiLog.level(info) << "   URI:     " << (*subchannel)->inputUri;
-        switch ((*subchannel)->type) {
+        etiLog.level(info) << "   URI:     " << subchannel->inputUri;
+        switch (subchannel->type) {
             case subchannel_type_t::Audio:
                 etiLog.log(info, " type:       audio");
                 break;
@@ -345,9 +346,9 @@ void printSubchannels(vector<DabSubchannel*>& subchannels)
                 break;
         }
         etiLog.log(info, " id:         0x%x (%u)",
-                (*subchannel)->id, (*subchannel)->id);
+                subchannel->id, subchannel->id);
         etiLog.log(info, " bitrate:    %i",
-                (*subchannel)->bitrate);
+                subchannel->bitrate);
         if (protection->form == UEP) {
             etiLog.log(info, " protection: UEP %i", protection->level + 1);
             etiLog.log(info, "  index:     %i",
@@ -360,14 +361,17 @@ void printSubchannels(vector<DabSubchannel*>& subchannels)
             etiLog.log(info, "  option:    %i",
                     protection->eep.GetOption());
             etiLog.log(info, "  level:     %i",
-                    (*subchannel)->protection.level);
+                    subchannel->protection.level);
         }
         etiLog.log(info, " SAD:        %u",
-                (*subchannel)->startAddress);
+                subchannel->startAddress);
         etiLog.log(info, " size (CU):  %i",
-                (*subchannel)->getSizeCu());
+                subchannel->getSizeCu());
+        total_num_cu += subchannel->getSizeCu();
         ++index;
     }
+
+    etiLog.log(info, "Total ensemble size (CU):  %i", total_num_cu);
 }
 
 static void printLinking(const shared_ptr<dabEnsemble>& ensemble)
@@ -407,6 +411,28 @@ static void printLinking(const shared_ptr<dabEnsemble>& ensemble)
             }
         }
     }
+
+    etiLog.log(info, " Services in other ensembles");
+    if (ensemble->service_other_ensemble.empty()) {
+        etiLog.level(info) << "  None ";
+    }
+
+    for (const auto& s_oe : ensemble->service_other_ensemble) {
+        int oe = 1;
+
+        for (const auto& local_service : ensemble->services) {
+            if (local_service->id == s_oe.service_id) {
+                oe = 0;
+                break;
+            }
+        }
+
+        etiLog.log(info, "  Service 0x%lx", s_oe.service_id);
+        for (const auto oe : s_oe.other_ensembles) {
+            etiLog.log(info, "   Available in ensemble 0x%04x", oe);
+        }
+        etiLog.log(info, "   OE=%d", oe);
+    }
 }
 
 static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)
@@ -416,69 +442,68 @@ static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)
         etiLog.level(info) << "  None ";
     }
     for (const auto& fi : ensemble->frequency_information) {
-        etiLog.level(info) << "  FI " << fi->uid;
-        for (const auto& fle : fi->frequency_information) {
-            etiLog.level(info) << "    continuity " << (fle.continuity ? "true" : "false");
-            switch (fle.rm) {
-                case RangeModulation::dab_ensemble:
-                    etiLog.level(info) << "    RM: DAB";
-                    etiLog.log(info,      "      EId 0x%04x", fle.fi_dab.eid);
-                    break;
-                case RangeModulation::drm:
-                    etiLog.level(info) << "    RM: DRM";
-                    etiLog.log(info,      "      DRM Id 0x%06x", fle.fi_drm.drm_service_id);
-                    break;
-                case RangeModulation::fm_with_rds:
-                    etiLog.level(info) << "    RM: FM (with RDS)";
-                    etiLog.log(info,      "      PI-Code 0x%04x", fle.fi_fm.pi_code);
-                    break;
-                case RangeModulation::amss:
-                    etiLog.level(info) << "    RM: AMSS";
-                    etiLog.log(info,      "      AMSS Id 0x%06x", fle.fi_amss.amss_service_id);
-                    break;
-            }
+        etiLog.level(info) << "  FI " << fi.uid;
+        etiLog.level(info) << "   OE=" << (fi.other_ensemble ? 1 : 0);
+        switch (fi.rm) {
+            case RangeModulation::dab_ensemble:
+                etiLog.level(info) << "   RM: DAB";
+                etiLog.log(info,      "   EId 0x%04x", fi.fi_dab.eid);
+                break;
+            case RangeModulation::drm:
+                etiLog.level(info) << "   RM: DRM";
+                etiLog.log(info,      "   DRM Id 0x%06x", fi.fi_drm.drm_service_id);
+                break;
+            case RangeModulation::fm_with_rds:
+                etiLog.level(info) << "   RM: FM (with RDS)";
+                etiLog.log(info,      "   PI-Code 0x%04x", fi.fi_fm.pi_code);
+                break;
+            case RangeModulation::amss:
+                etiLog.level(info) << "   RM: AMSS";
+                etiLog.log(info,      "   AMSS Id 0x%06x", fi.fi_amss.amss_service_id);
+                break;
+        }
+        etiLog.level(info) << "   continuity " << (fi.continuity ? "true" : "false");
 
-            switch (fle.rm) {
-                case RangeModulation::dab_ensemble:
-                    for (const auto& f : fle.fi_dab.frequencies) {
-                        stringstream ss;
-                        ss << "      " << f.uid << " ";
-                        switch (f.control_field) {
-                            case FrequencyInfoDab::ControlField_e::adjacent_no_mode:
-                                ss << "Adjacent, w/o mode indication, ";
-                                break;
-                            case FrequencyInfoDab::ControlField_e::adjacent_mode1:
-                                ss << "Adjacent, mode I, ";
-                                break;
-                            case FrequencyInfoDab::ControlField_e::disjoint_no_mode:
-                                ss << "Disjoint, w/o mode indication, ";
-                                break;
-                            case FrequencyInfoDab::ControlField_e::disjoint_mode1:
-                                ss << "Disjoint, mode I, ";
-                                break;
-                        }
-                        ss << f.frequency;
-                        etiLog.level(info) << ss.str();
+        switch (fi.rm) {
+            case RangeModulation::dab_ensemble:
+                for (const auto& f : fi.fi_dab.frequencies) {
+                    stringstream ss;
+                    ss << "      " << f.uid << " ";
+                    switch (f.control_field) {
+                        case FrequencyInfoDab::ControlField_e::adjacent_no_mode:
+                            ss << "Adjacent, w/o mode indication, ";
+                            break;
+                        case FrequencyInfoDab::ControlField_e::adjacent_mode1:
+                            ss << "Adjacent, mode I, ";
+                            break;
+                        case FrequencyInfoDab::ControlField_e::disjoint_no_mode:
+                            ss << "Disjoint, w/o mode indication, ";
+                            break;
+                        case FrequencyInfoDab::ControlField_e::disjoint_mode1:
+                            ss << "Disjoint, mode I, ";
+                            break;
                     }
-                    break;
-                case RangeModulation::drm:
-                    etiLog.log(info, "    ID 0x%02x", fle.fi_drm.drm_service_id);
-                    for (const auto& f : fle.fi_drm.frequencies) {
-                        etiLog.level(info) << "        " << f;
-                    }
-                    break;
-                case RangeModulation::fm_with_rds:
-                    for (const auto& f : fle.fi_fm.frequencies) {
-                        etiLog.level(info) << "        " << f;
-                    }
-                    break;
-                case RangeModulation::amss:
-                    etiLog.log(info, "    ID 0x%02x", fle.fi_amss.amss_service_id);
-                    for (const auto& f : fle.fi_amss.frequencies) {
-                        etiLog.level(info) << "        " << f;
-                    }
-                    break;
-            }
+                    ss << f.frequency;
+                    etiLog.level(info) << ss.str();
+                }
+                break;
+            case RangeModulation::drm:
+                etiLog.log(info, "    ID 0x%02x", fi.fi_drm.drm_service_id);
+                for (const auto& f : fi.fi_drm.frequencies) {
+                    etiLog.level(info) << "        " << f;
+                }
+                break;
+            case RangeModulation::fm_with_rds:
+                for (const auto& f : fi.fi_fm.frequencies) {
+                    etiLog.level(info) << "        " << f;
+                }
+                break;
+            case RangeModulation::amss:
+                etiLog.log(info, "    ID 0x%02x", fi.fi_amss.amss_service_id);
+                for (const auto& f : fi.fi_amss.frequencies) {
+                    etiLog.level(info) << "        " << f;
+                }
+                break;
         }
     }
 }
@@ -494,7 +519,20 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
             ensemble->label.short_label();
 
     etiLog.log(info, " (0x%x)", ensemble->label.flag());
-    etiLog.log(info, " mode:        %u", ensemble->mode);
+    switch (ensemble->transmission_mode) {
+        case TransmissionMode_e::TM_I:
+            etiLog.log(info, " mode:        TM I");
+            break;
+        case TransmissionMode_e::TM_II:
+            etiLog.log(info, " mode:        TM II");
+            break;
+        case TransmissionMode_e::TM_III:
+            etiLog.log(info, " mode:        TM III");
+            break;
+        case TransmissionMode_e::TM_IV:
+            etiLog.log(info, " mode:        TM IV");
+            break;
+    }
 
     if (ensemble->lto_auto) {
         time_t now = time(nullptr);
@@ -511,8 +549,9 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
         etiLog.level(info) << " No announcement clusters defined";
     }
     else {
+        etiLog.level(info) << " Announcement clusters:";
         for (const auto& cluster : ensemble->clusters) {
-            etiLog.level(info) << cluster->tostring();
+            etiLog.level(info) << "  " << cluster->tostring();
         }
     }
 
@@ -525,14 +564,19 @@ long hexparse(const std::string& input)
     long value = 0;
     errno = 0;
 
+    char* endptr = nullptr;
+
+    const bool is_hex = (input.find("0x") == 0);
+
     // Do not use strtol's base=0 because
     // we do not want to accept octal.
-    if (input.find("0x") == 0) {
-        value = strtol(input.c_str() + 2, nullptr, 16);
-    }
-    else {
-        value = strtol(input.c_str(), nullptr, 10);
-    }
+    const int base = is_hex ? 16 : 10;
+
+    const char* const startptr = is_hex ?
+        input.c_str() + 2 :
+        input.c_str();
+
+    value = strtol(input.c_str(), &endptr, base);
 
     if ((value == LONG_MIN or value == LONG_MAX) and errno == ERANGE) {
         throw out_of_range("hexparse: value out of range");
@@ -541,6 +585,14 @@ long hexparse(const std::string& input)
         stringstream ss;
         ss << "hexparse: " << strerror(errno);
         throw invalid_argument(ss.str());
+    }
+
+    if (startptr == endptr) {
+        throw out_of_range("hexparse: no value found");
+    }
+
+    if (*endptr != '\0') {
+        throw out_of_range("hexparse: superfluous characters after value found: '" + input + "'");
     }
 
     return value;

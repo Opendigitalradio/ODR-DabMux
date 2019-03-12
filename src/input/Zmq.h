@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016 Matthias P. Braendli
+   Copyright (C) 2017 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -25,7 +25,7 @@
 /*
    This file is part of ODR-DabMux.
 
-   It defines a ZeroMQ input for dabplus data.
+   It defines a ZeroMQ input for audio and dabplus data.
 
    ODR-DabMux is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as
@@ -147,7 +147,7 @@ struct zmq_frame_header_t
 
 class ZmqBase : public InputBase, public RemoteControllable {
     public:
-        ZmqBase(const std::string name,
+        ZmqBase(const std::string& name,
                 dab_input_zmq_config_t config)
             : RemoteControllable(name),
             m_zmq_context(1),
@@ -156,7 +156,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
             m_bitrate(0),
             m_enable_input(true),
             m_config(config),
-            m_stats(m_name),
+            m_stats(name),
             m_prebuf_current(config.prebuffering) {
                 RC_ADD_PARAMETER(enable,
                         "If the input is enabled. Set to zero to empty the buffer.");
@@ -229,7 +229,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
 
 class ZmqMPEG : public ZmqBase {
     public:
-        ZmqMPEG(const std::string name,
+        ZmqMPEG(const std::string& name,
                 dab_input_zmq_config_t config)
             : ZmqBase(name, config) {
                 RC_ADD_PARAMETER(buffer,
@@ -245,7 +245,7 @@ class ZmqMPEG : public ZmqBase {
 
 class ZmqAAC : public ZmqBase {
     public:
-        ZmqAAC(const std::string name,
+        ZmqAAC(const std::string& name,
                 dab_input_zmq_config_t config)
             : ZmqBase(name, config) {
                 RC_ADD_PARAMETER(buffer,

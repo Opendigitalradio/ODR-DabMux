@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -45,6 +45,7 @@
 #ifdef HAVE_OUTPUT_ZEROMQ
 #  include "zmq.hpp"
 #endif
+#include "dabOutput/metadata.h"
 
 /** Configuration for EDI output */
 
@@ -52,8 +53,8 @@
 struct edi_destination_t {
     std::string dest_addr;
     std::string source_addr;
-    unsigned int source_port;
-    unsigned int ttl;
+    unsigned int source_port = 0;
+    unsigned int ttl = 10;
 
     std::shared_ptr<UdpSocket> socket;
 };
@@ -89,6 +90,8 @@ class DabOutput
         virtual ~DabOutput() {}
 
         virtual std::string get_info() const = 0;
+
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) = 0;
 };
 
 // ----- used in File and Fifo outputs
@@ -117,6 +120,7 @@ class DabOutputFile : public DabOutput
             return "file://" + filename_;
         }
 
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     protected:
         /* Set ETI type according to filename, and return
          * filename without the &type=foo part
@@ -148,27 +152,6 @@ class DabOutputFifo : public DabOutputFile
 class DabOutputRaw : public DabOutput
 {
     public:
-        DabOutputRaw()
-        {
-            socket_ = -1;
-            isCyclades_ = false;
-            buffer_ = new unsigned char[6144];
-        }
-
-        DabOutputRaw(const DabOutputRaw& other)
-        {
-            socket_ = other.socket_;
-            isCyclades_ = other.isCyclades_;
-            buffer_ = new unsigned char[6144];
-            memcpy(buffer_, other.buffer_, 6144);
-        }
-
-        ~DabOutputRaw() {
-            delete[] buffer_;
-        }
-
-        const DabOutputRaw operator=(const DabOutputRaw& other) = delete;
-
         int Open(const char* name);
         int Write(void* buffer, int size);
         int Close();
@@ -176,11 +159,13 @@ class DabOutputRaw : public DabOutput
         std::string get_info() const {
             return "raw://" + filename_;
         }
+
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
+
     private:
         std::string filename_;
-        int socket_;
-        bool isCyclades_;
-        unsigned char* buffer_;
+        int socket_ = -1;
+        bool isCyclades_ = false;
 };
 
 // -------------- UDP ------------------
@@ -192,7 +177,7 @@ class DabOutputUdp : public DabOutput
             socket_ = new UdpSocket();
         }
 
-        ~DabOutputUdp() {
+        virtual ~DabOutputUdp() {
             delete socket_;
             delete packet_;
         }
@@ -204,6 +189,7 @@ class DabOutputUdp : public DabOutput
         std::string get_info() const {
             return "udp://" + uri_;
         }
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     private:
         // make sure we don't copy this output around
         // the UdpPacket and UdpSocket do not support
@@ -228,7 +214,7 @@ class DabOutputTcp : public DabOutput
         std::string get_info() const {
             return "tcp://" + uri_;
         }
-
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     private:
         std::string uri_;
 
@@ -246,6 +232,7 @@ class DabOutputSimul : public DabOutput
         std::string get_info() const {
             return "simul://" + name_;
         }
+        virtual void setMetadata(std::shared_ptr<OutputMetadata> &md) {}
     private:
         std::string name_;
         std::chrono::steady_clock::time_point startTime_;
@@ -286,6 +273,10 @@ struct zmq_dab_message_t
      */
 
     uint8_t  buf[NUM_FRAMES_PER_ZMQ_MESSAGE*6144];
+
+    /* The packet is then followed with metadata appended to it,
+     * according to dabOutput/metadata.h
+     */
 };
 
 #define ZMQ_DAB_MESSAGE_HEAD_LENGTH (4 + NUM_FRAMES_PER_ZMQ_MESSAGE*2)
@@ -294,17 +285,18 @@ struct zmq_dab_message_t
 class DabOutputZMQ : public DabOutput
 {
     public:
-        DabOutputZMQ(const std::string &zmq_proto) :
+        DabOutputZMQ(const std::string &zmq_proto, bool allow_metadata) :
             endpoint_(""),
             zmq_proto_(zmq_proto), zmq_context_(1),
             zmq_pub_sock_(zmq_context_, ZMQ_PUB),
-            zmq_message_ix(0)
+            zmq_message_ix(0),
+            m_allow_metadata(allow_metadata)
         { }
 
         DabOutputZMQ(const DabOutputZMQ& other) = delete;
         DabOutputZMQ& operator=(const DabOutputZMQ& other) = delete;
 
-        ~DabOutputZMQ()
+        virtual ~DabOutputZMQ()
         {
             zmq_pub_sock_.close();
         }
@@ -316,8 +308,9 @@ class DabOutputZMQ : public DabOutput
         int Open(const char* endpoint);
         int Write(void* buffer, int size);
         int Close();
-    private:
+        void setMetadata(std::shared_ptr<OutputMetadata> &md);
 
+    private:
         std::string endpoint_;
         std::string zmq_proto_;
         zmq::context_t zmq_context_; // handle for the zmq context
@@ -325,6 +318,9 @@ class DabOutputZMQ : public DabOutput
 
         zmq_dab_message_t zmq_message;
         int zmq_message_ix;
+
+        bool m_allow_metadata;
+        std::vector<std::shared_ptr<OutputMetadata> > meta_;
 };
 
 #endif

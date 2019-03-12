@@ -2,10 +2,10 @@
    Copyright (C) 2007, 2008, 2009, 2010, 2011 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013, 2014
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
-   An implementation for a threadsafe queue using boost thread library
+   An implementation for a threadsafe queue, depends on C++11
 
    When creating a ThreadsafeQueue, one can specify the minimal number
    of elements it must contain before it is possible to take one
@@ -28,19 +28,24 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef THREADSAFE_QUEUE_H
-#define THREADSAFE_QUEUE_H
+#pragma once
 
-#include <boost/thread.hpp>
+#include <mutex>
+#include <condition_variable>
 #include <queue>
+#include <utility>
 
 /* This queue is meant to be used by two threads. One producer
  * that pushes elements into the queue, and one consumer that
  * retrieves the elements.
  *
  * The queue can make the consumer block until an element
- * is available.
+ * is available, or a wakeup requested.
  */
+
+/* Class thrown by blocking pop to tell the consumer
+ * that there's a wakeup requested. */
+class ThreadsafeQueueWakeup {};
 
 template<typename T>
 class ThreadsafeQueue
@@ -53,8 +58,20 @@ public:
      */
     size_t push(T const& val)
     {
-        boost::mutex::scoped_lock lock(the_mutex);
+        std::unique_lock<std::mutex> lock(the_mutex);
         the_queue.push(val);
+        size_t queue_size = the_queue.size();
+        lock.unlock();
+
+        the_rx_notification.notify_one();
+
+        return queue_size;
+    }
+
+    size_t push(T&& val)
+    {
+        std::unique_lock<std::mutex> lock(the_mutex);
+        the_queue.emplace(std::move(val));
         size_t queue_size = the_queue.size();
         lock.unlock();
 
@@ -72,7 +89,7 @@ public:
      */
     size_t push_wait_if_full(T const& val, size_t threshold)
     {
-        boost::mutex::scoped_lock lock(the_mutex);
+        std::unique_lock<std::mutex> lock(the_mutex);
         while (the_queue.size() >= threshold) {
             the_tx_notification.wait(lock);
         }
@@ -85,6 +102,17 @@ public:
         return queue_size;
     }
 
+    /* Trigger a wakeup event on a blocking consumer, which
+     * will receive a ThreadsafeQueueWakeup exception.
+     */
+    void trigger_wakeup(void)
+    {
+        std::unique_lock<std::mutex> lock(the_mutex);
+        wakeup_requested = true;
+        lock.unlock();
+        the_rx_notification.notify_one();
+    }
+
     /* Send a notification for the receiver thread */
     void notify(void)
     {
@@ -93,19 +121,19 @@ public:
 
     bool empty() const
     {
-        boost::mutex::scoped_lock lock(the_mutex);
+        std::unique_lock<std::mutex> lock(the_mutex);
         return the_queue.empty();
     }
 
     size_t size() const
     {
-        boost::mutex::scoped_lock lock(the_mutex);
+        std::unique_lock<std::mutex> lock(the_mutex);
         return the_queue.size();
     }
 
     bool try_pop(T& popped_value)
     {
-        boost::mutex::scoped_lock lock(the_mutex);
+        std::unique_lock<std::mutex> lock(the_mutex);
         if (the_queue.empty()) {
             return false;
         }
@@ -121,24 +149,30 @@ public:
 
     void wait_and_pop(T& popped_value, size_t prebuffering = 1)
     {
-        boost::mutex::scoped_lock lock(the_mutex);
-        while (the_queue.size() < prebuffering) {
+        std::unique_lock<std::mutex> lock(the_mutex);
+        while (the_queue.size() < prebuffering and
+                not wakeup_requested) {
             the_rx_notification.wait(lock);
         }
 
-        popped_value = the_queue.front();
-        the_queue.pop();
+        if (wakeup_requested) {
+            wakeup_requested = false;
+            throw ThreadsafeQueueWakeup();
+        }
+        else {
+            std::swap(popped_value, the_queue.front());
+            the_queue.pop();
 
-        lock.unlock();
-        the_tx_notification.notify_one();
+            lock.unlock();
+            the_tx_notification.notify_one();
+        }
     }
 
 private:
     std::queue<T> the_queue;
-    mutable boost::mutex the_mutex;
-    boost::condition_variable the_rx_notification;
-    boost::condition_variable the_tx_notification;
+    mutable std::mutex the_mutex;
+    std::condition_variable the_rx_notification;
+    std::condition_variable the_tx_notification;
+    bool wakeup_requested = false;
 };
-
-#endif
 

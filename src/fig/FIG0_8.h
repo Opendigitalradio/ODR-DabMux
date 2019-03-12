@@ -39,16 +39,16 @@ class FIG0_8 : public IFIG
     public:
         FIG0_8(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+        virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual const int figtype(void) const { return 0; }
-        virtual const int figextension(void) const { return 8; }
+        virtual int figtype() const { return 0; }
+        virtual int figextension() const { return 8; }
 
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         bool m_transmit_programme;
-        std::vector<DabComponent*>::iterator componentFIG0_8;
+        vec_sp_component::iterator componentFIG0_8;
 };
 
 }

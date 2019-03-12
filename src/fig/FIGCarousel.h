@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -39,13 +39,20 @@
 
 namespace FIC {
 
-struct FIGCarouselElement {
-    IFIG* fig;
-    int   deadline; // unit: ms
+class FIGCarouselElement {
+    public:
+        IFIG* fig;
+        int   deadline; // unit: ms
 
-    void reduce_deadline(void);
+        void reduce_deadline();
+        void increase_deadline();
 
-    void increase_deadline(void);
+        /* Returns true if the repetition rate changed and the
+         * deadline was recalculated */
+        bool check_deadline();
+
+    private:
+        FIG_rate m_last_rate = FIG_rate::A;
 };
 
 enum class FIBAllocation {
@@ -102,6 +109,7 @@ class FIGCarousel {
         FIG0_18 m_fig0_18;
         FIG0_19 m_fig0_19;
         FIG0_21 m_fig0_21;
+        FIG0_24 m_fig0_24;
 };
 
 } // namespace FIC

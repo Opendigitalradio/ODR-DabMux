@@ -38,10 +38,10 @@ class FIG0_10 : public IFIG
     public:
         FIG0_10(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+        virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual const int figtype(void) const { return 0; }
-        virtual const int figextension(void) const { return 10; }
+        virtual int figtype() const { return 0; }
+        virtual int figextension() const { return 10; }
 
     private:
         FIGRuntimeInformation *m_rti;

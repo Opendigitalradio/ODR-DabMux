@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -44,7 +44,8 @@ void FIGCarouselElement::reduce_deadline()
     deadline -= 24; //ms
 
     if (deadline < 0) {
-        etiLog.level(debug) << "Could not respect repetition rate for FIG " <<
+        etiLog.level(debug) <<
+            "Could not respect repetition rate for FIG " <<
             fig->name() << " (" << deadline << "ms late)";
     }
 }
@@ -52,6 +53,22 @@ void FIGCarouselElement::reduce_deadline()
 void FIGCarouselElement::increase_deadline()
 {
     deadline = rate_increment_ms(fig->repetition_rate());
+}
+
+bool FIGCarouselElement::check_deadline()
+{
+    const auto new_rate = fig->repetition_rate();
+    const bool rate_changed = (m_last_rate != new_rate);
+
+    if (rate_changed) {
+        const auto new_deadline = rate_increment_ms(new_rate);
+        if (deadline > new_deadline) {
+            deadline = new_deadline;
+        }
+        m_last_rate = new_rate;
+    }
+
+    return rate_changed;
 }
 
 
@@ -76,7 +93,8 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_fig1_5(&m_rti),
     m_fig0_18(&m_rti),
     m_fig0_19(&m_rti),
-    m_fig0_21(&m_rti)
+    m_fig0_21(&m_rti),
+    m_fig0_24(&m_rti)
 {
     /* Complete MCI except FIG0/8 should be in FIB0.
      * EN 300 401 V1.4.1 Clause 6.1
@@ -111,6 +129,7 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     load_and_allocate(m_fig0_18, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_19, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_21, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_24, FIBAllocation::FIB_ANY);
 }
 
 void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
@@ -185,17 +204,18 @@ size_t FIGCarousel::carousel(
 
     FIBAllocation fibix;
 
-    if (fib == 0) {
-        fibix = FIBAllocation::FIB0;
-    }
-    else if (fib == 1) {
-        fibix = FIBAllocation::FIB1;
-    }
-    else if (fib == 2) {
-        fibix = FIBAllocation::FIB2;
-    }
-    else {
-        throw std::invalid_argument("FIGCarousel::carousel called with invalid fib");
+    switch (fib) {
+        case 0:
+            fibix = FIBAllocation::FIB0;
+            break;
+        case 1:
+            fibix = FIBAllocation::FIB1;
+            break;
+        case 2:
+            fibix = FIBAllocation::FIB2;
+            break;
+        default:
+            throw std::invalid_argument("FIGCarousel::carousel called with invalid fib");
     }
 
     // Create our list of FIGs to consider for this FIB
@@ -205,6 +225,18 @@ size_t FIGCarousel::carousel(
     }
     for (auto& fig : m_fibs[FIBAllocation::FIB_ANY]) {
         sorted_figs.push_back(&fig);
+    }
+
+    /* Some FIGs might have changed rate since we last
+     * set the deadline */
+    for (auto& fig : sorted_figs) {
+        if (fig->check_deadline()) {
+#if CAROUSELDEBUG
+            std::cerr << " FIG" << fig->fig->figtype() << "/" <<
+                fig->fig->figextension() << " deadline changed" <<
+                std::endl;
+#endif
+        }
     }
 
     /* Sort the FIGs in the FIB according to their deadline */
@@ -288,7 +320,15 @@ size_t FIGCarousel::carousel(
             ss << "Assertion error: FIG" << fig_el->fig->figtype() << "/" <<
                 fig_el->fig->figextension() <<
                 " did not write enough data: (" << written << ")";
-            throw std::runtime_error(ss.str());
+            throw std::logic_error(ss.str());
+        }
+        else if (written > available_size) {
+            std::stringstream ss;
+            ss << "Assertion error: FIG" << fig_el->fig->figtype() << "/" <<
+                fig_el->fig->figextension() <<
+                " wrote " << written << " bytes, but only " <<
+                available_size << " available!";
+            throw std::logic_error(ss.str());
         }
 
         if (written > 2) {

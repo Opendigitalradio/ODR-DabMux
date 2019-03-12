@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -26,25 +26,39 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
+#include <map>
+#include <list>
 
 namespace FIC {
 
 // FIG type 0/9
 // The Country, LTO and International table feature defines the local time
-// offset, the International Table and the Extended Country Code (ECC)
+// offset, the International Table and the Extended Country Code (ECC) for
+// the ensemble. Also, the ECC for services with differing ECC.
 class FIG0_9 : public IFIG
 {
     public:
         FIG0_9(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::B; }
+        virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
 
-        virtual const int figtype(void) const { return 0; }
-        virtual const int figextension(void) const { return 9; }
+        virtual int figtype() const { return 0; }
+        virtual int figextension() const { return 9; }
 
     private:
         FIGRuntimeInformation *m_rti;
+
+        struct FIG0_9_Extended_Field {
+            uint8_t ecc;
+            std::list<uint16_t> sids;
+
+            size_t required_bytes() const {
+                return 2 + 2 * sids.size();
+            }
+        };
+        std::list<FIG0_9_Extended_Field> m_extended_fields;
+        std::list<FIG0_9_Extended_Field>::iterator m_current_extended_field;
+
 };
 
 }

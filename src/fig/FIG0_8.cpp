@@ -88,10 +88,10 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
         if (subchannel == ensemble->subchannels.end()) {
             etiLog.log(error,
                     "Subchannel %i does not exist for component "
-                    "of service %i\n",
+                    "of service %i",
                     (*componentFIG0_8)->subchId,
                     (*componentFIG0_8)->serviceId);
-            throw MuxInitException();
+            continue;
         }
 
         if (m_transmit_programme and (*service)->isProgramme(ensemble)) {
@@ -177,8 +177,10 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
             }
 
             if ((*subchannel)->type == subchannel_type_t::Packet) { // Data packet
-                buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
-                buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
+                buf[0] = ((*componentFIG0_8)->serviceId >> 24) & 0xFF;
+                buf[1] = ((*componentFIG0_8)->serviceId >> 16) & 0xFF;
+                buf[2] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
+                buf[3] = ((*componentFIG0_8)->serviceId) & 0xFF;
                 fig0->Length += 4;
                 buf += 4;
                 remaining -= 4;
@@ -194,8 +196,10 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
                 remaining -= 3;
             }
             else {    // Audio, data stream or FIDC
-                buf[0] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
-                buf[1] = ((*componentFIG0_8)->serviceId) & 0xFF;
+                buf[0] = ((*componentFIG0_8)->serviceId >> 24) & 0xFF;
+                buf[1] = ((*componentFIG0_8)->serviceId >> 16) & 0xFF;
+                buf[2] = ((*componentFIG0_8)->serviceId >> 8) & 0xFF;
+                buf[3] = ((*componentFIG0_8)->serviceId) & 0xFF;
                 fig0->Length += 4;
                 buf += 4;
                 remaining -= 4;

@@ -40,4 +40,5 @@
 #include "fig/FIG0_18.h"
 #include "fig/FIG0_19.h"
 #include "fig/FIG0_21.h"
+#include "fig/FIG0_24.h"
 

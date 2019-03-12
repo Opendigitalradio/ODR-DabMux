@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -36,72 +36,37 @@
 #   include "config.h"
 #endif
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <memory>
-#include <exception>
-#include <iostream>
-#include <vector>
-#include <stdint.h>
-#include <string>
-#include <map>
-#include <cstring>
 #include "dabOutput/dabOutput.h"
-#include "input/inputs.h"
 #include "utils.h"
 #include "DabMux.h"
 #include "ManagementServer.h"
-
 #include "input/Prbs.h"
 #include "input/Zmq.h"
 #include "input/File.h"
 #include "input/Udp.h"
-
-
-#ifdef _WIN32
-#   pragma warning ( disable : 4103 )
-#   include "Eti.h"
-#   pragma warning ( default : 4103 )
-#else
-#   include "Eti.h"
-#endif
-
-
-#ifdef _WIN32
-#   include <time.h>
-#   include <process.h>
-#   include <io.h>
-#   include <conio.h>
-#   include <winsock2.h> // For types...
-typedef u_char uint8_t;
-typedef WORD uint16_t;
-typedef DWORD32 uint32_t;
-
-#   ifndef __MINGW32__
-#       include "xgetopt.h"
-#   endif
-#   define read _read
-#   define snprintf _snprintf 
-#   define sleep(a) Sleep((a) * 1000)
-#else
-#   include <unistd.h>
-#   include <sys/time.h>
-#   include <sys/wait.h>
-#   include <sys/ioctl.h>
-#   include <sys/times.h>
-#endif
+#include "Eti.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <exception>
+#include <iostream>
+#include <string>
+#include <map>
+#include <vector>
 
 using namespace std;
+using boost::property_tree::ptree;
+using boost::property_tree::ptree_error;
 
-static void setup_subchannel_from_ptree(DabSubchannel* subchan,
-        const boost::property_tree::ptree &pt,
+static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
+        const ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid);
 
-static uint16_t get_announcement_flag_from_ptree(
-        boost::property_tree::ptree& pt
-        )
+static uint16_t get_announcement_flag_from_ptree(ptree& pt)
 {
     uint16_t flags = 0;
     for (size_t flag = 0; flag < 16; flag++) {
@@ -117,12 +82,9 @@ static uint16_t get_announcement_flag_from_ptree(
 }
 
 // Parse the linkage section
-static void parse_linkage(boost::property_tree::ptree& pt,
+static void parse_linkage(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
-
     auto pt_linking = pt.get_child_optional("linking");
     if (pt_linking)
     {
@@ -131,69 +93,74 @@ static void parse_linkage(boost::property_tree::ptree& pt,
             const ptree pt_set = it.second;
 
             uint16_t lsn = hexparse(pt_set.get("lsn", "0"));
-            if (lsn == 0) {
+            if (lsn == 0 or lsn > 0xFFF) {
                 etiLog.level(error) << "LSN for linking set " <<
                     setuid << " invalid or missing";
                 throw runtime_error("Invalid service linking definition");
             }
 
+            bool active = pt_set.get("active", true);
             bool hard = pt_set.get("hard", true);
             bool international = pt_set.get("international", false);
-
             string service_uid = pt_set.get("keyservice", "");
-            if (service_uid.empty()) {
-                etiLog.level(error) << "Key Service for linking set " <<
-                    setuid << " invalid or missing";
-                throw runtime_error("Invalid service linking definition");
-            }
 
-            auto linkageset = make_shared<LinkageSet>(setuid, lsn, hard, international);
+            auto linkageset = make_shared<LinkageSet>(setuid, lsn, active, hard, international);
             linkageset->keyservice = service_uid; // TODO check if it exists
 
             auto pt_list = pt_set.get_child_optional("list");
-            if (not pt_list) {
-                etiLog.level(error) << "list missing in linking set " <<
-                    setuid;
-                throw runtime_error("Invalid service linking definition");
+
+            if (service_uid.empty()) {
+                if (pt_list) {
+                    etiLog.level(error) << "list defined but no keyservice in linking set " <<
+                        setuid;
+                    throw runtime_error("Invalid service linking definition");
+                }
             }
-
-            for (const auto& it : *pt_list) {
-                const string linkuid = it.first;
-                const ptree pt_link = it.second;
-
-                ServiceLink link;
-
-                string link_type = pt_link.get("type", "");
-                if (link_type == "dab") link.type = ServiceLinkType::DAB;
-                else if (link_type == "fm") link.type = ServiceLinkType::FM;
-                else if (link_type == "drm") link.type = ServiceLinkType::DRM;
-                else if (link_type == "amss") link.type = ServiceLinkType::AMSS;
-                else {
-                    etiLog.level(error) << "Invalid type " << link_type <<
-                        " for link " << linkuid;
+            else {
+                if (not pt_list) {
+                    etiLog.level(error) << "list missing in linking set " <<
+                        setuid;
                     throw runtime_error("Invalid service linking definition");
                 }
 
-                link.id = hexparse(pt_link.get("id", "0"));
-                if (link.id == 0) {
-                    etiLog.level(error) << "id for link " <<
-                        linkuid << " invalid or missing";
-                    throw runtime_error("Invalid service linking definition");
-                }
+                for (const auto& it : *pt_list) {
+                    const string linkuid = it.first;
+                    const ptree pt_link = it.second;
 
-                if (international) {
-                    link.ecc = hexparse(pt_link.get("ecc", "0"));
-                    if (link.ecc == 0) {
-                        etiLog.level(error) << "ecc for link " <<
+                    ServiceLink link;
+
+                    string link_type = pt_link.get("type", "");
+                    if (link_type == "dab") link.type = ServiceLinkType::DAB;
+                    else if (link_type == "fm") link.type = ServiceLinkType::FM;
+                    else if (link_type == "drm") link.type = ServiceLinkType::DRM;
+                    else if (link_type == "amss") link.type = ServiceLinkType::AMSS;
+                    else {
+                        etiLog.level(error) << "Invalid type " << link_type <<
+                            " for link " << linkuid;
+                        throw runtime_error("Invalid service linking definition");
+                    }
+
+                    link.id = hexparse(pt_link.get("id", "0"));
+                    if (link.id == 0) {
+                        etiLog.level(error) << "id for link " <<
                             linkuid << " invalid or missing";
                         throw runtime_error("Invalid service linking definition");
                     }
-                }
-                else {
-                    link.ecc = 0;
-                }
 
-                linkageset->id_list.push_back(link);
+                    if (international) {
+                        link.ecc = hexparse(pt_link.get("ecc", "0"));
+                        if (link.ecc == 0) {
+                            etiLog.level(error) << "ecc for link " <<
+                                linkuid << " invalid or missing";
+                            throw runtime_error("Invalid service linking definition");
+                        }
+                    }
+                    else {
+                        link.ecc = 0;
+                    }
+
+                    linkageset->id_list.push_back(link);
+                }
             }
             ensemble->linkagesets.push_back(linkageset);
         }
@@ -201,12 +168,8 @@ static void parse_linkage(boost::property_tree::ptree& pt,
 }
 
 // Parse the FI section
-static void parse_freq_info(boost::property_tree::ptree& pt,
-        std::shared_ptr<dabEnsemble> ensemble)
+static void parse_freq_info(ptree& pt, std::shared_ptr<dabEnsemble> ensemble)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
-
     auto pt_frequency_information = pt.get_child_optional("frequency_information");
     if (pt_frequency_information)
     {
@@ -214,143 +177,200 @@ static void parse_freq_info(boost::property_tree::ptree& pt,
             const string fi_uid = it_fi.first;
             const ptree pt_fi = it_fi.second;
 
-            auto fi = make_shared<FrequencyInformation>();
+            FrequencyInformation fi;
 
-            fi->uid = fi_uid;
+            fi.uid = fi_uid;
 
-            for (const auto& it_fle : pt_fi) {
-                const string fle_uid = it_fle.first;
-                const ptree pt_entry = it_fle.second;
+            fi.other_ensemble = pt_fi.get("oe", false);
+            string rm_str = pt_fi.get("range_modulation", "");
+            if (rm_str == "dab") {
+                fi.rm = RangeModulation::dab_ensemble;
+            }
+            else if (rm_str == "fm") {
+                fi.rm = RangeModulation::fm_with_rds;
+            }
+            else if (rm_str == "drm") {
+                fi.rm = RangeModulation::drm;
+            }
+            else if (rm_str == "amss") {
+                fi.rm = RangeModulation::amss;
+            }
+            else if (rm_str == "") {
+                throw runtime_error("Missing range_modulation in FI " + fi_uid);
+            }
+            else {
+                throw runtime_error("Invalid range_modulation '" + rm_str +
+                        "' in FI " + fi_uid);
+            }
 
-                FrequencyListEntry fle;
+            fi.continuity = pt_fi.get<bool>("continuity");
 
-                fle.uid = fle_uid;
+            try {
+                switch (fi.rm) {
+                    case RangeModulation::dab_ensemble:
+                        {
+                            fi.fi_dab.eid = hexparse(pt_fi.get<string>("eid"));
 
-                string rm_str = pt_entry.get("range_modulation", "");
-                if (rm_str == "dab") {
-                    fle.rm = RangeModulation::dab_ensemble;
-                }
-                else if (rm_str == "fm") {
-                    fle.rm = RangeModulation::fm_with_rds;
-                }
-                else if (rm_str == "drm") {
-                    fle.rm = RangeModulation::drm;
-                }
-                else if (rm_str == "amss") {
-                    fle.rm = RangeModulation::amss;
-                }
-                else {
-                    throw runtime_error("Invalid range_modulation: " + rm_str);
-                }
+                            for (const auto& list_it : pt_fi.get_child("frequencies")) {
+                                const string fi_list_uid = list_it.first;
+                                const ptree pt_list_entry = list_it.second;
 
-                fle.continuity = pt_entry.get<bool>("continuity");
+                                FrequencyInfoDab::ListElement el;
+                                el.uid = fi_list_uid;
+                                el.frequency = pt_list_entry.get<float>("frequency");
 
-                try {
-                    switch (fle.rm) {
-                        case RangeModulation::dab_ensemble:
-                            {
-                                fle.fi_dab.eid = hexparse(pt_entry.get<string>("eid"));
+                                bool signal_mode_1 = pt_list_entry.get("signal_mode_1", false);
+                                bool adjacent = pt_list_entry.get("adjacent", false);
 
-                                for (const auto& list_it : pt_entry.get_child("frequencies")) {
-                                    const string fi_list_uid = list_it.first;
-                                    const ptree pt_list_entry = list_it.second;
-
-                                    FrequencyInfoDab::ListElement el;
-                                    el.uid = fi_list_uid;
-                                    el.frequency = pt_list_entry.get<float>("frequency");
-
-                                    bool signal_mode_1 = pt_list_entry.get("signal_mode_1", false);
-                                    bool adjacent = pt_list_entry.get("adjacent", false);
-
-                                    if (adjacent and signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::adjacent_mode1;
-                                    }
-                                    else if (adjacent and not signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::adjacent_no_mode;
-                                    }
-                                    if (not adjacent and signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::disjoint_mode1;
-                                    }
-                                    else if (not adjacent and not signal_mode_1) {
-                                        el.control_field = FrequencyInfoDab::ControlField_e::disjoint_no_mode;
-                                    }
-                                    fle.fi_dab.frequencies.push_back(el);
+                                if (adjacent and signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::adjacent_mode1;
                                 }
-                                if (fle.fi_dab.frequencies.size() > 7) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
+                                else if (adjacent and not signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::adjacent_no_mode;
                                 }
-                            } break;
-                        case RangeModulation::fm_with_rds:
-                            {
-                                fle.fi_fm.pi_code = hexparse(pt_entry.get<string>("pi_code"));
-
-                                std::stringstream frequencies_ss;
-                                frequencies_ss << pt_entry.get<string>("frequencies");
-                                for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
-                                    fle.fi_fm.frequencies.push_back(std::stof(freq));
+                                if (not adjacent and signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::disjoint_mode1;
                                 }
-                                if (fle.fi_fm.frequencies.size() > 7) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
+                                else if (not adjacent and not signal_mode_1) {
+                                    el.control_field = FrequencyInfoDab::ControlField_e::disjoint_no_mode;
                                 }
-                            } break;
-                        case RangeModulation::drm:
-                            {
-                                fle.fi_drm.drm_service_id = hexparse(pt_entry.get<string>("drm_id"));
+                                fi.fi_dab.frequencies.push_back(el);
+                            }
+                            if (fi.fi_dab.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
+                    case RangeModulation::fm_with_rds:
+                        {
+                            fi.fi_fm.pi_code = hexparse(pt_fi.get<string>("pi_code"));
 
-                                std::stringstream frequencies_ss;
-                                frequencies_ss << pt_entry.get<string>("frequencies");
-                                for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
-                                    fle.fi_drm.frequencies.push_back(std::stof(freq));
-                                }
-                                if (fle.fi_drm.frequencies.size() > 7) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
-                                }
-                            } break;
-                        case RangeModulation::amss:
-                            {
-                                fle.fi_amss.amss_service_id = hexparse(pt_entry.get<string>("amss_id"));
+                            std::stringstream frequencies_ss;
+                            frequencies_ss << pt_fi.get<string>("frequencies");
+                            for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                                fi.fi_fm.frequencies.push_back(std::stof(freq));
+                            }
+                            if (fi.fi_fm.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
+                    case RangeModulation::drm:
+                        {
+                            fi.fi_drm.drm_service_id = hexparse(pt_fi.get<string>("drm_id"));
 
-                                std::stringstream frequencies_ss;
-                                frequencies_ss << pt_entry.get<string>("frequencies");
-                                for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
-                                    fle.fi_amss.frequencies.push_back(std::stof(freq));
-                                }
-                                if (fle.fi_amss.frequencies.size() > 7) {
-                                    throw runtime_error("Too many frequency entries in FI " + fle.uid);
-                                }
-                            } break;
-                    } // switch(rm)
-                }
-                catch (ptree_error &e) {
-                    throw runtime_error("invalid configuration for FI " + fle_uid);
-                }
+                            std::stringstream frequencies_ss;
+                            frequencies_ss << pt_fi.get<string>("frequencies");
+                            for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                                fi.fi_drm.frequencies.push_back(std::stof(freq));
+                            }
+                            if (fi.fi_drm.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
+                    case RangeModulation::amss:
+                        {
+                            fi.fi_amss.amss_service_id = hexparse(pt_fi.get<string>("amss_id"));
 
-                fi->frequency_information.push_back(fle);
+                            std::stringstream frequencies_ss;
+                            frequencies_ss << pt_fi.get<string>("frequencies");
+                            for (std::string freq; std::getline(frequencies_ss, freq, ' '); ) {
+                                fi.fi_amss.frequencies.push_back(std::stof(freq));
+                            }
+                            if (fi.fi_amss.frequencies.empty()) {
+                                throw runtime_error("Empty frequency list in FI " + fi.uid);
+                            }
+                        } break;
+                } // switch(rm)
+            }
+            catch (const ptree_error &e) {
+                throw runtime_error("invalid configuration for FI " + fi_uid);
+            }
 
-            } // for over fle
-
-            ensemble->frequency_information.push_back(fi);
-
+            ensemble->frequency_information.emplace_back(move(fi));
         } // for over fi
+
+        /* We sort all FI to have the OE=0 first and the OE=1 afterwards, to
+         * avoid having to send FIG0 headers every time it switches.  */
+        std::sort(
+                ensemble->frequency_information.begin(),
+                ensemble->frequency_information.end(),
+                [](const FrequencyInformation& first,
+                   const FrequencyInformation& second) {
+                    const int oe_first = first.other_ensemble ? 1 : 0;
+                    const int oe_second = second.other_ensemble ? 1 : 0;
+                    return oe_first < oe_second;
+                } );
     } // if FI present
 }
 
-void parse_ptree(
-        boost::property_tree::ptree& pt,
+static void parse_other_service_linking(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
+    auto pt_other_services = pt.get_child_optional("other-services");
+    if (pt_other_services)
+    {
+        for (const auto& it_service : *pt_other_services) {
+            const string srv_uid = it_service.first;
+            const ptree pt_srv = it_service.second;
+
+            ServiceOtherEnsembleInfo info;
+            try {
+                info.service_id = hexparse(pt_srv.get<string>("id"));
+
+                auto oelist = pt_srv.get<std::string>("other_ensembles", "");
+
+                if (not oelist.empty()) {
+                    vector<string> oe_string_list;
+                    boost::split(oe_string_list, oelist, boost::is_any_of(","));
+
+                    for (const auto& oe_string : oe_string_list) {
+                        if (oe_string == "") {
+                            continue;
+                        }
+                        try {
+                            info.other_ensembles.push_back(hexparse(oe_string));
+                        }
+                        catch (const std::exception& e) {
+                            etiLog.level(warn) << "Cannot parse '" << oelist <<
+                                "' other_ensembles for service " << srv_uid <<
+                                ": " << e.what();
+                        }
+                    }
+
+                    ensemble->service_other_ensemble.push_back(move(info));
+                }
+            }
+            catch (const std::exception &e) {
+                etiLog.level(warn) <<
+                    "Cannot parse other_ensembles for service " << srv_uid <<
+                    ": " << e.what();
+            }
+
+        } // for over services
+    } // if other-services present
+}
+
+static void parse_general(ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
+{
     /******************** READ GENERAL OPTIONS *****************/
     ptree pt_general = pt.get_child("general");
 
     /* Dab mode logic */
-    ensemble->mode = pt_general.get("dabmode", 2);
-    if ((ensemble->mode < 1) || (ensemble->mode > 4)) {
-        throw runtime_error("Mode must be between 1-4");
-    }
-    if (ensemble->mode == 4) {
-        ensemble->mode = 0;
+    switch (pt_general.get("dabmode", 1)) {
+        case 1:
+            ensemble->transmission_mode = TransmissionMode_e::TM_I;
+            break;
+        case 2:
+            ensemble->transmission_mode = TransmissionMode_e::TM_II;
+            break;
+        case 3:
+            ensemble->transmission_mode = TransmissionMode_e::TM_III;
+            break;
+        case 4:
+            ensemble->transmission_mode = TransmissionMode_e::TM_IV;
+            break;
+        default:
+            throw runtime_error("Mode must be between 1-4");
     }
 
     /******************** READ ENSEMBLE PARAMETERS *************/
@@ -358,11 +378,17 @@ void parse_ptree(
 
     /* Ensemble ID */
     ensemble->id = hexparse(pt_ensemble.get("id", "0"));
+    if (ensemble->id == 0) {
+        etiLog.level(warn) << "Ensemble ID is 0!";
+    }
 
     /* Extended Country Code */
     ensemble->ecc = hexparse(pt_ensemble.get("ecc", "0"));
+    if (ensemble->ecc == 0) {
+        etiLog.level(warn) << "ECC is 0!";
+    }
 
-    ensemble->international_table = pt_ensemble.get("international-table", 0);
+    ensemble->international_table = pt_ensemble.get("international-table", 1);
 
     string lto_auto = pt_ensemble.get("local-time-offset", "");
     if (lto_auto == "auto") {
@@ -392,7 +418,7 @@ void parse_ptree(
         ensemble_short_label = pt_ensemble.get<string>("shortlabel");
         success = ensemble->label.setLabel(ensemble_label, ensemble_short_label);
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         etiLog.level(warn) << "Ensemble short label undefined, "
             "truncating label " << ensemble_label;
 
@@ -429,6 +455,10 @@ void parse_ptree(
 
             auto cl = make_shared<AnnouncementCluster>(name);
             cl->cluster_id = hexparse(pt_announcement.get<string>("cluster"));
+            if (cl->cluster_id == 0 or cl->cluster_id == 0xFF) {
+                throw runtime_error("Announcement cluster id " +
+                        to_string(cl->cluster_id) + " is not allowed");
+            }
             cl->flags = get_announcement_flag_from_ptree(
                     pt_announcement.get_child("flags"));
             cl->subchanneluid = pt_announcement.get<string>("subchannel");
@@ -437,13 +467,19 @@ void parse_ptree(
             ensemble->clusters.push_back(cl);
         }
     }
-    catch (ptree_error& e) {
-        etiLog.level(info) << "No announcements defined in ensemble";
-        etiLog.level(debug) << "because " << e.what();
+    catch (const ptree_error& e) {
+        etiLog.level(info) <<
+            "No announcements defined in ensemble because " << e.what();
     }
+}
+
+void parse_ptree(
+        boost::property_tree::ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
+{
+    parse_general(pt, ensemble);
 
     /******************** READ SERVICES PARAMETERS *************/
-
     map<string, shared_ptr<DabService> > allservices;
 
     /* For each service, we keep a separate SCIdS counter */
@@ -455,23 +491,23 @@ void parse_ptree(
         string serviceuid = it->first;
         ptree pt_service = it->second;
 
-        shared_ptr<DabService> service;
+        stringstream def_serviceid;
+        def_serviceid << DEFAULT_SERVICE_ID + ensemble->services.size();
+        uint32_t new_service_id = hexparse(pt_service.get("id", def_serviceid.str()));
 
-        bool service_already_existing = false;
-
+        // Ensure that both UID and service ID are unique
         for (auto srv : ensemble->services) {
             if (srv->uid == serviceuid) {
-                service = srv;
-                service_already_existing = true;
-                break;
+                throw runtime_error("Duplicate service uid " + serviceuid);
+            }
+
+            if (srv->id == new_service_id) {
+                throw runtime_error("Duplicate service id " + to_string(new_service_id));
             }
         }
 
-        if (not service_already_existing) {
-            auto new_srv = make_shared<DabService>(serviceuid);
-            ensemble->services.push_back(new_srv);
-            service = new_srv;
-        }
+        auto service = make_shared<DabService>(serviceuid);
+        ensemble->services.push_back(service);
 
         try {
             /* Parse announcements */
@@ -491,7 +527,7 @@ void parse_ptree(
                 try {
                     service->clusters.push_back(hexparse(cluster_s));
                 }
-                catch (std::logic_error& e) {
+                catch (const std::exception& e) {
                     etiLog.level(warn) << "Cannot parse '" << clusterlist <<
                         "' announcement clusters for service " << serviceuid <<
                         ": " << e.what();
@@ -503,7 +539,7 @@ void parse_ptree(
                     "is empty, but announcements are defined";
             }
         }
-        catch (ptree_error& e) {
+        catch (const ptree_error& e) {
             service->ASu = 0;
             service->clusters.clear();
 
@@ -519,7 +555,7 @@ void parse_ptree(
             serviceshortlabel = pt_service.get<string>("shortlabel");
             success = service->label.setLabel(servicelabel, serviceshortlabel);
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             etiLog.level(warn) << "Service short label undefined, "
                 "truncating label " << servicelabel;
 
@@ -548,34 +584,49 @@ void parse_ptree(
                 abort();
         }
 
-        stringstream def_serviceid;
-        def_serviceid << DEFAULT_SERVICE_ID + ensemble->services.size();
-        service->id = hexparse(pt_service.get("id", def_serviceid.str()));
-        service->pty = hexparse(pt_service.get("pty", "0"));
-        service->language = hexparse(pt_service.get("language", "0"));
-
-        // keep service in map, and check for uniqueness of the UID
-        if (allservices.count(serviceuid) == 0) {
-            allservices[serviceuid] = service;
-
-            // Set the service's SCIds to zero
-            SCIdS_per_service[service] = 0;
+        service->id = new_service_id;
+        service->ecc = hexparse(pt_service.get("ecc", "0"));
+        service->pty_settings.pty = hexparse(pt_service.get("pty", "0"));
+        // Default to dynamic for backward compatibility
+        const string dynamic_no_static_str = pt_service.get("pty-sd", "dynamic");
+        if (dynamic_no_static_str == "dynamic") {
+            service->pty_settings.dynamic_no_static = true;
+        }
+        else if (dynamic_no_static_str == "static") {
+            service->pty_settings.dynamic_no_static = false;
         }
         else {
-            stringstream ss;
-            ss << "Service with uid " << serviceuid << " not unique!";
-            throw runtime_error(ss.str());
+            throw runtime_error("pty-sd setting for service " +
+                    serviceuid + " is invalid");
+        }
+        service->language = hexparse(pt_service.get("language", "0"));
+
+        auto oelist = pt_service.get<std::string>("other_ensembles", "");
+        if (not oelist.empty()) {
+            throw runtime_error(
+                "You are using the deprecated other_ensembles inside "
+                "'services' specification. Please see doc/servicelinking.mux "
+                "for the new syntax.");
+        }
+
+        allservices[serviceuid] = service;
+
+        // Set the service's SCIds to zero
+        SCIdS_per_service[service] = 0;
+
+        if (allservices.count(serviceuid) != 1) {
+            throw logic_error("Assertion error: duplicated service with uid " + serviceuid);
         }
     }
 
 
     /******************** READ SUBCHAN PARAMETERS **************/
-    map<string, DabSubchannel*> allsubchans;
+    map<string, shared_ptr<DabSubchannel> > allsubchans;
 
     ptree pt_subchans = pt.get_child("subchannels");
     for (ptree::iterator it = pt_subchans.begin(); it != pt_subchans.end(); ++it) {
         string subchanuid = it->first;
-        auto subchan = new DabSubchannel(subchanuid);
+        auto subchan = make_shared<DabSubchannel>(subchanuid);
 
         ensemble->subchannels.push_back(subchan);
 
@@ -583,7 +634,7 @@ void parse_ptree(
             setup_subchannel_from_ptree(subchan, it->second, ensemble,
                     subchanuid);
         }
-        catch (runtime_error &e) {
+        catch (const runtime_error &e) {
             etiLog.log(error,
                     "%s\n", e.what());
             throw;
@@ -602,7 +653,7 @@ void parse_ptree(
     }
 
     /******************** READ COMPONENT PARAMETERS ************/
-    map<string, DabComponent*> allcomponents;
+    map<string, shared_ptr<DabComponent> > allcomponents;
     ptree pt_components = pt.get_child("components");
     for (ptree::iterator it = pt_components.begin(); it != pt_components.end(); ++it) {
         string componentuid = it->first;
@@ -620,13 +671,13 @@ void parse_ptree(
             }
             service = allservices[service_uid];
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             stringstream ss;
             ss << "Component with uid " << componentuid << " is missing service definition!";
             throw runtime_error(ss.str());
         }
 
-        DabSubchannel* subchannel;
+        shared_ptr<DabSubchannel> subchannel;
         try {
             string subchan_uid = pt_comp.get<string>("subchannel");
             if (allsubchans.count(subchan_uid) != 1) {
@@ -637,7 +688,7 @@ void parse_ptree(
             }
             subchannel = allsubchans[subchan_uid];
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             stringstream ss;
             ss << "Component with uid " << componentuid << " is missing subchannel definition!";
             throw runtime_error(ss.str());
@@ -648,7 +699,7 @@ void parse_ptree(
         int packet_datagroup = pt_comp.get("datagroup", false);
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
-        auto component = new DabComponent(componentuid);
+        auto component = make_shared<DabComponent>(componentuid);
 
         component->serviceId = service->id;
         component->subchId = subchannel->id;
@@ -662,7 +713,7 @@ void parse_ptree(
             componentshortlabel = pt_comp.get<string>("shortlabel");
             success = component->label.setLabel(componentlabel, componentshortlabel);
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             if (not componentlabel.empty()) {
                 etiLog.level(warn) << "Component short label undefined, "
                     "truncating label " << componentlabel;
@@ -744,20 +795,19 @@ void parse_ptree(
 
     parse_linkage(pt, ensemble);
     parse_freq_info(pt, ensemble);
+    parse_other_service_linking(pt, ensemble);
 }
 
 static Inputs::dab_input_zmq_config_t setup_zmq_input(
-        const boost::property_tree::ptree &pt,
+        const ptree &pt,
         const std::string& subchanuid)
 {
-    using boost::property_tree::ptree_error;
-
     Inputs::dab_input_zmq_config_t zmqconfig;
 
     try {
         zmqconfig.buffer_size = pt.get<int>("zmq-buffer");
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel " << subchanuid << ": " << "no zmq-buffer defined!";
         throw runtime_error(ss.str());
@@ -765,7 +815,7 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
     try {
         zmqconfig.prebuffering = pt.get<int>("zmq-prebuffering");
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel " << subchanuid << ": " << "no zmq-prebuffer defined!";
         throw runtime_error(ss.str());
@@ -775,25 +825,22 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
     zmqconfig.curve_secret_keyfile = pt.get<string>("secret-key","");
     zmqconfig.curve_public_keyfile = pt.get<string>("public-key","");
 
-    zmqconfig.enable_encryption = pt.get<int>("encryption", 0);
+    zmqconfig.enable_encryption = pt.get<bool>("encryption", false);
 
     return zmqconfig;
 }
 
-static void setup_subchannel_from_ptree(DabSubchannel* subchan,
-        const boost::property_tree::ptree &pt,
+static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
+        const ptree &pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid)
 {
-    using boost::property_tree::ptree;
-    using boost::property_tree::ptree_error;
-
     string type;
     /* Read type first */
     try {
         type = pt.get<string>("type");
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel with uid " << subchanuid << " has no type defined!";
         throw runtime_error(ss.str());
@@ -808,7 +855,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         try {
             inputUri = pt.get<string>("inputfile");
         }
-        catch (ptree_error &e) {
+        catch (const ptree_error &e) {
             stringstream ss;
             ss << "Subchannel with uid " << subchanuid << " has no inputUri defined!";
             throw runtime_error(ss.str());
@@ -826,13 +873,6 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
 
     subchan->inputUri = inputUri;
 
-    dabProtection* protection = &subchan->protection;
-
-    const bool nonblock = pt.get("nonblock", false);
-    if (nonblock) {
-        etiLog.level(warn) << "The nonblock option is not supported";
-    }
-
     if (type == "dabplus" or type == "audio") {
         subchan->type = subchannel_type_t::Audio;
         subchan->bitrate = 0;
@@ -848,10 +888,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
                 throw logic_error("Incomplete handling of file input");
             }
         }
-        else if (proto == "tcp"  ||
-                 proto == "epgm" ||
-                 proto == "ipc") {
-
+        else if (proto == "tcp"  or proto == "epgm" or proto == "ipc") {
             auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             if (type == "audio") {
@@ -924,8 +961,20 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         ss << "Subchannel with uid " << subchanuid << " has unknown type!";
         throw runtime_error(ss.str());
     }
+
+    const bool nonblock = pt.get("nonblock", false);
+    if (nonblock) {
+        if (auto filein = dynamic_pointer_cast<Inputs::FileBase>(subchan->input)) {
+            filein->setNonblocking(nonblock);
+        }
+        else {
+            etiLog.level(warn) << "The nonblock option is not supported";
+        }
+    }
+
     subchan->startAddress = 0;
 
+    dabProtection* protection = &subchan->protection;
     if (type == "audio") {
         protection->form = UEP;
         protection->level = 2;
@@ -947,19 +996,20 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
             throw runtime_error(ss.str());
         }
     }
-    catch (ptree_error &e) {
-        stringstream ss;
-        ss << "Error, no bitrate defined for subchannel " << subchanuid;
-        throw runtime_error(ss.str());
+    catch (const ptree_error &e) {
+        throw runtime_error("Error, no bitrate defined for subchannel " + subchanuid);
     }
 
     /* Get id */
     try {
         subchan->id = hexparse(pt.get<std::string>("id"));
+        if (subchan->id >= 64) {
+            throw runtime_error("Invalid subchannel id " + to_string(subchan->id));
+        }
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         for (int i = 0; i < 64; ++i) { // Find first free subchannel
-            vector<DabSubchannel*>::iterator subchannel = getSubchannel(ensemble->subchannels, i);
+            auto subchannel = getSubchannel(ensemble->subchannels, i);
             if (subchannel == ensemble->subchannels.end()) {
                 subchannel = ensemble->subchannels.end() - 1;
                 subchan->id = i;
@@ -981,6 +1031,12 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
     }
     else if (profile == "UEP") {
         protection->form = UEP;
+    }
+    else if (profile == "") {
+        /* take defaults */
+    }
+    else {
+        throw runtime_error("Invalid protection-profile: " + profile);
     }
 
     /* Get protection level */
@@ -1007,7 +1063,7 @@ static void setup_subchannel_from_ptree(DabSubchannel* subchan,
         }
         protection->level = level - 1;
     }
-    catch (ptree_error &e) {
+    catch (const ptree_error &e) {
         stringstream ss;
         ss << "Subchannel with uid " << subchanuid <<
             ": protection level undefined!";

@@ -37,7 +37,22 @@ space used within the common interleaved frame.
     Fast Information Ch.                 Main Service Channel
                       COMMON   INTERLEAVED   FRAME
 
-Configuration
-=============
-The configuration is given in a file, please see the example in doc/example.mux
+Files in this folder
+====================
+The configuration is given in a file, this folder contains examples.
+
+A basic example is in the file *example.mux*, a more complete view of the
+settings is available in *advanced.mux* and configuration settings related to
+service linking are shown in *servicelinking.mux*
+
+An explanation on how to use the remote control is in *remote_control.txt*, and
+*zmq_remote.py* illustrates how to control ODR-DabMux using the ZMQ remote
+control interface.
+
+Two scripts are used for monitoring systems: *stats_dabmux_munin.py* for Munin,
+and *retodrs.pl* for Xymon. You can use *show_dabmux_stats.py* to print the
+statistics to console.
+
+*DabMux.1* is an old manpage that describes the command line options that
+existed in past versions. It is kept for archive.
 

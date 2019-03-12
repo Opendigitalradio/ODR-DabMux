@@ -36,18 +36,18 @@ class FIG0_2 : public IFIG
     public:
         FIG0_2(FIGRuntimeInformation* rti);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate(void) { return FIG_rate::A; }
+        virtual FIG_rate repetition_rate() const { return FIG_rate::A; }
 
-        virtual const int figtype(void) const { return 0; }
-        virtual const int figextension(void) const { return 2; }
+        virtual int figtype() const { return 0; }
+        virtual int figextension() const { return 2; }
 
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
         bool m_inserting_audio_not_data;
-        std::vector<std::shared_ptr<DabService> > m_audio_services;
-        std::vector<std::shared_ptr<DabService> > m_data_services;
-        std::vector<std::shared_ptr<DabService> >::iterator serviceFIG0_2;
+        vec_sp_service m_audio_services;
+        vec_sp_service m_data_services;
+        vec_sp_service::iterator serviceFIG0_2;
 };
 
 }

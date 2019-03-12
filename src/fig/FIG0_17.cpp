@@ -65,7 +65,7 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
     for (; serviceFIG0_17 != ensemble->services.end();
             ++serviceFIG0_17) {
 
-        if ((*serviceFIG0_17)->pty == 0) {
+        if ((*serviceFIG0_17)->pty_settings.pty == 0) {
             continue;
         }
 
@@ -92,13 +92,13 @@ FillStatus FIG0_17::fill(uint8_t *buf, size_t max_size)
 
         auto fig0_17 = (FIGtype0_17*)buf;
         fig0_17->SId = htons((*serviceFIG0_17)->id);
-        fig0_17->SD = 1; // We only transmit dynamic PTy
+        fig0_17->SD = ((*serviceFIG0_17)->pty_settings.dynamic_no_static ? 1 : 0);
         fig0_17->rfa1 = 0;
         fig0_17->rfu1 = 0;
         fig0_17->rfa2_low = 0;
         fig0_17->rfa2_high = 0;
         fig0_17->rfu2 = 0;
-        fig0_17->IntCode = (*serviceFIG0_17)->pty;
+        fig0_17->IntCode = (*serviceFIG0_17)->pty_settings.pty;
 
         fig0->Length += 4;
         buf += 4;

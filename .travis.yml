@@ -1,32 +1,70 @@
 language: c++
-sudo: required
-dist: trusty
 
-addons: &addons
-  apt:
-    sources: &sources
-      - ubuntu-toolchain-r-test
-    packages: &packages
-      - libzmq3-dev
-      - libzmq3
-      - automake
-      - libtool
-      - libboost1.55-all-dev
-      - libcurl4-openssl-dev
-      - gcc-5
-      - g++-5
+matrix:
+  include:
+    # Clang on OSX
+    - env: MATRIX_EVAL="" CONF=""
+      os: osx
+      osx_image: xcode9.4
+      compiler: clang
 
-env:
-  - CONF=--disable-output-edi
-  - CONF=
-  - CONF=--enable-output-raw
+    # GCC and clang builds on Linux
+    - env: MATRIX_EVAL="CC=gcc-6 CXX=g++-6" CONF="--disable-output-edi"
+      os: linux
+      dist: trusty
+      sudo: required
+      compiler: gcc
+      addons: &linuxaddons
+        apt:
+          sources: &sources
+            - ubuntu-toolchain-r-test
+          packages: &packages
+            - libzmq3-dev
+            - libzmq3
+            - automake
+            - libtool
+            - libboost1.55-all-dev
+            - libcurl4-openssl-dev
+            - g++-6
 
-compiler:
-  - gcc
+    - env: MATRIX_EVAL="CC=gcc-6 CXX=g++-6" CONF="--enable-output-raw"
+      compiler: gcc
+      addons: *linuxaddons
+
+    - env: MATRIX_EVAL="CC=gcc-6 CXX=g++-6" CONF=""
+      compiler: gcc
+      addons: *linuxaddons
+
+    - env: MATRIX_EVAL="" CONF="--enable-output-raw"
+      compiler: clang
+      addons: &linuxclang40
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - libzmq3-dev
+            - libzmq3
+            - automake
+            - libtool
+            - libboost1.55-all-dev
+            - libcurl4-openssl-dev
+            - clang-4.0
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    brew update
+    brew install automake || true
+    brew install zeromq || true
+    brew install boost || true
+    brew install curl || true
+    fi
 
 script:
   - |
     ./bootstrap.sh
-    CC=gcc-5 CXX=g++-5 ./configure $CONF
+    ./configure $CONF
     make
 

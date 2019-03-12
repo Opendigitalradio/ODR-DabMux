@@ -1,6 +1,94 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2019-01-07: Matthias P. Braendli <matthias@mpb.li>
+	(v2.3.1):
+		Happy new year!
+		Fix TAI bulletin parsing on systems where long is 32 bit.
+		Add configurable URLs to download TAI clock bulletin and
+		rework the download logic.
+		Do not read TAI clock cache file from /tmp anymore, only
+		use /var/tmp.
+
+2018-10-30: Matthias P. Braendli <matthias@mpb.li>
+	(v2.3.0):
+		Correct FIG0/6 output for services with different ECC.
+		Add support for transmitting empty Linkage Sets.
+		Save leap-second cache to /var/tmp, which doesn't get
+		cleared across reboots.
+		Rework audio level measurement in the statistics server to
+		alleviate some timing-related issues.
+		odr-zmq2edi: Add option to drop late packets.
+
+2018-07-31: Matthias P. Braendli <matthias@mpb.li>
+	(v2.2.0):
+		Fix delays and FIG repetition burst on announcement switching.
+		Add support for services with different ECC (Signalled in FIG0/9).
+		Improve ODR-ZMQ2EDI statistics.
+
+2018-05-29: Matthias P. Braendli <matthias@mpb.li>
+	(v2.1.2):
+		A couple of internal changes and fixes for
+		compilation warnings.
+
+2018-03-27: Matthias P. Braendli <matthias@mpb.li>
+	(v2.1.1):
+		Fix segmentation fault in peak audio statistics
+		calculation.
+
+2018-03-23: Matthias P. Braendli <matthias@mpb.li>
+	(v2.1.0):
+		Add version string to management server.
+		Introduce slow audio peak statistic.
+		Avoid doing useless copies in the RAW output.
+
+2018-03-01: Matthias P. Braendli <matthias@mpb.li>
+	(v2.0.0):
+		Configuration file syntax changed for Frequency Information
+		and Other Services settings.
+		Statistics server changes: audio-level peak information is
+		measured over the last second, and not anymore since the last
+		request. Same for buffers, where min/max are measured over
+		thirty seconds.
+		Make nonblock available again for file inputs.
+
+2018-02-09: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.3):
+		Add dynamic/static PTy setting to configuration.
+		Add UTF-8 to EBU Latin character set converter for labels.
+		Show TAI bulletin expiration in RC.
+		Stop using SUBDIRS in automake, and build the executable in ./ and not
+		in ./src anymore.
+
+2018-01-23: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.2):
+		Add clock selection to RAW output.
+		zmq2edi: intentionnally crash after timeout.
+		Add command "state" to the monitoring interface and add to Munin
+		script.
+		Fix TAI bulletin download failure handling.
+		Improve portability for non-Linux POSIX systems, and improve
+		autoconf checks.
+		Default international-table to 1.
+
+2017-08-23: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.1):
+		Add retords.pl script for Xymon monitoring tool.
+		Add odr-zmq2edi tool, and add necessary metadata to
+		the ZMQ output of ODR-DabMux. The configuration file
+		was extended in a backward-compatible way. Handling
+		of the TAI clock subsystem has been adapted too.
+
+2017-06-30: Matthias P. Braendli <matthias@mpb.li>
+	(v1.3.0):
+		Add support for FIG0/24 to announce that a service is present
+		in another ensemble. This completes the implementation of all
+		service linking FIGs according to ETSI TS 103 176 Figure 1.
+		Allow EDI packet lengths up to 1400 bytes.
+		Add local cache for the leap second information downloaded from
+		IETF, remove download from USNO servers, as they don't give validity
+		information.
+
 2017-06-05: Matthias P. Braendli <matthias@mpb.li>
 	(v1.2.2):
 		Add support for FIG0/21 "Frequency Information".

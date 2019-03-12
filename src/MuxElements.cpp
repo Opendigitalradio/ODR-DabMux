@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -30,6 +30,7 @@
 #include <algorithm>
 
 #include "MuxElements.h"
+#include "lib/charset/charset.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
@@ -44,7 +45,7 @@ const unsigned short Sub_Channel_SizeTable[64] = {
     232, 280, 160, 208, 280, 192, 280, 416
 };
 
-
+static CharsetConverter charset_converter;
 
 using namespace std;
 
@@ -54,16 +55,20 @@ std::string AnnouncementCluster::tostring() const
     ss << "cluster id(" << (int)cluster_id;
     ss << ", flags 0x" << boost::format("%04x") % flags;
     ss << ", subchannel " << subchanneluid;
-    if (m_active) {
-        ss << " active ";
-    }
 
-    if (m_deferred_start_time) {
-        ss << " start pending";
-    }
+    {
+        lock_guard<mutex> lock(m_active_mutex);
+        if (m_active) {
+            ss << " active ";
+        }
 
-    if (m_deferred_stop_time) {
-        ss << " stop pending";
+        if (m_deferred_start_time) {
+            ss << " start pending";
+        }
+
+        if (m_deferred_stop_time) {
+            ss << " stop pending";
+        }
     }
 
     ss << " )";
@@ -73,8 +78,9 @@ std::string AnnouncementCluster::tostring() const
 
 bool AnnouncementCluster::is_active()
 {
-    if (m_deferred_start_time)
-    {
+    lock_guard<mutex> lock(m_active_mutex);
+
+    if (m_deferred_start_time) {
         const auto now = std::chrono::steady_clock::now();
 
         if (*m_deferred_start_time <= now) {
@@ -84,8 +90,7 @@ bool AnnouncementCluster::is_active()
         }
     }
 
-    if (m_deferred_stop_time)
-    {
+    if (m_deferred_stop_time) {
         const auto now = std::chrono::steady_clock::now();
 
         if (*m_deferred_stop_time <= now) {
@@ -104,6 +109,8 @@ void AnnouncementCluster::set_parameter(const string& parameter,
     if (parameter == "active") {
         stringstream ss;
         ss << value;
+
+        lock_guard<mutex> lock(m_active_mutex);
         ss >> m_active;
     }
     else if (parameter == "start_in") {
@@ -113,6 +120,7 @@ void AnnouncementCluster::set_parameter(const string& parameter,
         int start_in_ms;
         ss >> start_in_ms;
 
+        lock_guard<mutex> lock(m_active_mutex);
         using namespace std::chrono;
         m_deferred_start_time = steady_clock::now() + milliseconds(start_in_ms);
     }
@@ -123,6 +131,7 @@ void AnnouncementCluster::set_parameter(const string& parameter,
         int stop_in_ms;
         ss >> stop_in_ms;
 
+        lock_guard<mutex> lock(m_active_mutex);
         using namespace std::chrono;
         m_deferred_stop_time = steady_clock::now() + milliseconds(stop_in_ms);
     }
@@ -140,9 +149,11 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
 
     stringstream ss;
     if (parameter == "active") {
+        lock_guard<mutex> lock(m_active_mutex);
         ss << m_active;
     }
     else if (parameter == "start_in") {
+        lock_guard<mutex> lock(m_active_mutex);
         if (m_deferred_start_time) {
             const auto diff = *m_deferred_start_time - steady_clock::now();
             ss << duration_cast<milliseconds>(diff).count();
@@ -152,6 +163,7 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
         }
     }
     else if (parameter == "stop_in") {
+        lock_guard<mutex> lock(m_active_mutex);
         if (m_deferred_stop_time) {
             const auto diff = *m_deferred_stop_time - steady_clock::now();
             ss << duration_cast<milliseconds>(diff).count();
@@ -171,13 +183,28 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
 
 int DabLabel::setLabel(const std::string& label)
 {
-    size_t len = label.length();
-    if (len > DABLABEL_LENGTH)
-        return -3;
+    try {
+        auto ebu_label = charset_converter.convert(label, false);
+        size_t len = ebu_label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
+
+        m_label = ebu_label;
+    }
+    catch (const utf8::exception& e) {
+        etiLog.level(warn) << "Failed to convert label '" << label <<
+            "' to EBU Charset";
+
+        size_t len = label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
+
+        m_label = label;
+    }
 
     m_flag = 0xFF00; // truncate the label to the eight first characters
-
-    m_label = label;
 
     return 0;
 }
@@ -185,20 +212,54 @@ int DabLabel::setLabel(const std::string& label)
 int DabLabel::setLabel(const std::string& label, const std::string& short_label)
 {
     DabLabel newlabel;
+    newlabel.m_flag = 0xFF00;
 
-    int result = newlabel.setLabel(label);
-    if (result < 0)
-        return result;
+    try {
+        newlabel.m_label = charset_converter.convert(label, false);
 
-    /* First check if we can actually create the short label */
-    int flag = newlabel.setShortLabel(short_label);
-    if (flag < 0)
-        return flag;
+        size_t len = newlabel.m_label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
+
+        int flag = newlabel.setShortLabel(
+                charset_converter.convert(short_label, false));
+        if (flag < 0) {
+            return flag;
+        }
+
+        m_flag = flag & 0xFFFF;
+    }
+    catch (const utf8::exception& e) {
+        etiLog.level(warn) << "Failed to convert label '" << label <<
+            " or short label '" << short_label << "' to EBU Charset";
+
+        // Use label as-is
+
+        size_t len = label.length();
+        if (len > DABLABEL_LENGTH) {
+            return -3;
+        }
+
+        newlabel.m_label = label;
+        newlabel.m_flag = 0xFF00;
+
+        int result = newlabel.setLabel(label);
+        if (result < 0) {
+            return result;
+        }
+
+        /* First check if we can actually create the short label */
+        int flag = newlabel.setShortLabel(short_label);
+        if (flag < 0) {
+            return flag;
+        }
+
+        m_flag = flag & 0xFFFF;
+    }
 
     // short label is valid.
-    m_flag = flag & 0xFFFF;
     m_label = newlabel.m_label;
-
     return 0;
 }
 
@@ -258,6 +319,11 @@ int DabLabel::setShortLabel(const std::string& slabel)
     return flag;
 }
 
+const string DabLabel::long_label() const
+{
+    return charset_converter.convert_ebu_to_utf8(m_label);
+}
+
 const string DabLabel::short_label() const
 {
     stringstream shortlabel;
@@ -267,7 +333,7 @@ const string DabLabel::short_label() const
         }
     }
 
-    return shortlabel.str();
+    return charset_converter.convert_ebu_to_utf8(shortlabel.str());
 }
 
 void DabLabel::writeLabel(uint8_t* buf) const
@@ -278,24 +344,26 @@ void DabLabel::writeLabel(uint8_t* buf) const
     }
 }
 
-vector<DabSubchannel*>::iterator getSubchannel(
-        vector<DabSubchannel*>& subchannels, int id)
+vec_sp_subchannel::iterator getSubchannel(
+        vec_sp_subchannel& subchannels,
+        int id)
 {
     return find_if(
             subchannels.begin(),
             subchannels.end(),
-            [&](const DabSubchannel* s){ return s->id == id; }
+            [&](shared_ptr<DabSubchannel>& s){ return s->id == id; }
             );
 }
 
-vector<DabComponent*>::iterator getComponent(
-        vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId,
-        vector<DabComponent*>::iterator current)
+        vec_sp_component::iterator current)
 {
     if (current == components.end()) {
         current = components.begin();
-    } else {
+    }
+    else {
         ++current;
     }
 
@@ -310,18 +378,18 @@ vector<DabComponent*>::iterator getComponent(
 }
 
 
-vector<DabComponent*>::iterator getComponent(
-        vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId) {
     return getComponent(components, serviceId, components.end());
 }
 
-std::vector<std::shared_ptr<DabService> >::iterator getService(
-        DabComponent* component,
-        std::vector<std::shared_ptr<DabService> >& services)
+vec_sp_service::iterator getService(
+        std::shared_ptr<DabComponent> component,
+        vec_sp_service& services)
 {
     size_t i = 0;
-    for (auto service : services) {
+    for (const auto service : services) {
         if (service->id == component->serviceId) {
             return services.begin() + i;
         }
@@ -331,7 +399,7 @@ std::vector<std::shared_ptr<DabService> >::iterator getService(
     throw std::runtime_error("Service not included in any component");
 }
 
-bool DabComponent::isPacketComponent(vector<DabSubchannel*>& subchannels) const
+bool DabComponent::isPacketComponent(vec_sp_subchannel& subchannels) const
 {
     if (subchId > 63) {
         etiLog.log(error,
@@ -339,16 +407,15 @@ bool DabComponent::isPacketComponent(vector<DabSubchannel*>& subchannels) const
                 "packet component before defining packet ");
         return false;
     }
-    if (getSubchannel(subchannels, subchId) == subchannels.end()) {
+    const auto subch_it = getSubchannel(subchannels, subchId);
+    if (subch_it == subchannels.cend()) {
         etiLog.log(error,
                 "Invalid subchannel id in the packet component "
                 "for defining packet ");
         return false;
     }
-    if ((*getSubchannel(subchannels, subchId))->type != subchannel_type_t::Packet) {
-        return false;
-    }
-    return true;
+
+    return (*subch_it)->type == subchannel_type_t::Packet;
 }
 
 void DabComponent::set_parameter(const string& parameter,
@@ -368,23 +435,23 @@ void DabComponent::set_parameter(const string& parameter,
             case 0:
                 break;
             case -1:
-                ss << m_name << " short label " <<
+                ss << m_rc_name << " short label " <<
                     fields[1] << " is not subset of label '" <<
                     fields[0] << "'";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -2:
-                ss << m_name << " short label " <<
+                ss << m_rc_name << " short label " <<
                     fields[1] << " is too long (max 8 characters)";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -3:
-                ss << m_name << " label " <<
+                ss << m_rc_name << " label " <<
                     fields[0] << " is too long (max 16 characters)";
                 etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             default:
-                ss << m_name << " short label definition: program error !";
+                ss << m_rc_name << " short label definition: program error !";
                 etiLog.level(alert) << ss.str();
                 throw ParameterError(ss.str());
         }
@@ -412,16 +479,16 @@ const string DabComponent::get_parameter(const string& parameter) const
 
 }
 
-subchannel_type_t DabService::getType(const std::shared_ptr<dabEnsemble> ensemble) const
+subchannel_type_t DabService::getType(
+        const std::shared_ptr<dabEnsemble> ensemble) const
 {
-    vector<DabSubchannel*>::iterator subchannel;
     auto component =
         getComponent(ensemble->components, id);
     if (component == ensemble->components.end()) {
         throw std::runtime_error("No component found for service");
     }
 
-    subchannel = getSubchannel(ensemble->subchannels, (*component)->subchId);
+    auto subchannel = getSubchannel(ensemble->subchannels, (*component)->subchId);
     if (subchannel == ensemble->subchannels.end()) {
         throw std::runtime_error("Could not find subchannel associated with service");
     }
@@ -443,27 +510,27 @@ bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
             break;
         default:
             etiLog.log(error,
-                    "Error, unknown service type: %u\n",
+                    "Error, unknown service type: %u",
                     getType(ensemble));
-            throw std::runtime_error("DabService::isProgramme unknown service type");
+            throw runtime_error("DabService::isProgramme unknown service type");
     }
 
     return ret;
 }
 
 
-unsigned char DabService::nbComponent(const vector<DabComponent*>& components) const
+unsigned char DabService::nbComponent(const vec_sp_component& components) const
 {
     size_t count = std::count_if(components.begin(), components.end(),
-            [&](const DabComponent* c) { return c->serviceId == id;} );
+            [&](const shared_ptr<DabComponent>& c) { return c->serviceId == id;} );
+
     if (count > 0xFF) {
         throw std::logic_error("Invalid number of components in service");
     }
     return count;
 }
 
-void DabService::set_parameter(const string& parameter,
-        const string& value)
+void DabService::set_parameter(const string& parameter, const string& value)
 {
     if (parameter == "label") {
         vector<string> fields;
@@ -474,29 +541,25 @@ void DabService::set_parameter(const string& parameter,
         }
         int success = this->label.setLabel(fields[0], fields[1]);
         stringstream ss;
-        switch (success)
-        {
+        switch (success) {
             case 0:
                 break;
             case -1:
-                ss << m_name << " short label " <<
+                ss << "Short label " <<
                     fields[1] << " is not subset of label '" <<
                     fields[0] << "'";
-                etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -2:
-                ss << m_name << " short label " <<
+                ss << "Short label " <<
                     fields[1] << " is too long (max 8 characters)";
-                etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             case -3:
-                ss << m_name << " label " <<
+                ss << "Label " <<
                     fields[0] << " is too long (max 16 characters)";
-                etiLog.level(warn) << ss.str();
                 throw ParameterError(ss.str());
             default:
-                ss << m_name << " short label definition: program error !";
-                etiLog.level(alert) << ss.str();
+                ss << m_rc_name << " short label definition: program error !";
+                etiLog.level(error) << ss.str();
                 throw ParameterError(ss.str());
         }
     }
@@ -504,13 +567,21 @@ void DabService::set_parameter(const string& parameter,
         int newpty = std::stoi(value); // International code, 5 bits
 
         if (newpty >= 0 and newpty < (1<<5)) {
-            pty = newpty;
+            pty_settings.pty = newpty;
         }
         else {
-            stringstream ss;
-            ss << m_name << " pty is out of bounds";
-            etiLog.level(warn) << ss.str();
-            throw ParameterError(ss.str());
+            throw ParameterError("PTy value is out of bounds");
+        }
+    }
+    else if (parameter == "ptysd") {
+        if (value == "static") {
+            pty_settings.dynamic_no_static = false;
+        }
+        else if (value == "dynamic") {
+            pty_settings.dynamic_no_static = true;
+        }
+        else {
+            throw ParameterError("Invalid value for ptysd, use static or dynamic");
         }
     }
     else {
@@ -528,7 +599,10 @@ const string DabService::get_parameter(const string& parameter) const
         ss << label.long_label() << "," << label.short_label();
     }
     else if (parameter == "pty") {
-        ss << (int)pty;
+        ss << (int)pty_settings.pty;
+    }
+    else if (parameter == "ptysd") {
+        ss << (pty_settings.dynamic_no_static ? "dynamic" : "static");
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -536,7 +610,6 @@ const string DabService::get_parameter(const string& parameter) const
         throw ParameterError(ss.str());
     }
     return ss.str();
-
 }
 
 void dabEnsemble::set_parameter(const string& parameter, const string& value)
@@ -588,6 +661,45 @@ const string dabEnsemble::get_parameter(const string& parameter) const
     return ss.str();
 }
 
+bool dabEnsemble::validate_linkage_sets()
+{
+    for (const auto& ls : linkagesets) {
+        const std::string keyserviceuid = ls->keyservice;
+        if (keyserviceuid.empty()) {
+            if (not ls->id_list.empty()) {
+                etiLog.log(error, "Linkage set 0x%04x with empty key service "
+                        "should have an empty list.", ls->lsn);
+                return false;
+            }
+        }
+        else {
+            const auto& keyservice = std::find_if(
+                    services.cbegin(),
+                    services.cend(),
+                    [&](const std::shared_ptr<DabService>& srv) {
+                    return srv->uid == keyserviceuid;
+                    });
+
+            if (keyservice == services.end()) {
+                etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
+                        keyserviceuid.c_str(), ls->lsn);
+                return false;
+            }
+
+            // need to add key service to num_ids
+            const size_t num_ids = 1 + ls->id_list.size();
+            if (num_ids > 0x0F) {
+                etiLog.log(error,
+                        "Too many links for linkage set 0x%04x",
+                        ls->lsn);
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 unsigned short DabSubchannel::getSizeCu() const
 {
     if (protection.form == UEP) {
@@ -610,8 +722,7 @@ unsigned short DabSubchannel::getSizeCu() const
                 return (bitrate >> 1);
                 break;
             default: // Should not happens
-                etiLog.log(error, "Bad protection level on "
-                        "subchannel\n");
+                etiLog.log(error, "Bad protection level on subchannel");
                 return 0;
             }
             break;
@@ -630,13 +741,12 @@ unsigned short DabSubchannel::getSizeCu() const
                 return (bitrate * 15) >> 5;
                 break;
             default: // Should not happens
-                etiLog.log(error,
-                        "Bad protection level on subchannel\n");
+                etiLog.log(error, "Bad protection level on subchannel");
                 return 0;
             }
             break;
         default:
-            etiLog.log(error, "Invalid protection option\n");
+            etiLog.log(error, "Invalid protection option");
             return 0;
         }
     }
@@ -660,18 +770,20 @@ unsigned short DabSubchannel::getSizeDWord() const
 
 LinkageSet::LinkageSet(const std::string& name,
         uint16_t lsn,
+        bool active,
         bool hard,
         bool international) :
     lsn(lsn),
-    active(true),
+    active(active),
     hard(hard),
-    international(international)
+    international(international),
+    m_name(name)
 {}
 
 
 LinkageSet LinkageSet::filter_type(const ServiceLinkType type)
 {
-    LinkageSet lsd(m_name, lsn, hard, international);
+    LinkageSet lsd(m_name, lsn, active, hard, international);
 
     lsd.active = active;
     lsd.keyservice = keyservice;

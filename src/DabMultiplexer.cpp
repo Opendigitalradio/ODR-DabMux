@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2017
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -66,6 +66,19 @@ const unsigned short BitRateTable[64] = {
     384, 384, 384
 };
 
+static vector<string> split_pipe_separated_string(const std::string& s)
+{
+    stringstream ss;
+    ss << s;
+
+    string elem;
+    vector<string> components;
+    while (getline(ss, elem, '|')) {
+        components.push_back(elem);
+    }
+    return components;
+}
+
 DabMultiplexer::DabMultiplexer(
         boost::property_tree::ptree pt) :
     RemoteControllable("mux"),
@@ -75,11 +88,19 @@ DabMultiplexer::DabMultiplexer(
     sync(0x49C5F8),
     currentFrame(0),
     ensemble(std::make_shared<dabEnsemble>()),
-    m_clock_tai(),
+    m_tai_clock_required(false),
+    m_clock_tai(split_pipe_separated_string(pt.get("general.tai_clock_bulletins", ""))),
     fig_carousel(ensemble)
 {
     RC_ADD_PARAMETER(frames,
             "Show number of frames generated [read-only]");
+
+    rcs.enrol(&m_clock_tai);
+}
+
+DabMultiplexer::~DabMultiplexer()
+{
+    rcs.remove_controllable(&m_clock_tai);
 }
 
 void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
@@ -128,7 +149,7 @@ void DabMultiplexer::set_edi_config(const edi_configuration_t& new_edi_conf)
 
 
 // Run a set of checks on the configuration
-void DabMultiplexer::prepare()
+void DabMultiplexer::prepare(bool require_tai_clock)
 {
     parse_ptree(m_pt, ensemble);
 
@@ -138,17 +159,20 @@ void DabMultiplexer::prepare()
     prepare_subchannels();
     prepare_services_components();
     prepare_data_inputs();
-
-    if (ensemble->subchannels.size() == 0) {
-        etiLog.log(error, "can't multiplex no subchannel!\n");
+    if (not ensemble->validate_linkage_sets()) {
+        etiLog.log(error, "Linkage set definition error");
         throw MuxInitException();
     }
 
-    vector<DabSubchannel*>::iterator subchannel =
-        ensemble->subchannels.end() - 1;
+    if (ensemble->subchannels.size() == 0) {
+        etiLog.log(error, "can't multiplex no subchannel!");
+        throw MuxInitException();
+    }
 
-    if ((*subchannel)->startAddress + (*subchannel)->getSizeCu() > 864) {
-        etiLog.log(error, "Total size in CU exceeds 864\n");
+    auto last_subchannel = *(ensemble->subchannels.end() - 1);
+
+    if (last_subchannel->startAddress + last_subchannel->getSizeCu() > 864) {
+        etiLog.log(error, "Total size in CU exceeds 864");
         printSubchannels(ensemble->subchannels);
         throw MuxInitException();
     }
@@ -168,17 +192,16 @@ void DabMultiplexer::prepare()
 
     bool tist_enabled = m_pt.get("general.tist", false);
 
-    if (tist_enabled and edi_conf.enabled()) {
+    m_tai_clock_required = (tist_enabled and edi_conf.enabled()) or require_tai_clock;
+
+    if (m_tai_clock_required) {
         try {
             m_clock_tai.get_offset();
         }
         catch (std::runtime_error& e) {
-            const char* err_msg =
-                "Could not initialise TAI clock properly required by "
-                "EDI with timestamp. Do you have a working internet "
-                "connection?";
-
-            etiLog.level(error) << err_msg;
+            etiLog.level(error) <<
+                "Could not initialise TAI clock properly. "
+                "Do you have a working internet connection?";
             throw;
         }
     }
@@ -201,7 +224,7 @@ void DabMultiplexer::prepare_subchannels()
     for (auto subchannel : ensemble->subchannels) {
         if (ids.find(subchannel->id) != ids.end()) {
             etiLog.log(error,
-                    "Subchannel %u is set more than once!\n",
+                    "Subchannel %u is set more than once!",
                     subchannel->id);
             throw MuxInitException();
         }
@@ -215,13 +238,13 @@ void DabMultiplexer::prepare_services_components()
     set<uint32_t> ids;
     dabProtection* protection = nullptr;
 
-    vector<DabComponent*>::iterator component;
-    vector<DabSubchannel*>::iterator subchannel;
+    vec_sp_component::iterator component;
+    vec_sp_subchannel::iterator subchannel;
 
     for (auto service : ensemble->services) {
         if (ids.find(service->id) != ids.end()) {
             etiLog.log(error,
-                    "Service id 0x%x (%u) is set more than once!\n",
+                    "Service id 0x%x (%u) is set more than once!",
                     service->id, service->id);
             throw MuxInitException();
         }
@@ -230,7 +253,7 @@ void DabMultiplexer::prepare_services_components()
         component = getComponent(ensemble->components, service->id);
         if (component == ensemble->components.end()) {
             etiLog.log(error,
-                    "Service id 0x%x (%u) includes no component!\n",
+                    "Service id 0x%x (%u) includes no component!",
                     service->id, service->id);
             throw MuxInitException();
         }
@@ -243,7 +266,7 @@ void DabMultiplexer::prepare_services_components()
                 getSubchannel(ensemble->subchannels, (*component)->subchId);
             if (subchannel == ensemble->subchannels.end()) {
                 etiLog.log(error, "Error, service %u component "
-                        "links to the invalid subchannel %u\n",
+                        "links to the invalid subchannel %u",
                         (*component)->serviceId, (*component)->subchId);
                 throw MuxInitException();
             }
@@ -271,7 +294,7 @@ void DabMultiplexer::prepare_services_components()
                     break;
                 default:
                     etiLog.log(error,
-                            "Error, unknown subchannel type\n");
+                            "Error, unknown subchannel type");
                     throw MuxInitException();
             }
             component = getComponent(ensemble->components,
@@ -287,7 +310,7 @@ void DabMultiplexer::prepare_services_components()
         if (subchannel == ensemble->subchannels.end()) {
             etiLog.log(error,
                     "Subchannel %i does not exist for component "
-                    "of service %i\n",
+                    "of service %i",
                     component->subchId, component->serviceId);
             throw MuxInitException();
         }
@@ -295,7 +318,7 @@ void DabMultiplexer::prepare_services_components()
 
         component->packet.id = cur_packetid++;
 
-        rcs.enrol(component);
+        rcs.enrol(component.get());
     }
 
 }
@@ -303,10 +326,9 @@ void DabMultiplexer::prepare_services_components()
 void DabMultiplexer::prepare_data_inputs()
 {
     dabProtection* protection = nullptr;
-    vector<DabSubchannel*>::iterator subchannel;
 
     // Prepare and check the data inputs
-    for (subchannel = ensemble->subchannels.begin();
+    for (auto subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
         protection = &(*subchannel)->protection;
@@ -369,12 +391,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     unsigned char etiFrame[6144];
     unsigned short index = 0;
 
-    vector<std::shared_ptr<DabService> >::iterator service;
-    vector<DabComponent*>::iterator component;
-    vector<DabSubchannel*>::iterator subchannel;
+    vec_sp_service::iterator service;
+    vec_sp_component::iterator component;
 
     // FIC Length, DAB Mode I, II, IV -> FICL = 24, DAB Mode III -> FICL = 32
-    unsigned FICL  = (ensemble->mode == 3 ? 32 : 24);
+    unsigned FICL =
+        (ensemble->transmission_mode == TransmissionMode_e::TM_III ? 32 : 24);
 
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     edi::TagDETI edi_tagDETI;
@@ -416,7 +438,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     //****** FCT ******//
     // Incremente for each frame, overflows at 249
     fc->FCT = currentFrame % 250;
-    edi_tagDETI.dflc = currentFrame % 5000;
+    edi_tagDETI.dlfc = currentFrame % 5000;
 
     //****** FICF ******//
     // Fast Information Channel Flag, 1 bit, =1 if FIC present
@@ -437,7 +459,20 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     //****** MID ******//
     //Mode Identity, 2 bits, 01 ModeI, 10 modeII, 11 ModeIII, 00 ModeIV
-    fc->MID = edi_tagDETI.mid = ensemble->mode;      //mode 2 needs 3 FIB, 3*32octets = 96octets
+    switch (ensemble->transmission_mode) {
+        case TransmissionMode_e::TM_I:
+            fc->MID = edi_tagDETI.mid = 1;
+            break;
+        case TransmissionMode_e::TM_II:
+            fc->MID = edi_tagDETI.mid = 2;
+            break;
+        case TransmissionMode_e::TM_III:
+            fc->MID = edi_tagDETI.mid = 3;
+            break;
+        case TransmissionMode_e::TM_IV:
+            fc->MID = edi_tagDETI.mid = 0;
+            break;
+    }
 
     //****** FL ******//
     /* Frame Length, 11 bits, nb of words(4 bytes) in STC, EOH and MST
@@ -446,7 +481,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      */
     unsigned short FLtmp = 1 + FICL + (fc->NST);
 
-    for (subchannel = ensemble->subchannels.begin();
+    for (auto subchannel = ensemble->subchannels.begin();
             subchannel != ensemble->subchannels.end();
             ++subchannel) {
         // Add STLsbch
@@ -460,15 +495,13 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     // Stream Characterization,
     //  number of channels * 4 octets = nb octets total
     int edi_stream_id = 1;
-    for (subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
-        dabProtection* protection = &(*subchannel)->protection;
+    for (auto subchannel : ensemble->subchannels) {
+        dabProtection* protection = &subchannel->protection;
         eti_STC *sstc = (eti_STC *) & etiFrame[index];
 
-        sstc->SCID = (*subchannel)->id;
-        sstc->startAddress_high = (*subchannel)->startAddress / 256;
-        sstc->startAddress_low = (*subchannel)->startAddress % 256;
+        sstc->SCID = subchannel->id;
+        sstc->startAddress_high = subchannel->startAddress / 256;
+        sstc->startAddress_low = subchannel->startAddress % 256;
         // depends on the desired protection form
         if (protection->form == UEP) {
             sstc->TPL = 0x10 |
@@ -479,20 +512,20 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
 
         // Sub-channel Stream Length, multiple of 64 bits
-        sstc->STL_high = (*subchannel)->getSizeDWord() / 256;
-        sstc->STL_low = (*subchannel)->getSizeDWord() % 256;
+        sstc->STL_high = subchannel->getSizeDWord() / 256;
+        sstc->STL_low = subchannel->getSizeDWord() % 256;
 
         edi::TagESTn tag_ESTn;
         tag_ESTn.id = edi_stream_id++;
-        tag_ESTn.scid = (*subchannel)->id;
-        tag_ESTn.sad = (*subchannel)->startAddress;
+        tag_ESTn.scid = subchannel->id;
+        tag_ESTn.sad = subchannel->startAddress;
         tag_ESTn.tpl = sstc->TPL;
         tag_ESTn.rfa = 0; // two bits
-        tag_ESTn.mst_length = (*subchannel)->getSizeByte() / 8;
+        tag_ESTn.mst_length = subchannel->getSizeByte() / 8;
         tag_ESTn.mst_data = nullptr;
-        assert((*subchannel)->getSizeByte() % 8 == 0);
+        assert(subchannel->getSizeByte() % 8 == 0);
 
-        edi_subchannelToTag[*subchannel] = tag_ESTn;
+        edi_subchannelToTag[subchannel.get()] = tag_ESTn;
         index += 4;
     }
 
@@ -563,27 +596,24 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     // Insert all FIBs
     fig_carousel.update(currentFrame);
-    const bool fib3_present = ensemble->mode == 3;
+    const bool fib3_present = (ensemble->transmission_mode == TransmissionMode_e::TM_III);
     index += fig_carousel.write_fibs(&etiFrame[index], currentFrame % 4, fib3_present);
 
     /**********************************************************************
      ******  Input Data Reading *******************************************
      **********************************************************************/
 
-    for (subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
+    for (auto subchannel : ensemble->subchannels) {
+        edi::TagESTn& tag = edi_subchannelToTag[subchannel.get()];
 
-        edi::TagESTn& tag = edi_subchannelToTag[*subchannel];
-
-        int sizeSubchannel = (*subchannel)->getSizeByte();
-        int result = (*subchannel)->input->readFrame(
+        int sizeSubchannel = subchannel->getSizeByte();
+        int result = subchannel->input->readFrame(
                 &etiFrame[index], sizeSubchannel);
 
         if (result < 0) {
             etiLog.log(info,
-                    "Subchannel %d read failed at ETI frame number: %d\n",
-                    (*subchannel)->id, currentFrame);
+                    "Subchannel %d read failed at ETI frame number: %d",
+                    subchannel->id, currentFrame);
         }
 
         // save pointer to Audio or Data Stream into correct TagESTn for EDI
@@ -594,10 +624,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
 
     index = (3 + fc->NST + FICL) * 4;
-    for (subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
-        index += (*subchannel)->getSizeByte();
+    for (auto subchannel : ensemble->subchannels) {
+        index += subchannel->getSizeByte();
     }
 
     /******* Section EOF **************************************************/
@@ -640,13 +668,27 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     try {
         bool tist_enabled = m_pt.get("general.tist", false);
 
-        if (tist_enabled and edi_conf.enabled()) {
+        if (tist_enabled and m_tai_clock_required) {
             edi_tagDETI.set_seconds(edi_time);
 
             // In case get_offset fails, we still want to update the EDI seconds
-            edi_tagDETI.set_tai_utc_offset(m_clock_tai.get_offset());
-        }
+            const auto tai_utc_offset = m_clock_tai.get_offset();
+            edi_tagDETI.set_tai_utc_offset(tai_utc_offset);
 
+            for (auto output : outputs) {
+                shared_ptr<OutputMetadata> md_utco =
+                    make_shared<OutputMetadataUTCO>(edi_tagDETI.utco);
+                output->setMetadata(md_utco);
+
+                shared_ptr<OutputMetadata> md_edi_time =
+                    make_shared<OutputMetadataEDITime>(edi_tagDETI.seconds);
+                output->setMetadata(md_edi_time);
+
+                shared_ptr<OutputMetadata> md_dlfc =
+                    make_shared<OutputMetadataDLFC>(currentFrame % 5000);
+                output->setMetadata(md_dlfc);
+            }
+        }
     }
     catch (std::runtime_error& e) {
         etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
@@ -678,13 +720,23 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         edi_time += chrono::seconds(1);
     }
 
-
-
     /********************************************************************** 
      ***********   Section FRPD   *****************************************
      **********************************************************************/
 
     int frame_size = (FLtmp + 1 + 1 + 1 + 1) * 4;
+
+    for (auto output : outputs) {
+        auto out_zmq = std::dynamic_pointer_cast<DabOutputZMQ>(output);
+        if (out_zmq) {
+            // The separator allows the receiver to associate the right
+            // metadata with the right ETI frame, since the output gathers
+            // four ETI frames into one message
+            shared_ptr<OutputMetadata> md_sep =
+                make_shared<OutputMetadataSeparation>();
+            out_zmq->setMetadata(md_sep);
+        }
+    }
 
     // Give the data to the outputs
     for (auto output : outputs) {
@@ -717,7 +769,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(edi_afpacket);
 
             if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragment before interleaver %zu\n",
+                fprintf(stderr, "EDI number of PFT fragment before interleaver %zu",
                         edi_fragments.size());
             }
 
@@ -742,7 +794,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             }
 
             if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragments %zu\n",
+                fprintf(stderr, "EDI number of PFT fragments %zu",
                         edi_fragments.size());
             }
         }
@@ -770,12 +822,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      **********************************************************************/
     if (currentFrame % 100 == 0) {
         if (enableTist) {
-            etiLog.log(info, "ETI frame number %i Timestamp: %d + %f\n",
+            etiLog.log(info, "ETI frame number %i Timestamp: %d + %f",
                     currentFrame, mnsc_time.tv_sec,
                     (timestamp & 0xFFFFFF) / 16384000.0);
         }
         else {
-            etiLog.log(info, "ETI frame number %i Time: %d, no TIST\n",
+            etiLog.log(info, "ETI frame number %i Time: %d, no TIST",
                     currentFrame, mnsc_time.tv_sec);
         }
     }

@@ -31,7 +31,7 @@
 #include <string>
 
 #include "input/inputs.h"
-#include "prbs.h"
+#include "PrbsGenerator.h"
 
 namespace Inputs {
 

@@ -3,7 +3,7 @@
    Her Majesty the Queen in Right of Canada (Communications Research
    Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -25,8 +25,16 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <list>
+#include <cstdarg>
+#include <chrono>
+
 #include "Log.h"
 
+using namespace std;
+
+/* etiLog is a singleton used in all parts of ODR-DabMod to output log messages.
+ */
 Logger etiLog;
 
 void Logger::register_backend(std::shared_ptr<LogBackend> backend)
@@ -59,10 +67,10 @@ void Logger::log(log_level_t level, const char* fmt, ...)
             size *= 2;
     }
 
-    logstr(level, str);
+    logstr(level, move(str));
 }
 
-void Logger::logstr(log_level_t level, std::string message)
+void Logger::logstr(log_level_t level, std::string&& message)
 {
     if (level == discard) {
         return;
@@ -91,3 +99,45 @@ LogLine Logger::level(log_level_t level)
     return LogLine(this, level);
 }
 
+LogToFile::LogToFile(const std::string& filename) : name("FILE")
+{
+    FILE* fd = fopen(filename.c_str(), "a");
+    if (fd == nullptr) {
+        fprintf(stderr, "Cannot open log file !");
+        throw std::runtime_error("Cannot open log file !");
+    }
+
+    log_file.reset(fd);
+}
+
+void LogToFile::log(log_level_t level, const std::string& message)
+{
+    if (level != log_level_t::discard) {
+        const char* log_level_text[] = {
+            "DEBUG", "INFO", "WARN", "ERROR", "ALERT", "EMERG"};
+
+        // fprintf is thread-safe
+        fprintf(log_file.get(), SYSLOG_IDENT ": %s: %s\n",
+                log_level_text[(size_t)level], message.c_str());
+        fflush(log_file.get());
+    }
+}
+
+void LogToSyslog::log(log_level_t level, const std::string& message)
+{
+    if (level != log_level_t::discard) {
+        int syslog_level = LOG_EMERG;
+        switch (level) {
+            case debug: syslog_level = LOG_DEBUG; break;
+            case info:  syslog_level = LOG_INFO; break;
+                        /* we don't have the notice level */
+            case warn:  syslog_level = LOG_WARNING; break;
+            case error: syslog_level = LOG_ERR; break;
+            default:    syslog_level = LOG_CRIT; break;
+            case alert: syslog_level = LOG_ALERT; break;
+            case emerg: syslog_level = LOG_EMERG; break;
+        }
+
+        syslog(syslog_level, SYSLOG_IDENT " %s", message.c_str());
+    }
+}

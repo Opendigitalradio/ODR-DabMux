@@ -33,7 +33,7 @@
 
 #include <cstring>
 #include <cstdlib>
-#include <boost/regex.hpp>
+#include <regex>
 #include <string>
 #include <cstdio>
 #include <limits.h>
@@ -54,14 +54,14 @@
 int DabOutputUdp::Open(const char* name)
 {
     using namespace std;
-    using namespace boost;
 
     const string uri_without_proto(name);
 
     regex re_url("([^:]+):([0-9]+)(.*)");
-    regex re_query("[?](?:src=([^,]+))(?:,ttl=([0-9]+))?");
+    regex re_query("[?](?:src=([^&,]+))(?:[&,]ttl=([0-9]+))?");
     smatch what;
-    if (regex_match(uri_without_proto, what, re_url, match_default)) {
+    if (regex_match(uri_without_proto, what, re_url,
+                regex_constants::match_default)) {
         string address = what[1];
 
         if (this->packet_->getAddress().setAddress(address.c_str()) == -1) {
@@ -83,7 +83,8 @@ int DabOutputUdp::Open(const char* name)
 
         string query_params = what[3];
         smatch query_what;
-        if (regex_match(query_params, query_what, re_query, match_default)) {
+        if (regex_match(query_params, query_what, re_query,
+                    regex_constants::match_default)) {
             string src = query_what[1];
 
             int err = socket_->setMulticastSource(src.c_str());
@@ -118,7 +119,7 @@ int DabOutputUdp::Open(const char* name)
     else {
         etiLog.level(error) << uri_without_proto <<
             " is an invalid format for UDP address: "
-            "expected ADDRESS:PORT[?src=SOURCE,ttl=TTL]";
+            "expected ADDRESS:PORT[?src=SOURCE&ttl=TTL]";
         return -1;
     }
 

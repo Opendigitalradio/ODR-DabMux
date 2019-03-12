@@ -2,10 +2,10 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2013, 2014 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2014
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
-    http://opendigitalradio.org
+    http://www.opendigitalradio.org
 
    ZeroMQ output. see www.zeromq.org for more info
 
@@ -61,6 +61,7 @@ int DabOutputZMQ::Open(const char* endpoint)
     string proto_endpoint = zmq_proto_ + "://" + std::string(endpoint);
     std::cerr << "ZMQ socket " << proto_endpoint << std::endl;
     zmq_pub_sock_.bind(proto_endpoint.c_str());
+    endpoint_ = endpoint;
 
     return 0;
 }
@@ -88,19 +89,28 @@ int DabOutputZMQ::Write(void* buffer, int size)
     if (zmq_message_ix == NUM_FRAMES_PER_ZMQ_MESSAGE) {
 
         // Size of the header:
-        int full_length = ZMQ_DAB_MESSAGE_HEAD_LENGTH;
+        size_t full_length = ZMQ_DAB_MESSAGE_HEAD_LENGTH;
 
         for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
             full_length += zmq_message.buflen[i];
         }
 
-        zmq_message_ix = 0;
+        vector<uint8_t> msg(full_length);
+        memcpy(msg.data(), (uint8_t*)&zmq_message, full_length);
+
+        // metadata gets appended at the end
+        for (const auto& md : meta_) {
+            vector<uint8_t> md_data(md->getLength());
+            md->write(md_data.data());
+
+            copy(md_data.begin(), md_data.end(), back_inserter(msg));
+        }
 
         const int flags = 0;
-        zmq_send(zmq_pub_sock_,
-                (uint8_t*)&zmq_message,
-                full_length, flags);
+        zmq_send(zmq_pub_sock_, msg.data(), msg.size(), flags);
 
+        meta_.clear();
+        zmq_message_ix = 0;
         for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
             zmq_message.buflen[i] = -1;
         }
@@ -113,6 +123,13 @@ int DabOutputZMQ::Write(void* buffer, int size)
 int DabOutputZMQ::Close()
 {
     return zmq_close(zmq_pub_sock_);
+}
+
+void DabOutputZMQ::setMetadata(std::shared_ptr<OutputMetadata> &md)
+{
+    if (m_allow_metadata) {
+        meta_.push_back(md);
+    }
 }
 
 #endif

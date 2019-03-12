@@ -1,50 +1,32 @@
 # Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
+#
+# Copyright (C) 2019 Matthias P. Braendli, http://opendigitalradio.org
 
 # This file is part of ODR-DabMux.
-# 
+#
 # ODR-DabMux is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-# 
+#
 # ODR-DabMux is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_PREREQ(2.61)
-AC_INIT([ODR-DabMux], [1.2.2], [matthias.braendli@mpb.li])
+AC_PREREQ(2.69)
+AC_INIT([ODR-DabMux], [2.3.1], [matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([-Wall subdir-objects foreign])
+AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/DabMux.cpp])
 AC_CONFIG_HEADER([config.h])
 AM_SILENT_RULES([yes])
-
-AC_CONFIG_MACRO_DIR([m4])
-
-case $host in
-*linux*)
-    case $target_cpu in
-    x86_64)
-        AC_DEFINE([__64BIT__], [], [__16BIT__, __32BIT__])
-        ;;
-    *)
-        AC_DEFINE([__32BIT__], [], [__16BIT__, __64BIT__])
-        AC_SUBST([BUILD_TARGET], ["CC='gcc -m32' CXX='g++ -m32' --target=i686"])
-        flags="-m32"
-    esac
-    ;;
-*)
-    AC_DEFINE([__32BIT__], [], [__16BIT__, __64BIT__])
-    AC_SUBST([GETOPT], ["xgetopt.cpp xgetopt.h"])
-    AC_SUBST([WSOCK32], ["-lwsock32"])
-    AC_SUBST([BUILD_HOST], ["--host i386-mingw32msvc"])
-esac
 
 # Checks for programs.
 AC_PROG_CXX
@@ -55,50 +37,15 @@ AC_PROG_INSTALL
 AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 
 # Checks for libraries.
-AC_CHECK_LIB([pthread], [pthread_create], [], AC_MSG_ERROR([libpthread is required]))
+AX_PTHREAD([], AC_MSG_ERROR([requires pthread]))
 AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
-
-AC_CHECK_LIB([m], [sin])
+AX_BOOST_THREAD
+AX_BOOST_SYSTEM
+AX_BOOST_ASIO
 
 # Checks for header files.
-AC_MSG_CHECKING([for OS type])
-AC_PREPROC_IFELSE(
-        [AC_LANG_SOURCE([
-#ifndef _WIN32
-#error windows
-#endif
-            ])],
-        [OS=windows],
-        [OS=linux]
-        )
-AC_MSG_RESULT([$OS])
-AM_CONDITIONAL([WINDOWS], [test "x$OS" == "xwindows"])
-AC_SUBST([FARSYNC_DIR], ['$(top_srcdir)/lib/farsync/'$OS])
-
 AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_CONST
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_HEADER_TIME
-AC_STRUCT_TM
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT8_T
-AC_C_VOLATILE
-
-# Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
-AC_FUNC_REALLOC
-AC_TYPE_SIGNAL
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero gethostbyname gettimeofday inet_ntoa memchr memmove memset socket strchr strdup strerror strrchr strstr strtol strtoul])
 
 # Options
 # Outputs
@@ -149,15 +96,44 @@ AS_IF([test "x$enable_output_edi" = "xyes"],
 AS_IF([test "x$enable_output_edi" = "xyes"],
         [AC_DEFINE(HAVE_CURL, [1], [Define if cURL is available])])
 
+AC_LANG_PUSH([C++])
+AX_CHECK_COMPILE_FLAG([-Wduplicated-cond], [CXXFLAGS="$CXXFLAGS -Wduplicated-cond"], [], ["-Werror"])
+AX_CHECK_COMPILE_FLAG([-Wduplicated-branches], [CXXFLAGS="$CXXFLAGS -Wduplicated-branches"], [], ["-Werror"])
+AX_CHECK_COMPILE_FLAG([-Wlogical-op], [CXXFLAGS="$CXXFLAGS -Wlogical-op"], [], ["-Werror"])
+AX_CHECK_COMPILE_FLAG([-Wrestrict], [CXXFLAGS="$CXXFLAGS -Wrestrict"], [], ["-Werror"])
+AX_CHECK_COMPILE_FLAG([-Wdouble-promotion], [CXXFLAGS="$CXXFLAGS -Wdouble-promotion"], [], ["-Werror"])
+AX_CHECK_COMPILE_FLAG(["-Wformat=2"], [CXXFLAGS="$CXXFLAGS -Wformat=2"], [], ["-Werror"])
+
+# Linux defines MSG_NOSIGNAL, some other systems have SO_NOSIGPIPE instead
+AC_MSG_CHECKING(for MSG_NOSIGNAL)
+AC_COMPILE_IFELSE([ AC_LANG_PROGRAM([[
+                    #include <sys/socket.h>
+                    int f = MSG_NOSIGNAL;
+                    ]])],
+                   [ AC_MSG_RESULT(yes)
+                     AC_DEFINE(HAVE_MSG_NOSIGNAL, 1, [Define this symbol if you have MSG_NOSIGNAL]) ],
+                   [ AC_MSG_RESULT(no) ])
+
+AC_MSG_CHECKING(for SO_NOSIGPIPE)
+AC_COMPILE_IFELSE([ AC_LANG_PROGRAM([[
+                    #include <sys/socket.h>
+                    int f = SO_NOSIGPIPE;
+                    ]])],
+                   [ AC_MSG_RESULT(yes)
+                     AC_DEFINE(HAVE_SO_NOSIGPIPE, 1, [Define this symbol if you have SO_NOSIGPIPE]) ],
+                   [ AC_MSG_RESULT(no) ])
+
+AC_LANG_POP([C++])
+
 # ZeroMQ
-AC_CHECK_LIB(zmq, zmq_init, [] , AC_MSG_ERROR(ZeroMQ libzmq is required))
+AX_ZMQ([4.0.0], [], AC_MSG_ERROR(ZeroMQ 4.0.0 is required))
 
 AC_DEFINE([HAVE_INPUT_ZEROMQ], [1], [Define if ZeroMQ input is enabled])
 AC_DEFINE([HAVE_OUTPUT_ZEROMQ], [1], [Define if ZeroMQ output is enabled])
 AC_DEFINE([HAVE_RC_ZEROMQ], [1], [Define if ZeroMQ enabled for rc])
 
 # Link against cURL
-AM_CONDITIONAL([HAVE_CURL_TEST],
+AM_CONDITIONAL([HAVE_EDI_TEST],
 			   [test "x$enable_output_edi" = "xyes"])
 # Do not build odr-zmq2farsync if no RAW output
 AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],
@@ -165,11 +141,7 @@ AM_CONDITIONAL([HAVE_OUTPUT_RAW_TEST],
 
 AM_CONDITIONAL([IS_GIT_REPO], [test -d '.git'])
 
-AC_CONFIG_FILES([Makefile
-                 src/Makefile
-                 lib/Makefile
-                 lib/farsync/Makefile
-                 ])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
 echo

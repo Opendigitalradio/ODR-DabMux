@@ -2,8 +2,10 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016 Matthias P. Braendli
-   http://mpb.li
+   Copyright (C) 2016
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+    http://www.opendigitalradio.org
 
    File output
    */
@@ -50,11 +52,11 @@ int DabOutputFile::Write(void* buffer, int size)
 
     switch (this->type_) {
     case ETI_FILE_TYPE_FRAMED:
-        // Writting nb of frames at beginning of file
+        // Writing nb of frames at beginning of file
         if (lseek(this->file_, 0, SEEK_SET) == -1) goto FILE_WRITE_ERROR;
         if (write(this->file_, &this->nbFrames_, 4) == -1) goto FILE_WRITE_ERROR;
 
-        // Writting nb frame length at end of file
+        // Writing nb frame length at end of file
         if (lseek(this->file_, 0, SEEK_END) == -1) goto FILE_WRITE_ERROR;
         if (write(this->file_, &frame_size, 2) == -1) goto FILE_WRITE_ERROR;
 
@@ -62,7 +64,7 @@ int DabOutputFile::Write(void* buffer, int size)
         if (write(this->file_, buffer, size) == -1) goto FILE_WRITE_ERROR;
         break;
     case ETI_FILE_TYPE_STREAMED:
-        // Writting nb frame length at end of file
+        // Writing nb frame length at end of file
         if (write(this->file_, &frame_size, 2) == -1) goto FILE_WRITE_ERROR;
 
         // Appending data
@@ -85,7 +87,7 @@ int DabOutputFile::Write(void* buffer, int size)
     return size;
 
 FILE_WRITE_ERROR:
-    perror("Error while writting to file");
+    perror("Error while writing to file");
     return -1;
 }
 

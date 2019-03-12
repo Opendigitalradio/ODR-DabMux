@@ -43,16 +43,15 @@ FIG0_19::FIG0_19(FIGRuntimeInformation *rti) :
     m_rti(rti)
 { }
 
+#define FIG0_19_TRACE discard
+
 FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
 {
     using namespace std;
 
     auto ensemble = m_rti->ensemble;
 
-    // We are called every 24ms, and must timeout after 2s
-    const int timeout = 2000/24;
-
-    m_transition.update_state(timeout, ensemble->clusters);
+    m_transition.update_state(std::chrono::seconds(2), ensemble->clusters);
 
     FillStatus fs;
     ssize_t remaining = max_size;
@@ -73,11 +72,15 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
 
     const int length_0_19 = 4;
     fs.complete_fig_transmitted = true;
+    etiLog.level(FIG0_19_TRACE) << "FIG0_19::loop with " << allclusters.size() <<
+        " clusters";
     for (auto& cluster : allclusters) {
+        etiLog.level(FIG0_19_TRACE) << "FIG0_19::cluster " << cluster->cluster_id;
 
         if (fig0 == NULL) {
             if (remaining < 2 + length_0_19) {
                 fs.complete_fig_transmitted = false;
+                etiLog.level(FIG0_19_TRACE) << "FIG0_19::no space FIG0";
                 break;
             }
 
@@ -92,6 +95,7 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
             remaining -= 2;
         }
         else if (remaining < length_0_19) {
+            etiLog.level(FIG0_19_TRACE) << "FIG0_19::no space FIG0/19";
             fs.complete_fig_transmitted = false;
             break;
         }
@@ -124,16 +128,19 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
             continue;
         }
 
+        etiLog.level(FIG0_19_TRACE) << "FIG0_19::advance " << length_0_19;
+
         fig0->Length += length_0_19;
         buf += length_0_19;
         remaining -= length_0_19;
     }
 
     fs.num_bytes_written = max_size - remaining;
+    etiLog.level(FIG0_19_TRACE) << "FIG0_19::out " << fs.num_bytes_written;
     return fs;
 }
 
-FIG_rate FIG0_19::repetition_rate(void)
+FIG_rate FIG0_19::repetition_rate() const
 {
     if (    m_transition.new_entries.size() > 0 or
             m_transition.disabled_entries.size() ) {

@@ -55,10 +55,18 @@ TcpSocket::TcpSocket(int port, const string& name) :
             throw std::runtime_error("Can't reuse address");
         }
 
+#if defined(HAVE_SO_NOSIGPIPE)
+        int val = 1;
+        if (setsockopt(m_sock, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))
+                == SOCKET_ERROR) {
+            throw std::runtime_error("Can't set SO_NOSIGPIPE");
+        }
+#endif
+
         m_own_address.setAddress(name);
         m_own_address.setPort(port);
 
-        if (bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
+        if (::bind(m_sock, m_own_address.getAddress(), sizeof(sockaddr_in)) == SOCKET_ERROR) {
             ::close(m_sock);
             m_sock = INVALID_SOCKET;
             throw std::runtime_error("Can't bind socket");
@@ -152,8 +160,15 @@ ssize_t TcpSocket::send(const void* data, size_t size, int timeout_ms)
         }
     }
 
-    /* Without MSG_NOSIGNAL the process would receive a SIGPIPE and die */
-    ssize_t ret = ::send(m_sock, (const char*)data, size, MSG_NOSIGNAL);
+    /* On Linux, the MSG_NOSIGNAL flag ensures that the process would not
+     * receive a SIGPIPE and die.
+     * Other systems have SO_NOSIGPIPE set on the socket for the same effect. */
+#if defined(HAVE_MSG_NOSIGNAL)
+    const int flags = MSG_NOSIGNAL;
+#else
+    const int flags = 0;
+#endif
+    ssize_t ret = ::send(m_sock, (const char*)data, size, flags);
 
     if (ret == SOCKET_ERROR) {
         stringstream ss;

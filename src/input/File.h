@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016 Matthias P. Braendli
+   Copyright (C) 2018 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    */
@@ -28,7 +28,7 @@
 #include <vector>
 #include <array>
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include "input/inputs.h"
 #include "ManagementServer.h"
 
@@ -41,6 +41,8 @@ class FileBase : public InputBase {
         virtual int setBitrate(int bitrate);
         virtual int close();
 
+        virtual void setNonblocking(bool nonblock);
+
         /* Rewind the file
          * Returns -1 on failure, 0 on success
          */
@@ -52,8 +54,11 @@ class FileBase : public InputBase {
         virtual ssize_t readFromFile(uint8_t* buf, size_t len);
 
         // We use unix open() instead of fopen() because
-        // we might want to do non-blocking I/O in the future
+        // of non-blocking I/O
         int m_fd = -1;
+
+        bool m_nonblock = false;
+        std::vector<uint8_t> m_nonblock_buffer;
 };
 
 class MPEGFile : public FileBase {
@@ -76,16 +81,16 @@ class PacketFile : public FileBase {
         virtual int readFrame(uint8_t* buffer, size_t size);
 
     protected:
-        std::array<uint8_t,96> m_packetData;
-        size_t m_packetLength;
+        std::array<uint8_t, 96> m_packetData;
+        size_t m_packetLength = 0;
 
         /* Enhanced packet mode enables FEC for MSC packet mode
          * as described in EN 300 401 Clause 5.3.5
          */
         bool m_enhancedPacketEnabled = false;
         std::array<std::array<uint8_t, 204>,12> m_enhancedPacketData;
-        size_t m_enhancedPacketWaiting;
-        size_t m_enhancedPacketLength;
+        size_t m_enhancedPacketWaiting = 0;
+        size_t m_enhancedPacketLength = 0;
 };
 
 };

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -80,8 +80,18 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         const bool PD = false;
         const bool ILS = linkageSetFIG0_6->international;
 
-        // need to add key service to num_ids
-        const size_t num_ids = 1 + linkageSetFIG0_6->id_list.size();
+        // need to add key service to num_ids, unless it is empty which means we
+        // send a CEI
+        const size_t num_ids = linkageSetFIG0_6->keyservice.empty() ?
+            // do not transmit list if keyservice empty, it should anyway be empty
+            0 : (1 + linkageSetFIG0_6->id_list.size());
+
+        if (num_ids > 0x0F) {
+            etiLog.log(error,
+                    "Too many links for linkage set 0x%04x",
+                    linkageSetFIG0_6->lsn);
+            continue;
+        }
 
         const size_t headersize = sizeof(struct FIGtype0_6_header);
         const int required_size = sizeof(struct FIGtype0_6) + headersize +
@@ -110,7 +120,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
 
         FIGtype0_6 *fig0_6 = (FIGtype0_6*)buf;
 
-        fig0_6->IdListFlag = (num_ids > 0);
+        fig0_6->IdListFlag = (num_ids > 0); // C/N=0 and IdListFlag=0 is CEI
         fig0_6->LA = linkageSetFIG0_6->active;
         fig0_6->SH = linkageSetFIG0_6->hard;
         fig0_6->ILS = ILS;
@@ -120,14 +130,13 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         buf += sizeof(struct FIGtype0_6);
         remaining -= sizeof(struct FIGtype0_6);
 
+        etiLog.log(debug,
+                "Linkage set 0x%04x wrote %d",
+                linkageSetFIG0_6->lsn, fig0->Length);
+
         if (num_ids > 0) {
             FIGtype0_6_header *header = (FIGtype0_6_header*)buf;
             header->rfu = 0;
-            if (num_ids > 0x0F) {
-                etiLog.log(error, "Too large number of links for linkage set 0x%04x",
-                        linkageSetFIG0_6->lsn);
-                throw MuxInitException();
-            }
 
             // update() guarantees us that all entries in a linkage set
             // have the same type
@@ -135,7 +144,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 if (l.type != linkageSetFIG0_6->id_list.front().type) {
                     etiLog.log(error, "INTERNAL ERROR: invalid linkage subset 0x%04x",
                         linkageSetFIG0_6->lsn);
-                    throw std::runtime_error("INTERNAL ERROR");
+                    throw std::logic_error("FIG0_6 INTERNAL ERROR");
                 }
             }
 
@@ -161,9 +170,10 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                     });
 
             if (keyservice == ensemble->services.end()) {
-                etiLog.log(error, "Invalid key service %s in linkage set 0x%04x",
-                        keyserviceuid.c_str(), linkageSetFIG0_6->lsn);
-                throw MuxInitException();
+                std::stringstream ss;
+                ss << "Invalid key service " << keyserviceuid <<
+                        " in linkage set 0x" << std::hex << linkageSetFIG0_6->lsn;
+                throw MuxInitException(ss.str());
             }
 
             if (not PD and not ILS) {
@@ -182,7 +192,8 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 }
             }
             else if (not PD and ILS) {
-                buf[0] = ensemble->ecc;
+                buf[0] = ((*keyservice)->ecc == 0) ?
+                    ensemble->ecc : (*keyservice)->ecc;
                 buf[1] = (*keyservice)->id >> 8;
                 buf[2] = (*keyservice)->id & 0xFF;
                 fig0->Length += 3;
@@ -239,7 +250,10 @@ void FIG0_6::update()
     for (const auto& linkageset : m_rti->ensemble->linkagesets) {
         const auto lsn = linkageset->lsn;
 
-        for (const auto& link : linkageset->id_list) {
+        if (linkageset->keyservice.empty()) {
+            linkageSubsets.push_back(*linkageset);
+        }
+        else for (const auto& link : linkageset->id_list) {
             const auto type = link.type;
 
             const auto subset =

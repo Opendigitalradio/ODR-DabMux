@@ -3,7 +3,7 @@
    Her Majesty the Queen in Right of Canada (Communications Research
    Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -31,16 +31,15 @@
 #   include "config.h"
 #endif
 
-#include <stdarg.h>
-#include <stdio.h>
 #include <syslog.h>
+#include <cstdarg>
+#include <cstdio>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <list>
 #include <stdexcept>
 #include <string>
-#include <map>
 #include <mutex>
 #include <memory>
 
@@ -55,79 +54,47 @@ static const std::string levels_as_str[] =
 /** Abstract class all backends must inherit from */
 class LogBackend {
     public:
-        virtual void log(log_level_t level, std::string message) = 0;
-        virtual std::string get_name() = 0;
+        virtual ~LogBackend() {};
+        virtual void log(log_level_t level, const std::string& message) = 0;
+        virtual std::string get_name() const = 0;
 };
 
 /** A Logging backend for Syslog */
 class LogToSyslog : public LogBackend {
     public:
-        LogToSyslog() {
-            name = "SYSLOG";
+        LogToSyslog() : name("SYSLOG") {
             openlog(SYSLOG_IDENT, LOG_PID, SYSLOG_FACILITY);
         }
 
-        ~LogToSyslog() {
+        virtual ~LogToSyslog() {
             closelog();
         }
 
-        void log(log_level_t level, std::string message) {
+        void log(log_level_t level, const std::string& message);
 
-            int syslog_level = LOG_EMERG;
-            switch (level) {
-                case debug: syslog_level = LOG_DEBUG; break;
-                case info:  syslog_level = LOG_INFO; break;
-                /* we don't have the notice level */
-                case warn:  syslog_level = LOG_WARNING; break;
-                case error: syslog_level = LOG_ERR; break;
-                default:    syslog_level = LOG_CRIT; break;
-                case alert: syslog_level = LOG_ALERT; break;
-                case emerg: syslog_level = LOG_EMERG; break;
-            }
-
-            syslog(syslog_level, SYSLOG_IDENT " %s", message.c_str());
-        }
-
-        std::string get_name() { return name; }
+        std::string get_name() const { return name; }
 
     private:
-        std::string name;
+        const std::string name;
+
+        LogToSyslog(const LogToSyslog& other) = delete;
+        const LogToSyslog& operator=(const LogToSyslog& other) = delete;
 };
 
 class LogToFile : public LogBackend {
     public:
-        LogToFile(std::string filename) {
-            name = "FILE";
-
-            log_file = fopen(filename.c_str(), "a");
-            if (log_file == NULL) {
-                fprintf(stderr, "Cannot open log file !");
-                throw std::runtime_error("Cannot open log file !");
-            }
-        }
-
-        ~LogToFile() {
-            if (log_file != NULL) {
-                fclose(log_file);
-            }
-        }
-
-        void log(log_level_t level, std::string message) {
-
-            const char* log_level_text[] =
-                {"DEBUG", "INFO", "WARN", "ERROR", "ALERT", "EMERG"};
-
-            // fprintf is thread-safe
-            fprintf(log_file, SYSLOG_IDENT ": %s: %s\n",
-                    log_level_text[(size_t)level], message.c_str());
-            fflush(log_file);
-        }
-
-        std::string get_name() { return name; }
+        LogToFile(const std::string& filename);
+        void log(log_level_t level, const std::string& message);
+        std::string get_name() const { return name; }
 
     private:
-        std::string name;
-        FILE* log_file;
+        const std::string name;
+
+        struct FILEDeleter{ void operator()(FILE* fd){ if(fd) fclose(fd);}};
+        std::unique_ptr<FILE, FILEDeleter> log_file;
+
+        LogToFile(const LogToFile& other) = delete;
+        const LogToFile& operator=(const LogToFile& other) = delete;
 };
 
 class LogLine;
@@ -139,7 +106,7 @@ class Logger {
         /* Log the message to all backends */
         void log(log_level_t level, const char* fmt, ...);
 
-        void logstr(log_level_t level, std::string message);
+        void logstr(log_level_t level, std::string&& message);
 
         /* Return a LogLine for the given level
          * so that you can write etiLog.level(info) << "stuff = " << 21 */
@@ -158,6 +125,7 @@ extern Logger etiLog;
 class LogLine {
     public:
         LogLine(const LogLine& logline);
+        const LogLine& operator=(const LogLine& other) = delete;
         LogLine(Logger* logger, log_level_t level) :
             logger_(logger)
         {

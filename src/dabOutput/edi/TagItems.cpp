@@ -72,8 +72,8 @@ std::vector<uint8_t> TagDETI::Assemble()
     packet.push_back(0);
     packet.push_back(0);
 
-    uint8_t fct  = dflc % 250;
-    uint8_t fcth = dflc / 250;
+    uint8_t fct  = dlfc % 250;
+    uint8_t fcth = dlfc / 250;
 
 
     uint16_t detiHeader = fct | (fcth << 8) | (rfudf << 13) | (ficf << 14) | (atstf << 15);
@@ -122,7 +122,7 @@ std::vector<uint8_t> TagDETI::Assemble()
     packet[6] = (taglength >> 8) & 0xFF;
     packet[7] = taglength & 0xFF;
 
-    dflc = (dflc+1) % 5000;
+    dlfc = (dlfc+1) % 5000;
 
     /*
     std::cerr << "TagItem deti, packet.size " << packet.size() << std::endl;

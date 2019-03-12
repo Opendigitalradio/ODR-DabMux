@@ -31,7 +31,31 @@ general {
 
     ; Enable timestamp definition necessary for SFN
     ; This also enables time encoding using the MNSC.
+    ;
+    ; When TIST is enabled, and either EDI or a ZMQ output with metadata is used,
+    ; ODR-DabMux will download leap-second information from the IETF website,
+    ; and cache it locally in /var/tmp. It will refresh the data by itself
+    ; before it expires.
+    ;
+    ; If it cannot load this information, ODR-DabMux cannot start up!
+    ;
+    ; If your system doesn't have access to internet, you have to take care
+    ; to create the file before ODR-DabMux startup. Get it from
+    ; http://www.ietf.org/timezones/data/leap-seconds.list
+    ; and save it to
+    ; /var/tmp/odr-dabmux-leap-seconds.cache
+    ; Refresh the file before expiry otherwise ODR-DabMux will abort!
+    ;
+    ; Use the RC interface 'get clocktai expiry' command to check how long
+    ; your file is still valid.
     tist false
+
+    ; The URLs used to fetch the TAI bulletin can be overridden if needed.
+    ; URLs are given as a pipe-separated list, and the default value is:
+    ;tai_clock_bulletins "https://www.ietf.org/timezones/data/leap-seconds.list|https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list"
+    ;
+    ; You may also use a file:// URL if you take care of updating the file
+    ; yourself and store it locally.
 
     ; The management server is a simple TCP server that can present
     ; statistics data (buffers, overruns, underruns, etc)
@@ -67,15 +91,29 @@ remotecontrol {
 
 ; Some ensemble parameters
 ensemble {
+    ; A unique 16-bit id is allocated to the ensemble and allows unambiguous
+    ; identification of the ensemble when associated with the ensemble ECC.
+    ; The id normally starts with the coutry id. (See ETSI TS 101 756)
+
+    ; Example for Switzerland, with country id=4 and ECC=E1
     id 0x4fff ; you can also use decimal if you want
-    ecc 0xec ; Extended Country Code
+    ecc 0xe1 ; Extended Country Code
 
     local-time-offset auto  ; autmatically calculate from system local time
                             ; or
     ;local-time-offset 1    ; in hours, supports half-hour offsets
 
-    ; all labels are maximum 16 characters in length
+    ; If you want to run your machine in UTC time, but still take advantage of the
+    ; automatic calculation of the local time offset, set the environment variable TZ
+    ; to your timezone (e.g. TZ=Europe/Rome) before you launch ODR-DabMux
+
+    ; All labels are maximum 16 characters in length.
+    ; Labels that are valid utf-8 will be converted to EBU Latin Character set
+    ; as defined in ETSI TS 101 756, in Annex C. If it's not valid utf-8, the
+    ; label is taken as-is, byte per byte. Characters that cannot be
+    ; represented in EBU Latin will be replaced by a space character.
     label "OpenDigitalRadio"
+
     ; The short label is built from the label by erasing letters, and cannot
     ; be longer than 8 characters. If omitted, it will be truncated from the
     ; label
@@ -87,12 +125,15 @@ services {
     ; Each service has it's own unique identifier, that is
     ; used throughout the configuration file and for the RC.
     srv-fu {
-        id 0x8daa
-        label "Funk"
-        ; you can define a shortlabel too.
+        id 0x4daa
+        label "Fünk"
+        ; You can define a shortlabel too.
     }
     srv-ri {
-        id 0x8dab
+        ; If your ensemble contains a service from another country,
+        ; specify its ECC here. Example is for Italy, country id=5, ECC=E0
+        id 0x5dab
+        ecc 0xe0
         label "Rick"
     }
 }
@@ -163,10 +204,23 @@ outputs {
     ; Output RAW ETI NI to standard output
     stdout "fifo:///dev/stdout?type=raw"
 
-    ; ZeroMQ output example 
+    ; ZeroMQ output example, new configuration format. Several
+    ; zeromq blocks can be added here.
     ; This output does not back-pressure the multiplexer.
-    ; Listen on all interfaces, on port 9100
-    ;zmq  "zmq+tcp://*:9100"
+    zeromq {
+        ; Listen on all interfaces, on port 9100
+        endpoint "tcp://*:9100"
+
+        ; Transmit backward compatible metadata containing
+        ; EDI time and UTC offset when TIST is enabled.
+        ;
+        ; If TIST is enabled, requires leap-second information (see example.mux)
+        ;
+        ; WARNING! requires ODR-DabMux to be compiled with
+        ; EDI output, and this will enable leap second download
+        ; as for the EDI output!
+        allowmetadata true
+    }
 
     ; Output ETI-over-TCP. This is like piping a RAW ETI NI data stream
     ; into a TCP socket, except that the output can handle simultaneous

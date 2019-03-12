@@ -13,11 +13,13 @@ to the multiplexer. Relevant spec: ETSI TS 102 693
 It would be beneficial to write and EDI decoding library that can be re-used in
 ODR-DabMod to add EDI input there too.
 
-Initial work started in http://git.mpb.li/git/odr-edilib/
+Stuff in http://git.mpb.li/git/odr-edilib/ could be helpful.
 
 There is experimental support for STI(PI, X)/RTP using UDP, which is used by
 AVT encoders. It does not properly reorder incoming UDP packets nor align
 STI frames with ETI frames.
+
+Also, it doesn't print out nice messages (like ZMQ's "prebuffering complete").
 
 
 Explicit Service Linking
@@ -35,12 +37,9 @@ and which ones would make sense to add.
 Also, there is no documentation on the possibilites of packet data.
 
 
-Clarify usage of PTy
---------------------
-We currently transmit dynamic PTy in FIG0/17 since it can be changed in
-through the remote control. Some receivers might not display the dynamic
-PTy, but only the static PTy. Clarify if we need to add both PTy variants
-to the configuration and the code.
+Multicast support for the UDP input
+-----------------------------------
+The current UDP input implementation cannot join a multicast group.
 
 
 Improvements for inputs
@@ -50,6 +49,9 @@ This would mean we have to move the packet buffer from the operating system
 into our own buffer, so that we can actually get the statistics.
 
 Also see the STI-D over EDI topic above.
+
+For error handling, there are parts of the code that use return values, parts
+use exceptions. While it works, we could clean it up a bit.
 
 
 Fix DMB input
@@ -67,7 +69,6 @@ TIST, and the ClockTAI class can get the information from the Internet, but it
 is not used in FIG0/10.
 
 
-Add support for services with different ECC than ensemble
----------------------------------------------------------
-FIG 0/9 can transmit an Extended field for this information. Needs change of
-configuration file, internal structures and FIG 0/9.
+Implement FIG0/20 Service List
+------------------------------
+See ETSI TS 103 176

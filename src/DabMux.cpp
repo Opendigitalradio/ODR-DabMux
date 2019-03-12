@@ -275,6 +275,7 @@ int main(int argc, char *argv[])
 
         /******************** READ OUTPUT PARAMETERS ***************/
         set<string> all_output_names;
+        bool output_require_tai_clock = false;
         ptree pt_outputs = pt.get_child("outputs");
         for (auto ptree_pair : pt_outputs) {
             string outputuid = ptree_pair.first;
@@ -333,6 +334,46 @@ int main(int argc, char *argv[])
                 throw runtime_error("EDI output not compiled in");
 #endif
             }
+            else if (outputuid == "zeromq") {
+#if defined(HAVE_OUTPUT_ZEROMQ)
+                ptree pt_zeromq = pt_outputs.get_child("zeromq");
+                shared_ptr<DabOutput> output;
+
+                string endpoint = pt_zeromq.get<string>("endpoint");
+                bool allow_metadata = pt_zeromq.get<bool>("allowmetadata");
+                output_require_tai_clock |= allow_metadata;
+
+                size_t proto_pos = endpoint.find("://");
+                if (proto_pos == std::string::npos) {
+                    stringstream ss;
+                    ss << "zeromq output endpoint '" << endpoint << "' has incorrect format!";
+                    throw runtime_error(ss.str());
+                }
+
+                string proto = endpoint.substr(0, proto_pos);
+                string location = endpoint.substr(proto_pos + 3);
+
+                output = make_shared<DabOutputZMQ>(proto, allow_metadata);
+
+                if (not output) {
+                    etiLog.level(error) <<
+                        "Unable to init zeromq output " <<
+                        endpoint;
+                    return -1;
+                }
+
+                if (output->Open(location) == -1) {
+                    etiLog.level(error) <<
+                        "Unable to open zeromq output " <<
+                        endpoint;
+                    return -1;
+                }
+
+                outputs.push_back(output);
+#else
+                throw runtime_error("ZeroMQ output not compiled in");
+#endif
+            }
             else {
                 string uri = pt_outputs.get<string>(outputuid);
 
@@ -374,14 +415,17 @@ int main(int argc, char *argv[])
                     output = make_shared<DabOutputSimul>();
 #endif // defined(HAVE_OUTPUT_SIMUL)
 #if defined(HAVE_OUTPUT_ZEROMQ)
+                /* The legacy configuration setting will not enable metadata,
+                 * to keep backward compatibility
+                 */
                 } else if (proto == "zmq+tcp") {
-                    output = make_shared<DabOutputZMQ>("tcp");
+                    output = make_shared<DabOutputZMQ>("tcp", false);
                 } else if (proto == "zmq+ipc") {
-                    output = make_shared<DabOutputZMQ>("ipc");
+                    output = make_shared<DabOutputZMQ>("ipc", false);
                 } else if (proto == "zmq+pgm") {
-                    output = make_shared<DabOutputZMQ>("pgm");
+                    output = make_shared<DabOutputZMQ>("pgm", false);
                 } else if (proto == "zmq+epgm") {
-                    output = make_shared<DabOutputZMQ>("epgm");
+                    output = make_shared<DabOutputZMQ>("epgm", false);
 #endif // defined(HAVE_OUTPUT_ZEROMQ)
                 } else {
                     etiLog.level(error) << "Output protocol unknown: " << proto;
@@ -413,7 +457,7 @@ int main(int argc, char *argv[])
             throw MuxInitException();
         }
 
-        mux.prepare();
+        mux.prepare(output_require_tai_clock);
         mux.print_info();
 
         etiLog.log(info, "--- Output list ---");
@@ -480,6 +524,14 @@ int main(int argc, char *argv[])
     catch (const std::invalid_argument& except) {
         etiLog.level(error) << "Caught invalid argument : " << except.what();
         returnCode = 1;
+    }
+    catch (const std::out_of_range& except) {
+        etiLog.level(error) << "Caught out of range exception : " << except.what();
+        returnCode = 1;
+    }
+    catch (const std::logic_error& except) {
+        etiLog.level(error) << "Caught logic error : " << except.what();
+        returnCode = 2;
     }
     catch (const std::runtime_error& except) {
         etiLog.level(error) << "Caught runtime error : " << except.what();

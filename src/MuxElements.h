@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2018
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <functional>
 #include <exception>
@@ -110,16 +111,14 @@ class AnnouncementCluster : public RemoteControllable {
         bool is_active(void);
 
     private:
+        mutable std::mutex m_active_mutex;
         bool m_active = false;
-
         boost::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_start_time;
-
         boost::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_stop_time;
-
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -147,7 +146,11 @@ struct dabOutput {
 class DabLabel
 {
     public:
-        /* Set a new label and short label.
+        /* Set a new label and short label. If the label parses as valid UTF-8, it
+         * will be converted to EBU Latin. If utf-8 decoding fails, the label
+         * will be used as is. Characters that cannot be converted are replaced
+         * by a space.
+         *
          * returns:  0 on success
          *          -1 if the short_label is not a representable
          *          -2 if the short_label is too long
@@ -170,7 +173,7 @@ class DabLabel
         void writeLabel(uint8_t* buf) const;
 
         uint16_t flag() const { return m_flag; }
-        const std::string long_label() const { return m_label; }
+        const std::string long_label() const;
         const std::string short_label() const;
 
     private:
@@ -182,7 +185,7 @@ class DabLabel
         /* The m_label is not padded in any way */
         std::string m_label;
 
-        /* Checks and calculates the flag */
+        /* Checks and calculates the flag. slabel must be EBU Latin Charset */
         int setShortLabel(const std::string& slabel);
 };
 
@@ -192,6 +195,19 @@ class DabComponent;
 class DabSubchannel;
 class LinkageSet;
 struct FrequencyInformation;
+struct ServiceOtherEnsembleInfo;
+
+using vec_sp_component = std::vector<std::shared_ptr<DabComponent> >;
+using vec_sp_service = std::vector<std::shared_ptr<DabService> >;
+using vec_sp_subchannel = std::vector<std::shared_ptr<DabSubchannel> >;
+
+
+enum class TransmissionMode_e {
+    TM_I,
+    TM_II,
+    TM_III,
+    TM_IV
+};
 
 class dabEnsemble : public RemoteControllable {
     public:
@@ -209,11 +225,14 @@ class dabEnsemble : public RemoteControllable {
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
 
+        /* Check if the Linkage Sets are valid */
+        bool validate_linkage_sets(void);
+
         /* all fields are public, since this was a struct before */
         uint16_t id = 0;
         uint8_t ecc = 0;
         DabLabel label;
-        uint8_t mode = 0;
+        TransmissionMode_e transmission_mode = TransmissionMode_e::TM_I;
 
         /* Use the local time to calculate the lto */
         bool lto_auto = true;
@@ -225,13 +244,14 @@ class dabEnsemble : public RemoteControllable {
         // 2 corresponds to program types used in north america
         int international_table = 1;
 
-        std::vector<std::shared_ptr<DabService> > services;
-        std::vector<DabComponent*> components;
-        std::vector<DabSubchannel*> subchannels;
+        vec_sp_service services;
+        vec_sp_component components;
+        vec_sp_subchannel subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
         std::vector<std::shared_ptr<LinkageSet> > linkagesets;
-        std::vector<std::shared_ptr<FrequencyInformation> > frequency_information;
+        std::vector<FrequencyInformation> frequency_information;
+        std::vector<ServiceOtherEnsembleInfo> service_other_ensemble;
 };
 
 
@@ -338,7 +358,6 @@ struct dabPacketComponent {
     bool datagroup;
 };
 
-
 class DabComponent : public RemoteControllable
 {
     public:
@@ -362,7 +381,7 @@ class DabComponent : public RemoteControllable
         dabFidcComponent fidc;
         dabPacketComponent packet;
 
-        bool isPacketComponent(std::vector<DabSubchannel*>& subchannels) const;
+        bool isPacketComponent(vec_sp_subchannel& subchannels) const;
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -370,15 +389,7 @@ class DabComponent : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
-
-        virtual ~DabComponent() {}
-
-    private:
-        const DabComponent& operator=(const DabComponent& other);
-        DabComponent(const DabComponent& other);
 };
-
-
 
 class DabService : public RemoteControllable
 {
@@ -390,12 +401,25 @@ class DabService : public RemoteControllable
         {
             RC_ADD_PARAMETER(label, "Label and shortlabel [label,short]");
             RC_ADD_PARAMETER(pty, "Programme Type");
+            RC_ADD_PARAMETER(ptysd, "PTy Static/Dynamic [static,dynamic]");
         }
 
         std::string uid;
 
         uint32_t id = 0;
-        unsigned char pty = 0;
+
+        /* Services with different ECC than the ensemble must be signalled in FIG0/9.
+         * here, leave at 0 if they have the same as the ensemble
+         */
+        uint8_t ecc = 0;
+
+        struct pty_settings_t {
+            uint8_t pty = 0; // 0 means disabled
+            bool dynamic_no_static = false;
+        };
+
+        pty_settings_t pty_settings;
+
         unsigned char language = 0;
 
         /* ASu (Announcement support) flags: this 16-bit flag field shall
@@ -408,7 +432,7 @@ class DabService : public RemoteControllable
 
         subchannel_type_t getType(const std::shared_ptr<dabEnsemble> ensemble) const;
         bool isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const;
-        unsigned char nbComponent(const std::vector<DabComponent*>& components) const;
+        unsigned char nbComponent(const vec_sp_component& components) const;
 
         DabLabel label;
 
@@ -418,12 +442,13 @@ class DabService : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+};
 
-        virtual ~DabService() {}
-
-    private:
-        const DabService& operator=(const DabService& other);
-        DabService(const DabService& other);
+/* Represent an entry for FIG0/24 */
+struct ServiceOtherEnsembleInfo {
+    uint32_t service_id = 0;
+    // Ensembles in which this service is also available
+    std::vector<uint16_t> other_ensembles;
 };
 
 enum class ServiceLinkType {DAB, FM, DRM, AMSS};
@@ -443,6 +468,7 @@ class LinkageSet {
     public:
         LinkageSet(const std::string& name,
                 uint16_t lsn,
+                bool active,
                 bool hard,
                 bool international);
 
@@ -511,11 +537,17 @@ struct FrequencyInfoAmss {
     std::vector<float> frequencies;
 };
 
-struct FrequencyListEntry {
+/* One FI database entry. DB key are oe, rm, and idfield, which is
+ * inside the fi_XXX field
+ */
+struct FrequencyInformation {
     std::string uid;
+    bool other_ensemble = false;
 
-    RangeModulation rm;
-    bool continuity;
+    // The latest draft spec does not specify the RegionId anymore, it's
+    // now a reserved field.
+    RangeModulation rm = RangeModulation::dab_ensemble;
+    bool continuity = false;
 
     // Only one of those must contain information, which
     // must be consistent with RangeModulation
@@ -525,27 +557,20 @@ struct FrequencyListEntry {
     FrequencyInfoAmss fi_amss;
 };
 
-struct FrequencyInformation {
-    std::string uid;
+vec_sp_subchannel::iterator getSubchannel(
+        vec_sp_subchannel& subchannels,
+        int id);
 
-    // The latest draft spec does not specify the RegionId anymore, it's
-    // now a reserved field.
-    std::vector<FrequencyListEntry> frequency_information;
-};
-
-std::vector<DabSubchannel*>::iterator getSubchannel(
-        std::vector<DabSubchannel*>& subchannels, int id);
-
-std::vector<DabComponent*>::iterator getComponent(
-        std::vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId,
-        std::vector<DabComponent*>::iterator current);
+        vec_sp_component::iterator current);
 
-std::vector<DabComponent*>::iterator getComponent(
-        std::vector<DabComponent*>& components,
+vec_sp_component::iterator getComponent(
+        vec_sp_component& components,
         uint32_t serviceId);
 
-std::vector<std::shared_ptr<DabService> >::iterator getService(
-        DabComponent* component,
-        std::vector<std::shared_ptr<DabService> >& services);
+vec_sp_service::iterator getService(
+        std::shared_ptr<DabComponent> component,
+        vec_sp_service& services);
 

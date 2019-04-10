@@ -6,11 +6,13 @@ Required dependencies:
 * ZeroMQ 4 or later
 * (optional) cURL to download the TAI-UTC bulletin, needed for timestamps in EDI and ZMQ output.
 
-Dependencies on Debian
-----------------------
+Dependencies on Debian (and Ubuntu)
+-----------------------------------
 
-On Debian you will need to install the following packages:
-build-essential, libzmq5-dev, automake, libboost-system-dev, libcurl4-openssl-dev
+On Debian and Ubuntu you will need to install the following packages:
+
+    sudo apt-get install build-essential libzmq5-dev automake libboost-system-dev libcurl4-openssl-dev
+
 
 Dependencies on CentOS
 ----------------------
@@ -26,8 +28,8 @@ the [radio RaBe repository](https://github.com/radiorabe/).
 For openSUSE, mnhauke is maintaining packages, also built using
 [OBS](https://build.opensuse.org/project/show/home:mnhauke:ODR-mmbTools).
 
-Compile odr-dabmux
-==================
+Compiling ODR-DabMux
+====================
 
 The *master* branch in the repository always points to the
 latest release. If you are looking for a new feature or bug-fix
@@ -35,12 +37,26 @@ that did not yet make its way into a release, you can clone the
 *next* branch from the repository.
 
 * Download and install the dependencies as above
-* Clone the git repository
-* Switch to the *next* branch
-* Bootstrap autotools: <pre>% ./bootstrap.sh</pre>
-* Run the configure script <pre>./configure</pre>
-* Build ODR-DabMux <pre>make</pre>
-* Install ODR-DabMux (as root) <pre>sudo make install</pre>
+* Clone the git repository 
+
+       % git clone [-b next] https://github.com/Opendigitalradio/ODR-DabMux.git
+       % cd ODR-DabMux/
+       
+* Bootstrap autotools: 
+
+       % ./bootstrap.sh
+
+* Run the configure script 
+
+       % ./configure
+
+* Build ODR-DabMux 
+
+       % make
+        
+* Install ODR-DabMux (as root) 
+
+       % sudo make install
 
 It is advised to run the bootstrap and configure steps again every
 time you pull updates from the repository.
@@ -64,8 +80,8 @@ before calling ./configure
 On both systems, RAW output is not available. Note that these systems
 are not tested regularly.
 
-Advanced install procedure:
-===========================
+Advanced installation procedure:
+================================
 
 The configure script can be launched with a variety of options, launch the
 following command for a complete list:

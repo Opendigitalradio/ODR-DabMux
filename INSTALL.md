@@ -37,24 +37,28 @@ that did not yet make its way into a release, you can clone the
 *next* branch from the repository.
 
 * Download and install the dependencies as above
-* Clone the git repository 
+* Clone the git repository, master branch
 
-       % git clone [-b next] https://github.com/Opendigitalradio/ODR-DabMux.git
+       % git clone https://github.com/Opendigitalradio/ODR-DabMux.git
+
+* or next branch
+
+       % git clone -b next https://github.com/Opendigitalradio/ODR-DabMux.git
+
+* Bootstrap autotools:
+
        % cd ODR-DabMux/
-       
-* Bootstrap autotools: 
-
        % ./bootstrap.sh
 
-* Run the configure script 
+* Run the configure script
 
        % ./configure
 
-* Build ODR-DabMux 
+* Build ODR-DabMux
 
        % make
-        
-* Install ODR-DabMux (as root) 
+
+* Install ODR-DabMux (as root)
 
        % sudo make install
 

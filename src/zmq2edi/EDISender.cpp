@@ -47,51 +47,14 @@ EDISender::~EDISender()
     }
 }
 
-void EDISender::start(const edi_configuration_t& conf,
+void EDISender::start(const edi::configuration_t& conf,
         int delay_ms, bool drop_late_packets)
 {
     edi_conf = conf;
     tist_delay_ms = delay_ms;
     drop_late = drop_late_packets;
 
-    if (edi_conf.verbose) {
-        etiLog.log(info, "Setup EDI");
-    }
-
-    if (edi_conf.dump) {
-        edi_debug_file.open("./edi.debug");
-    }
-
-    if (edi_conf.enabled()) {
-        for (auto& edi_destination : edi_conf.destinations) {
-            auto edi_output = make_shared<UdpSocket>(edi_destination.source_port);
-
-            if (not edi_destination.source_addr.empty()) {
-                int err = edi_output->setMulticastSource(edi_destination.source_addr.c_str());
-                if (err) {
-                    throw runtime_error("EDI socket set source failed!");
-                }
-                err = edi_output->setMulticastTTL(edi_destination.ttl);
-                if (err) {
-                    throw runtime_error("EDI socket set TTL failed!");
-                }
-            }
-
-            edi_destination.socket = edi_output;
-        }
-    }
-
-    if (edi_conf.verbose) {
-        etiLog.log(info, "EDI set up");
-    }
-
-    // The AF Packet will be protected with reed-solomon and split in fragments
-    edi::PFT pft(edi_conf);
-    edi_pft = pft;
-
-    if (edi_conf.interleaver_enabled()) {
-        edi_interleaver.SetLatency(edi_conf.latency_frames);
-    }
+    edi_sender = make_shared<edi::Sender>(edi_conf);
 
     startTime = std::chrono::steady_clock::now();
     running.store(true);
@@ -106,19 +69,7 @@ void EDISender::push_frame(const frame_t& frame)
 void EDISender::print_configuration()
 {
     if (edi_conf.enabled()) {
-        etiLog.level(info) << "EDI";
-        etiLog.level(info) << " verbose     " << edi_conf.verbose;
-        for (auto& edi_dest : edi_conf.destinations) {
-            etiLog.level(info) << " to " << edi_dest.dest_addr << ":" << edi_conf.dest_port;
-            if (not edi_dest.source_addr.empty()) {
-                etiLog.level(info) << "  source      " << edi_dest.source_addr;
-                etiLog.level(info) << "  ttl         " << edi_dest.ttl;
-            }
-            etiLog.level(info) << "  source port " << edi_dest.source_port;
-        }
-        if (edi_conf.interleaver_enabled()) {
-            etiLog.level(info) << " interleave     " << edi_conf.latency_frames * 24 << " ms";
-        }
+        edi_conf.print();
     }
     else {
         etiLog.level(info) << "EDI disabled";
@@ -251,7 +202,7 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
     edi_tagDETI.utco = metadata.utc_offset;
     edi_tagDETI.seconds = metadata.edi_time;
 
-    if (edi_conf.enabled()) {
+    if (edi_sender and edi_conf.enabled()) {
         // put tags *ptr, DETI and all subchannels into one TagPacket
         edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
         edi_tagpacket.tag_items.push_back(&edi_tagDETI);
@@ -260,58 +211,7 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
             edi_tagpacket.tag_items.push_back(&tag.second);
         }
 
-        // Assemble into one AF Packet
-        edi::AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
-
-        if (edi_conf.enable_pft) {
-            // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
-            vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(edi_afpacket);
-
-            if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragment before interleaver %zu\n",
-                        edi_fragments.size());
-            }
-
-            if (edi_conf.interleaver_enabled()) {
-                edi_fragments = edi_interleaver.Interleave(edi_fragments);
-            }
-
-            // Send over ethernet
-            for (const auto& edi_frag : edi_fragments) {
-                for (auto& dest : edi_conf.destinations) {
-                    InetAddress addr;
-                    addr.setAddress(dest.dest_addr.c_str());
-                    addr.setPort(edi_conf.dest_port);
-
-                    dest.socket->send(edi_frag, addr);
-                }
-
-                if (edi_conf.dump) {
-                    std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-                    std::copy(edi_frag.begin(), edi_frag.end(), debug_iterator);
-                }
-            }
-
-            if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragments %zu\n",
-                        edi_fragments.size());
-            }
-        }
-        else {
-            // Send over ethernet
-            for (auto& dest : edi_conf.destinations) {
-                InetAddress addr;
-                addr.setAddress(dest.dest_addr.c_str());
-                addr.setPort(edi_conf.dest_port);
-
-                dest.socket->send(edi_afpacket, addr);
-            }
-
-            if (edi_conf.dump) {
-                std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-                std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
-            }
-        }
+        edi_sender->write(edi_tagpacket);
     }
 }
 

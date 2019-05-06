@@ -81,14 +81,17 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/dabOutput/metadata.cpp \
 					 src/dabOutput/edi/AFPacket.cpp \
 					 src/dabOutput/edi/AFPacket.h \
+					 src/dabOutput/edi/Config.h \
+					 src/dabOutput/edi/Interleaver.cpp \
+					 src/dabOutput/edi/Interleaver.h \
+					 src/dabOutput/edi/PFT.cpp \
+					 src/dabOutput/edi/PFT.h \
 					 src/dabOutput/edi/TagItems.cpp \
 					 src/dabOutput/edi/TagItems.h \
 					 src/dabOutput/edi/TagPacket.cpp \
 					 src/dabOutput/edi/TagPacket.h \
-					 src/dabOutput/edi/PFT.cpp \
-					 src/dabOutput/edi/PFT.h \
-					 src/dabOutput/edi/Interleaver.cpp \
-					 src/dabOutput/edi/Interleaver.h \
+					 src/dabOutput/edi/Transport.cpp \
+					 src/dabOutput/edi/Transport.h \
 					 src/ClockTAI.h \
 					 src/ClockTAI.cpp \
 					 src/ConfigParser.cpp \
@@ -191,14 +194,17 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/metadata.cpp \
 					   src/dabOutput/edi/AFPacket.cpp \
 					   src/dabOutput/edi/AFPacket.h \
+					   src/dabOutput/edi/Config.h \
+					   src/dabOutput/edi/Interleaver.cpp \
+					   src/dabOutput/edi/Interleaver.h \
+					   src/dabOutput/edi/PFT.cpp \
+					   src/dabOutput/edi/PFT.h \
 					   src/dabOutput/edi/TagItems.cpp \
 					   src/dabOutput/edi/TagItems.h \
 					   src/dabOutput/edi/TagPacket.cpp \
 					   src/dabOutput/edi/TagPacket.h \
-					   src/dabOutput/edi/PFT.cpp \
-					   src/dabOutput/edi/PFT.h \
-					   src/dabOutput/edi/Interleaver.cpp \
-					   src/dabOutput/edi/Interleaver.h \
+					   src/dabOutput/edi/Transport.cpp \
+					   src/dabOutput/edi/Transport.h \
 					   src/InetAddress.h \
 					   src/InetAddress.cpp \
 					   src/UdpSocket.h \

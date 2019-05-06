@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -50,6 +50,30 @@ using namespace std;
 // An integer division that rounds up, i.e. ceil(a/b)
 #define CEIL_DIV(a, b) (a % b == 0  ? a / b : a / b + 1)
 
+PFT::PFT() { }
+
+PFT::PFT(const configuration_t &conf) :
+    m_k(conf.chunk_len),
+    m_m(conf.fec),
+    m_dest_port(conf.dest_port),
+    m_pseq(0),
+    m_num_chunks(0),
+    m_verbose(conf.verbose)
+    {
+        if (m_k > 207) {
+            etiLog.level(warn) <<
+                "EDI PFT: maximum chunk size is 207.";
+            throw std::out_of_range("EDI PFT Chunk size too large.");
+        }
+
+        if (m_m > 5) {
+            etiLog.level(warn) <<
+                "EDI PFT: high number of recoverable fragments"
+                " may lead to large overhead";
+            // See TS 102 821, 7.2.1 Known values, list entry for 'm'
+        }
+    }
+
 RSBlock PFT::Protect(AFPacket af_packet)
 {
     RSBlock rs_block;
@@ -98,7 +122,7 @@ RSBlock PFT::Protect(AFPacket af_packet)
     // Calculate RS for each chunk and assemble RS block
     for (size_t i = 0; i < af_packet.size(); i+= chunk_len) {
         vector<uint8_t> chunk(207);
-        vector<uint8_t> protection(ParityBytes);
+        vector<uint8_t> protection(PARITYBYTES);
 
         // copy chunk_len bytes into new chunk
         memcpy(&chunk.front(), &af_packet[i], chunk_len);
@@ -139,7 +163,7 @@ vector< vector<uint8_t> > PFT::ProtectAndFragment(AFPacket af_packet)
 #endif
 
         // TS 102 821 7.2.2: s_max = MIN(floor(c*p/(m+1)), MTU - h))
-        const size_t max_payload_size = ( m_num_chunks * ParityBytes ) / (m_m + 1);
+        const size_t max_payload_size = ( m_num_chunks * PARITYBYTES ) / (m_m + 1);
 
         // Calculate fragment count and size
         // TS 102 821 7.2.2: ceil((l + c*p + z) / s_max)

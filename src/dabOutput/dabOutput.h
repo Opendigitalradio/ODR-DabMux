@@ -48,34 +48,6 @@
 #endif
 #include "dabOutput/metadata.h"
 
-/** Configuration for EDI output */
-
-// Can represent both unicast and multicast destinations
-struct edi_destination_t {
-    std::string dest_addr;
-    std::string source_addr;
-    unsigned int source_port = 0;
-    unsigned int ttl = 10;
-
-    std::shared_ptr<UdpSocket> socket;
-};
-
-struct edi_configuration_t {
-    unsigned chunk_len = 207;        // RSk, data length of each chunk
-    unsigned fec       = 0;          // number of fragments that can be recovered
-    bool dump          = false;      // dump a file with the EDI packets
-    bool verbose       = false;
-    bool enable_pft    = false;      // Enable protection and fragmentation
-    unsigned int tagpacket_alignment = 0;
-    std::vector<edi_destination_t> destinations;
-    unsigned int dest_port = 0;      // common destination port, because it's encoded in the transport layer
-    unsigned int latency_frames = 0; // if nonzero, enable interleaver with a latency of latency_frames * 24ms
-
-    bool enabled() const { return destinations.size() > 0; }
-    bool interleaver_enabled() const { return latency_frames > 0; }
-};
-
-
 // Abstract base class for all outputs
 class DabOutput
 {

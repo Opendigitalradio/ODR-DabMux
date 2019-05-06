@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -40,7 +40,7 @@
 constexpr size_t MAX_ERROR_COUNT = 10;
 constexpr long ZMQ_TIMEOUT_MS = 1000;
 
-static edi_configuration_t edi_conf;
+static edi::configuration_t edi_conf;
 
 static EDISender edisender;
 
@@ -155,7 +155,7 @@ static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_b
 /* There is some state inside the parsing of destination arguments,
  * because several destinations can be given.  */
 
-static edi_destination_t edi_destination;
+static std::shared_ptr<edi::udp_destination_t> edi_destination;
 static bool source_port_set = false;
 static bool source_addr_set = false;
 static bool ttl_set = false;
@@ -168,9 +168,8 @@ static void add_edi_destination(void)
                 std::to_string(edi_conf.destinations.size() + 1));
     }
 
-    edi_conf.destinations.push_back(edi_destination);
-    edi_destination_t newdest;
-    edi_destination = newdest;
+    edi_conf.destinations.push_back(move(edi_destination));
+    edi_destination.reset();
 
     source_port_set = false;
     source_addr_set = false;
@@ -180,33 +179,37 @@ static void add_edi_destination(void)
 
 static void parse_destination_args(char option)
 {
+    if (not edi_destination) {
+        edi_destination = std::make_shared<edi::udp_destination_t>();
+    }
+
     switch (option) {
         case 's':
             if (source_port_set) {
                 add_edi_destination();
             }
-            edi_destination.source_port = std::stoi(optarg);
+            edi_destination->source_port = std::stoi(optarg);
             source_port_set = true;
             break;
         case 'S':
             if (source_addr_set) {
                 add_edi_destination();
             }
-            edi_destination.source_addr = optarg;
+            edi_destination->source_addr = optarg;
             source_addr_set = true;
             break;
         case 't':
             if (ttl_set) {
                 add_edi_destination();
             }
-            edi_destination.ttl = std::stoi(optarg);
+            edi_destination->ttl = std::stoi(optarg);
             ttl_set = true;
             break;
         case 'd':
             if (dest_addr_set) {
                 add_edi_destination();
             }
-            edi_destination.dest_addr = optarg;
+            edi_destination->dest_addr = optarg;
             dest_addr_set = true;
             break;
         default:

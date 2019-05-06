@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -40,7 +40,7 @@
 #include "AFPacket.h"
 #include "Log.h"
 #include "ReedSolomon.h"
-#include "dabOutput/dabOutput.h"
+#include "dabOutput/edi/Config.h"
 
 namespace edi {
 
@@ -50,38 +50,10 @@ typedef std::vector<uint8_t> PFTFragment;
 class PFT
 {
     public:
-        static const int ParityBytes = 48;
+        static constexpr int PARITYBYTES = 48;
 
-        PFT() :
-            m_k(207),
-            m_m(3),
-            m_dest_port(12000),
-            m_pseq(0),
-            m_num_chunks(0),
-            m_verbose(false)
-        { }
-
-        PFT(const edi_configuration_t &conf) :
-            m_k(conf.chunk_len),
-            m_m(conf.fec),
-            m_dest_port(conf.dest_port),
-            m_pseq(0),
-            m_num_chunks(0),
-            m_verbose(conf.verbose)
-        {
-            if (m_k > 207) {
-                etiLog.level(warn) <<
-                        "EDI PFT: maximum chunk size is 207.";
-                throw std::out_of_range("EDI PFT Chunk size too large.");
-            }
-
-            if (m_m > 5) {
-                etiLog.level(warn) <<
-                    "EDI PFT: high number of recoverable fragments"
-                    " may lead to large overhead";
-                // See TS 102 821, 7.2.1 Known values, list entry for 'm'
-            }
-        }
+        PFT();
+        PFT(const configuration_t& conf);
 
         // return a list of PFT fragments with the correct
         // PFT headers
@@ -94,17 +66,12 @@ class PFT
         std::vector< std::vector<uint8_t> > ProtectAndFragment(AFPacket af_packet);
 
     private:
-        unsigned int m_k; // length of RS data word
-        unsigned int m_m; // number of fragments that can be recovered if lost
-
-        unsigned int m_dest_port; // Destination port for transport header
-
-        uint16_t m_pseq;
-
-        size_t m_num_chunks;
-
-        bool m_verbose;
-
+        unsigned int m_k = 207; // length of RS data word
+        unsigned int m_m = 3; // number of fragments that can be recovered if lost
+        unsigned int m_dest_port = 12000; // Destination port for transport header
+        uint16_t m_pseq = 0;
+        size_t m_num_chunks = 0;
+        bool m_verbose = 0;
 };
 
 }

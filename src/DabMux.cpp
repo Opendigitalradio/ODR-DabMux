@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
                 " starting up";
 
 
-        edi_configuration_t edi_conf;
+        edi::configuration_t edi_conf;
 
         /******************** READ OUTPUT PARAMETERS ***************/
         set<string> all_output_names;
@@ -293,12 +293,12 @@ int main(int argc, char *argv[])
             if (outputuid == "edi") {
                 ptree pt_edi = pt_outputs.get_child("edi");
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
-                    edi_destination_t dest;
-                    dest.dest_addr   = pt_edi_dest.second.get<string>("destination");
-                    dest.ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
+                    auto dest = make_shared<edi::udp_destination_t>();
+                    dest->dest_addr   = pt_edi_dest.second.get<string>("destination");
+                    dest->ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
 
-                    dest.source_addr = pt_edi_dest.second.get<string>("source", "");
-                    dest.source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
+                    dest->source_addr = pt_edi_dest.second.get<string>("source", "");
+                    dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
 
                     edi_conf.destinations.push_back(dest);
                 }
@@ -460,19 +460,7 @@ int main(int argc, char *argv[])
         printOutputs(outputs);
 
         if (edi_conf.enabled()) {
-            etiLog.level(info) << "EDI";
-            etiLog.level(info) << " verbose     " << edi_conf.verbose;
-            for (auto& edi_dest : edi_conf.destinations) {
-                etiLog.level(info) << " to " << edi_dest.dest_addr << ":" << edi_conf.dest_port;
-                if (not edi_dest.source_addr.empty()) {
-                    etiLog.level(info) << "  source      " << edi_dest.source_addr;
-                    etiLog.level(info) << "  ttl         " << edi_dest.ttl;
-                }
-                etiLog.level(info) << "  source port " << edi_dest.source_port;
-            }
-            if (edi_conf.interleaver_enabled()) {
-                etiLog.level(info) << " interleave     " << edi_conf.latency_frames * 24 << " ms";
-            }
+            edi_conf.print();
         }
 
         size_t limit = pt.get("general.nbframes", 0);

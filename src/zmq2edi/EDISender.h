@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -36,9 +36,7 @@
 #include "dabOutput/dabOutput.h"
 #include "dabOutput/edi/TagItems.h"
 #include "dabOutput/edi/TagPacket.h"
-#include "dabOutput/edi/AFPacket.h"
-#include "dabOutput/edi/PFT.h"
-#include "dabOutput/edi/Interleaver.h"
+#include "dabOutput/edi/Transport.h"
 
 // This metadata gets transmitted in the zmq stream
 struct metadata_t {
@@ -55,7 +53,7 @@ class EDISender {
         EDISender(const EDISender& other) = delete;
         EDISender& operator=(const EDISender& other) = delete;
         ~EDISender();
-        void start(const edi_configuration_t& conf,
+        void start(const edi::configuration_t& conf,
                 int delay_ms, bool drop_late_packets);
         void push_frame(const frame_t& frame);
         void print_configuration(void);
@@ -68,19 +66,11 @@ class EDISender {
         bool drop_late;
         std::atomic<bool> running;
         std::thread process_thread;
-        edi_configuration_t edi_conf;
+        edi::configuration_t edi_conf;
         std::chrono::steady_clock::time_point startTime;
         ThreadsafeQueue<frame_t> frames;
-        std::ofstream edi_debug_file;
 
-        // The TagPacket will then be placed into an AFPacket
-        edi::AFPacketiser edi_afPacketiser;
-
-        // The AF Packet will be protected with reed-solomon and split in fragments
-        edi::PFT edi_pft;
-
-        // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
-        edi::Interleaver edi_interleaver;
+        std::shared_ptr<edi::Sender> edi_sender;
 
         // For statistics about wait time before we transmit packets,
         // in microseconds

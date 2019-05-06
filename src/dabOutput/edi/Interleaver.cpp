@@ -30,6 +30,7 @@
    */
 
 #include "Interleaver.h"
+#include <cassert>
 
 namespace edi {
 

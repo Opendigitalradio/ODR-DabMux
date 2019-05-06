@@ -33,8 +33,7 @@
 #include "dabOutput/edi/TagItems.h"
 #include "dabOutput/edi/TagPacket.h"
 #include "dabOutput/edi/AFPacket.h"
-#include "dabOutput/edi/PFT.h"
-#include "dabOutput/edi/Interleaver.h"
+#include "dabOutput/edi/Transport.h"
 #include "fig/FIGCarousel.h"
 #include "crc.h"
 #include "utils.h"
@@ -67,7 +66,7 @@ class DabMultiplexer : public RemoteControllable {
 
         void print_info(void);
 
-        void set_edi_config(const edi_configuration_t& new_edi_conf);
+        void set_edi_config(const edi::configuration_t& new_edi_conf);
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -88,7 +87,8 @@ class DabMultiplexer : public RemoteControllable {
         std::time_t edi_time;
         std::time_t edi_time_latched_for_mnsc;
 
-        edi_configuration_t edi_conf;
+        edi::configuration_t edi_conf;
+        std::shared_ptr<edi::Sender> edi_sender;
 
         uint32_t sync = 0x49C5F8;
         unsigned long currentFrame = 0;
@@ -98,17 +98,6 @@ class DabMultiplexer : public RemoteControllable {
         int m_tist_offset = 0;
         bool m_tai_clock_required = false;
         ClockTAI m_clock_tai;
-
-        std::ofstream edi_debug_file;
-
-        // The TagPacket will then be placed into an AFPacket
-        edi::AFPacketiser edi_afPacketiser;
-
-        // The AF Packet will be protected with reed-solomon and split in fragments
-        edi::PFT edi_pft;
-
-        // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
-        edi::Interleaver edi_interleaver;
 
         /* New FIG Carousel */
         FIC::FIGCarousel fig_carousel;

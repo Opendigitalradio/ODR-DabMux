@@ -29,6 +29,7 @@
 #pragma once
 
 #include "UdpSocket.h"
+#include "TcpSocket.h"
 #include "Log.h"
 #include "string.h"
 #include <stdexcept>
@@ -203,7 +204,6 @@ class DabOutputUdp : public DabOutput
 };
 
 // -------------- TCP ------------------
-class TCPDataDispatcher;
 class DabOutputTcp : public DabOutput
 {
     public:

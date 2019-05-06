@@ -388,12 +388,14 @@ outputs {
             example_unicast {
                 ; example for unicast EDI over UDP
                 ; for unicast EDI, do not set source
+                protocol udp
                 destination "192.168.23.23"
                 sourceport  13000
             }
             example_multicast {
                 ; example for multicast EDI, the source IP is required
                 ; so that the data is sent on the correct ethernet interface
+                protocol udp
                 destination "232.20.10.1"
                 source      "192.168.0.50"
                 ; The multicast TTL has to be adapted according to your network
@@ -401,8 +403,20 @@ outputs {
 
                 sourceport  13000
             }
+            example_tcp {
+                ; example for EDI TCP server. TCP is reliable, so it is counterproductive to
+                ; use FEC. Using PFT also brings no benefit.
+                protocol tcp
+                listenport 13000
 
-            ; EDI over TCP is not supported
+                ; For every connected endpoint, a queue is created. If the queue overflows, we
+                ; assume the endpoint has a problem, and we close the connection. This sets
+                ; the max queue size in number of frames. With PFT disabled, one frame is generated
+                ; every 24ms. With PFT enabled, it depends on fragmentation and FEC settings.
+                ;
+                ; default value: 500 frames, without PFT: 12s worth of EDI data
+                ;max_frames_queued 500
+            }
         }
 
         ; The settings below apply to all destinations

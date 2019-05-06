@@ -49,6 +49,12 @@ struct udp_destination_t : public destination_t {
     unsigned int ttl = 10;
 };
 
+// TCP server that can accept multiple connections
+struct tcp_destination_t : public destination_t {
+    unsigned int listen_port = 0;
+    size_t max_frames_queued = 1024;
+};
+
 struct configuration_t {
     unsigned chunk_len = 207;        // RSk, data length of each chunk
     unsigned fec       = 0;          // number of fragments that can be recovered

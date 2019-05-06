@@ -64,7 +64,7 @@ void usage(void)
     cerr << " -v Enables verbose mode." << endl;
     cerr << " -a <tagpacket alignement> sets the alignment of the TAG Packet (default 8)." << endl << endl;
 
-    cerr << "The following options can be given several times, when more than once destination is addressed:" << endl;
+    cerr << "The following options can be given several times, when more than UDP destination is desired:" << endl;
     cerr << " -d <destination ip> sets the destination ip." << endl;
     cerr << " -s <source port> sets the source port." << endl;
     cerr << " -S <source ip> select the source IP in case we want to use multicast." << endl;

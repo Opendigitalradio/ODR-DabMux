@@ -38,12 +38,16 @@ void configuration_t::print() const
     etiLog.level(info) << " verbose     " << verbose;
     for (auto edi_dest : destinations) {
         if (auto udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(edi_dest)) {
-            etiLog.level(info) << " to " << udp_dest->dest_addr << ":" << dest_port;
+            etiLog.level(info) << " UDP to " << udp_dest->dest_addr << ":" << dest_port;
             if (not udp_dest->source_addr.empty()) {
                 etiLog.level(info) << "  source      " << udp_dest->source_addr;
                 etiLog.level(info) << "  ttl         " << udp_dest->ttl;
             }
             etiLog.level(info) << "  source port " << udp_dest->source_port;
+        }
+        else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_destination_t>(edi_dest)) {
+            etiLog.level(info) << " TCP listening on port " << tcp_dest->listen_port;
+            etiLog.level(info) << "  max frames queued    " << tcp_dest->max_frames_queued;
         }
         else {
             throw std::logic_error("EDI destination not implemented");
@@ -79,6 +83,14 @@ Sender::Sender(const configuration_t& conf) :
             }
 
             udp_sockets.emplace(udp_dest.get(), udp_socket);
+        }
+        else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_destination_t>(edi_dest)) {
+            auto dispatcher = make_shared<TCPDataDispatcher>(tcp_dest->max_frames_queued);
+            dispatcher->start(tcp_dest->listen_port, "0.0.0.0");
+            tcp_dispatchers.emplace(tcp_dest.get(), dispatcher);
+        }
+        else {
+            throw std::logic_error("EDI destination not implemented");
         }
     }
 
@@ -123,6 +135,9 @@ void Sender::write(const TagPacket& tagpacket)
 
                     udp_sockets.at(udp_dest.get())->send(edi_frag, addr);
                 }
+                else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_destination_t>(dest)) {
+                    tcp_dispatchers.at(tcp_dest.get())->write(edi_frag);
+                }
                 else {
                     throw std::logic_error("EDI destination not implemented");
                 }
@@ -148,6 +163,9 @@ void Sender::write(const TagPacket& tagpacket)
                 addr.setPort(m_conf.dest_port);
 
                 udp_sockets.at(udp_dest.get())->send(af_packet, addr);
+            }
+            else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_destination_t>(dest)) {
+                tcp_dispatchers.at(tcp_dest.get())->write(af_packet);
             }
             else {
                 throw std::logic_error("EDI destination not implemented");

@@ -293,14 +293,26 @@ int main(int argc, char *argv[])
             if (outputuid == "edi") {
                 ptree pt_edi = pt_outputs.get_child("edi");
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
-                    auto dest = make_shared<edi::udp_destination_t>();
-                    dest->dest_addr   = pt_edi_dest.second.get<string>("destination");
-                    dest->ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
+                    const auto proto = pt_edi_dest.second.get<string>("protocol");
+                    if (proto == "udp") {
+                        auto dest = make_shared<edi::udp_destination_t>();
+                        dest->dest_addr   = pt_edi_dest.second.get<string>("destination");
+                        dest->ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
 
-                    dest->source_addr = pt_edi_dest.second.get<string>("source", "");
-                    dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
+                        dest->source_addr = pt_edi_dest.second.get<string>("source", "");
+                        dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
 
-                    edi_conf.destinations.push_back(dest);
+                        edi_conf.destinations.push_back(dest);
+                    }
+                    else if (proto == "tcp") {
+                        auto dest = make_shared<edi::tcp_destination_t>();
+                        dest->listen_port = pt_edi_dest.second.get<unsigned int>("listenport");
+                        dest->max_frames_queued = pt_edi_dest.second.get<size_t>("max_frames_queued", 500);
+                        edi_conf.destinations.push_back(dest);
+                    }
+                    else {
+                        throw runtime_error("Unknown EDI protocol " + proto);
+                    }
                 }
 
                 edi_conf.dest_port           = pt_edi.get<unsigned int>("port");

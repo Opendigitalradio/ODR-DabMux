@@ -248,8 +248,10 @@ TCPConnection::TCPConnection(TcpSocket&& sock) :
             m_sender_thread(),
             m_sock(move(sock))
 {
+    auto own_addr = m_sock.getOwnAddress();
     auto addr = m_sock.getRemoteAddress();
-    etiLog.level(debug) << "New TCP Connection from " <<
+    etiLog.level(debug) << "New TCP Connection on port " <<
+        own_addr.getPort() << " from " <<
         addr.getHostAddress() << ":" << addr.getPort();
     m_sender_thread = std::thread(&TCPConnection::process, this);
 }
@@ -293,8 +295,11 @@ void TCPConnection::process()
         }
     }
 
+
+    auto own_addr = m_sock.getOwnAddress();
     auto addr = m_sock.getRemoteAddress();
-    etiLog.level(debug) << "Dropping TCP Connection from " <<
+    etiLog.level(debug) << "Dropping TCP Connection on port " <<
+        own_addr.getPort() << " from " <<
         addr.getHostAddress() << ":" << addr.getPort();
 }
 

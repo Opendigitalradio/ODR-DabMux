@@ -207,6 +207,8 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/edi/Transport.h \
 					   src/InetAddress.h \
 					   src/InetAddress.cpp \
+					   src/TcpSocket.h \
+					   src/TcpSocket.cpp \
 					   src/UdpSocket.h \
 					   src/UdpSocket.cpp \
 					   src/ReedSolomon.h \

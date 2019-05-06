@@ -62,6 +62,7 @@ class Sender {
         edi::Interleaver edi_interleaver;
 
         std::unordered_map<udp_destination_t*, std::shared_ptr<UdpSocket>> udp_sockets;
+        std::unordered_map<tcp_destination_t*, std::shared_ptr<TCPDataDispatcher>> tcp_dispatchers;
 };
 
 }

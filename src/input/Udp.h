@@ -31,7 +31,7 @@
 #include <deque>
 #include <boost/thread.hpp>
 #include "input/inputs.h"
-#include "UdpSocket.h"
+#include "Socket.h"
 
 namespace Inputs {
 
@@ -46,7 +46,7 @@ class Udp : public InputBase {
         virtual int close();
 
     protected:
-        UdpSocket m_sock;
+        Socket::UDPSocket m_sock;
         std::string m_name;
 
         void openUdpSocket(const std::string& endpoint);

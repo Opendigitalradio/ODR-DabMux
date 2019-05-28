@@ -98,8 +98,6 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/ConfigParser.h \
 					 src/Eti.h \
 					 src/Eti.cpp \
-					 src/InetAddress.h \
-					 src/InetAddress.cpp \
 					 src/Interleaver.h \
 					 src/Interleaver.cpp \
 					 src/Log.h \
@@ -113,10 +111,6 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/ReedSolomon.cpp \
 					 src/RemoteControl.cpp \
 					 src/RemoteControl.h \
-					 src/TcpSocket.h \
-					 src/TcpSocket.cpp \
-					 src/UdpSocket.h \
-					 src/UdpSocket.cpp \
 					 src/ThreadsafeQueue.h \
 					 src/crc.h \
 					 src/crc.c \
@@ -167,6 +161,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/PrbsGenerator.h \
 					 src/utils.cpp \
 					 src/utils.h \
+					 lib/Socket.h \
+					 lib/Socket.cpp \
 					 lib/zmq.hpp \
 					 $(lib_fec_sources) \
 					 $(lib_charset_sources)
@@ -205,18 +201,14 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/edi/TagPacket.h \
 					   src/dabOutput/edi/Transport.cpp \
 					   src/dabOutput/edi/Transport.h \
-					   src/InetAddress.h \
-					   src/InetAddress.cpp \
-					   src/TcpSocket.h \
-					   src/TcpSocket.cpp \
-					   src/UdpSocket.h \
-					   src/UdpSocket.cpp \
 					   src/ReedSolomon.h \
 					   src/ReedSolomon.cpp \
 					   src/Log.h \
 					   src/Log.cpp \
 					   src/crc.h \
 					   src/crc.c \
+					   lib/Socket.h \
+					   lib/Socket.cpp \
 					   lib/zmq.hpp \
 					   $(lib_fec_sources)
 

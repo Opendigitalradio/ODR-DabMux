@@ -32,11 +32,11 @@
 #include "AFPacket.h"
 #include "PFT.h"
 #include "Interleaver.h"
+#include "Socket.h"
 #include <vector>
 #include <unordered_map>
 #include <stdexcept>
 #include <cstdint>
-#include "dabOutput/dabOutput.h"
 
 namespace edi {
 
@@ -61,8 +61,8 @@ class Sender {
         // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
         edi::Interleaver edi_interleaver;
 
-        std::unordered_map<udp_destination_t*, std::shared_ptr<UdpSocket>> udp_sockets;
-        std::unordered_map<tcp_destination_t*, std::shared_ptr<TCPDataDispatcher>> tcp_dispatchers;
+        std::unordered_map<udp_destination_t*, std::shared_ptr<Socket::UDPSocket>> udp_sockets;
+        std::unordered_map<tcp_destination_t*, std::shared_ptr<Socket::TCPDataDispatcher>> tcp_dispatchers;
 };
 
 }

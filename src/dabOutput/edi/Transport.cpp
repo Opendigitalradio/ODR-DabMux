@@ -69,23 +69,17 @@ Sender::Sender(const configuration_t& conf) :
 
     for (const auto& edi_dest : m_conf.destinations) {
         if (const auto udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(edi_dest)) {
-            auto udp_socket = std::make_shared<UdpSocket>(udp_dest->source_port);
+            auto udp_socket = std::make_shared<Socket::UDPSocket>(udp_dest->source_port);
 
             if (not udp_dest->source_addr.empty()) {
-                int err = udp_socket->setMulticastSource(udp_dest->source_addr.c_str());
-                if (err) {
-                    throw runtime_error("EDI socket set source failed!");
-                }
-                err = udp_socket->setMulticastTTL(udp_dest->ttl);
-                if (err) {
-                    throw runtime_error("EDI socket set TTL failed!");
-                }
+                udp_socket->setMulticastSource(udp_dest->source_addr.c_str());
+                udp_socket->setMulticastTTL(udp_dest->ttl);
             }
 
             udp_sockets.emplace(udp_dest.get(), udp_socket);
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_destination_t>(edi_dest)) {
-            auto dispatcher = make_shared<TCPDataDispatcher>(tcp_dest->max_frames_queued);
+            auto dispatcher = make_shared<Socket::TCPDataDispatcher>(tcp_dest->max_frames_queued);
             dispatcher->start(tcp_dest->listen_port, "0.0.0.0");
             tcp_dispatchers.emplace(tcp_dest.get(), dispatcher);
         }
@@ -129,9 +123,8 @@ void Sender::write(const TagPacket& tagpacket)
         for (const auto& edi_frag : edi_fragments) {
             for (auto& dest : m_conf.destinations) {
                 if (const auto& udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(dest)) {
-                    InetAddress addr;
-                    addr.setAddress(udp_dest->dest_addr.c_str());
-                    addr.setPort(m_conf.dest_port);
+                    Socket::InetAddress addr;
+                    addr.resolveUdpDestination(udp_dest->dest_addr, m_conf.dest_port);
 
                     udp_sockets.at(udp_dest.get())->send(edi_frag, addr);
                 }
@@ -158,9 +151,8 @@ void Sender::write(const TagPacket& tagpacket)
         // Send over ethernet
         for (auto& dest : m_conf.destinations) {
             if (const auto& udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(dest)) {
-                InetAddress addr;
-                addr.setAddress(udp_dest->dest_addr.c_str());
-                addr.setPort(m_conf.dest_port);
+                Socket::InetAddress addr;
+                addr.resolveUdpDestination(udp_dest->dest_addr, m_conf.dest_port);
 
                 udp_sockets.at(udp_dest.get())->send(af_packet, addr);
             }

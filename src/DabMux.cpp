@@ -99,8 +99,7 @@ typedef DWORD32 uint32_t;
 
 #include "dabOutput/dabOutput.h"
 #include "crc.h"
-#include "UdpSocket.h"
-#include "InetAddress.h"
+#include "Socket.h"
 #include "PcDebug.h"
 #include "DabMux.h"
 #include "MuxElements.h"

@@ -82,17 +82,8 @@ void Udp::openUdpSocket(const std::string& endpoint)
         throw out_of_range("can't use port number 0 in udp address");
     }
 
-    if (m_sock.reinit(port, address) == -1) {
-        stringstream ss;
-        ss << "Could not init UDP socket: " << inetErrMsg;
-        throw runtime_error(ss.str());
-    }
-
-    if (m_sock.setBlocking(false) == -1) {
-        stringstream ss;
-        ss << "Could not set non-blocking UDP socket: " << inetErrMsg;
-        throw runtime_error(ss.str());
-    }
+    m_sock.reinit(port, address);
+    m_sock.setBlocking(false);
 
     etiLog.level(info) << "Opened UDP port " << address << ":" << port;
 }
@@ -100,17 +91,9 @@ void Udp::openUdpSocket(const std::string& endpoint)
 int Udp::readFrame(uint8_t* buffer, size_t size)
 {
     // Regardless of buffer contents, try receiving data.
-    UdpPacket packet(32768);
-    int ret = m_sock.receive(packet);
+    auto packet = m_sock.receive(32768);
 
-    if (ret == -1) {
-        stringstream ss;
-        ss << "Could not read from UDP socket: " << inetErrMsg;
-        throw runtime_error(ss.str());
-    }
-
-    std::copy(packet.getData(), packet.getData() + packet.getSize(),
-            back_inserter(m_buffer));
+    std::copy(packet.buffer.cbegin(), packet.buffer.cend(), back_inserter(m_buffer));
 
     // Take data from the buffer if it contains enough data,
     // in any case write the buffer
@@ -136,7 +119,8 @@ int Udp::setBitrate(int bitrate)
 
 int Udp::close()
 {
-    return m_sock.close();
+    m_sock.close();
+    return 0;
 }
 
 
@@ -190,29 +174,22 @@ int Sti_d_Rtp::open(const std::string& name)
 
 void Sti_d_Rtp::receive_packet()
 {
-    UdpPacket packet(32768);
-    int ret = m_sock.receive(packet);
+    auto packet = m_sock.receive(32768);
 
-    if (ret == -1) {
-        stringstream ss;
-        ss << "Could not read from UDP socket: " << inetErrMsg;
-        throw runtime_error(ss.str());
-    }
-
-    if (packet.getSize() == 0) {
+    if (packet.buffer.empty()) {
         // No packet was received
         return;
     }
 
     const size_t STI_FC_LEN = 8;
 
-    if (packet.getSize() < RTP_HEADER_LEN + STI_SYNC_LEN + STI_FC_LEN) {
+    if (packet.buffer.size() < RTP_HEADER_LEN + STI_SYNC_LEN + STI_FC_LEN) {
         etiLog.level(info) << "Received too small RTP packet for " <<
             m_name;
         return;
     }
 
-    if (not rtpHeaderValid(packet.getData())) {
+    if (not rtpHeaderValid(packet.buffer.data())) {
         etiLog.level(info) << "Received invalid RTP header for " <<
             m_name;
         return;
@@ -220,7 +197,7 @@ void Sti_d_Rtp::receive_packet()
 
     //  STI(PI, X)
     size_t index = RTP_HEADER_LEN;
-    const uint8_t *buf = packet.getData();
+    const uint8_t *buf = packet.buffer.data();
 
     //   SYNC
     index++; // Advance over STAT
@@ -242,7 +219,7 @@ void Sti_d_Rtp::receive_packet()
             m_name;
         return;
     }
-    if (packet.getSize() < index + DFS) {
+    if (packet.buffer.size() < index + DFS) {
         etiLog.level(info) << "Received STI too small for given DFS for " <<
             m_name;
         return;
@@ -270,9 +247,9 @@ void Sti_d_Rtp::receive_packet()
     uint16_t NST   = unpack2(buf+index) & 0x7FF; // 11 bits
     index += 2;
 
-    if (packet.getSize() < index + 4*NST) {
+    if (packet.buffer.size() < index + 4*NST) {
         etiLog.level(info) << "Received STI too small to contain NST for " <<
-            m_name << " packet: " << packet.getSize() << " need " <<
+            m_name << " packet: " << packet.buffer.size() << " need " <<
             index + 4*NST;
         return;
     }

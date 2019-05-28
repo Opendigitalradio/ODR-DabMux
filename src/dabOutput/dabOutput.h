@@ -28,8 +28,7 @@
 
 #pragma once
 
-#include "UdpSocket.h"
-#include "TcpSocket.h"
+#include "Socket.h"
 #include "Log.h"
 #include "string.h"
 #include <stdexcept>
@@ -57,6 +56,8 @@ class DabOutput
         {
             return Open(name.c_str());
         }
+
+        // Return -1 on failure
         virtual int Write(void* buffer, int size) = 0;
         virtual int Close() = 0;
 
@@ -145,15 +146,7 @@ class DabOutputRaw : public DabOutput
 class DabOutputUdp : public DabOutput
 {
     public:
-        DabOutputUdp() {
-            packet_ = new UdpPacket(6144);
-            socket_ = new UdpSocket();
-        }
-
-        virtual ~DabOutputUdp() {
-            delete socket_;
-            delete packet_;
-        }
+        DabOutputUdp();
 
         int Open(const char* name);
         int Write(void* buffer, int size);
@@ -171,8 +164,8 @@ class DabOutputUdp : public DabOutput
         DabOutputUdp operator=(const DabOutputUdp& other) = delete;
 
         std::string uri_;
-        UdpSocket* socket_;
-        UdpPacket* packet_;
+        Socket::UDPSocket socket_;
+        Socket::UDPPacket packet_;
 };
 
 // -------------- TCP ------------------
@@ -190,7 +183,7 @@ class DabOutputTcp : public DabOutput
     private:
         std::string uri_;
 
-        std::shared_ptr<TCPDataDispatcher> dispatcher_;
+        std::shared_ptr<Socket::TCPDataDispatcher> dispatcher_;
 };
 
 // -------------- Simul ------------------

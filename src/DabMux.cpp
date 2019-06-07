@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
             if (outputuid == "edi") {
                 ptree pt_edi = pt_outputs.get_child("edi");
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
-                    const auto proto = pt_edi_dest.second.get<string>("protocol");
+                    const auto proto = pt_edi_dest.second.get<string>("protocol", "udp");
                     if (proto == "udp") {
                         auto dest = make_shared<edi::udp_destination_t>();
                         dest->dest_addr   = pt_edi_dest.second.get<string>("destination");

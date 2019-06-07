@@ -50,8 +50,15 @@ struct udp_destination_t : public destination_t {
 };
 
 // TCP server that can accept multiple connections
-struct tcp_destination_t : public destination_t {
+struct tcp_server_t : public destination_t {
     unsigned int listen_port = 0;
+    size_t max_frames_queued = 1024;
+};
+
+// TCP client that connects to one endpoint
+struct tcp_client_t : public destination_t {
+    std::string dest_addr;
+    unsigned int dest_port = 0;
     size_t max_frames_queued = 1024;
 };
 

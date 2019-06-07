@@ -36,6 +36,7 @@
 #include <vector>
 #include <unordered_map>
 #include <stdexcept>
+#include <fstream>
 #include <cstdint>
 
 namespace edi {
@@ -62,7 +63,8 @@ class Sender {
         edi::Interleaver edi_interleaver;
 
         std::unordered_map<udp_destination_t*, std::shared_ptr<Socket::UDPSocket>> udp_sockets;
-        std::unordered_map<tcp_destination_t*, std::shared_ptr<Socket::TCPDataDispatcher>> tcp_dispatchers;
+        std::unordered_map<tcp_server_t*, std::shared_ptr<Socket::TCPDataDispatcher>> tcp_dispatchers;
+        std::unordered_map<tcp_client_t*, std::shared_ptr<Socket::TCPSocket>> tcp_senders;
 };
 
 }

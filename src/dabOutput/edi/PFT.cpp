@@ -314,7 +314,7 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
 
 #if 0
         fprintf(stderr, "* PFT pseq %d, findex %d, fcount %d, plen %d\n",
-                m_pseq, findex, fcount, plen & ~0x8000);
+                m_pseq, findex, fcount, plen & ~0xC000);
 #endif
     }
 

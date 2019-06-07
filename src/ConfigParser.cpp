@@ -40,6 +40,7 @@
 #include "utils.h"
 #include "DabMux.h"
 #include "ManagementServer.h"
+#include "input/Edi.h"
 #include "input/Prbs.h"
 #include "input/Zmq.h"
 #include "input/File.h"
@@ -876,34 +877,46 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         type = pt.get<string>("type");
     }
     catch (const ptree_error &e) {
-        stringstream ss;
-        ss << "Subchannel with uid " << subchanuid << " has no type defined!";
-        throw runtime_error(ss.str());
+        throw runtime_error("Subchannel with uid " + subchanuid + " has no type defined!");
     }
 
-    /* Both inputfile and inputuri are supported, and are equivalent.
-     * inputuri has precedence
+    /* Up to v2.3.1, both inputfile and inputuri are supported, and are
+     * equivalent.  inputuri has precedence.
+     *
+     * After that, either inputfile or the (inputproto, inputuri) pair must be given, but not both.
      */
     string inputUri = pt.get<string>("inputuri", "");
+    string proto = pt.get<string>("inputproto", "");
 
-    if (inputUri == "") {
+    if (inputUri.empty() and proto.empty()) {
         try {
+            /* Old approach, derives proto from scheme used in the URL.
+             * This makes it impossible to distinguish between ZMQ tcp:// and
+             * EDI tcp://
+             */
             inputUri = pt.get<string>("inputfile");
+            size_t protopos = inputUri.find("://");
+
+            if (protopos == string::npos) {
+                proto = "file";
+            }
+            else {
+                proto = inputUri.substr(0, protopos);
+
+                if (proto == "tcp" or proto == "epgm" or proto == "ipc") {
+                    proto = "zmq";
+                }
+                else if (proto == "sti-rtp") {
+                    proto = "sti";
+                }
+            }
         }
         catch (const ptree_error &e) {
-            stringstream ss;
-            ss << "Subchannel with uid " << subchanuid << " has no inputUri defined!";
-            throw runtime_error(ss.str());
+            throw runtime_error("Subchannel with uid " + subchanuid + " has no input defined!");
         }
     }
-
-    string proto;
-    size_t protopos = inputUri.find("://");
-    if (protopos == string::npos) {
-        proto = "file";
-    }
-    else {
-        proto = inputUri.substr(0, protopos);
+    else if (inputUri.empty() or proto.empty()) {
+        throw runtime_error("Must define both inputuri and inputproto for uid " + subchanuid);
     }
 
     subchan->inputUri = inputUri;
@@ -928,7 +941,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
                 throw logic_error("Incomplete handling of file input");
             }
         }
-        else if (proto == "tcp"  or proto == "epgm" or proto == "ipc") {
+        else if (proto == "zmq") {
             auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             if (type == "audio") {
@@ -941,15 +954,11 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
                 rcs.enrol(inzmq.get());
                 subchan->input = inzmq;
             }
-
-            if (proto == "epgm") {
-                etiLog.level(warn) << "Using untested epgm:// zeromq input";
-            }
-            else if (proto == "ipc") {
-                etiLog.level(warn) << "Using untested ipc:// zeromq input";
-            }
         }
-        else if (proto == "sti-rtp") {
+        else if (proto == "edi") {
+            subchan->input = make_shared<Inputs::Edi>();
+        }
+        else if (proto == "stp") {
             subchan->input = make_shared<Inputs::Sti_d_Rtp>();
         }
         else {

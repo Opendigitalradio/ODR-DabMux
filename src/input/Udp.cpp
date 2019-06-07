@@ -151,8 +151,8 @@ static uint16_t unpack2(const uint8_t *buf)
 
 int Sti_d_Rtp::open(const std::string& name)
 {
-    // Skip the sti-rtp:// part if it is present
-    const string endpoint = (name.substr(0, 10) == "sti-rtp://") ?
+    // Skip the rtp:// part if it is present
+    const string endpoint = (name.substr(0, 10) == "rtp://") ?
         name.substr(10) : name;
 
     // The endpoint should be address:port
@@ -160,8 +160,8 @@ int Sti_d_Rtp::open(const std::string& name)
     if (colon_pos == string::npos) {
         stringstream ss;
         ss << "'" << name <<
-                " is an invalid format for sti-rtp address: "
-                "expected [sti-rtp://]address:port";
+                " is an invalid format for rtp address: "
+                "expected [rtp://]address:port";
         throw invalid_argument(ss.str());
     }
 

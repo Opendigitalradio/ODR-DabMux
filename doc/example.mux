@@ -171,7 +171,8 @@ subchannels {
         type dabplus
         ; Accepts connections to port 9000 from any interface.
         ; Use ODR-AudioEnc as encoder
-        inputfile "tcp://*:9000"
+        inputproto zmq
+        inputuri "tcp://*:9000"
         bitrate 96
         id 1
         protection 3

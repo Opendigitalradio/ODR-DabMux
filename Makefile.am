@@ -69,6 +69,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/input/File.h \
 					 src/input/Udp.cpp \
 					 src/input/Udp.h \
+					 src/input/Edi.cpp \
+					 src/input/Edi.h \
 					 src/dabOutput/dabOutput.h \
 					 src/dabOutput/dabOutputFile.cpp \
 					 src/dabOutput/dabOutputFifo.cpp \
@@ -107,11 +109,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/MuxElements.cpp \
 					 src/MuxElements.h \
 					 src/PcDebug.h \
-					 src/ReedSolomon.h \
-					 src/ReedSolomon.cpp \
 					 src/RemoteControl.cpp \
 					 src/RemoteControl.h \
-					 src/ThreadsafeQueue.h \
 					 src/crc.h \
 					 src/crc.c \
 					 src/fig/FIG.h \
@@ -161,8 +160,19 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/PrbsGenerator.h \
 					 src/utils.cpp \
 					 src/utils.h \
+					 lib/edi/STIDecoder.cpp \
+					 lib/edi/STIDecoder.h \
+					 lib/edi/STIWriter.cpp \
+					 lib/edi/STIWriter.h \
+					 lib/edi/PFT.cpp \
+					 lib/edi/PFT.h \
+					 lib/edi/common.cpp \
+					 lib/edi/common.h \
+					 lib/ReedSolomon.h \
+					 lib/ReedSolomon.cpp \
 					 lib/Socket.h \
 					 lib/Socket.cpp \
+					 lib/ThreadsafeQueue.h \
 					 lib/zmq.hpp \
 					 $(lib_fec_sources) \
 					 $(lib_charset_sources)
@@ -201,14 +211,15 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/edi/TagPacket.h \
 					   src/dabOutput/edi/Transport.cpp \
 					   src/dabOutput/edi/Transport.h \
-					   src/ReedSolomon.h \
-					   src/ReedSolomon.cpp \
 					   src/Log.h \
 					   src/Log.cpp \
 					   src/crc.h \
 					   src/crc.c \
+					   lib/ReedSolomon.h \
+					   lib/ReedSolomon.cpp \
 					   lib/Socket.h \
 					   lib/Socket.cpp \
+					   lib/ThreadsafeQueue.h \
 					   lib/zmq.hpp \
 					   $(lib_fec_sources)
 

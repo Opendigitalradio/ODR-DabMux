@@ -104,13 +104,14 @@ class UDPSocket
         const UDPSocket& operator=(const UDPSocket& other) = delete;
 
         /** Close the already open socket, and create a new one. Throws a runtime_error on error.  */
+        void reinit(int port);
         void reinit(int port, const std::string& name);
 
         void close(void);
         void send(UDPPacket& packet);
         void send(const std::vector<uint8_t>& data, InetAddress destination);
         UDPPacket receive(size_t max_size);
-        void joinGroup(char* groupname);
+        void joinGroup(const char* groupname, const char* if_addr = nullptr);
         void setMulticastSource(const char* source_addr);
         void setMulticastTTL(int ttl);
 
@@ -120,9 +121,36 @@ class UDPSocket
         void setBlocking(bool block);
 
     protected:
-        SOCKET listenSocket;
+        SOCKET m_sock;
 };
 
+/* Threaded UDP receiver */
+class UDPReceiver {
+    public:
+        UDPReceiver() : m_port(0), m_thread(), m_stop(false), m_packets() {}
+        ~UDPReceiver();
+        UDPReceiver(const UDPReceiver&) = delete;
+        UDPReceiver operator=(const UDPReceiver&) = delete;
+
+        // Start the receiver in a separate thread
+        void start(int port, const std::string& bindto, const std::string& mcastaddr, size_t max_packets_queued);
+
+        // Get the data contained in a UDP packet, blocks if none available
+        // In case of error, throws a runtime_error
+        std::vector<uint8_t> get_packet_buffer(void);
+
+    private:
+        void m_run(void);
+
+        int m_port;
+        std::string m_bindto;
+        std::string m_mcastaddr;
+        size_t m_max_packets_queued;
+        std::thread m_thread;
+        std::atomic<bool> m_stop;
+        ThreadsafeQueue<UDPPacket> m_packets;
+        UDPSocket m_sock;
+};
 
 class TCPSocket {
     public:

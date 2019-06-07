@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
                         edi_conf.destinations.push_back(dest);
                     }
                     else if (proto == "tcp") {
-                        auto dest = make_shared<edi::tcp_destination_t>();
+                        auto dest = make_shared<edi::tcp_server_t>();
                         dest->listen_port = pt_edi_dest.second.get<unsigned int>("listenport");
                         dest->max_frames_queued = pt_edi_dest.second.get<size_t>("max_frames_queued", 500);
                         edi_conf.destinations.push_back(dest);

@@ -169,7 +169,7 @@ static void add_edi_destination(void)
     }
 
     edi_conf.destinations.push_back(move(edi_destination));
-    edi_destination.reset();
+    edi_destination = std::make_shared<edi::udp_destination_t>();
 
     source_port_set = false;
     source_addr_set = false;

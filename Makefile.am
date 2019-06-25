@@ -168,6 +168,7 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/edi/PFT.h \
 					 lib/edi/common.cpp \
 					 lib/edi/common.h \
+					 lib/edi/buffer_unpack.hpp \
 					 lib/ReedSolomon.h \
 					 lib/ReedSolomon.cpp \
 					 lib/Socket.h \

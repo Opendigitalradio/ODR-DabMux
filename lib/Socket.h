@@ -127,7 +127,7 @@ class UDPSocket
 /* Threaded UDP receiver */
 class UDPReceiver {
     public:
-        UDPReceiver() : m_port(0), m_thread(), m_stop(false), m_packets() {}
+        UDPReceiver();
         ~UDPReceiver();
         UDPReceiver(const UDPReceiver&) = delete;
         UDPReceiver operator=(const UDPReceiver&) = delete;
@@ -142,12 +142,12 @@ class UDPReceiver {
     private:
         void m_run(void);
 
-        int m_port;
+        int m_port = 0;
         std::string m_bindto;
         std::string m_mcastaddr;
-        size_t m_max_packets_queued;
+        size_t m_max_packets_queued = 1;
         std::thread m_thread;
-        std::atomic<bool> m_stop;
+        std::atomic<bool> m_stop = ATOMIC_VAR_INIT(false);
         ThreadsafeQueue<UDPPacket> m_packets;
         UDPSocket m_sock;
 };
@@ -254,7 +254,7 @@ class TCPDataDispatcher
         void write(const std::vector<uint8_t>& data);
 
     private:
-        void process(void);
+        void process();
 
         size_t m_max_queue_size;
 
@@ -263,6 +263,32 @@ class TCPDataDispatcher
         std::thread m_listener_thread;
         TCPSocket m_listener_socket;
         std::list<TCPConnection> m_connections;
+};
+
+/* A TCP Server to receive data, which abstracts the handling of connects and disconnects.
+ */
+class TCPReceiveServer {
+    public:
+        TCPReceiveServer(size_t blocksize);
+        ~TCPReceiveServer();
+        TCPReceiveServer(const TCPReceiveServer&) = delete;
+        TCPReceiveServer& operator=(const TCPReceiveServer&) = delete;
+
+        void start(int listen_port, const std::string& address);
+
+        // Return a vector that contains up to blocksize bytes of data, or
+        // and empty vector if no data is available.
+        std::vector<uint8_t> receive();
+
+    private:
+        void process();
+
+        size_t m_blocksize = 0;
+        ThreadsafeQueue<std::vector<uint8_t> > m_queue;
+        std::atomic<bool> m_running;
+        std::string m_exception_data;
+        std::thread m_listener_thread;
+        TCPSocket m_listener_socket;
 };
 
 }

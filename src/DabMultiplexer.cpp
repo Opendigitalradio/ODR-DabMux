@@ -284,13 +284,13 @@ void DabMultiplexer::prepare_services_components()
                     component->subchId, component->serviceId);
             throw MuxInitException();
         }
-        if ((*subchannel)->type != subchannel_type_t::Packet) continue;
 
-        component->packet.id = cur_packetid++;
+        if ((*subchannel)->type == subchannel_type_t::Packet) {
+            component->packet.id = cur_packetid++;
+        }
 
         rcs.enrol(component.get());
     }
-
 }
 
 void DabMultiplexer::prepare_data_inputs()

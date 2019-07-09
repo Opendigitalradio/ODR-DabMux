@@ -9,9 +9,9 @@ matrix:
       compiler: clang
 
     # GCC and clang builds on Linux
-    - env: MATRIX_EVAL="CC=gcc-6 CXX=g++-6" CONF="--disable-output-edi"
+    - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF="--disable-output-edi"
       os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       compiler: gcc
       addons: &linuxaddons
@@ -20,18 +20,18 @@ matrix:
             - ubuntu-toolchain-r-test
           packages: &packages
             - libzmq3-dev
-            - libzmq3
+            - libzmq5
             - automake
             - libtool
-            - libboost1.55-all-dev
+            - libboost1.58-all-dev
             - libcurl4-openssl-dev
-            - g++-6
+            - g++-9
 
-    - env: MATRIX_EVAL="CC=gcc-6 CXX=g++-6" CONF="--enable-output-raw"
+    - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF="--enable-output-raw"
       compiler: gcc
       addons: *linuxaddons
 
-    - env: MATRIX_EVAL="CC=gcc-6 CXX=g++-6" CONF=""
+    - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF=""
       compiler: gcc
       addons: *linuxaddons
 
@@ -41,15 +41,15 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-4.0
+            - llvm-toolchain-xenial-8
           packages:
             - libzmq3-dev
-            - libzmq3
+            - libzmq5
             - automake
             - libtool
-            - libboost1.55-all-dev
+            - libboost1.58-all-dev
             - libcurl4-openssl-dev
-            - clang-4.0
+            - clang-8
 
 before_install:
   - eval "${MATRIX_EVAL}"

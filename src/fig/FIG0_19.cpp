@@ -109,6 +109,19 @@ FillStatus FIG0_19::fill(uint8_t *buf, size_t max_size)
         else {
             fig0_19->ASw = 0;
         }
+
+        /* From the crc-mmbtools google groups, 2019-07-11, L. Cornell:
+         *
+         * Long ago, there was a defined use for the New flag - it was intended
+         * to indicate whether the announcement was new or was a repeated
+         * announcement.  But the problem is that it doesn't really help
+         * receivers because they might tune to the ensemble at any time, and
+         * might tune to a service that may be interrupted at any time.  So
+         * some years ago it was decided that the New flag would not longer be
+         * used in transmissions.  The setting was fixed to be 1 because some
+         * receivers would have never switched to the announcement if the flag
+         * was set to 0.
+         */
         fig0_19->NewFlag = 1;
         fig0_19->RegionFlag = 0;
         fig0_19->SubChId = 0;

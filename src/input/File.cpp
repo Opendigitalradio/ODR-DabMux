@@ -128,7 +128,7 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
                 return -1;
             }
 
-            if (buf.size() + ret == size) {
+            if (ret == size) {
                 std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.end(),
                         buffer);
                 buffer += m_nonblock_buffer.size();

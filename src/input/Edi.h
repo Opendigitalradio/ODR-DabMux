@@ -71,7 +71,8 @@ class Edi : public InputBase {
         EdiDecoder::STIDecoder m_sti_decoder;
         std::thread m_thread;
         std::atomic<bool> m_running = ATOMIC_VAR_INIT(false);
-        ThreadsafeQueue<std::vector<uint8_t> > m_frames;
+        ThreadsafeQueue<EdiDecoder::sti_frame_t> m_frames;
+        EdiDecoder::sti_frame_t m_pending_sti_frame;
 
         bool m_is_prebuffering = true;
 

@@ -120,6 +120,7 @@ void STIWriter::assemble()
     m_stiFrame.frame = m_payload.istd;
     m_stiFrame.timestamp.seconds = m_seconds;
     m_stiFrame.timestamp.utco = m_utco;
+    m_stiFrame.timestamp.tsta = m_management_data.tsta;
 }
 
 sti_frame_t STIWriter::getFrame()

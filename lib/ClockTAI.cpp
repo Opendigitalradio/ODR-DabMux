@@ -477,7 +477,7 @@ void ClockTAI::set_parameter(const string& parameter, const string& value)
 {
     if (parameter == "expiry") {
         throw ParameterError("Parameter '" + parameter +
-            "' is not read-only in controllable " + get_rc_name());
+            "' is read-only in controllable " + get_rc_name());
     }
     else {
         throw ParameterError("Parameter '" + parameter +

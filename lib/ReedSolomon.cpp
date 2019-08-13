@@ -64,7 +64,9 @@ ReedSolomon::ReedSolomon(int N, int K, bool reverse, int gfpoly, int firstRoot, 
 
 ReedSolomon::~ReedSolomon()
 {
-    free_rs_char(rsData);
+    if (rsData != nullptr) {
+        free_rs_char(rsData);
+    }
 }
 
 

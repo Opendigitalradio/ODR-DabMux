@@ -94,25 +94,17 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/dabOutput/edi/TagPacket.h \
 					 src/dabOutput/edi/Transport.cpp \
 					 src/dabOutput/edi/Transport.h \
-					 src/ClockTAI.h \
-					 src/ClockTAI.cpp \
 					 src/ConfigParser.cpp \
 					 src/ConfigParser.h \
 					 src/Eti.h \
 					 src/Eti.cpp \
 					 src/Interleaver.h \
 					 src/Interleaver.cpp \
-					 src/Log.h \
-					 src/Log.cpp \
 					 src/ManagementServer.h \
 					 src/ManagementServer.cpp \
 					 src/MuxElements.cpp \
 					 src/MuxElements.h \
 					 src/PcDebug.h \
-					 src/RemoteControl.cpp \
-					 src/RemoteControl.h \
-					 src/crc.h \
-					 src/crc.c \
 					 src/fig/FIG.h \
 					 src/fig/FIG.cpp \
 					 src/fig/FIG0.h \
@@ -160,6 +152,14 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/PrbsGenerator.h \
 					 src/utils.cpp \
 					 src/utils.h \
+					 lib/crc.h \
+					 lib/crc.c \
+					 lib/ClockTAI.h \
+					 lib/ClockTAI.cpp \
+					 lib/Log.h \
+					 lib/Log.cpp \
+					 lib/RemoteControl.cpp \
+					 lib/RemoteControl.h \
 					 lib/edi/STIDecoder.cpp \
 					 lib/edi/STIDecoder.h \
 					 lib/edi/STIWriter.cpp \
@@ -185,8 +185,8 @@ zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS) $(ZMQ_CPPFLAGS)
 odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 						   src/dabOutput/dabOutput.h \
 						   src/dabOutput/dabOutputRaw.cpp \
-						   src/Log.h \
-						   src/Log.cpp \
+						   lib/Log.h \
+						   lib/Log.cpp \
 						   lib/zmq.hpp
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
@@ -212,10 +212,10 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/edi/TagPacket.h \
 					   src/dabOutput/edi/Transport.cpp \
 					   src/dabOutput/edi/Transport.h \
-					   src/Log.h \
-					   src/Log.cpp \
-					   src/crc.h \
-					   src/crc.c \
+					   lib/Log.h \
+					   lib/Log.cpp \
+					   lib/crc.h \
+					   lib/crc.c \
 					   lib/ReedSolomon.h \
 					   lib/ReedSolomon.cpp \
 					   lib/Socket.h \

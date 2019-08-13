@@ -9,31 +9,32 @@
     http://www.opendigitalradio.org
  */
 /*
-   This file is part of ODR-DabMux.
+   This file is part of the ODR-mmbTools.
 
-   ODR-DabMux is free software: you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as
    published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
-   ODR-DabMux is distributed in the hope that it will be useful,
+   This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <list>
 #include <cstdarg>
+#include <cinttypes>
 #include <chrono>
 
 #include "Log.h"
 
 using namespace std;
 
-/* etiLog is a singleton used in all parts of ODR-DabMod to output log messages.
+/* etiLog is a singleton used in all parts of the program to output log messages.
  */
 Logger etiLog;
 
@@ -74,22 +75,40 @@ void Logger::logstr(log_level_t level, std::string&& message)
 {
     if (level == discard) {
         return;
-    }
+	}
 
-    /* Remove a potential trailing newline.
-     * It doesn't look good in syslog
-     */
-    if (message[message.length()-1] == '\n') {
-        message.resize(message.length()-1);
-    }
+    log_message_t m(level, move(message));
+    m_message_queue.push(move(m));
+}
 
-    for (auto &backend : backends) {
-        backend->log(level, message);
-    }
+void Logger::io_process()
+{
+    while (1) {
+        log_message_t m;
+        try {
+            m_message_queue.wait_and_pop(m);
+        }
+        catch (const ThreadsafeQueueWakeup&) {
+            break;
+        }
 
-    {
-        std::lock_guard<std::mutex> guard(m_cerr_mutex);
-        std::cerr << levels_as_str[level] << " " << message << std::endl;
+        auto message = m.message;
+
+        /* Remove a potential trailing newline.
+         * It doesn't look good in syslog
+         */
+        if (message[message.length()-1] == '\n') {
+            message.resize(message.length()-1);
+        }
+
+        for (auto &backend : backends) {
+            backend->log(m.level, message);
+        }
+
+        if (m.level != log_level_t::trace) {
+            std::lock_guard<std::mutex> guard(m_cerr_mutex);
+            std::cerr << levels_as_str[m.level] << " " << message << std::endl;
+        }
     }
 }
 
@@ -112,7 +131,7 @@ LogToFile::LogToFile(const std::string& filename) : name("FILE")
 
 void LogToFile::log(log_level_t level, const std::string& message)
 {
-    if (level != log_level_t::discard) {
+    if (not (level == log_level_t::trace or level == log_level_t::discard)) {
         const char* log_level_text[] = {
             "DEBUG", "INFO", "WARN", "ERROR", "ALERT", "EMERG"};
 
@@ -125,7 +144,7 @@ void LogToFile::log(log_level_t level, const std::string& message)
 
 void LogToSyslog::log(log_level_t level, const std::string& message)
 {
-    if (level != log_level_t::discard) {
+    if (not (level == log_level_t::trace or level == log_level_t::discard)) {
         int syslog_level = LOG_EMERG;
         switch (level) {
             case debug: syslog_level = LOG_DEBUG; break;
@@ -139,5 +158,37 @@ void LogToSyslog::log(log_level_t level, const std::string& message)
         }
 
         syslog(syslog_level, SYSLOG_IDENT " %s", message.c_str());
+    }
+}
+
+LogTracer::LogTracer(const string& trace_filename) : name("TRACE")
+{
+    etiLog.level(info) << "Setting up TRACE to " << trace_filename;
+
+    FILE* fd = fopen(trace_filename.c_str(), "a");
+    if (fd == nullptr) {
+        fprintf(stderr, "Cannot open trace file !");
+        throw std::runtime_error("Cannot open trace file !");
+    }
+    m_trace_file.reset(fd);
+
+    using namespace std::chrono;
+    auto now = steady_clock::now().time_since_epoch();
+    m_trace_micros_startup = duration_cast<microseconds>(now).count();
+
+    fprintf(m_trace_file.get(),
+            "0,TRACER,startup at %" PRIu64 "\n", m_trace_micros_startup);
+}
+
+void LogTracer::log(log_level_t level, const std::string& message)
+{
+    if (level == log_level_t::trace) {
+        using namespace std::chrono;
+        const auto now = steady_clock::now().time_since_epoch();
+        const auto micros = duration_cast<microseconds>(now).count();
+
+        fprintf(m_trace_file.get(), "%" PRIu64 ",%s\n",
+                micros - m_trace_micros_startup,
+                message.c_str());
     }
 }

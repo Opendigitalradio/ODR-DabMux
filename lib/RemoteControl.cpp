@@ -9,31 +9,27 @@
     http://www.opendigitalradio.org
  */
 /*
-   This file is part of ODR-DabMux.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-   ODR-DabMux is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as
-   published by the Free Software Foundation, either version 3 of the
-   License, or (at your option) any later version.
-
-   ODR-DabMux is distributed in the hope that it will be useful,
+   This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <list>
 #include <string>
 #include <iostream>
 #include <string>
-#include <boost/asio.hpp>
-#include <boost/thread.hpp>
+#include <algorithm>
 
 #include "RemoteControl.h"
 
-using boost::asio::ip::tcp;
 using namespace std;
 
 RemoteControllers rcs;
@@ -41,7 +37,6 @@ RemoteControllers rcs;
 RemoteControllerTelnet::~RemoteControllerTelnet()
 {
     m_active = false;
-    m_io_service.stop();
 
     if (m_restarter_thread.joinable()) {
         m_restarter_thread.join();
@@ -158,7 +153,6 @@ void RemoteControllers::set_param(
 void RemoteControllerTelnet::restart_thread(long)
 {
     m_active = false;
-    m_io_service.stop();
 
     if (m_child_thread.joinable()) {
         m_child_thread.join();
@@ -167,51 +161,55 @@ void RemoteControllerTelnet::restart_thread(long)
     m_child_thread = std::thread(&RemoteControllerTelnet::process, this, 0);
 }
 
-void RemoteControllerTelnet::handle_accept(
-        const boost::system::error_code& boost_error,
-        boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
-        boost::asio::ip::tcp::acceptor& acceptor)
+void RemoteControllerTelnet::handle_accept(Socket::TCPSocket&& socket)
 {
-
-    const std::string welcome = "ODR-DabMux Remote Control CLI\n"
+    const std::string welcome = PACKAGE_NAME " Remote Control CLI\n"
                                 "Write 'help' for help.\n"
                                 "**********\n";
     const std::string prompt = "> ";
 
     std::string in_message;
-    size_t length;
-
-    if (boost_error) {
-        etiLog.level(error) << "RC: Error accepting connection";
-        return;
-    }
 
     try {
         etiLog.level(info) << "RC: Accepted";
 
-        boost::system::error_code ignored_error;
+        socket.sendall(welcome.data(), welcome.size());
 
-        boost::asio::write(*socket, boost::asio::buffer(welcome),
-                boost::asio::transfer_all(),
-                ignored_error);
+        while (m_active and in_message != "quit") {
+            socket.sendall(prompt.data(), prompt.size());
 
-        while (m_active && in_message != "quit") {
-            boost::asio::write(*socket, boost::asio::buffer(prompt),
-                    boost::asio::transfer_all(),
-                    ignored_error);
+            stringstream in_message_stream;
 
-            in_message = "";
+            char last_char = '\0';
+            try {
+                while (last_char != '\n') {
+                    try {
+                        auto ret = socket.recv(&last_char, 1, 0, 1000);
+                        if (ret == 1) {
+                            in_message_stream << last_char;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    catch (const Socket::TCPSocket::Timeout&) {
+                        if (not m_active) {
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (const Socket::TCPSocket::Interrupted&) {
+                in_message_stream.clear();
+            }
 
-            boost::asio::streambuf buffer;
-            length = boost::asio::read_until(*socket, buffer, "\n", ignored_error);
 
-            std::istream str(&buffer);
-            std::getline(str, in_message);
-
-            if (length == 0) {
+            if (in_message_stream.str().size() == 0) {
                 etiLog.level(info) << "RC: Connection terminated";
                 break;
             }
+
+            std::getline(in_message_stream, in_message);
 
             while (in_message.length() > 0 &&
                     (in_message[in_message.length()-1] == '\r' ||
@@ -225,44 +223,35 @@ void RemoteControllerTelnet::handle_accept(
 
             etiLog.level(info) << "RC: Got message '" << in_message << "'";
 
-            dispatch_command(*socket, in_message);
+            dispatch_command(socket, in_message);
         }
         etiLog.level(info) << "RC: Closing socket";
-        socket->close();
+        socket.close();
     }
-    catch (const std::exception& e)
-    {
+    catch (const std::exception& e) {
         etiLog.level(error) << "Remote control caught exception: " << e.what();
     }
 }
 
 void RemoteControllerTelnet::process(long)
 {
-    m_active = true;
+    try {
+        m_active = true;
 
-    while (m_active) {
-        m_io_service.reset();
+        m_socket.listen(m_port, "localhost");
 
-        tcp::acceptor acceptor(m_io_service, tcp::endpoint(
-                    boost::asio::ip::address::from_string("127.0.0.1"), m_port) );
-
-
-        // Add a job to start accepting connections.
-        boost::shared_ptr<tcp::socket> socket(
-                new tcp::socket(acceptor.get_io_service()));
-
-        // Add an accept call to the service.  This will prevent io_service::run()
-        // from returning.
         etiLog.level(info) << "RC: Waiting for connection on port " << m_port;
-        acceptor.async_accept(*socket,
-                boost::bind(&RemoteControllerTelnet::handle_accept,
-                    this,
-                    boost::asio::placeholders::error,
-                    socket,
-                    boost::ref(acceptor)));
+        while (m_active) {
+            auto sock = m_socket.accept(1000);
 
-        // Process event loop.
-        m_io_service.run();
+            if (sock.valid()) {
+                handle_accept(move(sock));
+                etiLog.level(info) << "RC: Connection closed. Waiting for connection on port " << m_port;
+            }
+        }
+    }
+    catch (const runtime_error& e) {
+        etiLog.level(warn) << "RC: Encountered error: " << e.what();
     }
 
     etiLog.level(info) << "RC: Leaving";
@@ -281,7 +270,7 @@ static std::vector<std::string> tokenise(const std::string& message) {
 }
 
 
-void RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string command)
+void RemoteControllerTelnet::dispatch_command(Socket::TCPSocket& socket, string command)
 {
     vector<string> cmd = tokenise(command);
 
@@ -386,18 +375,15 @@ void RemoteControllerTelnet::dispatch_command(tcp::socket& socket, string comman
     }
 }
 
-void RemoteControllerTelnet::reply(tcp::socket& socket, string message)
+void RemoteControllerTelnet::reply(Socket::TCPSocket& socket, string message)
 {
-    boost::system::error_code ignored_error;
     stringstream ss;
     ss << message << "\r\n";
-    boost::asio::write(socket, boost::asio::buffer(ss.str()),
-            boost::asio::transfer_all(),
-            ignored_error);
+    socket.sendall(message.data(), message.size());
 }
 
 
-#if defined(HAVE_RC_ZEROMQ)
+#if defined(HAVE_ZEROMQ)
 
 RemoteControllerZmq::~RemoteControllerZmq() {
     m_active = false;

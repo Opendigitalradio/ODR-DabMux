@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdlib>
 #include <sstream>
 #include <chrono>
 #include <future>

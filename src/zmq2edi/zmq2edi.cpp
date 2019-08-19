@@ -399,7 +399,7 @@ int start(int argc, char **argv)
         num_consecutive_resets++;
 
         zmq_sock.close();
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
         etiLog.level(info) << "ZMQ input (" << source_url << ") timeout after " <<
             num_consecutive_resets << " consecutive resets.";
     }

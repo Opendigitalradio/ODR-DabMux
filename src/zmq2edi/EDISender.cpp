@@ -79,7 +79,7 @@ void EDISender::print_configuration()
 void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
 {
     edi::TagDETI edi_tagDETI;
-    edi::TagStarPTR edi_tagStarPtr;
+    edi::TagStarPTR edi_tagStarPtr("DETI");
     map<int, edi::TagESTn> edi_subchannelToTag;
     // The above Tag Items will be assembled into a TAG Packet
     edi::TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);

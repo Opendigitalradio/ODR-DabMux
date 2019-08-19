@@ -376,7 +376,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     edi::TagDETI edi_tagDETI;
-    edi::TagStarPTR edi_tagStarPtr;
+    edi::TagStarPTR edi_tagStarPtr("DETI");
     map<DabSubchannel*, edi::TagESTn> edi_subchannelToTag;
 
     // The above Tag Items will be assembled into a TAG Packet

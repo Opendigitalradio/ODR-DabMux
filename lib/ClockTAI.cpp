@@ -9,27 +9,27 @@
     http://www.opendigitalradio.org
    */
 /*
-   This file is part of ODR-DabMux.
+   This file is part of the ODR-mmbTools.
 
-   ODR-DabMux is free software: you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as
    published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
-   ODR-DabMux is distributed in the hope that it will be useful,
+   This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
-*/
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /* This file downloads the TAI-UTC bulletins from the from IETF and parses them
  * so that correct time can be communicated in EDI timestamps.
  *
  * This file contains self-test code that can be executed by running
- *  g++ -g -Wall -DTEST -DHAVE_CURL -std=c++11 -lcurl -pthread \
+ *  g++ -g -Wall -DTAI_TEST -DHAVE_CURL -std=c++11 -lcurl -pthread \
  *  ClockTAI.cpp Log.cpp RemoteControl.cpp -lboost_system -o taitest && ./taitest
  */
 
@@ -40,9 +40,9 @@
 #include "ClockTAI.h"
 #include "Log.h"
 
-#include <time.h>
-#include <stdio.h>
-#include <errno.h>
+#include <ctime>
+#include <cstdio>
+#include <cerrno>
 #if SUPPORT_SETTING_CLOCK_TAI
 #  include <sys/timex.h>
 #endif
@@ -54,10 +54,13 @@
 #include <iostream>
 #include <algorithm>
 #include <regex>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 using namespace std;
 
-#ifdef TEST
+#ifdef DOWNLOADED_IN_THE_PAST_TEST
 static bool wait_longer = true;
 #endif
 
@@ -76,7 +79,7 @@ static array<const char*, 2> default_tai_urls = {
 
 // According to the Filesystem Hierarchy Standard, the data in
 // /var/tmp "must not be deleted when the system is booted."
-static const char *tai_cache_location = "/var/tmp/odr-dabmux-leap-seconds.cache";
+static const char *tai_cache_location = "/var/tmp/odr-leap-seconds.cache";
 
 // read TAI offset from a valid bulletin in IETF format
 static int parse_ietf_bulletin(const std::string& bulletin)
@@ -127,7 +130,7 @@ static int parse_ietf_bulletin(const std::string& bulletin)
                 tai_utc_offset = offset;
                 tai_utc_offset_valid = true;
             }
-#if TEST
+#if TAI_TEST
             else {
                 cerr << "IETF Ignoring offset " << bulletin_offset <<
                     " at TS " << bulletin_ntp_timestamp <<
@@ -183,7 +186,7 @@ static bulletin_state parse_bulletin(const string& bulletin)
             const int64_t expiry_unix =
                 std::atoll(expiry_data_str.c_str()) - ntp_unix_offset;
 
-#ifdef TEST
+#ifdef TAI_TEST
             etiLog.level(info) << "Bulletin expires in " << expiry_unix - now;
 #endif
             ret.expiry = expiry_unix - now;
@@ -246,17 +249,46 @@ static string download_tai_utc_bulletin(const char* url)
 
 static string load_bulletin_from_file(const char* cache_filename)
 {
-    // Clear the bulletin
-    ifstream f(cache_filename);
-    if (not f.good()) {
-        return {};
+    int fd = open(cache_filename, O_RDWR); // lockf requires O_RDWR
+    if (fd == -1) {
+        etiLog.level(error) << "TAI-UTC bulletin open cache for reading: " <<
+            strerror(errno);
+        return "";
     }
 
-    stringstream ss;
-    ss << f.rdbuf();
-    f.close();
+    lseek(fd, 0, SEEK_SET);
 
-    return ss.str();
+    vector<char> buf(1024);
+    vector<char> new_bulletin_data;
+
+    ssize_t ret = lockf(fd, F_LOCK, 0);
+    if (ret == 0) {
+        // exclusive lock acquired
+
+        do {
+            ret = read(fd, buf.data(), buf.size());
+
+            if (ret == -1) {
+                close(fd);
+                etiLog.level(error) << "TAI-UTC bulletin read cache: " <<
+                        strerror(errno);
+                return "";
+            }
+
+            copy(buf.data(), buf.data() + ret, back_inserter(new_bulletin_data));
+        } while (ret > 0);
+
+        close(fd);
+
+        return string{new_bulletin_data.data(), new_bulletin_data.size()};
+    }
+    else {
+        etiLog.level(error) <<
+            "TAI-UTC bulletin acquire cache lock for reading: " <<
+            strerror(errno);
+        close(fd);
+    }
+    return "";
 }
 
 ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) :
@@ -289,7 +321,7 @@ int ClockTAI::get_valid_offset()
 
     const auto state = parse_bulletin(m_bulletin);
     if (state.usable()) {
-#if TEST
+#if TAI_TEST
         etiLog.level(info) << "Bulletin already valid";
 #endif
         offset = state.offset;
@@ -297,20 +329,25 @@ int ClockTAI::get_valid_offset()
     }
     else {
         const auto cache_bulletin = load_bulletin_from_file(tai_cache_location);
+#if TAI_TEST
+        etiLog.level(info) << "Loaded cache bulletin with " <<
+            std::count_if(cache_bulletin.cbegin(), cache_bulletin.cend(),
+                    [](const char c){ return c == '\n'; }) << " lines";
+#endif
         const auto cache_state = parse_bulletin(cache_bulletin);
 
         if (cache_state.usable()) {
             m_bulletin = cache_bulletin;
             offset = cache_state.offset;
             offset_valid = true;
-#if TEST
+#if TAI_TEST
             etiLog.level(info) << "Bulletin from cache valid with offset=" << offset;
 #endif
         }
         else {
             for (const auto url : m_bulletin_urls) {
                 try {
-#if TEST
+#if TAI_TEST
                     etiLog.level(info) << "Load bulletin from " << url;
 #endif
                     const auto new_bulletin = download_tai_utc_bulletin(url.c_str());
@@ -368,7 +405,7 @@ int ClockTAI::get_offset()
     std::unique_lock<std::mutex> lock(m_data_mutex);
 
     if (not m_offset_valid) {
-#ifdef TEST
+#ifdef DOWNLOADED_IN_THE_PAST_TEST
         // Assume we've downloaded it in the past:
 
         m_offset = 37; // Valid in early 2017
@@ -418,7 +455,7 @@ int ClockTAI::get_offset()
 
                         m_bulletin_download_time += hours(download_retry_interval_hours);
                     }
-#ifdef TEST
+#ifdef DOWNLOADED_IN_THE_PAST_TEST
                     wait_longer = false;
 #endif
                     break;
@@ -426,14 +463,14 @@ int ClockTAI::get_offset()
                 case future_status::deferred:
                 case future_status::timeout:
                     // Not ready yet
-#ifdef TEST
+#ifdef TAI_TEST
                     etiLog.level(debug) << "  async not ready yet";
 #endif
                     break;
             }
         }
         else {
-#ifdef TEST
+#ifdef TAI_TEST
             etiLog.level(debug) << " Launch async";
 #endif
             m_offset_future = async(launch::async, &ClockTAI::get_valid_offset, this);
@@ -463,13 +500,45 @@ int ClockTAI::update_local_tai_clock(int offset)
 
 void ClockTAI::update_cache(const char* cache_filename)
 {
-    ofstream f(cache_filename);
-    if (not f.good()) {
-        throw runtime_error("TAI-UTC bulletin open cache for writing");
+    int fd = open(cache_filename, O_RDWR | O_CREAT, 00664);
+    if (fd == -1) {
+        etiLog.level(error) <<
+            "TAI-UTC bulletin open cache for writing: " <<
+            strerror(errno);
+        return;
     }
 
-    f << m_bulletin;
-    f.close();
+    lseek(fd, 0, SEEK_SET);
+
+    ssize_t ret = lockf(fd, F_LOCK, 0);
+    if (ret == 0) {
+        // exclusive lock acquired
+        const char *data = m_bulletin.data();
+        size_t remaining = m_bulletin.size();
+
+        while (remaining > 0) {
+            ret = write(fd, data, remaining);
+            if (ret == -1) {
+                close(fd);
+                etiLog.level(error) <<
+                    "TAI-UTC bulletin write cache: " <<
+                    strerror(errno);
+                return;
+            }
+
+            remaining -= ret;
+            data += ret;
+        }
+        etiLog.level(debug) << "TAI-UTC bulletin cache updated";
+        close(fd);
+    }
+    else {
+        close(fd);
+        etiLog.level(error) <<
+            "TAI-UTC bulletin acquire cache lock for writing: " <<
+            strerror(errno);
+        return;
+    }
 }
 
 
@@ -533,30 +602,6 @@ void debug_tai_clk()
     }
 
     printf("adjtimex: %d, tai %d\n", err, timex_request.tai);
-}
-#endif
-
-#if TEST
-int main(int argc, char **argv)
-{
-    using namespace std;
-
-    ClockTAI tai({});
-
-    while (wait_longer) {
-        try {
-            etiLog.level(info) <<
-                "Offset is " << tai.get_offset();
-        }
-        catch (const exception &e) {
-            etiLog.level(error) <<
-                "Exception " << e.what();
-        }
-
-        this_thread::sleep_for(chrono::seconds(2));
-    }
-
-    return 0;
 }
 #endif
 

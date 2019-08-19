@@ -30,10 +30,10 @@
 #endif
 
 #include "dabOutput/dabOutput.h"
-#include "dabOutput/edi/TagItems.h"
-#include "dabOutput/edi/TagPacket.h"
-#include "dabOutput/edi/AFPacket.h"
-#include "dabOutput/edi/Transport.h"
+#include "edioutput/TagItems.h"
+#include "edioutput/TagPacket.h"
+#include "edioutput/AFPacket.h"
+#include "edioutput/Transport.h"
 #include "fig/FIGCarousel.h"
 #include "crc.h"
 #include "utils.h"

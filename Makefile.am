@@ -81,19 +81,6 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/dabOutput/dabOutputZMQ.cpp \
 					 src/dabOutput/metadata.h \
 					 src/dabOutput/metadata.cpp \
-					 src/dabOutput/edi/AFPacket.cpp \
-					 src/dabOutput/edi/AFPacket.h \
-					 src/dabOutput/edi/Config.h \
-					 src/dabOutput/edi/Interleaver.cpp \
-					 src/dabOutput/edi/Interleaver.h \
-					 src/dabOutput/edi/PFT.cpp \
-					 src/dabOutput/edi/PFT.h \
-					 src/dabOutput/edi/TagItems.cpp \
-					 src/dabOutput/edi/TagItems.h \
-					 src/dabOutput/edi/TagPacket.cpp \
-					 src/dabOutput/edi/TagPacket.h \
-					 src/dabOutput/edi/Transport.cpp \
-					 src/dabOutput/edi/Transport.h \
 					 src/ConfigParser.cpp \
 					 src/ConfigParser.h \
 					 src/Eti.h \
@@ -169,6 +156,19 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/edi/common.cpp \
 					 lib/edi/common.h \
 					 lib/edi/buffer_unpack.hpp \
+					 lib/edioutput/AFPacket.cpp \
+					 lib/edioutput/AFPacket.h \
+					 lib/edioutput/Config.h \
+					 lib/edioutput/Interleaver.cpp \
+					 lib/edioutput/Interleaver.h \
+					 lib/edioutput/PFT.cpp \
+					 lib/edioutput/PFT.h \
+					 lib/edioutput/TagItems.cpp \
+					 lib/edioutput/TagItems.h \
+					 lib/edioutput/TagPacket.cpp \
+					 lib/edioutput/TagPacket.h \
+					 lib/edioutput/Transport.cpp \
+					 lib/edioutput/Transport.h \
 					 lib/ReedSolomon.h \
 					 lib/ReedSolomon.cpp \
 					 lib/Socket.h \
@@ -199,19 +199,19 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/dabOutput.h \
 					   src/dabOutput/metadata.h \
 					   src/dabOutput/metadata.cpp \
-					   src/dabOutput/edi/AFPacket.cpp \
-					   src/dabOutput/edi/AFPacket.h \
-					   src/dabOutput/edi/Config.h \
-					   src/dabOutput/edi/Interleaver.cpp \
-					   src/dabOutput/edi/Interleaver.h \
-					   src/dabOutput/edi/PFT.cpp \
-					   src/dabOutput/edi/PFT.h \
-					   src/dabOutput/edi/TagItems.cpp \
-					   src/dabOutput/edi/TagItems.h \
-					   src/dabOutput/edi/TagPacket.cpp \
-					   src/dabOutput/edi/TagPacket.h \
-					   src/dabOutput/edi/Transport.cpp \
-					   src/dabOutput/edi/Transport.h \
+					   lib/edioutput/AFPacket.cpp \
+					   lib/edioutput/AFPacket.h \
+					   lib/edioutput/Config.h \
+					   lib/edioutput/Interleaver.cpp \
+					   lib/edioutput/Interleaver.h \
+					   lib/edioutput/PFT.cpp \
+					   lib/edioutput/PFT.h \
+					   lib/edioutput/TagItems.cpp \
+					   lib/edioutput/TagItems.h \
+					   lib/edioutput/TagPacket.cpp \
+					   lib/edioutput/TagPacket.h \
+					   lib/edioutput/Transport.cpp \
+					   lib/edioutput/Transport.h \
 					   lib/Log.h \
 					   lib/Log.cpp \
 					   lib/crc.h \

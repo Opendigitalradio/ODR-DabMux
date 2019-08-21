@@ -25,6 +25,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <cstring>
+#include <climits>
 #include <iostream>
 #include <memory>
 #include <boost/algorithm/string/join.hpp>

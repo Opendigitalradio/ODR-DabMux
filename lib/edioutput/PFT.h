@@ -40,7 +40,7 @@
 #include "AFPacket.h"
 #include "Log.h"
 #include "ReedSolomon.h"
-#include "Config.h"
+#include "EDIConfig.h"
 
 namespace edi {
 

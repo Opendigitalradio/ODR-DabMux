@@ -158,7 +158,7 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/edi/buffer_unpack.hpp \
 					 lib/edioutput/AFPacket.cpp \
 					 lib/edioutput/AFPacket.h \
-					 lib/edioutput/Config.h \
+					 lib/edioutput/EDIConfig.h \
 					 lib/edioutput/Interleaver.cpp \
 					 lib/edioutput/Interleaver.h \
 					 lib/edioutput/PFT.cpp \
@@ -201,7 +201,7 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/metadata.cpp \
 					   lib/edioutput/AFPacket.cpp \
 					   lib/edioutput/AFPacket.h \
-					   lib/edioutput/Config.h \
+					   lib/edioutput/EDIConfig.h \
 					   lib/edioutput/Interleaver.cpp \
 					   lib/edioutput/Interleaver.h \
 					   lib/edioutput/PFT.cpp \

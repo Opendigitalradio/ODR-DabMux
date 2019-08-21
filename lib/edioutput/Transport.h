@@ -28,7 +28,7 @@
 #pragma once
 
 #include "config.h"
-#include "Config.h"
+#include "EDIConfig.h"
 #include "AFPacket.h"
 #include "PFT.h"
 #include "Interleaver.h"

@@ -8,23 +8,21 @@
 
     http://www.opendigitalradio.org
 
-   This module adds remote-control capability to some of the dabmux modules.
+   This module adds remote-control capability to some of the dabmux/dabmod modules.
  */
 /*
-   This file is part of ODR-DabMux.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-   ODR-DabMux is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as
-   published by the Free Software Foundation, either version 3 of the
-   License, or (at your option) any later version.
-
-   ODR-DabMux is distributed in the hope that it will be useful,
+   This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -33,7 +31,7 @@
 #  include "config.h"
 #endif
 
-#if defined(HAVE_RC_ZEROMQ)
+#if defined(HAVE_ZEROMQ)
 #  include "zmq.hpp"
 #endif
 
@@ -43,14 +41,11 @@
 #include <string>
 #include <atomic>
 #include <iostream>
-#include <boost/bind.hpp>
-#include <boost/asio.hpp>
-#include <boost/foreach.hpp>
-#include <boost/tokenizer.hpp>
 #include <thread>
 #include <stdexcept>
 
 #include "Log.h"
+#include "Socket.h"
 
 #define RC_ADD_PARAMETER(p, desc) {   \
   std::vector<std::string> p; \
@@ -78,7 +73,7 @@ class RemoteControllable;
 class BaseRemoteController {
     public:
         /* When this returns one, the remote controller cannot be
-         * used anymore, and must be restarted by dabmux
+         * used anymore, and must be restarted
          */
         virtual bool fault_detected() = 0;
 
@@ -163,13 +158,11 @@ class RemoteControllerTelnet : public BaseRemoteController {
     public:
         RemoteControllerTelnet()
             : m_active(false),
-            m_io_service(),
             m_fault(false),
             m_port(0) { }
 
         RemoteControllerTelnet(int port)
             : m_active(port > 0),
-            m_io_service(),
             m_fault(false),
             m_port(port)
         {
@@ -191,19 +184,11 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         void process(long);
 
-        void dispatch_command(boost::asio::ip::tcp::socket& socket,
-                std::string command);
-
-        void reply(boost::asio::ip::tcp::socket& socket, std::string message);
-
-        void handle_accept(
-                const boost::system::error_code& boost_error,
-                boost::shared_ptr< boost::asio::ip::tcp::socket > socket,
-                boost::asio::ip::tcp::acceptor& acceptor);
+        void dispatch_command(Socket::TCPSocket& socket, std::string command);
+        void reply(Socket::TCPSocket& socket, std::string message);
+        void handle_accept(Socket::TCPSocket&& socket);
 
         std::atomic<bool> m_active;
-
-        boost::asio::io_service m_io_service;
 
         /* This is set to true if a fault occurred */
         std::atomic<bool> m_fault;
@@ -211,11 +196,12 @@ class RemoteControllerTelnet : public BaseRemoteController {
 
         std::thread m_child_thread;
 
+        Socket::TCPSocket m_socket;
         int m_port;
 };
 
-#if defined(HAVE_RC_ZEROMQ)
-/* Implements a Remote controller using zmq transportlayer
+#if defined(HAVE_ZEROMQ)
+/* Implements a Remote controller using ZMQ transportlayer
  * that listens on localhost
  */
 class RemoteControllerZmq : public BaseRemoteController {

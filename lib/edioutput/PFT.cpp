@@ -14,28 +14,28 @@
 
    */
 /*
-   This file is part of ODR-DabMux.
+   This file is part of the ODR-mmbTools.
 
-   ODR-DabMux is free software: you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as
    published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
-   ODR-DabMux is distributed in the hope that it will be useful,
+   This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
-   */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "config.h"
 #include <vector>
 #include <list>
 #include <cstdio>
 #include <cstring>
-#include <stdint.h>
+#include <cstdint>
 #include <arpa/inet.h>
 #include <stdexcept>
 #include <sstream>
@@ -314,7 +314,7 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
 
 #if 0
         fprintf(stderr, "* PFT pseq %d, findex %d, fcount %d, plen %d\n",
-                m_pseq, findex, fcount, plen & ~0x8000);
+                m_pseq, findex, fcount, plen & ~0xC000);
 #endif
     }
 

@@ -163,7 +163,8 @@ subchannels {
     sub-fu {
         type audio
         ; example file input
-        inputfile "funk.mp2"
+        inputproto zmq
+        inputuri "funk.mp2"
         nonblock false
         bitrate 128
         id 10
@@ -188,7 +189,8 @@ subchannels {
         ; Receive STI-D(LI) carried in STI(PI, X) inside RTP using UDP.
         ; This is intended to be compatible with AVT audio encoders.
         ; EXPERIMENTAL!
-        inputfile "sti-rtp://127.0.0.1:32010"
+        inputproto sti
+        inputuri "rtp://127.0.0.1:32010"
         bitrate 96
         id 3
         protection 3
@@ -196,11 +198,12 @@ subchannels {
     sub-ri {
         type dabplus
         ; example file input
-        ;inputfile "rick.dabp"
+        ;inputuri "rick.dabp"
         ; example zmq input:
         ; Accepts connections to port 9000 from any interface.
         ; Use ODR-AudioEnc as encoder
-        inputfile "tcp://*:9000"
+        inputproto zmq
+        inputuri "tcp://*:9000"
         bitrate 96
         id 1
         protection 1
@@ -256,7 +259,8 @@ subchannels {
         ; for audio types, you can use the ZeroMQ input (if compiled in)
         ; with the following configuration in combination with
         ; Toolame-DAB
-        inputfile "tcp://*:9001"
+        inputproto zmq
+        inputuri "tcp://*:9001"
         bitrate 96
         id 1
         protection 1
@@ -273,7 +277,8 @@ subchannels {
        type data
 
        ; Use the default PRBS polynomial.
-       inputfile "prbs://"
+       inputproto prbs
+       inputuri "prbs://"
 
        ; To use another polynomial, set it in the url as hexadecimal
        ; The default polynomial is G(x) = x^20 + x^17 + 1, represented as

@@ -94,7 +94,7 @@ int DabOutputTcp::Open(const char* name)
     uri_ = name;
 
     if (success) {
-        dispatcher_ = make_shared<TCPDataDispatcher>(MAX_QUEUED_ETI_FRAMES);
+        dispatcher_ = make_shared<Socket::TCPDataDispatcher>(MAX_QUEUED_ETI_FRAMES);
         dispatcher_->start(port, address);
     }
     else {

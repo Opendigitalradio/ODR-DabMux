@@ -69,6 +69,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/input/File.h \
 					 src/input/Udp.cpp \
 					 src/input/Udp.h \
+					 src/input/Edi.cpp \
+					 src/input/Edi.h \
 					 src/dabOutput/dabOutput.h \
 					 src/dabOutput/dabOutputFile.cpp \
 					 src/dabOutput/dabOutputFifo.cpp \
@@ -79,47 +81,17 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/dabOutput/dabOutputZMQ.cpp \
 					 src/dabOutput/metadata.h \
 					 src/dabOutput/metadata.cpp \
-					 src/dabOutput/edi/AFPacket.cpp \
-					 src/dabOutput/edi/AFPacket.h \
-					 src/dabOutput/edi/Config.h \
-					 src/dabOutput/edi/Interleaver.cpp \
-					 src/dabOutput/edi/Interleaver.h \
-					 src/dabOutput/edi/PFT.cpp \
-					 src/dabOutput/edi/PFT.h \
-					 src/dabOutput/edi/TagItems.cpp \
-					 src/dabOutput/edi/TagItems.h \
-					 src/dabOutput/edi/TagPacket.cpp \
-					 src/dabOutput/edi/TagPacket.h \
-					 src/dabOutput/edi/Transport.cpp \
-					 src/dabOutput/edi/Transport.h \
-					 src/ClockTAI.h \
-					 src/ClockTAI.cpp \
 					 src/ConfigParser.cpp \
 					 src/ConfigParser.h \
 					 src/Eti.h \
 					 src/Eti.cpp \
-					 src/InetAddress.h \
-					 src/InetAddress.cpp \
 					 src/Interleaver.h \
 					 src/Interleaver.cpp \
-					 src/Log.h \
-					 src/Log.cpp \
 					 src/ManagementServer.h \
 					 src/ManagementServer.cpp \
 					 src/MuxElements.cpp \
 					 src/MuxElements.h \
 					 src/PcDebug.h \
-					 src/ReedSolomon.h \
-					 src/ReedSolomon.cpp \
-					 src/RemoteControl.cpp \
-					 src/RemoteControl.h \
-					 src/TcpSocket.h \
-					 src/TcpSocket.cpp \
-					 src/UdpSocket.h \
-					 src/UdpSocket.cpp \
-					 src/ThreadsafeQueue.h \
-					 src/crc.h \
-					 src/crc.c \
 					 src/fig/FIG.h \
 					 src/fig/FIG.cpp \
 					 src/fig/FIG0.h \
@@ -167,6 +139,41 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/PrbsGenerator.h \
 					 src/utils.cpp \
 					 src/utils.h \
+					 lib/crc.h \
+					 lib/crc.c \
+					 lib/ClockTAI.h \
+					 lib/ClockTAI.cpp \
+					 lib/Log.h \
+					 lib/Log.cpp \
+					 lib/RemoteControl.cpp \
+					 lib/RemoteControl.h \
+					 lib/edi/STIDecoder.cpp \
+					 lib/edi/STIDecoder.h \
+					 lib/edi/STIWriter.cpp \
+					 lib/edi/STIWriter.h \
+					 lib/edi/PFT.cpp \
+					 lib/edi/PFT.h \
+					 lib/edi/common.cpp \
+					 lib/edi/common.h \
+					 lib/edi/buffer_unpack.hpp \
+					 lib/edioutput/AFPacket.cpp \
+					 lib/edioutput/AFPacket.h \
+					 lib/edioutput/Config.h \
+					 lib/edioutput/Interleaver.cpp \
+					 lib/edioutput/Interleaver.h \
+					 lib/edioutput/PFT.cpp \
+					 lib/edioutput/PFT.h \
+					 lib/edioutput/TagItems.cpp \
+					 lib/edioutput/TagItems.h \
+					 lib/edioutput/TagPacket.cpp \
+					 lib/edioutput/TagPacket.h \
+					 lib/edioutput/Transport.cpp \
+					 lib/edioutput/Transport.h \
+					 lib/ReedSolomon.h \
+					 lib/ReedSolomon.cpp \
+					 lib/Socket.h \
+					 lib/Socket.cpp \
+					 lib/ThreadsafeQueue.h \
 					 lib/zmq.hpp \
 					 $(lib_fec_sources) \
 					 $(lib_charset_sources)
@@ -178,8 +185,8 @@ zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS) $(ZMQ_CPPFLAGS)
 odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 						   src/dabOutput/dabOutput.h \
 						   src/dabOutput/dabOutputRaw.cpp \
-						   src/Log.h \
-						   src/Log.cpp \
+						   lib/Log.h \
+						   lib/Log.cpp \
 						   lib/zmq.hpp
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
@@ -192,31 +199,28 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/dabOutput.h \
 					   src/dabOutput/metadata.h \
 					   src/dabOutput/metadata.cpp \
-					   src/dabOutput/edi/AFPacket.cpp \
-					   src/dabOutput/edi/AFPacket.h \
-					   src/dabOutput/edi/Config.h \
-					   src/dabOutput/edi/Interleaver.cpp \
-					   src/dabOutput/edi/Interleaver.h \
-					   src/dabOutput/edi/PFT.cpp \
-					   src/dabOutput/edi/PFT.h \
-					   src/dabOutput/edi/TagItems.cpp \
-					   src/dabOutput/edi/TagItems.h \
-					   src/dabOutput/edi/TagPacket.cpp \
-					   src/dabOutput/edi/TagPacket.h \
-					   src/dabOutput/edi/Transport.cpp \
-					   src/dabOutput/edi/Transport.h \
-					   src/InetAddress.h \
-					   src/InetAddress.cpp \
-					   src/TcpSocket.h \
-					   src/TcpSocket.cpp \
-					   src/UdpSocket.h \
-					   src/UdpSocket.cpp \
-					   src/ReedSolomon.h \
-					   src/ReedSolomon.cpp \
-					   src/Log.h \
-					   src/Log.cpp \
-					   src/crc.h \
-					   src/crc.c \
+					   lib/edioutput/AFPacket.cpp \
+					   lib/edioutput/AFPacket.h \
+					   lib/edioutput/Config.h \
+					   lib/edioutput/Interleaver.cpp \
+					   lib/edioutput/Interleaver.h \
+					   lib/edioutput/PFT.cpp \
+					   lib/edioutput/PFT.h \
+					   lib/edioutput/TagItems.cpp \
+					   lib/edioutput/TagItems.h \
+					   lib/edioutput/TagPacket.cpp \
+					   lib/edioutput/TagPacket.h \
+					   lib/edioutput/Transport.cpp \
+					   lib/edioutput/Transport.h \
+					   lib/Log.h \
+					   lib/Log.cpp \
+					   lib/crc.h \
+					   lib/crc.c \
+					   lib/ReedSolomon.h \
+					   lib/ReedSolomon.cpp \
+					   lib/Socket.h \
+					   lib/Socket.cpp \
+					   lib/ThreadsafeQueue.h \
 					   lib/zmq.hpp \
 					   $(lib_fec_sources)
 

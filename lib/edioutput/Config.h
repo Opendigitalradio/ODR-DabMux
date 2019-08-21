@@ -9,21 +9,21 @@
 
    */
 /*
-   This file is part of ODR-DabMux.
+   This file is part of the ODR-mmbTools.
 
-   ODR-DabMux is free software: you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as
    published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
-   ODR-DabMux is distributed in the hope that it will be useful,
+   This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
-   */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #pragma once
 
@@ -50,8 +50,15 @@ struct udp_destination_t : public destination_t {
 };
 
 // TCP server that can accept multiple connections
-struct tcp_destination_t : public destination_t {
+struct tcp_server_t : public destination_t {
     unsigned int listen_port = 0;
+    size_t max_frames_queued = 1024;
+};
+
+// TCP client that connects to one endpoint
+struct tcp_client_t : public destination_t {
+    std::string dest_addr;
+    unsigned int dest_port = 0;
     size_t max_frames_queued = 1024;
 };
 

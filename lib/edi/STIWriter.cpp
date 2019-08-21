@@ -1,0 +1,139 @@
+/*
+   Copyright (C) 2019
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
+   http://opendigitalradio.org
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+#include "STIWriter.hpp"
+#include "crc.h"
+#include "Log.h"
+#include <cstdio>
+#include <cassert>
+#include <stdexcept>
+#include <sstream>
+#include <ctime>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
+namespace EdiDecoder {
+
+using namespace std;
+
+void STIWriter::update_protocol(
+        const std::string& proto,
+        uint16_t major,
+        uint16_t minor)
+{
+    m_proto_valid = (proto == "DSTI" and major == 0 and minor == 0);
+
+    if (not m_proto_valid) {
+        throw std::invalid_argument("Wrong EDI protocol");
+    }
+}
+
+void STIWriter::reinit()
+{
+    m_proto_valid = false;
+    m_management_data_valid = false;
+    m_stat_valid = false;
+    m_time_valid = false;
+    m_payload_valid = false;
+    m_stiFrame.frame.clear();
+}
+
+void STIWriter::update_stat(uint8_t stat, uint16_t spid)
+{
+    m_stat = stat;
+    m_spid = spid;
+    m_stat_valid = true;
+
+    if (m_stat != 0xFF) {
+        etiLog.log(warn, "STI errorlevel %02x", m_stat);
+    }
+}
+
+void STIWriter::update_rfad(std::array<uint8_t, 9> rfad)
+{
+    (void)rfad;
+}
+
+void STIWriter::update_sti_management(const sti_management_data& data)
+{
+    m_management_data = data;
+    m_management_data_valid = true;
+}
+
+void STIWriter::add_payload(sti_payload_data&& payload)
+{
+    m_payload = move(payload);
+    m_payload_valid = true;
+}
+
+void STIWriter::update_edi_time(
+        uint32_t utco,
+        uint32_t seconds)
+{
+    if (not m_proto_valid) {
+        throw std::logic_error("Cannot update time before protocol");
+    }
+
+    m_utco = utco;
+    m_seconds = seconds;
+
+    // TODO check validity
+    m_time_valid = true;
+}
+
+
+void STIWriter::assemble()
+{
+    if (not m_proto_valid) {
+        throw std::logic_error("Cannot assemble STI before protocol");
+    }
+
+    if (not m_management_data_valid) {
+        throw std::logic_error("Cannot assemble STI before management data");
+    }
+
+    if (not m_payload_valid) {
+        throw std::logic_error("Cannot assemble STI without frame data");
+    }
+
+    // TODO check time validity
+
+    // Do copies so as to preserve existing payload data
+    m_stiFrame.frame = m_payload.istd;
+    m_stiFrame.timestamp.seconds = m_seconds;
+    m_stiFrame.timestamp.utco = m_utco;
+    m_stiFrame.timestamp.tsta = m_management_data.tsta;
+}
+
+sti_frame_t STIWriter::getFrame()
+{
+    if (m_stiFrame.frame.empty()) {
+        return {};
+    }
+
+    sti_frame_t sti;
+    swap(sti, m_stiFrame);
+    reinit();
+    return sti;
+}
+
+}
+

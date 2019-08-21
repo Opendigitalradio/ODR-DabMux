@@ -34,9 +34,9 @@
 #include <atomic>
 #include "ThreadsafeQueue.h"
 #include "dabOutput/dabOutput.h"
-#include "dabOutput/edi/TagItems.h"
-#include "dabOutput/edi/TagPacket.h"
-#include "dabOutput/edi/Transport.h"
+#include "edioutput/TagItems.h"
+#include "edioutput/TagPacket.h"
+#include "edioutput/Transport.h"
 
 // This metadata gets transmitted in the zmq stream
 struct metadata_t {

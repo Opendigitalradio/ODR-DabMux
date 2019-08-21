@@ -328,7 +328,7 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
         etiLog.level(info) << "   URI:     " << subchannel->inputUri;
         switch (subchannel->type) {
             case subchannel_type_t::DABAudio:
-                etiLog.log(info, " type:       DAbAudio");
+                etiLog.log(info, " type:       DABAudio");
                 break;
             case subchannel_type_t::DABPlusAudio:
                 etiLog.log(info, " type:       DABPlusAudio");

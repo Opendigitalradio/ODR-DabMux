@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018 Matthias P. Braendli
+   Copyright (C) 2019 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    */
@@ -105,12 +105,13 @@ int FileBase::rewind()
 
 ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
 {
+    using namespace std;
+
     ssize_t ret = 0;
     if (m_nonblock) {
         if (size > m_nonblock_buffer.size()) {
-            size_t m_nonblock_buffer_len = m_nonblock_buffer.size();
-            size_t required_len = size - m_nonblock_buffer_len;
-            std::vector<uint8_t> buf(required_len);
+            const size_t required_len = size - m_nonblock_buffer.size();
+            vector<uint8_t> buf(required_len);
             ret = read(m_fd, buf.data(), required_len);
 
             /* If no process has the pipe open for writing, read() shall return 0
@@ -128,23 +129,25 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
                 etiLog.level(alert) << "ERROR: Can't read file " << strerror(errno);
                 return -1;
             }
-            
-            std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.end(), buffer);
-            buffer += m_nonblock_buffer_len;
-            m_nonblock_buffer.clear();
-            std::copy(buf.begin(), buf.end(), buffer);
-            return ret+m_nonblock_buffer_len;
-        }
-        else {
-            std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.begin() + size, buffer);
-            std::vector<uint8_t> remaining_buf;
-            std::copy(m_nonblock_buffer.begin() + size, m_nonblock_buffer.end(),
-                    std::back_inserter(remaining_buf));
 
-            m_nonblock_buffer = std::move(remaining_buf);
+            // read() might read less data than requested
+            buf.resize(ret);
+
+            copy(buf.begin(), buf.end(), back_inserter(m_nonblock_buffer));
+        }
+
+        if (m_nonblock_buffer.size() >= size) {
+            copy(m_nonblock_buffer.begin(), m_nonblock_buffer.begin() + size, buffer);
+
+            vector<uint8_t> remaining_buf;
+            copy(m_nonblock_buffer.begin() + size, m_nonblock_buffer.end(), back_inserter(remaining_buf));
+            m_nonblock_buffer = move(remaining_buf);
+
             return size;
         }
-        return 0;
+        else {
+            return 0;
+        }
     }
     else {
         ret = read(m_fd, buffer, size);

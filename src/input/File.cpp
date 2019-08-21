@@ -108,7 +108,8 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
     ssize_t ret = 0;
     if (m_nonblock) {
         if (size > m_nonblock_buffer.size()) {
-            size_t required_len = size - m_nonblock_buffer.size();
+            size_t m_nonblock_buffer_len = m_nonblock_buffer.size();
+            size_t required_len = size - m_nonblock_buffer_len;
             std::vector<uint8_t> buf(required_len);
             ret = read(m_fd, buf.data(), required_len);
 
@@ -127,20 +128,15 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
                 etiLog.level(alert) << "ERROR: Can't read file " << strerror(errno);
                 return -1;
             }
-
-            if (buf.size() + ret == size) {
-                std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.end(),
-                        buffer);
-                buffer += m_nonblock_buffer.size();
-                m_nonblock_buffer.clear();
-                std::copy(buf.begin(), buf.end(), buffer);
-                return size;
-            }
+            
+            std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.end(), buffer);
+            buffer += m_nonblock_buffer_len;
+            m_nonblock_buffer.clear();
+            std::copy(buf.begin(), buf.end(), buffer);
+            return ret+m_nonblock_buffer_len;
         }
         else {
-            std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.begin() + size,
-                    buffer);
-
+            std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.begin() + size, buffer);
             std::vector<uint8_t> remaining_buf;
             std::copy(m_nonblock_buffer.begin() + size, m_nonblock_buffer.end(),
                     std::back_inserter(remaining_buf));

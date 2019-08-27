@@ -31,6 +31,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <cstring>
+#include <cmath>
 #include <cstdlib>
 #include <cerrno>
 #include <climits>
@@ -175,7 +176,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t t
 
                 double ts_req = (double)seconds + (tsta / 16384000.0);
 
-                if (abs(ts_frame - ts_req) < 24e-3) {
+                if (std::abs(ts_frame - ts_req) < 24e-3) {
                     m_is_prebuffering = false;
                     etiLog.level(warn) << "EDI input " << m_name <<
                         " valid timestamp, pre-buffering complete";
@@ -230,7 +231,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t t
 
             double ts_req = (double)seconds + (tsta / 16384000.0);
 
-            if (abs(ts_frame - ts_req) > 24e-3) {
+            if (std::abs(ts_frame - ts_req) > 24e-3) {
                 m_is_prebuffering = true;
                 etiLog.level(warn) << "EDI input " << m_name <<
                     " timestamp out of bounds, re-enabling pre-buffering";

@@ -41,7 +41,8 @@ namespace Inputs {
 class Udp : public InputBase {
     public:
         virtual void open(const std::string& name);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta);
         virtual int setBitrate(int bitrate);
         virtual void close();
 
@@ -68,7 +69,7 @@ class Sti_d_Rtp : public Udp {
 
     public:
         virtual void open(const std::string& name);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
 
     private:
         void receive_packet(void);

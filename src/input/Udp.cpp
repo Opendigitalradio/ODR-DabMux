@@ -86,7 +86,7 @@ void Udp::openUdpSocket(const std::string& endpoint)
     etiLog.level(info) << "Opened UDP port " << address << ":" << port;
 }
 
-int Udp::readFrame(uint8_t* buffer, size_t size)
+size_t Udp::readFrame(uint8_t *buffer, size_t size)
 {
     // Regardless of buffer contents, try receiving data.
     auto packet = m_sock.receive(32768);
@@ -97,12 +97,19 @@ int Udp::readFrame(uint8_t* buffer, size_t size)
     // in any case write the buffer
     if (m_buffer.size() >= (size_t)size) {
         std::copy(m_buffer.begin(), m_buffer.begin() + size, buffer);
+        return size;
     }
     else {
         memset(buffer, 0x0, size);
+        return 0;
     }
+}
 
-    return size;
+size_t Udp::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+{
+    // Maybe there's a way to carry timestamps, but we don't need it.
+    memset(buffer, 0x0, size);
+    return 0;
 }
 
 int Udp::setBitrate(int bitrate)
@@ -278,7 +285,7 @@ void Sti_d_Rtp::receive_packet()
     }
 }
 
-int Sti_d_Rtp::readFrame(uint8_t* buffer, size_t size)
+size_t Sti_d_Rtp::readFrame(uint8_t *buffer, size_t size)
 {
     // Make sure we fill faster than we consume in case there
     // are pending packets.
@@ -287,19 +294,20 @@ int Sti_d_Rtp::readFrame(uint8_t* buffer, size_t size)
 
     if (m_queue.empty()) {
         memset(buffer, 0x0, size);
+        return 0;
     }
     else if (m_queue.front().size() != size) {
         etiLog.level(warn) << "Invalid input data size for STI " << m_name <<
             " : RX " << m_queue.front().size() << " expected " << size;
         memset(buffer, 0x0, size);
         m_queue.pop_front();
+        return 0;
     }
     else {
         copy(m_queue.front().begin(), m_queue.front().end(), buffer);
         m_queue.pop_front();
+        return size;
     }
-
-    return 0;
 }
 
 }

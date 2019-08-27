@@ -53,7 +53,8 @@ class Edi : public InputBase {
         ~Edi();
 
         virtual void open(const std::string& name);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta);
         virtual int setBitrate(int bitrate);
         virtual void close();
 
@@ -72,8 +73,11 @@ class Edi : public InputBase {
         std::thread m_thread;
         std::atomic<bool> m_running = ATOMIC_VAR_INIT(false);
         ThreadsafeQueue<EdiDecoder::sti_frame_t> m_frames;
+
+        // Used in timestamp-based buffer management
         EdiDecoder::sti_frame_t m_pending_sti_frame;
 
+        // Used in prebuffering-based buffer management
         bool m_is_prebuffering = true;
 
         std::string m_name;

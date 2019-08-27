@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017 Matthias P. Braendli
+   Copyright (C) 2019 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -182,7 +182,8 @@ class ZmqBase : public InputBase, public RemoteControllable {
             }
 
         virtual void open(const std::string& inputUri);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta);
         virtual int setBitrate(int bitrate);
         virtual void close();
 

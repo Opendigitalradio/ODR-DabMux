@@ -74,6 +74,14 @@ void FileBase::open(const std::string& name)
     }
 }
 
+size_t FileBase::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+{
+    // Will not be implemented, as there is no obvious way to carry timestamps
+    // in files.
+    memset(buffer, 0, size);
+    return 0;
+}
+
 int FileBase::setBitrate(int bitrate)
 {
     if (bitrate <= 0) {
@@ -181,7 +189,7 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
     return size;
 }
 
-int MPEGFile::readFrame(uint8_t* buffer, size_t size)
+size_t MPEGFile::readFrame(uint8_t *buffer, size_t size)
 {
     int result;
     bool do_rewind = false;
@@ -274,6 +282,9 @@ MUTE_SUBCHANNEL:
                 }
             }
     }
+
+    // TODO this is probably wrong, because it should return
+    // the number of bytes written.
     return result;
 }
 
@@ -296,7 +307,7 @@ int MPEGFile::setBitrate(int bitrate)
     return bitrate;
 }
 
-int RawFile::readFrame(uint8_t* buffer, size_t size)
+size_t RawFile::readFrame(uint8_t *buffer, size_t size)
 {
     return readFromFile(buffer, size);
 }
@@ -306,7 +317,7 @@ PacketFile::PacketFile(bool enhancedPacketMode)
     m_enhancedPacketEnabled = enhancedPacketMode;
 }
 
-int PacketFile::readFrame(uint8_t* buffer, size_t size)
+size_t PacketFile::readFrame(uint8_t *buffer, size_t size)
 {
     size_t written = 0;
     int length;

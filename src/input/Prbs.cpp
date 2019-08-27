@@ -75,13 +75,19 @@ void Prbs::open(const string& name)
     rewind();
 }
 
-int Prbs::readFrame(uint8_t* buffer, size_t size)
+size_t Prbs::readFrame(uint8_t *buffer, size_t size)
 {
     for (size_t i = 0; i < size; ++i) {
         buffer[i] = m_prbs.step();
     }
 
     return size;
+}
+
+size_t Prbs::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+{
+    memset(buffer, 0, size);
+    return 0;
 }
 
 int Prbs::setBitrate(int bitrate)

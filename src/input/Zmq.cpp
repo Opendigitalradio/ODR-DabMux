@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018 Matthias P. Braendli
+   Copyright (C) 2019 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -247,16 +247,14 @@ int ZmqBase::setBitrate(int bitrate)
 }
 
 // size corresponds to a frame size. It is constant for a given bitrate
-int ZmqBase::readFrame(uint8_t* buffer, size_t size)
+size_t ZmqBase::readFrame(uint8_t* buffer, size_t size)
 {
-    int rc;
-
     /* We must *always* read data from the ZMQ socket,
      * to make sure that ZMQ internal buffers are emptied
      * quickly. It's the only way to control the buffers
      * of the whole path from encoder to our frame_buffer.
      */
-    rc = readFromSocket(size);
+    const auto readsize = readFromSocket(size);
 
     /* Notify of a buffer overrun, and drop some frames */
     if (m_frame_buffer.size() >= m_config.buffer_size) {
@@ -297,10 +295,10 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
     }
 
     if (m_prebuf_current > 0) {
-        if (rc > 0)
+        if (readsize > 0)
             m_prebuf_current--;
         if (m_prebuf_current == 0)
-            etiLog.log(info, "inputZMQ %s input pre-buffering complete\n",
+            etiLog.log(info, "inputZMQ %s input pre-buffering complete",
                 m_rc_name.c_str());
 
         /* During prebuffering, give a zeroed frame to the mux */
@@ -313,7 +311,7 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
     m_stats.notifyBuffer(m_frame_buffer.size() * size);
 
     if (m_frame_buffer.empty()) {
-        etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
+        etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering",
                 m_rc_name.c_str());
         // reset prebuffering
         m_prebuf_current = m_config.prebuffering;
@@ -331,6 +329,13 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
         m_frame_buffer.pop_front();
         return size;
     }
+}
+
+size_t ZmqBase::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+{
+    // TODO add timestamps into the metadata and implement this
+    memset(buffer, 0, size);
+    return 0;
 }
 
 

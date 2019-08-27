@@ -36,7 +36,7 @@ namespace Inputs {
 
 class FileBase : public InputBase {
     public:
-        virtual int open(const std::string& name);
+        virtual void open(const std::string& name);
         virtual int readFrame(uint8_t* buffer, size_t size) = 0;
         virtual int setBitrate(int bitrate);
         virtual int close();

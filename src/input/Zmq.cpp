@@ -220,7 +220,7 @@ void ZmqBase::rebind()
     }
 }
 
-int ZmqBase::open(const std::string& inputUri)
+void ZmqBase::open(const std::string& inputUri)
 {
     m_inputUri = inputUri;
 
@@ -229,8 +229,6 @@ int ZmqBase::open(const std::string& inputUri)
 
     // We want to appear in the statistics !
     m_stats.registerAtServer();
-
-    return 0;
 }
 
 int ZmqBase::close()

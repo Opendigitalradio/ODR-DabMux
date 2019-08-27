@@ -180,7 +180,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
                 INVALIDATE_KEY(m_curve_encoder_key);
             }
 
-        virtual int open(const std::string& inputUri);
+        virtual void open(const std::string& inputUri);
         virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
         virtual int close();

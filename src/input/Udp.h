@@ -40,7 +40,7 @@ namespace Inputs {
  */
 class Udp : public InputBase {
     public:
-        virtual int open(const std::string& name);
+        virtual void open(const std::string& name);
         virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
         virtual int close();
@@ -67,7 +67,7 @@ class Sti_d_Rtp : public Udp {
     using vec_u8 = std::vector<uint8_t>;
 
     public:
-        virtual int open(const std::string& name);
+        virtual void open(const std::string& name);
         virtual int readFrame(uint8_t* buffer, size_t size);
 
     private:

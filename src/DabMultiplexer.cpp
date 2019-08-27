@@ -308,10 +308,8 @@ void DabMultiplexer::prepare_data_inputs()
             (*subchannel)->startAddress = (*(subchannel - 1))->startAddress +
                 (*(subchannel - 1))->getSizeCu();
         }
-        if ((*subchannel)->input->open((*subchannel)->inputUri) == -1) {
-            perror((*subchannel)->inputUri.c_str());
-            throw MuxInitException();
-        }
+
+        (*subchannel)->input->open((*subchannel)->inputUri);
 
         // TODO Check errors
         int subch_bitrate = (*subchannel)->input->setBitrate( (*subchannel)->bitrate);

@@ -2,7 +2,7 @@
    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
    Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -38,7 +38,9 @@ namespace Inputs {
 /* New input object base */
 class InputBase {
     public:
-        virtual int open(const std::string& name) = 0;
+        /* Throws runtime_error or invalid_argument on failure */
+        virtual void open(const std::string& name) = 0;
+
         virtual int readFrame(uint8_t* buffer, size_t size) = 0;
         virtual int setBitrate(int bitrate) = 0;
         virtual int close() = 0;

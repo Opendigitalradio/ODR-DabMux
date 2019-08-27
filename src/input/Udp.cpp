@@ -38,7 +38,7 @@ using namespace std;
 
 namespace Inputs {
 
-int Udp::open(const std::string& name)
+void Udp::open(const std::string& name)
 {
     // Skip the udp:// part if it is present
     const string endpoint = (name.substr(0, 6) == "udp://") ?
@@ -57,8 +57,6 @@ int Udp::open(const std::string& name)
     m_name = name;
 
     openUdpSocket(endpoint);
-
-    return 0;
 }
 
 void Udp::openUdpSocket(const std::string& endpoint)
@@ -149,7 +147,7 @@ static uint16_t unpack2(const uint8_t *buf)
     return (((uint16_t)buf[0]) << 8) | buf[1];
 }
 
-int Sti_d_Rtp::open(const std::string& name)
+void Sti_d_Rtp::open(const std::string& name)
 {
     // Skip the rtp:// part if it is present
     const string endpoint = (name.substr(0, 10) == "rtp://") ?
@@ -168,8 +166,6 @@ int Sti_d_Rtp::open(const std::string& name)
     m_name = name;
 
     openUdpSocket(endpoint);
-
-    return 0;
 }
 
 void Sti_d_Rtp::receive_packet()

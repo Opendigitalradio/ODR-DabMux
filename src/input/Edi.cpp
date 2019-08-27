@@ -57,7 +57,7 @@ Edi::~Edi() {
     }
 }
 
-int Edi::open(const std::string& name)
+void Edi::open(const std::string& name)
 {
     const std::regex re_udp("udp://:([0-9]+)");
     const std::regex re_tcp("tcp://(.*):([0-9]+)");
@@ -91,8 +91,6 @@ int Edi::open(const std::string& name)
 
     m_running = true;
     m_thread = std::thread(&Edi::m_run, this);
-
-    return 0;
 }
 
 int Edi::readFrame(uint8_t* buffer, size_t size)

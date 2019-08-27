@@ -58,7 +58,7 @@ __attribute((packed))
 ;
 
 
-int FileBase::open(const std::string& name)
+void FileBase::open(const std::string& name)
 {
     int flags = O_RDONLY | O_BINARY;
     if (m_nonblock) {
@@ -70,7 +70,6 @@ int FileBase::open(const std::string& name)
         throw std::runtime_error("Could not open input file " + name + ": " +
             strerror(errno));
     }
-    return 0;
 }
 
 int FileBase::setBitrate(int bitrate)

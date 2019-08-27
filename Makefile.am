@@ -54,7 +54,7 @@ lib_charset_sources = lib/charset/charset.cpp \
 odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS)
 odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(PTHREAD_CFLAGS) $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
 odr_dabmux_LDADD    =$(ZMQ_LIBS) $(BOOST_LDFLAGS) \
-					 $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
+					 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
 
 odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/DabMux.h \
@@ -191,7 +191,7 @@ odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
 odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/zmq2edi/EDISender.h \
@@ -224,7 +224,7 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   lib/zmq.hpp \
 					   $(lib_fec_sources)
 
-odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
+odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
 odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 

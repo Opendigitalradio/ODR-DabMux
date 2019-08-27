@@ -184,7 +184,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
         virtual void open(const std::string& inputUri);
         virtual int readFrame(uint8_t* buffer, size_t size);
         virtual int setBitrate(int bitrate);
-        virtual int close();
+        virtual void close();
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,

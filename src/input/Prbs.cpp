@@ -92,9 +92,8 @@ int Prbs::setBitrate(int bitrate)
     return bitrate;
 }
 
-int Prbs::close()
+void Prbs::close()
 {
-    return 0;
 }
 
 int Prbs::rewind()

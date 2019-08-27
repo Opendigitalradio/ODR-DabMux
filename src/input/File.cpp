@@ -84,13 +84,12 @@ int FileBase::setBitrate(int bitrate)
 }
 
 
-int FileBase::close()
+void FileBase::close()
 {
     if (m_fd != -1) {
         ::close(m_fd);
         m_fd = -1;
     }
-    return 0;
 }
 
 void FileBase::setNonblocking(bool nonblock)

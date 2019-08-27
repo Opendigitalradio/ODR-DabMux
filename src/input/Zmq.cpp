@@ -231,10 +231,9 @@ void ZmqBase::open(const std::string& inputUri)
     m_stats.registerAtServer();
 }
 
-int ZmqBase::close()
+void ZmqBase::close()
 {
     m_zmq_sock.close();
-    return 0;
 }
 
 int ZmqBase::setBitrate(int bitrate)

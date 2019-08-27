@@ -114,10 +114,9 @@ int Udp::setBitrate(int bitrate)
     return bitrate;
 }
 
-int Udp::close()
+void Udp::close()
 {
     m_sock.close();
-    return 0;
 }
 
 

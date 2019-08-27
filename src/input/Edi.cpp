@@ -209,10 +209,9 @@ int Edi::setBitrate(int bitrate)
     return bitrate;
 }
 
-int Edi::close()
+void Edi::close()
 {
     m_udp_sock.close();
-    return 0;
 }
 
 }

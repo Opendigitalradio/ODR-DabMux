@@ -45,7 +45,7 @@ class InputBase {
 
         /* Returns the effectively used bitrate, or throws invalid_argument on invalid bitrate */
         virtual int setBitrate(int bitrate) = 0;
-        virtual int close() = 0;
+        virtual void close() = 0;
 
         virtual ~InputBase() {}
     protected:

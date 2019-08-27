@@ -39,7 +39,7 @@ class FileBase : public InputBase {
         virtual void open(const std::string& name);
         virtual int readFrame(uint8_t* buffer, size_t size) = 0;
         virtual int setBitrate(int bitrate);
-        virtual int close();
+        virtual void close();
 
         virtual void setNonblocking(bool nonblock);
 

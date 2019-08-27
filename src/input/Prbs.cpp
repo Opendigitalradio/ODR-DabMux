@@ -86,6 +86,9 @@ int Prbs::readFrame(uint8_t* buffer, size_t size)
 
 int Prbs::setBitrate(int bitrate)
 {
+    if (bitrate <= 0) {
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate));
+    }
     return bitrate;
 }
 

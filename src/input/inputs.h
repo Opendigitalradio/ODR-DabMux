@@ -42,6 +42,8 @@ class InputBase {
         virtual void open(const std::string& name) = 0;
 
         virtual int readFrame(uint8_t* buffer, size_t size) = 0;
+
+        /* Returns the effectively used bitrate, or throws invalid_argument on invalid bitrate */
         virtual int setBitrate(int bitrate) = 0;
         virtual int close() = 0;
 

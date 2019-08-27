@@ -239,8 +239,12 @@ int ZmqBase::close()
 
 int ZmqBase::setBitrate(int bitrate)
 {
+    if (bitrate <= 0) {
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate) + " for " + m_name);
+    }
+
     m_bitrate = bitrate;
-    return bitrate; // TODO do a nice check here
+    return bitrate;
 }
 
 // size corresponds to a frame size. It is constant for a given bitrate

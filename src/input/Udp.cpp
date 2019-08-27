@@ -108,8 +108,7 @@ int Udp::readFrame(uint8_t* buffer, size_t size)
 int Udp::setBitrate(int bitrate)
 {
     if (bitrate <= 0) {
-        etiLog.log(error, "Invalid bitrate (%i)\n", bitrate);
-        return -1;
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate) + " for " + m_name);
     }
 
     return bitrate;

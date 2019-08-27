@@ -35,6 +35,8 @@
 #include "mpeg.h"
 #include "ReedSolomon.h"
 
+using namespace std;
+
 namespace Inputs {
 
 #ifdef _WIN32
@@ -67,7 +69,7 @@ void FileBase::open(const std::string& name)
 
     m_fd = ::open(name.c_str(), flags);
     if (m_fd == -1) {
-        throw std::runtime_error("Could not open input file " + name + ": " +
+        throw runtime_error("Could not open input file " + name + ": " +
             strerror(errno));
     }
 }
@@ -75,8 +77,7 @@ void FileBase::open(const std::string& name)
 int FileBase::setBitrate(int bitrate)
 {
     if (bitrate <= 0) {
-        etiLog.log(error, "Invalid bitrate (%i)", bitrate);
-        return -1;
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate));
     }
 
     return bitrate;
@@ -279,7 +280,10 @@ MUTE_SUBCHANNEL:
 
 int MPEGFile::setBitrate(int bitrate)
 {
-    if (bitrate == 0) {
+    if (bitrate < 0) {
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate));
+    }
+    else if (bitrate == 0) {
         uint8_t buffer[4];
 
         if (readFrame(buffer, 4) == 0) {
@@ -356,7 +360,7 @@ int PacketFile::readFrame(uint8_t* buffer, size_t size)
                     length = 24;
                 }
                 else {
-                    std::copy(m_packetData.begin(),
+                    copy(m_packetData.begin(),
                             m_packetData.begin() + m_packetLength,
                             buffer);
                     length = m_packetLength;
@@ -364,7 +368,7 @@ int PacketFile::readFrame(uint8_t* buffer, size_t size)
                 }
             }
             else {
-                std::copy(m_packetData.begin(),
+                copy(m_packetData.begin(),
                         m_packetData.begin() + m_packetLength,
                         buffer);
                 length = m_packetLength;

@@ -45,7 +45,7 @@
 
 #include <list>
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include "zmq.hpp"
 #include "input/inputs.h"
 #include "ManagementServer.h"
@@ -156,6 +156,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
             m_bitrate(0),
             m_enable_input(true),
             m_config(config),
+            m_name(name),
             m_stats(name),
             m_prebuf_current(config.prebuffering) {
                 RC_ADD_PARAMETER(enable,
@@ -220,6 +221,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
         char m_curve_encoder_key[CURVE_KEYLEN+1];
 
         std::string m_inputUri;
+        std::string m_name;
 
         InputStat m_stats;
 

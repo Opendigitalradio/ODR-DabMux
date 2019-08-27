@@ -203,8 +203,7 @@ void Edi::m_run()
 int Edi::setBitrate(int bitrate)
 {
     if (bitrate <= 0) {
-        etiLog.level(error) << "Invalid bitrate (" << bitrate << ") for " << m_name;
-        return -1;
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate) + " for " + m_name);
     }
 
     return bitrate;

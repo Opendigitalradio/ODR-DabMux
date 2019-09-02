@@ -143,6 +143,7 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/crc.c \
 					 lib/ClockTAI.h \
 					 lib/ClockTAI.cpp \
+					 lib/Globals.cpp \
 					 lib/Log.h \
 					 lib/Log.cpp \
 					 lib/RemoteControl.cpp \
@@ -185,8 +186,11 @@ zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS) $(ZMQ_CPPFLAGS)
 odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 						   src/dabOutput/dabOutput.h \
 						   src/dabOutput/dabOutputRaw.cpp \
+						   lib/Globals.cpp \
 						   lib/Log.h \
 						   lib/Log.cpp \
+						   lib/RemoteControl.cpp \
+						   lib/RemoteControl.h \
 						   lib/zmq.hpp
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
@@ -212,8 +216,11 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   lib/edioutput/TagPacket.h \
 					   lib/edioutput/Transport.cpp \
 					   lib/edioutput/Transport.h \
+					   lib/Globals.cpp \
 					   lib/Log.h \
 					   lib/Log.cpp \
+					   lib/RemoteControl.cpp \
+					   lib/RemoteControl.h \
 					   lib/crc.h \
 					   lib/crc.c \
 					   lib/ReedSolomon.h \

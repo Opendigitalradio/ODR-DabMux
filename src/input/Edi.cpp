@@ -155,7 +155,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
     }
 }
 
-size_t Edi::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
 {
     if (m_pending_sti_frame.frame.empty()) {
         m_frames.try_pop(m_pending_sti_frame);
@@ -171,12 +171,10 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t t
             // difference between the input frame timestamp and the requested
             // timestamp.
             if (m_pending_sti_frame.timestamp.valid()) {
-                double ts_frame = (double)m_pending_sti_frame.timestamp.seconds +
-                    (m_pending_sti_frame.timestamp.tsta / 16384000.0);
+                const auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
+                const double offset = m_pending_sti_frame.timestamp.diff_ms(ts_req);
 
-                double ts_req = (double)seconds + (tsta / 16384000.0);
-
-                if (std::abs(ts_frame - ts_req) < 24e-3) {
+                if (offset < 24e-3) {
                     m_is_prebuffering = false;
                     etiLog.level(warn) << "EDI input " << m_name <<
                         " valid timestamp, pre-buffering complete";
@@ -226,12 +224,10 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t t
             return 0;
         }
         else {
-            double ts_frame = (double)sti_frame.timestamp.seconds +
-                (sti_frame.timestamp.tsta / 16384000.0);
+            const auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
+            const double offset = m_pending_sti_frame.timestamp.diff_ms(ts_req);
 
-            double ts_req = (double)seconds + (tsta / 16384000.0);
-
-            if (std::abs(ts_frame - ts_req) > 24e-3) {
+            if (offset > 24e-3) {
                 m_is_prebuffering = true;
                 etiLog.level(warn) << "EDI input " << m_name <<
                     " timestamp out of bounds, re-enabling pre-buffering";

@@ -105,7 +105,7 @@ size_t Udp::readFrame(uint8_t *buffer, size_t size)
     }
 }
 
-size_t Udp::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+size_t Udp::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
 {
     // Maybe there's a way to carry timestamps, but we don't need it.
     memset(buffer, 0x0, size);

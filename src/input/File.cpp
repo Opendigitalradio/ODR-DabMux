@@ -74,7 +74,7 @@ void FileBase::open(const std::string& name)
     }
 }
 
-size_t FileBase::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+size_t FileBase::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
 {
     // Will not be implemented, as there is no obvious way to carry timestamps
     // in files.

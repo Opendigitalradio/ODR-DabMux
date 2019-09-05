@@ -54,7 +54,7 @@ class Edi : public InputBase {
 
         virtual void open(const std::string& name);
         virtual size_t readFrame(uint8_t *buffer, size_t size);
-        virtual size_t readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta);
+        virtual size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
         virtual int setBitrate(int bitrate);
         virtual void close();
 

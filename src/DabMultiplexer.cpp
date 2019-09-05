@@ -380,6 +380,17 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     // The above Tag Items will be assembled into a TAG Packet
     edi::TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
 
+    const bool tist_enabled = m_pt.get("general.tist", false);
+
+    int tai_utc_offset = 0;
+    if (tist_enabled and m_tai_clock_required) {
+        try {
+            tai_utc_offset = m_clock_tai.get_offset();
+        }
+        catch (const std::runtime_error& e) {
+            etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
+        }
+    }
     update_dab_time();
 
     // Initialise the ETI frame
@@ -588,7 +599,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
                 break;
             case BufferManagement::Timestamped:
                 // no need to check enableTist because we always increment the timestamp
-                result = subchannel->input->readFrame(&etiFrame[index], sizeSubchannel, edi_time + m_tist_offset, timestamp);
+                result = subchannel->input->readFrame(&etiFrame[index],
+                        sizeSubchannel, edi_time + m_tist_offset, tai_utc_offset, timestamp);
                 break;
         }
 
@@ -643,33 +655,24 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         edi_tagDETI.tsta = 0xffffff;
     }
 
-    const bool tist_enabled = m_pt.get("general.tist", false);
-
     if (tist_enabled and m_tai_clock_required) {
-        try {
-            const auto tai_utc_offset = m_clock_tai.get_offset();
-            edi_tagDETI.set_edi_time(edi_time + m_tist_offset, tai_utc_offset);
-            edi_tagDETI.atstf = true;
+        edi_tagDETI.set_edi_time(edi_time + m_tist_offset, tai_utc_offset);
+        edi_tagDETI.atstf = true;
 
-            for (auto output : outputs) {
-                shared_ptr<OutputMetadata> md_utco =
-                    make_shared<OutputMetadataUTCO>(edi_tagDETI.utco);
-                output->setMetadata(md_utco);
+        for (auto output : outputs) {
+            shared_ptr<OutputMetadata> md_utco =
+                make_shared<OutputMetadataUTCO>(edi_tagDETI.utco);
+            output->setMetadata(md_utco);
 
-                shared_ptr<OutputMetadata> md_edi_time =
-                    make_shared<OutputMetadataEDITime>(edi_tagDETI.seconds);
-                output->setMetadata(md_edi_time);
+            shared_ptr<OutputMetadata> md_edi_time =
+                make_shared<OutputMetadataEDITime>(edi_tagDETI.seconds);
+            output->setMetadata(md_edi_time);
 
-                shared_ptr<OutputMetadata> md_dlfc =
-                    make_shared<OutputMetadataDLFC>(currentFrame % 5000);
-                output->setMetadata(md_dlfc);
-            }
-        }
-        catch (const std::runtime_error& e) {
-            etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
+            shared_ptr<OutputMetadata> md_dlfc =
+                make_shared<OutputMetadataDLFC>(currentFrame % 5000);
+            output->setMetadata(md_dlfc);
         }
     }
-
 
     /* Coding of the TIST, according to ETS 300 799 Annex C
 

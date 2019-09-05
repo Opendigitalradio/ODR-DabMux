@@ -84,7 +84,7 @@ size_t Prbs::readFrame(uint8_t *buffer, size_t size)
     return size;
 }
 
-size_t Prbs::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+size_t Prbs::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
 {
     memset(buffer, 0, size);
     return 0;

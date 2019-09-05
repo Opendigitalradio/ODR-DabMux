@@ -331,7 +331,7 @@ size_t ZmqBase::readFrame(uint8_t* buffer, size_t size)
     }
 }
 
-size_t ZmqBase::readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta)
+size_t ZmqBase::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
 {
     // TODO add timestamps into the metadata and implement this
     memset(buffer, 0, size);

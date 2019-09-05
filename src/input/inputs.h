@@ -56,7 +56,7 @@ class InputBase {
         /* read a frame from the input, taking into account timestamp. The timestamp of the data
          * returned is not more recent than the timestamp specified in seconds and tsta.
          *
-         * seconds and tsta are in the format used by EDI.
+         * seconds is in UNIX epoch, utco is the TAI-UTC offset, tsta is in the format used by ETI.
          *
          * Returns number of data bytes written to the buffer. May clear the buffer
          * if no data bytes available, in which case it will return 0.
@@ -66,7 +66,7 @@ class InputBase {
          * Calling this function on inputs that do not support timestamps returns 0. This allows
          * changing the buffer management at runtime without risking an crash due to an exception.
          */
-        virtual size_t readFrame(uint8_t *buffer, size_t size, uint32_t seconds, uint32_t tsta) = 0;
+        virtual size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta) = 0;
 
         /* Returns the effectively used bitrate, or throws invalid_argument on invalid bitrate */
         virtual int setBitrate(int bitrate) = 0;

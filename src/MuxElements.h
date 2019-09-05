@@ -338,6 +338,14 @@ struct dabProtection {
     };
 };
 
+enum class BufferManagement {
+    // Use a buffer in the input that doesn't consider timestamps
+    Prebuffering,
+
+    // Buffer incoming data until a given timestamp is reached
+    Timestamped,
+};
+
 class DabSubchannel
 {
 public:
@@ -359,6 +367,7 @@ public:
     std::string uid;
 
     std::string inputUri;
+    BufferManagement bufferManagement = BufferManagement::Prebuffering;
     std::shared_ptr<Inputs::InputBase> input;
     unsigned char id = 0;
     subchannel_type_t type = subchannel_type_t::DABAudio;

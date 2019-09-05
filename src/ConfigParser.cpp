@@ -1021,6 +1021,17 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         }
     }
 
+    const string bufferManagement = pt.get("buffer-management", "prebuffering");
+    if (bufferManagement == "prebuffering") {
+        subchan->bufferManagement = BufferManagement::Prebuffering;
+    }
+    else if (bufferManagement == "timestamped") {
+        subchan->bufferManagement = BufferManagement::Timestamped;
+    }
+    else {
+        throw runtime_error("Subchannel with uid " + subchanuid + " has invalid buffer-management !");
+    }
+
     subchan->startAddress = 0;
 
     dabProtection* protection = &subchan->protection;

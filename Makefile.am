@@ -191,6 +191,8 @@ odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 						   lib/Log.cpp \
 						   lib/RemoteControl.cpp \
 						   lib/RemoteControl.h \
+						   lib/Socket.h \
+						   lib/Socket.cpp \
 						   lib/zmq.hpp
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)

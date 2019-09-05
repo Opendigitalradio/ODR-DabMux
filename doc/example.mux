@@ -161,22 +161,42 @@ subchannels {
     sub-fu {
         ; This is our DAB programme, using a file input
         type audio
-        inputfile "funk.mp2"
         bitrate 128
         id 10
         protection 3
+
+        inputfile "funk.mp2"
+    }
+    sub-bla {
+        type audio
+        bitrate 96
+        id 1
+        protection 1
+
+        ; for audio and dabplus, EDI input is available. It supports TCP server and UDP
+        inputproto edi
+        ; Accepts connection to port 9001 from any interface
+        inputuri "tcp://0.0.0.0:9001"
+
+        ; Two buffer-management types are available: prebuffering and timestamped.
+        ; prebuffering will accumulate a few frames before it starts streaming, and each
+        ; time there is a buffer underrun (similar to how the ZMQ input works)
+        ;
+        ; timestamped takes into account the TIST inside EDI and inserts the encoded
+        ; audio frame into the ETI frame with the same timestamp
+        buffer-management prebuffering
     }
     sub-ri {
-        ; This is our DAB+ programme, using a ZeroMQ
+        ; This is our DAB+ programme, using a ZeroMQ input
         type dabplus
-        ; Accepts connections to port 9000 from any interface.
-        ; Use ODR-AudioEnc as encoder
-        inputproto zmq
-        inputuri "tcp://*:9000"
         bitrate 96
         id 1
         protection 3
 
+        ; Accepts connections to port 9000 from any interface.
+        ; Use ODR-AudioEnc as encoder
+        inputproto zmq
+        inputuri "tcp://*:9000"
         ; ZMQ specific options, mandatory:
 
         ; Maximum size of input buffer, in AAC frames (24ms)

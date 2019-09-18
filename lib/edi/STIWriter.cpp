@@ -53,6 +53,7 @@ void STIWriter::reinit()
     m_stat_valid = false;
     m_time_valid = false;
     m_payload_valid = false;
+    m_audio_levels = audio_level_data();
     m_stiFrame.frame.clear();
 }
 
@@ -82,6 +83,16 @@ void STIWriter::add_payload(sti_payload_data&& payload)
 {
     m_payload = move(payload);
     m_payload_valid = true;
+}
+
+void STIWriter::update_audio_levels(const audio_level_data& data)
+{
+    m_audio_levels = data;
+}
+
+void STIWriter::update_odr_version(const odr_version_data& data)
+{
+    m_version_data = data;
 }
 
 void STIWriter::update_edi_time(
@@ -118,6 +129,8 @@ void STIWriter::assemble()
 
     // Do copies so as to preserve existing payload data
     m_stiFrame.frame = m_payload.istd;
+    m_stiFrame.audio_levels = m_audio_levels;
+    m_stiFrame.version_data = m_version_data;
     m_stiFrame.timestamp.seconds = m_seconds;
     m_stiFrame.timestamp.utco = m_utco;
     m_stiFrame.timestamp.tsta = m_management_data.tsta;

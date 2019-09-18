@@ -32,6 +32,8 @@ namespace EdiDecoder {
 struct sti_frame_t {
     std::vector<uint8_t> frame;
     frame_timestamp_t timestamp;
+    audio_level_data audio_levels;
+    odr_version_data version_data;
 };
 
 class STIWriter : public STIDataCollector {
@@ -52,6 +54,9 @@ class STIWriter : public STIDataCollector {
         virtual void update_rfad(std::array<uint8_t, 9> rfad);
         virtual void update_sti_management(const sti_management_data& data);
         virtual void add_payload(sti_payload_data&& payload);
+
+        virtual void update_audio_levels(const audio_level_data& data);
+        virtual void update_odr_version(const odr_version_data& data);
 
         virtual void assemble(void);
 
@@ -77,6 +82,8 @@ class STIWriter : public STIDataCollector {
         bool m_payload_valid = false;
         sti_payload_data m_payload;
 
+        audio_level_data m_audio_levels;
+        odr_version_data m_version_data;
         sti_frame_t m_stiFrame;
 };
 

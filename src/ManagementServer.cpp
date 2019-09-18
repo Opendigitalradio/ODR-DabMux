@@ -485,6 +485,14 @@ void InputStat::notifyOverrun(void)
     }
 }
 
+void InputStat::notifyVersion(const std::string& version, uint32_t uptime_s)
+{
+    unique_lock<mutex> lock(m_mutex);
+
+    m_version = version;
+    m_uptime_s = uptime_s;
+}
+
 std::string InputStat::encodeValuesJSON()
 {
     std::ostringstream ss;
@@ -548,6 +556,13 @@ std::string InputStat::encodeValuesJSON()
         return dB;
     };
 
+    auto version = m_version;
+    size_t pos = 0;
+    while ((pos = version.find("\"", pos)) != std::string::npos) {
+         version.replace(pos, 1, "\\\"");
+         pos++;
+    }
+
     ss <<
     "{ \"inputstat\" : {"
         "\"min_fill\": " << min_fill_buffer << ", "
@@ -557,7 +572,10 @@ std::string InputStat::encodeValuesJSON()
         "\"peak_left_slow\": " << to_dB(peak_left) << ", "
         "\"peak_right_slow\": " << to_dB(peak_right) << ", "
         "\"num_underruns\": " << m_num_underruns << ", "
-        "\"num_overruns\": " << m_num_overruns << ", ";
+        "\"num_overruns\": " << m_num_overruns << ", "
+        "\"version\": \"" << version << "\", "
+        "\"uptime\": " << m_uptime_s << ", "
+        ;
 
     ss << "\"state\": ";
 

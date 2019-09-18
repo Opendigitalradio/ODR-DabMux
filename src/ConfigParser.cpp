@@ -956,7 +956,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
             }
         }
         else if (proto == "edi") {
-            subchan->input = make_shared<Inputs::Edi>();
+            subchan->input = make_shared<Inputs::Edi>(subchanuid);
         }
         else if (proto == "stp") {
             subchan->input = make_shared<Inputs::Sti_d_Rtp>();

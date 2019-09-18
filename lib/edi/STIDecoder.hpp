@@ -53,6 +53,12 @@ struct sti_payload_data {
     uint16_t stl(void) const { return istd.size(); }
 };
 
+struct audio_level_data {
+    int16_t left = 0;
+    int16_t right = 0;
+};
+
+
 /* A class that receives STI data must implement the interface described
  * in the STIDataCollector. This can be e.g. a converter to ETI, or something that
  * prepares data structures for a modulator.
@@ -77,6 +83,9 @@ class STIDataCollector {
         virtual void update_sti_management(const sti_management_data& data) = 0;
 
         virtual void add_payload(sti_payload_data&& payload) = 0;
+
+        virtual void update_audio_levels(const audio_level_data& data) = 0;
+        virtual void update_odr_version(const odr_version_data& data) = 0;
 
         virtual void assemble() = 0;
 };
@@ -113,11 +122,13 @@ class STIDecoder {
         bool decode_ssn(const std::vector<uint8_t> &value, uint16_t n);
         bool decode_stardmy(const std::vector<uint8_t> &value, uint16_t);
 
+        bool decode_odraudiolevel(const std::vector<uint8_t> &value, uint16_t);
+        bool decode_odrversion(const std::vector<uint8_t> &value, uint16_t);
+
         void packet_completed();
 
         STIDataCollector& m_data_collector;
         TagDispatcher m_dispatcher;
-
 };
 
 }

@@ -44,6 +44,10 @@ STIDecoder::STIDecoder(STIDataCollector& data_collector, bool verbose) :
             std::bind(&STIDecoder::decode_ssn, this, _1, _2));
     m_dispatcher.register_tag("*dmy",
             std::bind(&STIDecoder::decode_stardmy, this, _1, _2));
+    m_dispatcher.register_tag("ODRa",
+            std::bind(&STIDecoder::decode_odraudiolevel, this, _1, _2));
+    m_dispatcher.register_tag("ODRv",
+            std::bind(&STIDecoder::decode_odrversion, this, _1, _2));
 }
 
 void STIDecoder::push_bytes(const vector<uint8_t> &buf)
@@ -180,6 +184,37 @@ bool STIDecoder::decode_ssn(const vector<uint8_t> &value, uint16_t n)
 
 bool STIDecoder::decode_stardmy(const vector<uint8_t>& /*value*/, uint16_t)
 {
+    return true;
+}
+
+bool STIDecoder::decode_odraudiolevel(const vector<uint8_t>& value, uint16_t)
+{
+    constexpr size_t expected_length = 2 * sizeof(int16_t);
+
+    audio_level_data audio_level;
+
+    if (value.size() == expected_length) {
+        audio_level.left = read_16b(value.begin());
+        audio_level.right = read_16b(value.begin() + 2);
+    }
+    else {
+        audio_level.left = 0;
+        audio_level.right = 0;
+        etiLog.level(warn) << "EDI: ODR AudioLevel TAG has wrong length!";
+    }
+
+    m_data_collector.update_audio_levels(audio_level);
+
+    // Not being able to decode the audio level is a soft-failure, it should
+    // not disrupt decoding the actual audio data.
+    return true;
+}
+
+bool STIDecoder::decode_odrversion(const vector<uint8_t>& value, uint16_t)
+{
+    const auto vd = parse_odr_version_data(value);
+    m_data_collector.update_odr_version(vd);
+
     return true;
 }
 

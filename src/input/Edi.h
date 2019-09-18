@@ -36,6 +36,7 @@
 #include "edi/STIDecoder.hpp"
 #include "edi/STIWriter.hpp"
 #include "ThreadsafeQueue.h"
+#include "ManagementServer.h"
 
 namespace Inputs {
 
@@ -47,7 +48,7 @@ namespace Inputs {
  */
 class Edi : public InputBase {
     public:
-        Edi();
+        Edi(const std::string& name);
         Edi(const Edi&) = delete;
         Edi& operator=(const Edi&) = delete;
         ~Edi();
@@ -81,6 +82,7 @@ class Edi : public InputBase {
         bool m_is_prebuffering = true;
 
         std::string m_name;
+        InputStat m_stats;
 };
 
 };

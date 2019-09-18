@@ -100,6 +100,7 @@ class InputStat
         void notifyPeakLevels(int peak_left, int peak_right);
         void notifyUnderrun(void);
         void notifyOverrun(void);
+        void notifyVersion(const std::string& version, uint32_t uptime_s);
         std::string encodeValuesJSON(void);
         input_state_t determineState(void);
 
@@ -130,6 +131,9 @@ class InputStat
         std::deque<peak_stat_t> m_peak_stats;
 
         size_t m_short_window_length = 0;
+
+        std::string m_version;
+        uint32_t m_uptime_s = 0;
 
         /************* STATE ***************/
         /* Variables used for determining the input state */

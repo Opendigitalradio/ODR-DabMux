@@ -225,5 +225,29 @@ class TagStarDMY : public TagItem
         uint32_t length_;
 };
 
+// Custom TAG that carries version information of the EDI source
+class TagODRVersion : public TagItem
+{
+    public:
+        TagODRVersion(const std::string& version, uint32_t uptime_s);
+        std::vector<uint8_t> Assemble();
+
+    private:
+        std::string m_version;
+        uint32_t m_uptime;
+};
+
+// Custom TAG that carries audio level metadata
+class TagODRAudioLevels : public TagItem
+{
+    public:
+        TagODRAudioLevels(int16_t audiolevel_left, int16_t audiolevel_right);
+        std::vector<uint8_t> Assemble();
+
+    private:
+        int16_t m_audio_left;
+        int16_t m_audio_right;
+};
+
 }
 

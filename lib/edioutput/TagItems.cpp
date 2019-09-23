@@ -379,5 +379,71 @@ std::vector<uint8_t> TagStarDMY::Assemble()
     return packet;
 }
 
+TagODRVersion::TagODRVersion(const std::string& version, uint32_t uptime_s) :
+    m_version(version),
+    m_uptime(uptime_s)
+{
+}
+
+std::vector<uint8_t> TagODRVersion::Assemble()
+{
+    std::string pack_data("ODRv");
+    std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
+
+    const size_t length = m_version.size() + sizeof(uint32_t);
+
+    packet.resize(4 + 4 + length);
+
+    const uint32_t length_bits = length * 8;
+
+    size_t i = 4;
+    packet[i++] = (length_bits >> 24) & 0xFF;
+    packet[i++] = (length_bits >> 16) & 0xFF;
+    packet[i++] = (length_bits >> 8) & 0xFF;
+    packet[i++] = length_bits & 0xFF;
+
+    copy(m_version.cbegin(), m_version.cend(), packet.begin() + i);
+    i += m_version.size();
+
+    packet[i++] = (m_uptime >> 24) & 0xFF;
+    packet[i++] = (m_uptime >> 16) & 0xFF;
+    packet[i++] = (m_uptime >> 8) & 0xFF;
+    packet[i++] = m_uptime & 0xFF;
+
+    return packet;
+}
+
+TagODRAudioLevels::TagODRAudioLevels(int16_t audiolevel_left, int16_t audiolevel_right) :
+    m_audio_left(audiolevel_left),
+    m_audio_right(audiolevel_right)
+{
+}
+
+std::vector<uint8_t> TagODRAudioLevels::Assemble()
+{
+    std::string pack_data("ODRa");
+    std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
+
+    constexpr size_t length = 2*sizeof(int16_t);
+
+    packet.resize(4 + 4 + length);
+
+    const uint32_t length_bits = length * 8;
+
+    size_t i = 4;
+    packet[i++] = (length_bits >> 24) & 0xFF;
+    packet[i++] = (length_bits >> 16) & 0xFF;
+    packet[i++] = (length_bits >> 8) & 0xFF;
+    packet[i++] = length_bits & 0xFF;
+
+    packet[i++] = (m_audio_left >> 8) & 0xFF;
+    packet[i++] = m_audio_left & 0xFF;
+
+    packet[i++] = (m_audio_right >> 8) & 0xFF;
+    packet[i++] = m_audio_right & 0xFF;
+
+    return packet;
+}
+
 }
 

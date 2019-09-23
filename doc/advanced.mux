@@ -180,7 +180,7 @@ subchannels {
         protection 4
 
         ; example file input
-        inputproto zmq
+        inputproto file
         inputuri "funk.mp2"
         nonblock false
     }
@@ -203,9 +203,9 @@ subchannels {
         protection 1
         ; example file input
         ;inputuri "rick.dabp"
+
         ; example zmq input:
         ; Accepts connections to port 9000 from any interface.
-        ; Use ODR-AudioEnc as encoder
         inputproto zmq
         inputuri "tcp://*:9000"
 
@@ -337,24 +337,9 @@ components {
     }
 }
 
-; A list of outputs, in the format
-; unique-id "uri"
 outputs {
     ; The unique-id can be used by the remote control or the statistics server
     ; to identify the output
-
-    ;supported output types for file and fifo outputs are
-    ; raw, framed and streamed
-    ;
-    ; Please see doc/dab_output_formats.txt
-    stdout "fifo:///dev/stdout?type=raw"
-
-    ; Legacy format for ZeroMQ output example. See example.mux
-    ; for newer format.
-    ;zmq  "zmq+tcp://*:9100"
-
-    ; Throttle output to real-time (one ETI frame every 24ms)
-    ;throttle "simul://"
 
     ; Important! For real-time operation, you need to have exactly one
     ; output that applies back-pressure to ODR-DabMux, otherwise it will run
@@ -365,10 +350,16 @@ outputs {
     ;
     ; If you use the zmq or EDI outputs, you must also enable a simul:// output!
 
-    ; The edi output has a different syntax
+    ;supported output types for file and fifo outputs are
+    ; raw, framed and streamed
+    ;
+    ; Please see doc/dab_output_formats.txt
+    ;stdout "fifo:///dev/stdout?type=raw"
+
+    ; Throttle output to real-time (one ETI frame every 24ms)
+    throttle "simul://"
+
     edi {
-        ; EDI uses the UDP protocol. This implementation of EDI does not support
-        ; EDI Packet Resend.
         ; If TIST is enabled, requires leap-second information (see example.mux)
         destinations {
             ; The names you give to the destinations have no meaning,
@@ -412,12 +403,16 @@ outputs {
         ; The destination port cannot be set independently for
         ; different outputs because it is encoded in the transport
         ; header of the PFT layer.
+        ; Necessary when using UDP, optional when only using TCP.
         port        12000
 
         ; Enable the PFT subsystem. If false, AFPackets are sent.
-        enable_pft  true
+        ; PFT is not necessary when using TCP.
+        enable_pft  false
 
-        ; How many lost fragments can be recovered by Reed-Solomon
+        ; How many lost fragments can be recovered by Reed-Solomon.
+        ; Requires enable_pft true.
+        ;
         ; If set to 0, the PFT subsystem will only do Fragmentation and
         ; Transport, but no Reed Solomon.
         ; See ETSI TS 102 821, Clause 7 "PFT Layer", Figure 10. ODR-DabMux
@@ -432,11 +427,11 @@ outputs {
         ; to nearest multiple of 24ms. Set to 0 to disable the interleaver.
         interleave 0
 
-        ; Length of a RS chunk, can be overriden
+        ; Length of a RS chunk, can be overridden
         ;default=207
         ;chunk_len   207
 
-        ; Save the packets sent over ethernet to the file ./edi.debug
+        ; Save the packets sent over Ethernet to the file ./edi.debug
         dump        false
 
         ; show more debugging info
@@ -450,8 +445,36 @@ outputs {
     }
 
     ; Other outputs:
-    ; TCP listen on port
-    ;net "tcp://host:port"
+
+    ; ZeroMQ output example, new configuration format. Several
+    ; zeromq blocks can be added here.
+    ; This output does not back-pressure the multiplexer.
+    ;zeromq {
+        ; Listen on all interfaces, on port 9100
+        ;endpoint "tcp://*:9100"
+
+        ; Transmit backward compatible metadata containing
+        ; EDI time and UTC offset when TIST is enabled.
+        ;
+        ; If TIST is enabled, requires leap-second information (see example.mux)
+        ;
+        ; WARNING! requires ODR-DabMux to be compiled with
+        ; cURL support, and this will enable leap second download
+        ; as for the EDI output!
+        ;allowmetadata true
+    ;}
+
+    ; Legacy format for ZeroMQ output example. See example.mux
+    ; for newer format.
+    ;zmq  "zmq+tcp://*:9100"
+
+    ; Output ETI-over-TCP. This is like piping a RAW ETI NI data stream
+    ; into a TCP socket, except that the output can handle simultaneous
+    ; connections. Not suitable for SFN use because timestamps are incomplete.
+    ; 0.0.0.0 means "listen on all interfaces"
+    ; This output does not back-pressure the multiplexer.
+    ;tcp "tcp://0.0.0.0:9200"
+
     ; UDP send to host:port, simple example for unicast
     ;net_udp "udp://host:port"
     ; example with source and TTL specification for multicast
@@ -466,5 +489,4 @@ outputs {
     ; external clock frequency in Hz.
     ; Example:
     ;farsync "raw://sync0?clocking=master&extsyncclock=10000000"
-
 }

@@ -5,7 +5,7 @@
 ;
 ; It contains two services, one DAB and one DAB+, and also shows
 ; both the file input useful for offline processing, and the
-; ZeroMQ input useful in a 24/7 scenario.
+; EDI input useful in a 24/7 scenario.
 
 ; More information about the usage of the tools is available
 ; in the guide, which can be found on the
@@ -186,13 +186,20 @@ subchannels {
         ; audio frame into the ETI frame with the same timestamp
         buffer-management prebuffering
 
-        ; Maximum size of input buffer, in AAC frames (24ms)
+        ; In an ideal scenario, where the input rate exactly corresponds
+        ; to the rate at which the frames are consumed by dabmux, you
+        ; see the buffer level staying around the prebuffering value.
+        ; Network latency jitter can make it temporarily go lower or higher.
+        ; Encoder clock drift will make the buffer either slowly fill or
+        ; empty, which will create intermittent glitches.
+
+        ; Maximum size of input buffer, in frames (24ms)
         ; when this buffer size is reached, some frames will be
         ; discarded to get the size again below this value.
         buffer 40
 
         ; At startup or after an underrun, the buffer is filled to this
-        ; amount of AAC frames before streaming starts.
+        ; amount of frames before streaming starts.
         prebuffering 20
     }
     sub-ri {
@@ -203,28 +210,18 @@ subchannels {
         protection 3
 
         ; Accepts connections to port 9000 from any interface.
-        ; Use ODR-AudioEnc as encoder
-        inputproto zmq
-        inputuri "tcp://*:9000"
-        ; ZMQ specific options, mandatory:
+        ; Use ODR-AudioEnc as encoder, accepts only connection
+        ; from the local machine.
+        inputproto edi
+        inputuri "tcp://127.0.0.1:9000"
 
-        ; Maximum size of input buffer, in AAC frames (24ms)
-        ; when this buffer size is reached, some frames will be
-        ; discarded to get the size again below this value.
-        ; As the present implementation discards entire AAC superframes,
-        ; (5 frames = 120ms) the effect will clearly be audible.
-        zmq-buffer 40
+        buffer-management timestamped
 
-        ; At startup or after an underrun, the buffer is filled to this
-        ; amount of AAC frames before streaming starts.
-        zmq-prebuffering 20
-
-        ; In an ideal scenario, where the input rate exactly corresponds
-        ; to the rate at which the frames are consumed by dabmux, you
-        ; see the buffer level staying around the zmq-prebuffering value.
-        ; Network latency jitter can make it temporarily go lower or higher.
-        ; Encoder clock drift will make the buffer either slowly fill or
-        ; empty, which will create intermittent glitches.
+        ; When using timestamped, the prebuffering is without effect.
+        ; The buffer setting however still dictates the maximum buffer size, to
+        ; avoid runaway memory usage in case of issues.
+        buffer 500
+        ; 500 * 24ms = 12 seconds
     }
 }
 
@@ -253,33 +250,19 @@ outputs {
     ; Output RAW ETI NI to standard output
     stdout "fifo:///dev/stdout?type=raw"
 
-    ; ZeroMQ output example, new configuration format. Several
-    ; zeromq blocks can be added here.
-    ; This output does not back-pressure the multiplexer.
-    zeromq {
-        ; Listen on all interfaces, on port 9100
-        endpoint "tcp://*:9100"
-
-        ; Transmit backward compatible metadata containing
-        ; EDI time and UTC offset when TIST is enabled.
-        ;
-        ; If TIST is enabled, requires leap-second information (see example.mux)
-        ;
-        ; WARNING! requires ODR-DabMux to be compiled with
-        ; cURL support, and this will enable leap second download
-        ; as for the EDI output!
-        allowmetadata true
+    edi {
+        ; Example EDI-over-TCP output
+        ; If TIST is enabled, requires leap-second information
+        destinations {
+            example_tcp {
+                protocol tcp
+                listenport 13000
+            }
+        }
     }
 
-    ; Output ETI-over-TCP. This is like piping a RAW ETI NI data stream
-    ; into a TCP socket, except that the output can handle simultaneous
-    ; connections.
-    ; 0.0.0.0 means "listen on all interfaces"
-    ; This output does not back-pressure the multiplexer.
-    ;tcp "tcp://0.0.0.0:9200"
-
     ; Throttle output to real-time (one ETI frame every 24ms)
-    ;throttle "simul://"
+    throttle "simul://"
 
     ; Important! For real-time operation, you need to have exactly one
     ; output that applies back-pressure to ODR-DabMux, otherwise it will run
@@ -288,7 +271,8 @@ outputs {
     ; For an output to a pipe, the data consumer at the other end of the pipe
     ; will dictate the multiplexing rate to ODR-DabMux.
     ;
-    ; If you use the zmq+tcp:// or the tcp:// output,
-    ; you must also enable a simul:// output!
+    ; If you use the EDI output, you must also enable a simul:// output!
+
+    ; More options are given in doc/advanced.mux
 }
 

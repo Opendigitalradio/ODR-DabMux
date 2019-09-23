@@ -291,6 +291,8 @@ int main(int argc, char *argv[])
 
             if (outputuid == "edi") {
                 ptree pt_edi = pt_outputs.get_child("edi");
+                bool require_dest_port = false;
+
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
                     const auto proto = pt_edi_dest.second.get<string>("protocol", "udp");
                     if (proto == "udp") {
@@ -302,6 +304,8 @@ int main(int argc, char *argv[])
                         dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
 
                         edi_conf.destinations.push_back(dest);
+
+                        require_dest_port = true;
                     }
                     else if (proto == "tcp") {
                         auto dest = make_shared<edi::tcp_server_t>();
@@ -314,11 +318,13 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                edi_conf.dest_port           = pt_edi.get<unsigned int>("port");
+                if (require_dest_port) {
+                    edi_conf.dest_port       = pt_edi.get<unsigned int>("port");
+                }
 
-                edi_conf.dump                = pt_edi.get<bool>("dump");
-                edi_conf.enable_pft          = pt_edi.get<bool>("enable_pft");
-                edi_conf.verbose             = pt_edi.get<bool>("verbose");
+                edi_conf.dump                = pt_edi.get<bool>("dump", false);
+                edi_conf.enable_pft          = pt_edi.get<bool>("enable_pft", false);
+                edi_conf.verbose             = pt_edi.get<bool>("verbose", false);
 
                 edi_conf.fec                 = pt_edi.get<unsigned int>("fec", 3);
                 edi_conf.chunk_len           = pt_edi.get<unsigned int>("chunk_len", 207);

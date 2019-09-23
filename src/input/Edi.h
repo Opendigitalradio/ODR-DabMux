@@ -40,6 +40,22 @@
 
 namespace Inputs {
 
+struct dab_input_edi_config_t
+{
+    /* The size of the internal buffer, measured in number
+     * of elements.
+     *
+     * Each element corresponds to one frame, i.e. 24ms
+     */
+    size_t buffer_size;
+
+    /* The amount of prebuffering to do before we start streaming
+     *
+     * Same units as buffer_size
+     */
+    size_t prebuffering;
+};
+
 /*
  * Receives EDI from UDP or TCP in a separate thread and pushes that data
  * into the STIDecoder. Complete frames are then put into a queue for the consumer.
@@ -48,7 +64,7 @@ namespace Inputs {
  */
 class Edi : public InputBase, public RemoteControllable {
     public:
-        Edi(const std::string& name);
+        Edi(const std::string& name, const dab_input_edi_config_t& config);
         Edi(const Edi&) = delete;
         Edi& operator=(const Edi&) = delete;
         ~Edi();
@@ -79,8 +95,7 @@ class Edi : public InputBase, public RemoteControllable {
         std::atomic<bool> m_running = ATOMIC_VAR_INIT(false);
         ThreadsafeQueue<EdiDecoder::sti_frame_t> m_frames;
 
-        std::mutex m_rc_params_mutex;
-        // InputBase defines bufferManagement, which must also be guarded by that mutex
+        // InputBase defines bufferManagement
 
         // Used in timestamp-based buffer management
         EdiDecoder::sti_frame_t m_pending_sti_frame;
@@ -100,7 +115,6 @@ class Edi : public InputBase, public RemoteControllable {
         /* When not using timestamping, how many frames to prebuffer.
          * Parameter 'prebuffering' inside RC. */
         std::atomic<size_t> m_num_frames_prebuffering = ATOMIC_VAR_INIT(10);
-
 
         std::string m_name;
         InputStat m_stats;

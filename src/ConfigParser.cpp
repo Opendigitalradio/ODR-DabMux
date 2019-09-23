@@ -956,7 +956,10 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
             }
         }
         else if (proto == "edi") {
-            auto inedi = make_shared<Inputs::Edi>(subchanuid);
+            Inputs::dab_input_edi_config_t config;
+            config.buffer_size = pt.get("buffer", config.buffer_size);
+            config.prebuffering = pt.get("prebuffering", config.prebuffering);
+            auto inedi = make_shared<Inputs::Edi>(subchanuid, config);
             rcs.enrol(inedi.get());
             subchan->input = inedi;
         }

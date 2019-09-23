@@ -44,11 +44,13 @@ namespace Inputs {
 constexpr bool VERBOSE = false;
 constexpr size_t TCP_BLOCKSIZE = 2048;
 
-Edi::Edi(const std::string& name) :
+Edi::Edi(const std::string& name, const dab_input_edi_config_t& config) :
     RemoteControllable(name),
     m_tcp_receive_server(TCP_BLOCKSIZE),
     m_sti_writer(),
     m_sti_decoder(m_sti_writer, VERBOSE),
+    m_max_frames_overrun(config.buffer_size),
+    m_num_frames_prebuffering(config.prebuffering),
     m_name(name),
     m_stats(name)
 {

@@ -185,6 +185,15 @@ subchannels {
         ; timestamped takes into account the TIST inside EDI and inserts the encoded
         ; audio frame into the ETI frame with the same timestamp
         buffer-management prebuffering
+
+        ; Maximum size of input buffer, in AAC frames (24ms)
+        ; when this buffer size is reached, some frames will be
+        ; discarded to get the size again below this value.
+        buffer 40
+
+        ; At startup or after an underrun, the buffer is filled to this
+        ; amount of AAC frames before streaming starts.
+        prebuffering 20
     }
     sub-ri {
         ; This is our DAB+ programme, using a ZeroMQ input

@@ -956,7 +956,9 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
             }
         }
         else if (proto == "edi") {
-            subchan->input = make_shared<Inputs::Edi>(subchanuid);
+            auto inedi = make_shared<Inputs::Edi>(subchanuid);
+            rcs.enrol(inedi.get());
+            subchan->input = inedi;
         }
         else if (proto == "stp") {
             subchan->input = make_shared<Inputs::Sti_d_Rtp>();
@@ -1023,10 +1025,10 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
 
     const string bufferManagement = pt.get("buffer-management", "prebuffering");
     if (bufferManagement == "prebuffering") {
-        subchan->bufferManagement = BufferManagement::Prebuffering;
+        subchan->input->setBufferManagement(Inputs::BufferManagement::Prebuffering);
     }
     else if (bufferManagement == "timestamped") {
-        subchan->bufferManagement = BufferManagement::Timestamped;
+        subchan->input->setBufferManagement(Inputs::BufferManagement::Timestamped);
     }
     else {
         throw runtime_error("Subchannel with uid " + subchanuid + " has invalid buffer-management !");

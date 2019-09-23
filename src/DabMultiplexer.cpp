@@ -592,17 +592,9 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         edi::TagESTn& tag = edi_subchannelToTag[subchannel.get()];
 
         int sizeSubchannel = subchannel->getSizeByte();
-        int result = -1;
-        switch (subchannel->bufferManagement) {
-            case BufferManagement::Prebuffering:
-                result = subchannel->input->readFrame(&etiFrame[index], sizeSubchannel);
-                break;
-            case BufferManagement::Timestamped:
-                // no need to check enableTist because we always increment the timestamp
-                result = subchannel->input->readFrame(&etiFrame[index],
+        // no need to check enableTist because we always increment the timestamp
+        int result = subchannel->readFrame(&etiFrame[index],
                         sizeSubchannel, edi_time + m_tist_offset, tai_utc_offset, timestamp);
-                break;
-        }
 
         if (result < 0) {
             etiLog.log(info,

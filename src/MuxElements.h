@@ -338,14 +338,6 @@ struct dabProtection {
     };
 };
 
-enum class BufferManagement {
-    // Use a buffer in the input that doesn't consider timestamps
-    Prebuffering,
-
-    // Buffer incoming data until a given timestamp is reached
-    Timestamped,
-};
-
 class DabSubchannel
 {
 public:
@@ -364,10 +356,12 @@ public:
     // Calculate subchannel size in number of uint64_t
     unsigned short getSizeDWord(void) const;
 
+    // Read from the input, using the correct buffer management
+    size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
+
     std::string uid;
 
     std::string inputUri;
-    BufferManagement bufferManagement = BufferManagement::Prebuffering;
     std::shared_ptr<Inputs::InputBase> input;
     unsigned char id = 0;
     subchannel_type_t type = subchannel_type_t::DABAudio;

@@ -784,6 +784,17 @@ unsigned short DabSubchannel::getSizeDWord() const
     return (bitrate * 3) >> 3;
 }
 
+size_t DabSubchannel::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
+{
+    switch (input->getBufferManagement()) {
+        case Inputs::BufferManagement::Prebuffering:
+            return input->readFrame(buffer, size);
+        case Inputs::BufferManagement::Timestamped:
+            return input->readFrame(buffer, size, seconds, utco, tsta);
+    }
+    throw logic_error("Unhandled case");
+}
+
 LinkageSet::LinkageSet(const std::string& name,
         uint16_t lsn,
         bool active,

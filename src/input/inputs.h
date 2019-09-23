@@ -35,6 +35,15 @@
 
 namespace Inputs {
 
+enum class BufferManagement {
+    // Use a buffer in the input that doesn't consider timestamps
+    Prebuffering,
+
+    // Buffer incoming data until a given timestamp is reached
+    Timestamped,
+};
+
+
 /* New input object base */
 class InputBase {
     public:
@@ -73,8 +82,14 @@ class InputBase {
         virtual void close() = 0;
 
         virtual ~InputBase() {}
+
+        void setBufferManagement(BufferManagement bm) { m_bufferManagement = bm; }
+        BufferManagement getBufferManagement() const { return m_bufferManagement; }
+
     protected:
         InputBase() {}
+
+        std::atomic<BufferManagement> m_bufferManagement = ATOMIC_VAR_INIT(BufferManagement::Prebuffering);
 };
 
 };

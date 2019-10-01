@@ -23,6 +23,7 @@
 #include "common.hpp"
 #include "STIDecoder.hpp"
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 #include <list>
@@ -38,6 +39,9 @@ struct sti_frame_t {
 
 class STIWriter : public STIDataCollector {
     public:
+        // The callback gets called for every STI frame that gets assembled
+        STIWriter(std::function<void(sti_frame_t&&)>&& frame_callback);
+
         // Tell the ETIWriter what EDI protocol we receive in *ptr.
         // This is not part of the ETI data, but is used as check
         virtual void update_protocol(
@@ -59,12 +63,8 @@ class STIWriter : public STIDataCollector {
         virtual void update_odr_version(const odr_version_data& data);
 
         virtual void assemble(void);
-
-        // Return the assembled frame or an empty frame if not ready
-        sti_frame_t getFrame();
-
     private:
-        void reinit(void);
+        std::function<void(sti_frame_t&&)> m_frame_callback;
 
         bool m_proto_valid = false;
 
@@ -84,7 +84,6 @@ class STIWriter : public STIDataCollector {
 
         audio_level_data m_audio_levels;
         odr_version_data m_version_data;
-        sti_frame_t m_stiFrame;
 };
 
 }

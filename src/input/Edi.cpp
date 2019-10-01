@@ -257,9 +257,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
         }
     }
     else {
-        EdiDecoder::sti_frame_t sti_frame;
-        m_frames.try_pop(sti_frame);
-        if (sti_frame.frame.empty()) {
+        if (m_pending_sti_frame.frame.empty()) {
             etiLog.level(warn) << "EDI input " << m_name <<
                 " empty, re-enabling pre-buffering";
             memset(buffer, 0, size);
@@ -267,10 +265,11 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             m_is_prebuffering = true;
             return 0;
         }
-        else if (not sti_frame.timestamp.valid()) {
+        else if (not m_pending_sti_frame.timestamp.valid()) {
             etiLog.level(warn) << "EDI input " << m_name <<
                 " invalid timestamp, ignoring";
             memset(buffer, 0, size);
+            m_pending_sti_frame.frame.clear();
             m_stats.notifyUnderrun();
             return 0;
         }
@@ -281,21 +280,23 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             if (offset > 24e-3) {
                 m_stats.notifyUnderrun();
                 m_is_prebuffering = true;
+                m_pending_sti_frame.frame.clear();
                 etiLog.level(warn) << "EDI input " << m_name <<
                     " timestamp out of bounds, re-enabling pre-buffering";
                 memset(buffer, 0, size);
                 return 0;
             }
             else {
-                if (not sti_frame.version_data.version.empty()) {
+                if (not m_pending_sti_frame.version_data.version.empty()) {
                     m_stats.notifyVersion(
-                            sti_frame.version_data.version,
-                            sti_frame.version_data.uptime_s);
+                            m_pending_sti_frame.version_data.version,
+                            m_pending_sti_frame.version_data.uptime_s);
                 }
 
-                m_stats.notifyPeakLevels(sti_frame.audio_levels.left,
-                        sti_frame.audio_levels.right);
-                copy(sti_frame.frame.cbegin(), sti_frame.frame.cend(), buffer);
+                m_stats.notifyPeakLevels(m_pending_sti_frame.audio_levels.left,
+                        m_pending_sti_frame.audio_levels.right);
+                copy(m_pending_sti_frame.frame.cbegin(), m_pending_sti_frame.frame.cend(), buffer);
+                m_pending_sti_frame.frame.clear();
                 return size;
             }
         }

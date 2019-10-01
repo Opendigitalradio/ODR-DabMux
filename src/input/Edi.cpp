@@ -47,7 +47,7 @@ constexpr size_t TCP_BLOCKSIZE = 2048;
 Edi::Edi(const std::string& name, const dab_input_edi_config_t& config) :
     RemoteControllable(name),
     m_tcp_receive_server(TCP_BLOCKSIZE),
-    m_sti_writer(),
+    m_sti_writer(bind(&Edi::m_new_sti_frame_callback, this, placeholders::_1)),
     m_sti_decoder(m_sti_writer, VERBOSE),
     m_max_frames_overrun(config.buffer_size),
     m_num_frames_prebuffering(config.prebuffering),
@@ -306,8 +306,6 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
 void Edi::m_run()
 {
     while (m_running) {
-        bool work_done = false;
-
         switch (m_input_used) {
             case InputUsed::UDP:
                 {
@@ -318,7 +316,9 @@ void Edi::m_run()
                     }
                     if (not packet.buffer.empty()) {
                         m_sti_decoder.push_packet(packet.buffer);
-                        work_done = true;
+                    }
+                    else {
+                        this_thread::sleep_for(chrono::milliseconds(12));
                     }
                 }
                 break;
@@ -327,27 +327,24 @@ void Edi::m_run()
                     auto packet = m_tcp_receive_server.receive();
                     if (not packet.empty()) {
                         m_sti_decoder.push_bytes(packet);
-                        work_done = true;
+                    }
+                    else {
+                        this_thread::sleep_for(chrono::milliseconds(12));
                     }
                 }
                 break;
             default:
                 throw logic_error("unimplemented input");
         }
+    }
+}
 
-        const auto sti = m_sti_writer.getFrame();
-        if (not sti.frame.empty()) {
-            // We should not wait here, because we want the complete input buffering
-            // happening inside m_frames. Using the blocking function is only a protection
-            // against runaway memory usage if something goes wrong in the consumer.
-            m_frames.push_wait_if_full(move(sti), m_max_frames_overrun * 2);
-            work_done = true;
-        }
-
-        if (not work_done) {
-            // Avoid fast loop
-            this_thread::sleep_for(chrono::milliseconds(12));
-        }
+void Edi::m_new_sti_frame_callback(EdiDecoder::sti_frame_t&& sti) {
+    if (not sti.frame.empty()) {
+        // We should not wait here, because we want the complete input buffering
+        // happening inside m_frames. Using the blocking function is only a protection
+        // against runaway memory usage if something goes wrong in the consumer.
+        m_frames.push_wait_if_full(move(sti), m_max_frames_overrun * 2);
     }
 }
 

@@ -82,6 +82,8 @@ class Edi : public InputBase, public RemoteControllable {
     protected:
         void m_run();
 
+        void m_new_sti_frame_callback(EdiDecoder::sti_frame_t&& frame);
+
         std::mutex m_mutex;
 
         enum class InputUsed { Invalid, UDP, TCP };

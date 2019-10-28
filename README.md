@@ -28,8 +28,12 @@ Features of ODR-DabMux:
 - Something that will (with your help?) one day become a nice GUI for
   configuration, see `gui/README.md`
 
-Additional tools: `odr-zmq2edi`, a tool that can convert a ZeroMQ ETI stream
-to an EDI stream. `odr-zmq2farsync`, a tool that can drive a FarSync card from
+Additional tools: 
+
+`odr-zmq2edi`, a tool that can convert a ZeroMQ ETI stream
+to an EDI stream. 
+
+`odr-zmq2farsync`, a tool that can drive a FarSync card from
 a ZeroMQ ETI stream.
 
 The `src/` directory contains the source code of ODR-DabMux and the additional
@@ -60,7 +64,7 @@ through the
 or any other channels mentioned on the ODR website.
 
 There is a list of ideas and thoughts about new possible features and improvements
-in the `TODO` file.
+in the `TODO.md` file.
 
 Developed by:
 

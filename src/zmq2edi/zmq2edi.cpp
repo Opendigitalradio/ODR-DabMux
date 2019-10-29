@@ -57,21 +57,22 @@ static void usage()
     cerr << "Options:" << endl;
     cerr << "The following options can be given only once:" << endl;
     cerr << " <source> is a ZMQ URL that points to a ODR-DabMux ZMQ output." << endl;
-    cerr << " -w <delay> Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
-    cerr << " -x Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
-    cerr << " -p <destination port> sets the destination port." << endl;
-    cerr << " -P Disable PFT and send AFPackets." << endl;
-    cerr << " -f <fec> sets the FEC." << endl;
-    cerr << " -i <interleave> enables the interleaved with this latency." << endl;
-    cerr << " -D dumps the EDI to edi.debug file." << endl;
-    cerr << " -v Enables verbose mode." << endl;
-    cerr << " -a <tagpacket alignement> sets the alignment of the TAG Packet (default 8)." << endl << endl;
+    cerr << " -w <delay>            Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
+    cerr << "                       Negative delay values are also allowed." << endl;
+    cerr << " -x                    Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
+    cerr << " -p <destination port> Set the destination port." << endl;
+    cerr << " -P                    Disable PFT and send AFPackets." << endl;
+    cerr << " -f <fec>              Set the FEC." << endl;
+    cerr << " -i <interleave>       Enable the interleaver with this latency." << endl;
+    cerr << " -D                    Dump the EDI to edi.debug file." << endl;
+    cerr << " -v                    Enables verbose mode." << endl;
+    cerr << " -a <alignement>       Set the alignment of the TAG Packet (default 8)." << endl << endl;
 
     cerr << "The following options can be given several times, when more than UDP destination is desired:" << endl;
-    cerr << " -d <destination ip> sets the destination ip." << endl;
-    cerr << " -s <source port> sets the source port." << endl;
-    cerr << " -S <source ip> select the source IP in case we want to use multicast." << endl;
-    cerr << " -t <ttl> set the packet's TTL." << endl << endl;
+    cerr << " -d <destination ip>   Set the destination ip." << endl;
+    cerr << " -s <source port>      Set the source port." << endl;
+    cerr << " -S <source ip>        Select the source IP in case we want to use multicast." << endl;
+    cerr << " -t <ttl>              Set the packet's TTL." << endl << endl;
 
     cerr << "The input socket will be reset if no data is received for " <<
         (int)(MAX_ERROR_COUNT * ZMQ_TIMEOUT_MS / 1000.0) << " seconds." << endl;

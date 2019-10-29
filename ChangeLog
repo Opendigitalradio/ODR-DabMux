@@ -1,6 +1,21 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2019-10-29: Matthias P. Braendli <matthias@mpb.li>
+	(v3.0.0):
+		Add EDI input with support for timestamps, which requires a change
+		in the configuration file format for the input specification. This
+		marks the beginning of a transition away from the ZMQ contribution
+		protocol towards the standard EDI, including EDI-over-TCP.
+		Move code shared with other mmbTools into a separate `common`
+		repository.
+		Change default TAI clock cache storage location to
+		`/var/tmp/odr-leap-seconds.cache`.
+		Add encoder version and uptime to stats if available (carried over
+		EDI, not ZMQ).
+		Fix nonblocking file input.
+		Modify ODR-zmq2edi and ODR-zmq2farsync timeout behaviour.
+
 2019-06-25: Matthias P. Braendli <matthias@mpb.li>
 	(v2.4.1):
 		Fix bug when odr-zmq2edi is used with more than one destination.

@@ -5,23 +5,6 @@ to some degree.
 Unless written, no activity has been started on the topics.
 
 
-EDI/STI-D Input
----------------
-Add support for EDI input, so that third-party encoders can be interfaced
-to the multiplexer. Relevant spec: ETSI TS 102 693
-
-It would be beneficial to write and EDI decoding library that can be re-used in
-ODR-DabMod to add EDI input there too.
-
-Stuff in http://git.mpb.li/git/odr-edilib/ could be helpful.
-
-There is experimental support for STI(PI, X)/RTP using UDP, which is used by
-AVT encoders. It does not properly reorder incoming UDP packets nor align
-STI frames with ETI frames.
-
-Also, it doesn't print out nice messages (like ZMQ's "prebuffering complete").
-
-
 Explicit Service Linking
 ------------------------
 It is impossible to activate/deactive linkage sets. Commit 5c3c6d7 added
@@ -48,16 +31,12 @@ Add statistics to UDP input, in a similar way that ZeroMQ offers statistics.
 This would mean we have to move the packet buffer from the operating system
 into our own buffer, so that we can actually get the statistics.
 
-Also see the STI-D over EDI topic above.
-
-For error handling, there are parts of the code that use return values, parts
-use exceptions. While it works, we could clean it up a bit.
-
 
 Fix DMB input
 -------------
 The code that does interleaving and reed-solomon encoding for DMB is not used
-anymore, and is untested. The relevant parts are src/dabInputDmb* and src/Dmb.cpp
+anymore, and is untested. The relevant parts are `src/dabInputDmb*` and
+`src/Dmb.cpp`
 
 
 Communicate Leap Seconds

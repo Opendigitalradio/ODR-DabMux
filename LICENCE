@@ -28,3 +28,14 @@ KA9Q FEC routines
 
 src/fec/ contains code from KA9Q's fec library. Please see
 src/fec/README.md and src/fec/LICENSING
+
+Other parts
+-----------
+
+lib/edi/PFT.{hpp,cpp} are APACHE 2.0 licensed.
+
+lib/charset contains a BSD-licensed UTF-8 library.
+
+lib/zmq.hpp is BSD-licensed.
+
+The farsync driver in lib/farsync is GPLv2+ licensed.

@@ -8,7 +8,7 @@ matrix:
       osx_image: xcode11
       compiler: clang
 
-    # GCC and clang builds on Linux
+    # GCC builds on Linux
     - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF="--disable-output-edi"
       os: linux
       arch: amd64
@@ -42,25 +42,6 @@ matrix:
       arch: arm64
       compiler: gcc
       addons: *linuxaddons
-
-    - env: MATRIX_EVAL="" CONF="--enable-output-raw"
-      arch: amd64
-      compiler: clang
-      addons: &linuxclang40
-        apt:
-          sources:
-            - sourceline: 'ppa:ubuntu-toolchain-r/test'
-            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main'
-            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main'
-            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main'
-          packages:
-            - libzmq3-dev
-            - libzmq5
-            - automake
-            - libtool
-            - libboost-all-dev
-            - libcurl4-openssl-dev
-            - clang-9
 
 before_install:
   - eval "${MATRIX_EVAL}"

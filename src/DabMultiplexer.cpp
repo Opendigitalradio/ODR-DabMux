@@ -134,24 +134,23 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         throw MuxInitException();
     }
 
-    /* TODO:
-     * In a SFN, when reconfiguring the ensemble, the multiplexer
-     * has to be restarted (odr-dabmux doesn't support reconfiguration).
-     * Ideally, we must be able to restart transmission s.t. the receiver
-     * synchronisation is preserved.
+    /* Ensure edi_time and TIST represent current time. Keep
+     * a granularity of 24ms, which corresponds to the
+     * duration of an ETI frame, to get nicer timestamps.
      */
     using Sec = chrono::seconds;
-    const auto now = chrono::time_point_cast<Sec>(chrono::system_clock::now());
-
-    edi_time = chrono::system_clock::to_time_t(now);
-
-    // We define that when the time is multiple of six seconds, the timestamp
-    // (PPS offset) is 0. This ensures consistency of TIST even across a
-    // mux restart
+    const auto now = chrono::system_clock::now();
+    edi_time = chrono::system_clock::to_time_t(chrono::time_point_cast<Sec>(now));
+    auto offset = now - chrono::time_point_cast<Sec>(now);
+    if (offset >= chrono::seconds(1)) {
+        throw std::logic_error("Invalid startup offset calculation for TIST! " +
+                to_string(chrono::duration_cast<chrono::milliseconds>(offset).count()) +
+                " ms");
+    }
     timestamp = 0;
-    edi_time -= (edi_time % 6);
-    while (edi_time < chrono::system_clock::to_time_t(now)) {
+    while (offset >= chrono::milliseconds(24)) {
         increment_timestamp();
+        offset -= chrono::milliseconds(24);
     }
 
     // Try to load offset once

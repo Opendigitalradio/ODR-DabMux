@@ -65,6 +65,12 @@ general {
     ; If the port is zero, or the line commented, the server
     ; is not started.
     managementport 12720
+
+    ; At startup, run the command and abort if is it not returning 0.
+    ; This may be a script. Useful for checking if the NTP client on your
+    ; system has had time to setup the clock.
+    ;startupcheck "chronyc waitsync 10 0.01"
+    ;startupcheck "ntp-wait -fv"
 }
 
 remotecontrol {

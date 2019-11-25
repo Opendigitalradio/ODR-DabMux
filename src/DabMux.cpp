@@ -239,6 +239,26 @@ int main(int argc, char *argv[])
             etiLog.register_backend(std::make_shared<LogToSyslog>());
         }
 
+        const auto startupcheck = pt.get<string>("general.startupcheck", "");
+        if (not startupcheck.empty()) {
+            etiLog.level(info) << "Running startup check '" << startupcheck << "'";
+            int wstatus = system(startupcheck.c_str());
+
+            if (WIFEXITED(wstatus)) {
+                if (WEXITSTATUS(wstatus) == 0) {
+                    etiLog.level(info) << "Startup check ok";
+                }
+                else {
+                    etiLog.level(error) << "Startup check failed, returned " << WEXITSTATUS(wstatus);
+                    return 1;
+                }
+            }
+            else {
+                etiLog.level(error) << "Startup check failed, child didn't terminate normally";
+                return 1;
+            }
+        }
+
         int mgmtserverport = pt.get<int>("general.managementport",
                              pt.get<int>("general.statsserverport", 0) );
 

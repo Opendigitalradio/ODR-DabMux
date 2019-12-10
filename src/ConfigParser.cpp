@@ -51,11 +51,12 @@
 #include <boost/algorithm/string/split.hpp>
 #include <cstdint>
 #include <cstring>
-#include <memory>
+#include <chrono>
 #include <exception>
 #include <iostream>
-#include <string>
 #include <map>
+#include <memory>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -1036,6 +1037,9 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
     else {
         throw runtime_error("Subchannel with uid " + subchanuid + " has invalid buffer-management !");
     }
+
+    const int32_t tist_delay = pt.get("tist-delay", 0);
+    subchan->input->setTistDelay(chrono::milliseconds(tist_delay));
 
     subchan->startAddress = 0;
 

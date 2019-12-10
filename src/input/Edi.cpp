@@ -62,6 +62,8 @@ Edi::Edi(const std::string& name, const dab_input_edi_config_t& config) :
 
     RC_ADD_PARAMETER(prebuffering,
             "Min buffer level before streaming starts [24ms frames]");
+
+    RC_ADD_PARAMETER(tistdelay, "TIST delay to add [ms]");
 }
 
 Edi::~Edi() {
@@ -209,7 +211,8 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             // difference between the input frame timestamp and the requested
             // timestamp.
             if (m_pending_sti_frame.timestamp.valid()) {
-                const auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
+                auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
+                ts_req += m_tist_delay;
                 const double offset = m_pending_sti_frame.timestamp.diff_ms(ts_req);
 
                 if (offset < 24e-3) {
@@ -274,7 +277,8 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             return 0;
         }
         else {
-            const auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
+            auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
+            ts_req += m_tist_delay;
             const double offset = m_pending_sti_frame.timestamp.diff_ms(ts_req);
 
             if (offset > 24e-3) {
@@ -384,6 +388,9 @@ void Edi::set_parameter(const std::string& parameter, const std::string& value)
             throw ParameterError("Invalid value for '" + parameter + "' in controllable " + get_rc_name());
         }
     }
+    else if (parameter == "tistdelay") {
+        m_tist_delay = chrono::milliseconds(stoi(value));
+    }
     else {
         throw ParameterError("Parameter '" + parameter + "' is not exported by controllable " + get_rc_name());
     }
@@ -407,6 +414,9 @@ const std::string Edi::get_parameter(const std::string& parameter) const
                 ss << "Timestamped";
                 break;
         }
+    }
+    else if (parameter == "tistdelay") {
+        ss << m_tist_delay.count();
     }
     else {
         throw ParameterError("Parameter '" + parameter + "' is not exported by controllable " + get_rc_name());

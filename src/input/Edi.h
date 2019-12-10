@@ -97,7 +97,7 @@ class Edi : public InputBase, public RemoteControllable {
         std::atomic<bool> m_running = ATOMIC_VAR_INIT(false);
         ThreadsafeQueue<EdiDecoder::sti_frame_t> m_frames;
 
-        // InputBase defines bufferManagement
+        // InputBase defines bufferManagement and tist delay
 
         // Used in timestamp-based buffer management
         EdiDecoder::sti_frame_t m_pending_sti_frame;

@@ -83,6 +83,7 @@ class InputBase {
 
         virtual ~InputBase() {}
 
+        void setTistDelay(const std::chrono::milliseconds& ms) { m_tist_delay = ms; }
         void setBufferManagement(BufferManagement bm) { m_bufferManagement = bm; }
         BufferManagement getBufferManagement() const { return m_bufferManagement; }
 
@@ -90,6 +91,7 @@ class InputBase {
         InputBase() {}
 
         std::atomic<BufferManagement> m_bufferManagement = ATOMIC_VAR_INIT(BufferManagement::Prebuffering);
+        std::chrono::milliseconds m_tist_delay;
 };
 
 };

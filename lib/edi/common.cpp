@@ -73,6 +73,19 @@ double frame_timestamp_t::diff_ms(const frame_timestamp_t& other) const
     return lhs - rhs;
 }
 
+frame_timestamp_t& frame_timestamp_t::operator+=(const std::chrono::milliseconds& ms)
+{
+    tsta += (ms.count() % 1000) << 14; // Shift ms by 14 to Timestamp level 2
+    if (tsta > 0xf9FFff) {
+        tsta -= 0xfa0000; // Substract 16384000, corresponding to one second
+        seconds += 1;
+    }
+
+    seconds += (ms.count() / 1000);
+
+    return *this;
+}
+
 frame_timestamp_t frame_timestamp_t::from_unix_epoch(std::time_t time, uint32_t tai_utc_offset, uint32_t tsta)
 {
     frame_timestamp_t ts;

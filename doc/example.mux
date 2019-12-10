@@ -228,6 +228,10 @@ subchannels {
         ; avoid runaway memory usage in case of issues.
         buffer 500
         ; 500 * 24ms = 12 seconds
+
+        ; Specify the additional delay in milliseconds to add to the TIST. Positive values
+        ; mean the content will be inserted later.
+        tist-delay 10
     }
 }
 

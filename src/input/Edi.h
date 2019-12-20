@@ -47,13 +47,13 @@ struct dab_input_edi_config_t
      *
      * Each element corresponds to one frame, i.e. 24ms
      */
-    size_t buffer_size;
+    size_t buffer_size = 100;
 
     /* The amount of prebuffering to do before we start streaming
      *
      * Same units as buffer_size
      */
-    size_t prebuffering;
+    size_t prebuffering = 30;
 };
 
 /*

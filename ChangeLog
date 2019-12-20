@@ -1,6 +1,10 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2019-12-20: Matthias P. Braendli <matthias@mpb.li>
+	(v2.4.2):
+		Backport the file input nonblock fix to v2.4.1.
+
 2019-06-25: Matthias P. Braendli <matthias@mpb.li>
 	(v2.4.1):
 		Fix bug when odr-zmq2edi is used with more than one destination.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # present statistics from dabmux Stats Server
 # to standard output.
@@ -21,7 +21,7 @@ def connect():
     sock = zmq.Socket(ctx, zmq.REQ)
     sock.connect("tcp://localhost:12720")
 
-    sock.send("info")
+    sock.send(b"info")
     infojson = json.loads(sock.recv())
 
     sys.stderr.write("Statistics from ODR-DabMux {}\n".format(infojson['version']))
@@ -34,7 +34,7 @@ def connect():
 
 if len(sys.argv) == 1:
     sock = connect()
-    sock.send("values")
+    sock.send(b"values")
 
     poller = zmq.Poller()
     poller.register(sock, zmq.POLLIN)
@@ -91,7 +91,7 @@ if len(sys.argv) == 1:
 elif len(sys.argv) == 2 and sys.argv[1] == "config":
     sock = connect()
 
-    sock.send("config")
+    sock.send(b"config")
 
     config = json.loads(sock.recv())
 

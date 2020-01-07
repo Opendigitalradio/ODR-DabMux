@@ -121,6 +121,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
             etiLog.level(info) << "EDI input " << m_name << " pre-buffering complete.";
         }
         memset(buffer, 0, size * sizeof(*buffer));
+        m_stats.notifyUnderrun();
         return 0;
     }
     else if (not m_pending_sti_frame.frame.empty()) {
@@ -129,6 +130,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
             etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
                 m_pending_sti_frame.frame.size() << " received, " << size << " requested";
             memset(buffer, 0, size * sizeof(*buffer));
+            m_stats.notifyUnderrun();
             return 0;
         }
         else {
@@ -149,6 +151,8 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
     else if (m_frames.try_pop(sti)) {
         if (sti.frame.size() == 0) {
             etiLog.level(debug) << "EDI input " << m_name << " empty frame";
+            memset(buffer, 0, size * sizeof(*buffer));
+            m_stats.notifyUnderrun();
             return 0;
         }
         else if (sti.frame.size() == size) {
@@ -181,6 +185,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
             etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
                 sti.frame.size() << " received, " << size << " requested";
             memset(buffer, 0, size * sizeof(*buffer));
+            m_stats.notifyUnderrun();
             return 0;
         }
     }
@@ -204,6 +209,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
     if (m_is_prebuffering) {
         if (m_pending_sti_frame.frame.empty()) {
             memset(buffer, 0, size);
+            m_stats.notifyUnderrun();
             return 0;
         }
         else if (m_pending_sti_frame.frame.size() == size) {

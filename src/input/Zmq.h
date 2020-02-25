@@ -45,6 +45,7 @@
 
 #include <list>
 #include <string>
+#include <vector>
 #include <cstdint>
 #include "zmq.hpp"
 #include "input/inputs.h"
@@ -212,7 +213,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
         bool m_enable_input;
 
         /* stores elements of type char[<superframesize>] */
-        std::list<uint8_t*> m_frame_buffer;
+        std::list<std::vector<uint8_t> > m_frame_buffer;
 
         dab_input_zmq_config_t m_config;
 

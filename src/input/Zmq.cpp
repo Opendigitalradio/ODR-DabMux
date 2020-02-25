@@ -268,7 +268,6 @@ size_t ZmqBase::readFrame(uint8_t* buffer, size_t size)
             size_t over_max = m_frame_buffer.size() - m_config.prebuffering;
 
             while (over_max--) {
-                delete[] m_frame_buffer.front();
                 m_frame_buffer.pop_front();
             }
         }
@@ -288,7 +287,6 @@ size_t ZmqBase::readFrame(uint8_t* buffer, size_t size)
              *       frames even though we could drop less.
              * */
             for (int frame_del_count = 0; frame_del_count < 5; frame_del_count++) {
-                delete[] m_frame_buffer.front();
                 m_frame_buffer.pop_front();
             }
         }
@@ -323,9 +321,11 @@ size_t ZmqBase::readFrame(uint8_t* buffer, size_t size)
     }
     else {
         /* Normal situation, give a frame from the frame_buffer */
-        uint8_t* newframe = m_frame_buffer.front();
-        memcpy(buffer, newframe, size);
-        delete[] newframe;
+        auto& newframe = m_frame_buffer.front();
+        if (newframe.size() != size) {
+            throw logic_error("Inconsistent ZMQ sizes");
+        }
+        memcpy(buffer, newframe.data(), newframe.size());
         m_frame_buffer.pop_front();
         return size;
     }
@@ -388,9 +388,9 @@ int ZmqMPEG::readFromSocket(size_t framesize)
         }
         else if (m_enable_input) {
             // copy the input frame blockwise into the frame_buffer
-            auto framedata = new uint8_t[framesize];
-            memcpy(framedata, data, framesize);
-            m_frame_buffer.push_back(framedata);
+            vector<uint8_t> framedata(framesize);
+            copy(data, data + framesize, framedata.begin());
+            m_frame_buffer.push_back(move(framedata));
         }
         else {
             return 0;
@@ -466,9 +466,9 @@ int ZmqAAC::readFromSocket(size_t framesize)
                 for (uint8_t* framestart = data;
                         framestart < &data[5*framesize];
                         framestart += framesize) {
-                    auto audioframe = new uint8_t[framesize];
-                    memcpy(audioframe, framestart, framesize);
-                    m_frame_buffer.push_back(audioframe);
+                    vector<uint8_t> audioframe(framesize);
+                    copy(framestart, framestart + framesize, audioframe.begin());
+                    m_frame_buffer.push_back(move(audioframe));
                 }
             }
             else {

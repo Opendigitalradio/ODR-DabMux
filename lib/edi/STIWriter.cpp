@@ -127,6 +127,8 @@ void STIWriter::assemble()
     stiFrame.timestamp.seconds = m_seconds;
     stiFrame.timestamp.utco = m_utco;
     stiFrame.timestamp.tsta = m_management_data.tsta;
+    stiFrame.audio_levels = m_audio_levels;
+    stiFrame.version_data = m_version_data;
 
     m_frame_callback(move(stiFrame));
 

@@ -107,6 +107,9 @@ class InputStat
     private:
         std::string m_name;
 
+        // Remove all expired fill and peak stats
+        void prune_statistics(const std::chrono::time_point<std::chrono::steady_clock>& timestamp);
+
         /************ STATISTICS ***********/
         // Keep track of buffer fill with timestamps, so that we
         // can calculate the correct state from it.

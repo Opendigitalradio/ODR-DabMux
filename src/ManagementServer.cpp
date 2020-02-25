@@ -379,14 +379,7 @@ void InputStat::notifyBuffer(long bufsize)
     const auto time_now = steady_clock::now();
     m_buffer_fill_stats.push_front({time_now, bufsize});
 
-    // Keep only stats whose timestamp are more recent than
-    // BUFFER_STATS_KEEP_DURATION ago
-    m_buffer_fill_stats.erase(remove_if(
-                m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
-                [&](const fill_stat_t& fs) {
-                    return fs.timestamp + BUFFER_STATS_KEEP_DURATION < time_now;
-                }),
-                m_buffer_fill_stats.end());
+    prune_statistics(time_now);
 }
 
 void InputStat::notifyPeakLevels(int peak_left, int peak_right)
@@ -395,17 +388,9 @@ void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 
     using namespace std::chrono;
     const auto time_now = steady_clock::now();
-
     m_peak_stats.push_front({time_now, peak_left, peak_right});
 
-    // Keep only stats whose timestamp are more recent than
-    // BUFFER_STATS_KEEP_DURATION ago
-    m_peak_stats.erase(remove_if(
-                m_peak_stats.begin(), m_peak_stats.end(),
-                [&](const peak_stat_t& ps) {
-                    return ps.timestamp + PEAK_STATS_KEEP_DURATION < time_now;
-                }),
-                m_peak_stats.end());
+    prune_statistics(time_now);
 
     if (m_peak_stats.size() >= 2) {
         // Calculate the peak over the short window
@@ -602,6 +587,8 @@ std::string InputStat::encodeValuesJSON()
 input_state_t InputStat::determineState()
 {
     const auto now = std::chrono::steady_clock::now();
+    prune_statistics(now);
+
     input_state_t state;
 
     /* if the last event was more that INPUT_COUNTER_RESET_TIME
@@ -640,5 +627,26 @@ input_state_t InputStat::determineState()
     }
 
     return state;
+}
+
+void InputStat::prune_statistics(const std::chrono::time_point<std::chrono::steady_clock>& time_now)
+{
+    // Keep only stats whose timestamp are more recent than
+    // BUFFER_STATS_KEEP_DURATION ago
+    m_buffer_fill_stats.erase(remove_if(
+                m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
+                [&](const fill_stat_t& fs) {
+                    return fs.timestamp + BUFFER_STATS_KEEP_DURATION < time_now;
+                }),
+                m_buffer_fill_stats.end());
+
+    // Keep only stats whose timestamp are more recent than
+    // BUFFER_STATS_KEEP_DURATION ago
+    m_peak_stats.erase(remove_if(
+                m_peak_stats.begin(), m_peak_stats.end(),
+                [&](const peak_stat_t& ps) {
+                    return ps.timestamp + PEAK_STATS_KEEP_DURATION < time_now;
+                }),
+                m_peak_stats.end());
 }
 

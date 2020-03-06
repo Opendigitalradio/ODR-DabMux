@@ -291,6 +291,7 @@ class dabEnsemble : public RemoteControllable {
         // 1 corresponds to the PTy used in RDS
         // 2 corresponds to program types used in north america
         int international_table = 1;
+        int reconfig_counter = 1;
 
         vec_sp_service services;
         vec_sp_component components;

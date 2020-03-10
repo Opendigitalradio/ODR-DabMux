@@ -272,7 +272,7 @@ size_t FIGCarousel::carousel(
     /* Take special care for FIG0/0 */
     auto fig0_0 = find_if(sorted_figs.begin(), sorted_figs.end(),
             [](const FIGCarouselElement* f) {
-            return f->fig->repetition_rate() == FIG_rate::FIG0_0;
+            return (f->fig->figtype() == 0 && f->fig->figextension() == 0);
             });
 
     if (fig0_0 != sorted_figs.end()) {
@@ -314,6 +314,53 @@ size_t FIGCarousel::carousel(
         }
 
         sorted_figs.erase(fig0_0);
+    }
+
+	/* Take special care for FIG0/7 */
+    auto fig0_7 = find_if(sorted_figs.begin(), sorted_figs.end(),
+            [](const FIGCarouselElement* f) {
+            return (f->fig->figtype() == 0 && f->fig->figextension() == 7);
+            });
+
+    if (fig0_7 != sorted_figs.end()) {
+        if (framephase == 0) { // TODO check for all TM
+            FillStatus status = (*fig0_7)->fig->fill(pbuf, available_size);
+            size_t written = status.num_bytes_written;
+
+            if (written > 0) {
+                available_size -= written;
+                pbuf += written;
+
+#if CAROUSELDEBUG
+                if (written) {
+                    std::cerr << " ****** FIG0/7(special) wrote\t" << written << " bytes"
+                        << std::endl;
+                }
+
+                if (    (*fig0_7)->fig->figtype() != 0 or
+                        (*fig0_7)->fig->figextension() != 7 or
+                        written != 4) {
+
+                    std::stringstream ss;
+                    ss << "Assertion error: FIG 0/7 is actually " <<
+                        (*fig0_7)->fig->figtype()
+                        << "/" << (*fig0_7)->fig->figextension() <<
+                        " and wrote " << written << " bytes";
+
+                    throw std::runtime_error(ss.str());
+                }
+#endif
+            }
+            else {
+                throw std::runtime_error("Failed to write FIG0/7");
+            }
+
+            if (status.complete_fig_transmitted) {
+                (*fig0_7)->increase_deadline();
+            }
+        }
+
+        sorted_figs.erase(fig0_7);
     }
 
 

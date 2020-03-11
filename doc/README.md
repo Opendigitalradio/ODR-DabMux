@@ -51,7 +51,7 @@ control interface.
 
 Two scripts are used for monitoring systems: *stats_dabmux_munin.py* for Munin,
 and *retodrs.pl* for Xymon. You can use *show_dabmux_stats.py* to print the
-statistics to console.
+statistics to console. The values are described in *STATS.md*
 
 *DabMux.1* is an old manpage that describes the command line options that
 existed in past versions. It is kept for archive.

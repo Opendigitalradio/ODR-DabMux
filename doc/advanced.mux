@@ -40,7 +40,7 @@ general {
     ; statistics data (buffers, overruns, underruns, etc)
     ; which can then be graphed a tool like Munin
     ; The doc/stats_dabmux_multi.py tool is a suitable
-    ; plugin for that.
+    ; plugin for that. The data fields are documented in doc/STATS.md
     ; If the port is zero, or the line commented, the server
     ; is not started.
     managementport 12720

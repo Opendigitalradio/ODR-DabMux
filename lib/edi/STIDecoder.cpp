@@ -110,7 +110,7 @@ bool STIDecoder::decode_dsti(const vector<uint8_t> &value, uint16_t)
         (md.rfadf ? 9 : 0);
 
     if (value.size() != expected_length) {
-        throw std::logic_error("EDI dsti: Assertion error:"
+        throw std::runtime_error("EDI dsti: decoding error:"
                 "value.size() != expected_length: " +
                to_string(value.size()) + " " +
                to_string(expected_length));

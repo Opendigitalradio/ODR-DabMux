@@ -307,12 +307,17 @@ bool TagDispatcher::decode_tagpacket(const vector<uint8_t> &payload)
         uint32_t taglength = read_32b(payload.begin() + i + 4);
 
         if (taglength % 8 != 0) {
-            etiLog.log(warn, "Invalid tag length!");
+            etiLog.log(warn, "Invalid tag length: not multiple of 8!");
             break;
         }
         taglength /= 8;
 
         length = taglength;
+
+        if (i + 8 + taglength >= payload.size()) {
+            etiLog.log(warn, "Invalid tag length: tag larger than tagpacket!");
+            break;
+        }
 
         vector<uint8_t> tag_value(taglength);
         copy(   payload.begin() + i+8,

@@ -95,7 +95,7 @@ void STIWriter::update_edi_time(
         uint32_t seconds)
 {
     if (not m_proto_valid) {
-        throw std::logic_error("Cannot update time before protocol");
+        throw std::runtime_error("Cannot update time before protocol");
     }
 
     m_utco = utco;
@@ -109,15 +109,15 @@ void STIWriter::update_edi_time(
 void STIWriter::assemble()
 {
     if (not m_proto_valid) {
-        throw std::logic_error("Cannot assemble STI before protocol");
+        throw std::runtime_error("Cannot assemble STI before protocol");
     }
 
     if (not m_management_data_valid) {
-        throw std::logic_error("Cannot assemble STI before management data");
+        throw std::runtime_error("Cannot assemble STI before management data");
     }
 
     if (not m_payload_valid) {
-        throw std::logic_error("Cannot assemble STI without frame data");
+        throw std::runtime_error("Cannot assemble STI without frame data");
     }
 
     // TODO check time validity

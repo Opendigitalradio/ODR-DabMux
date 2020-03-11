@@ -269,11 +269,17 @@ size_t FIGCarousel::carousel(
     /* Data structure to carry FIB */
     size_t available_size = bufsize;
 
-    /* Take special care for FIG0/0 */
+    /* Take special care for FIG0/0 which must be the first FIG of the FIB */
     auto fig0_0 = find_if(sorted_figs.begin(), sorted_figs.end(),
-            [](const FIGCarouselElement* f) {
+        [](const FIGCarouselElement *f) {
             return (f->fig->figtype() == 0 && f->fig->figextension() == 0);
-            });
+        });
+
+    /* FIG0/7 must directly follow FIG 0/0 */
+    auto fig0_7 = find_if(sorted_figs.begin(), sorted_figs.end(),
+        [](const FIGCarouselElement *f) {
+            return (f->fig->figtype() == 0 && f->fig->figextension() == 7);
+        });
 
     if (fig0_0 != sorted_figs.end()) {
         if (framephase == 0) { // TODO check for all TM
@@ -285,84 +291,55 @@ size_t FIGCarousel::carousel(
                 pbuf += written;
 
 #if CAROUSELDEBUG
-                if (written) {
-                    std::cerr << " ****** FIG0/0(special) wrote\t" << written << " bytes"
-                        << std::endl;
-                }
-
-                if (    (*fig0_0)->fig->figtype() != 0 or
-                        (*fig0_0)->fig->figextension() != 0 or
-                        written != 6) {
-
-                    std::stringstream ss;
-                    ss << "Assertion error: FIG 0/0 is actually " <<
-                        (*fig0_0)->fig->figtype()
-                        << "/" << (*fig0_0)->fig->figextension() <<
-                        " and wrote " << written << " bytes";
-
-                    throw std::runtime_error(ss.str());
-                }
+                std::cerr << " ****** FIG0/0(special) wrote\t" << written << " bytes"
+                    << std::endl;
 #endif
             }
             else {
-                throw std::runtime_error("Failed to write FIG0/0");
+                throw std::logic_error("Failed to write FIG0/0");
             }
 
             if (status.complete_fig_transmitted) {
                 (*fig0_0)->increase_deadline();
             }
+            else {
+                throw std::logic_error("FIG0/0 did not complete!");
+            }
+
+            if (fig0_7 != sorted_figs.end()) {
+                FillStatus status0_7 = (*fig0_7)->fig->fill(pbuf, available_size);
+                size_t written = status0_7.num_bytes_written;
+
+                if (written > 0) {
+                    available_size -= written;
+                    pbuf += written;
+
+#if CAROUSELDEBUG
+                    std::cerr << " ****** FIG0/7(special) wrote\t" << written << " bytes"
+                        << std::endl;
+#endif
+                }
+                else {
+                    throw std::logic_error("Failed to write FIG0/7");
+                }
+
+                if (status0_7.complete_fig_transmitted) {
+                    (*fig0_7)->increase_deadline();
+                }
+                else {
+                    throw std::logic_error("FIG0/7 did not complete!");
+                }
+            }
         }
 
+        // never transmit FIG 0/0 in any other spot
         sorted_figs.erase(fig0_0);
     }
 
-	/* Take special care for FIG0/7 */
-    auto fig0_7 = find_if(sorted_figs.begin(), sorted_figs.end(),
-            [](const FIGCarouselElement* f) {
-            return (f->fig->figtype() == 0 && f->fig->figextension() == 7);
-            });
-
+    // never transmit FIG 0/7 except right after FIG 0/0
     if (fig0_7 != sorted_figs.end()) {
-        if (framephase == 0) { // TODO check for all TM
-            FillStatus status = (*fig0_7)->fig->fill(pbuf, available_size);
-            size_t written = status.num_bytes_written;
-
-            if (written > 0) {
-                available_size -= written;
-                pbuf += written;
-
-#if CAROUSELDEBUG
-                if (written) {
-                    std::cerr << " ****** FIG0/7(special) wrote\t" << written << " bytes"
-                        << std::endl;
-                }
-
-                if (    (*fig0_7)->fig->figtype() != 0 or
-                        (*fig0_7)->fig->figextension() != 7 or
-                        written != 4) {
-
-                    std::stringstream ss;
-                    ss << "Assertion error: FIG 0/7 is actually " <<
-                        (*fig0_7)->fig->figtype()
-                        << "/" << (*fig0_7)->fig->figextension() <<
-                        " and wrote " << written << " bytes";
-
-                    throw std::runtime_error(ss.str());
-                }
-#endif
-            }
-            else {
-                throw std::runtime_error("Failed to write FIG0/7");
-            }
-
-            if (status.complete_fig_transmitted) {
-                (*fig0_7)->increase_deadline();
-            }
-        }
-
         sorted_figs.erase(fig0_7);
     }
-
 
     /* Fill the FIB with the FIGs, taking the earliest deadline first */
     while (available_size > 0 and not sorted_figs.empty()) {

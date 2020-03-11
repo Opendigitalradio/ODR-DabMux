@@ -5,6 +5,7 @@
 
    Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
+   Mathisd Kuntze, mathias@kuntze.email
    */
 /*
    This file is part of ODR-DabMux.
@@ -25,21 +26,26 @@
 
 #pragma once
 
-#include "fig/FIG0structs.h"
-#include "fig/FIG0_0.h"
-#include "fig/FIG0_1.h"
-#include "fig/FIG0_2.h"
-#include "fig/FIG0_3.h"
-#include "fig/FIG0_5.h"
-#include "fig/FIG0_6.h"
-#include "fig/FIG0_7.h"
-#include "fig/FIG0_8.h"
-#include "fig/FIG0_9.h"
-#include "fig/FIG0_10.h"
-#include "fig/FIG0_13.h"
-#include "fig/FIG0_17.h"
-#include "fig/FIG0_18.h"
-#include "fig/FIG0_19.h"
-#include "fig/FIG0_21.h"
-#include "fig/FIG0_24.h"
+#include <cstdint>
+#include <map>
 
+namespace FIC {
+
+// FIG type 0/7, Configuration Info (MCI),
+// Service Number information
+class FIG0_7 : public IFIG
+{
+    public:
+        FIG0_7(FIGRuntimeInformation* rti) :
+            m_rti(rti) {}
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate() const { return FIG_rate::FIG0_0; }
+
+        virtual int figtype() const { return 0; }
+        virtual int figextension() const { return 7; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+};
+
+}

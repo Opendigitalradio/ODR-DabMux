@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -98,6 +98,7 @@ class FIGCarousel {
         FIG0_3 m_fig0_3;
         FIG0_5 m_fig0_5;
         FIG0_6 m_fig0_6;
+        FIG0_7 m_fig0_7;
         FIG0_17 m_fig0_17;
         FIG0_8 m_fig0_8;
         FIG1_0 m_fig1_0;

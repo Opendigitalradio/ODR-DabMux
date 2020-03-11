@@ -108,6 +108,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG0_5.h \
 					 src/fig/FIG0_6.cpp \
 					 src/fig/FIG0_6.h \
+                                         src/fig/FIG0_7.cpp \
+                                         src/fig/FIG0_7.h \
 					 src/fig/FIG0_8.cpp \
 					 src/fig/FIG0_8.h \
 					 src/fig/FIG0_9.cpp \

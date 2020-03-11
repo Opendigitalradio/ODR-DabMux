@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -420,6 +420,7 @@ static void parse_general(ptree& pt,
     }
 
     ensemble->international_table = pt_ensemble.get("international-table", 1);
+    ensemble->reconfig_counter = pt_ensemble.get("reconfig-counter", 0);
 
     string lto_auto = pt_ensemble.get("local-time-offset", "");
     if (lto_auto == "auto") {

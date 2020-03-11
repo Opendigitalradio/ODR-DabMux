@@ -325,7 +325,13 @@ void Edi::m_run()
                         fprintf(stderr, "Warning, possible UDP truncation\n");
                     }
                     if (not packet.buffer.empty()) {
-                        m_sti_decoder.push_packet(packet.buffer);
+                        try {
+                            m_sti_decoder.push_packet(packet.buffer);
+                        }
+                        catch (const runtime_error& e) {
+                            etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
+                            this_thread::sleep_for(chrono::milliseconds(24));
+                        }
                     }
                     else {
                         this_thread::sleep_for(chrono::milliseconds(12));
@@ -336,7 +342,13 @@ void Edi::m_run()
                 {
                     auto packet = m_tcp_receive_server.receive();
                     if (not packet.empty()) {
-                        m_sti_decoder.push_bytes(packet);
+                        try {
+                            m_sti_decoder.push_bytes(packet);
+                        }
+                        catch (const runtime_error& e) {
+                            etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
+                            this_thread::sleep_for(chrono::milliseconds(24));
+                        }
                     }
                     else {
                         this_thread::sleep_for(chrono::milliseconds(12));

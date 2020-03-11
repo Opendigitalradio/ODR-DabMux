@@ -109,6 +109,17 @@ ensemble {
                             ; or
     ;local-time-offset 1    ; in hours, supports half-hour offsets
 
+    ; The presence of reconfig-counter enables FIG0/7, which specifies that
+    ; the ensemble is compliant to EN 300 401 version 2.
+    ; You can either set a number which will be used for the Count field in FIG0/7,
+    ;reconfig-counter 23
+    ; or set
+    reconfig-counter hash
+    ; to let ODR-DabMux calculate a hash that depends on your multiplex configuration,
+    ; ensuring that when you change the configuration, the FIG 0/7 Count also changes
+    ;
+    ; Leave the option commented-out if you do not wish to transmit FIG 0/7.
+
     ; If you want to run your machine in UTC time, but still take advantage of the
     ; automatic calculation of the local time offset, set the environment variable TZ
     ; to your timezone (e.g. TZ=Europe/Rome) before you launch ODR-DabMux

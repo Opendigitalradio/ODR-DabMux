@@ -44,6 +44,43 @@
 #include "RemoteControl.h"
 #include "Eti.h"
 
+// Protection levels and bitrates for UEP.
+const unsigned char ProtectionLevelTable[64] = {
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 1,
+    4, 2, 0
+};
+
+const unsigned short BitRateTable[64] = {
+    32, 32, 32, 32, 32,
+    48, 48, 48, 48, 48,
+    56, 56, 56, 56,
+    64, 64, 64, 64, 64,
+    80, 80, 80, 80, 80,
+    96, 96, 96, 96, 96,
+    112, 112, 112, 112,
+    128, 128, 128, 128, 128,
+    160, 160, 160, 160, 160,
+    192, 192, 192, 192, 192,
+    224, 224, 224, 224, 224,
+    256, 256, 256, 256, 256,
+    320, 320, 320,
+    384, 384, 384
+};
+
+
+
 class MuxInitException : public std::exception
 {
     public:
@@ -292,8 +329,13 @@ class dabEnsemble : public RemoteControllable {
         // 2 corresponds to program types used in north america
         int international_table = 1;
 
-        // Modulo-1024 counter for FIG0/7. Set to -1 to disable FIG0/7
-        int reconfig_counter = -1;
+        // Modulo-1024 counter for FIG0/7.
+        // Set to RECONFIG_COUNTER_DISABLED to disable FIG0/7.
+        // Set to RECONFIG_COUNTER_HASH to calculate the counter value using a hash function
+        // on relevant ensemble configuration parameters.
+        static constexpr int RECONFIG_COUNTER_DISABLED = -1;
+        static constexpr int RECONFIG_COUNTER_HASH = -2;
+        int reconfig_counter = RECONFIG_COUNTER_DISABLED;
 
         vec_sp_service services;
         vec_sp_component components;
@@ -333,12 +375,15 @@ enum dab_protection_form_t {
 };
 
 struct dabProtection {
-    unsigned char level;
+    uint8_t level;
     dab_protection_form_t form;
     union {
         dabProtectionUEP uep;
         dabProtectionEEP eep;
     };
+
+    // According to ETSI EN 300 799 5.4.1.2
+    uint8_t to_tpl() const;
 };
 
 class DabSubchannel

@@ -400,6 +400,16 @@ vec_sp_component::iterator getComponent(
     return components.end();
 }
 
+uint8_t dabProtection::to_tpl() const
+{
+    if (form == UEP) {
+        return 0x10 | ProtectionLevelTable[uep.tableIndex];
+    }
+    else if (form == EEP) {
+        return 0x20 | (eep.GetOption() << 2) | level;
+    }
+    throw logic_error("Invalid protection form");
+}
 
 vec_sp_component::iterator getComponent(
         vec_sp_component& components,

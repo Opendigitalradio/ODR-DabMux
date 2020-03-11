@@ -31,41 +31,6 @@
 
 using namespace std;
 
-// Protection levels and bitrates for UEP.
-const unsigned char ProtectionLevelTable[64] = {
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1, 0,
-    4, 3, 2, 1, 0,
-    4, 3, 1,
-    4, 2, 0
-};
-
-const unsigned short BitRateTable[64] = {
-    32, 32, 32, 32, 32,
-    48, 48, 48, 48, 48,
-    56, 56, 56, 56,
-    64, 64, 64, 64, 64,
-    80, 80, 80, 80, 80,
-    96, 96, 96, 96, 96,
-    112, 112, 112, 112,
-    128, 128, 128, 128, 128,
-    160, 160, 160, 160, 160,
-    192, 192, 192, 192, 192,
-    224, 224, 224, 224, 224,
-    256, 256, 256, 256, 256,
-    320, 320, 320,
-    384, 384, 384
-};
-
 static vector<string> split_pipe_separated_string(const std::string& s)
 {
     stringstream ss;
@@ -174,6 +139,48 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         }
     }
 
+    if (ensemble->reconfig_counter == dabEnsemble::RECONFIG_COUNTER_HASH) {
+        vector<uint32_t> data_to_hash;
+        data_to_hash.push_back(ensemble->id);
+        data_to_hash.push_back(ensemble->ecc);
+
+        for (const auto& srv : ensemble->services) {
+            data_to_hash.push_back(srv->id);
+            data_to_hash.push_back(srv->ecc);
+        }
+
+        for (const auto& sc : ensemble->components) {
+            data_to_hash.push_back(sc->serviceId);
+            data_to_hash.push_back(sc->subchId);
+            data_to_hash.push_back(sc->type);
+            data_to_hash.push_back(sc->SCIdS);
+        }
+
+
+        for (const auto& sub : ensemble->subchannels) {
+            data_to_hash.push_back(sub->id);
+            data_to_hash.push_back(sub->startAddress);
+            data_to_hash.push_back(sub->bitrate);
+
+            uint32_t t = 0;
+            switch (sub->type) {
+                case subchannel_type_t::DABAudio : t = 1; break;
+                case subchannel_type_t::DABPlusAudio: t = 2; break;
+                case subchannel_type_t::DataDmb: t = 3; break;
+                case subchannel_type_t::Packet: t= 4; break;
+            }
+            data_to_hash.push_back(t);
+            data_to_hash.push_back(sub->protection.to_tpl());
+        }
+
+        uint16_t crc_tmp = 0xFFFF;
+        crc_tmp = crc16(crc_tmp,
+                reinterpret_cast<uint16_t*>(data_to_hash.data()),
+                data_to_hash.size() * sizeof(data_to_hash.data()) / sizeof(uint16_t));
+
+        ensemble->reconfig_counter = crc_tmp % 1024;
+        etiLog.level(info) << "Calculated FIG 0/7 Count = " << ensemble->reconfig_counter;
+    }
 }
 
 
@@ -480,20 +487,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     //  number of channels * 4 octets = nb octets total
     int edi_stream_id = 1;
     for (auto subchannel : ensemble->subchannels) {
-        dabProtection* protection = &subchannel->protection;
         eti_STC *sstc = (eti_STC *) & etiFrame[index];
 
         sstc->SCID = subchannel->id;
         sstc->startAddress_high = subchannel->startAddress / 256;
         sstc->startAddress_low = subchannel->startAddress % 256;
-        // depends on the desired protection form
-        if (protection->form == UEP) {
-            sstc->TPL = 0x10 |
-                ProtectionLevelTable[protection->uep.tableIndex];
-        }
-        else if (protection->form == EEP) {
-            sstc->TPL = 0x20 | (protection->eep.GetOption() << 2) | protection->level;
-        }
+        sstc->TPL = subchannel->protection.to_tpl();
 
         // Sub-channel Stream Length, multiple of 64 bits
         sstc->STL_high = subchannel->getSizeDWord() / 256;

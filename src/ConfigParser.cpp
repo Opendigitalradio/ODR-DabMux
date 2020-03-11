@@ -420,7 +420,22 @@ static void parse_general(ptree& pt,
     }
 
     ensemble->international_table = pt_ensemble.get("international-table", ensemble->international_table);
-    ensemble->reconfig_counter = pt_ensemble.get("reconfig-counter", ensemble->reconfig_counter);
+
+    bool reconfig_counter_is_hash = false;
+    try {
+        if (pt_ensemble.get<string>("reconfig-counter") == "hash") {
+            reconfig_counter_is_hash = true;
+        }
+    }
+    catch (const ptree_error &e) {
+    }
+
+    if (reconfig_counter_is_hash) {
+        ensemble->reconfig_counter = -2;
+    }
+    else {
+        ensemble->reconfig_counter = pt_ensemble.get("reconfig-counter", ensemble->reconfig_counter);
+    }
 
     string lto_auto = pt_ensemble.get("local-time-offset", "");
     if (lto_auto == "auto") {

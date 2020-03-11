@@ -43,11 +43,20 @@ struct FIGtype0_7 {
     uint8_t ReconfigCounter_low:8;
 } PACKED;
 
-//=========== FIG 0/0 ===========
+//=========== FIG 0/7 ===========
 
 FillStatus FIG0_7::fill(uint8_t *buf, size_t max_size)
 {
     FillStatus fs;
+
+    auto ensemble = m_rti->ensemble;
+
+    if (ensemble->reconfig_counter < 0) {
+        // FIG 0/7 is disabled
+        fs.complete_fig_transmitted = true;
+        fs.num_bytes_written = 0;
+        return fs;
+    }
 
     FIGtype0_7 *fig0_7;
     fig0_7 = (FIGtype0_7 *)buf;
@@ -58,8 +67,6 @@ FillStatus FIG0_7::fill(uint8_t *buf, size_t max_size)
     fig0_7->OE = 0;
     fig0_7->PD = 0;
     fig0_7->Extension = 7;
-
-    auto ensemble = m_rti->ensemble;
 
     fig0_7->ServiceCount = ensemble->services.size();
     fig0_7->ReconfigCounter_high = (ensemble->reconfig_counter % 1024) / 256;

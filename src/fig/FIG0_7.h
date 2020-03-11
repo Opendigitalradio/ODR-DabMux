@@ -5,7 +5,7 @@
 
    Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
-   Mathisd Kuntze, mathias@kuntze.email
+   Mathias Kuntze, mathias@kuntze.email
    */
 /*
    This file is part of ODR-DabMux.

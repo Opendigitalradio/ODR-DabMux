@@ -319,15 +319,9 @@ size_t FIGCarousel::carousel(
                         << std::endl;
 #endif
                 }
-                else {
-                    throw std::logic_error("Failed to write FIG0/7");
-                }
 
                 if (status0_7.complete_fig_transmitted) {
                     (*fig0_7)->increase_deadline();
-                }
-                else {
-                    throw std::logic_error("FIG0/7 did not complete!");
                 }
             }
         }

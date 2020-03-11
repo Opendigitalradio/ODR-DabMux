@@ -72,6 +72,12 @@ ensemble {
                           ; 1 corresponds to the PTy used in RDS
                           ; 2 corresponds to program types used in north america
 
+    ;reconfig-counter 1 ; Uncomment this option to enable FIG0/7, which specifies that
+                        ; the ensemble is compliant to EN 300 401 version 2
+                        ; This setting sets the Count field of FIG0/7, which is a
+                        ; modulo-1024 binary counter that increments by one for every multiplex reconfiguration.
+
+
     ; all labels are maximum 16 characters in length
     label "OpenDigitalRadio"
     ; The short label is built from the label by erasing letters, and cannot

@@ -193,6 +193,7 @@ static void parse_linkage(ptree& pt,
                     linkageset->id_list.push_back(link);
                 }
             }
+            rcs.enrol(linkageset.get());
             ensemble->linkagesets.push_back(linkageset);
         }
     }
@@ -580,7 +581,7 @@ void parse_ptree(
                     etiLog.level(warn) << "Cannot parse '" << clusterlist <<
                         "' announcement clusters for service " << serviceuid <<
                         ": " << e.what();
-                }
+                } 
             }
 
             if (service->ASu != 0 and service->clusters.empty()) {

@@ -542,15 +542,32 @@ struct ServiceLink {
  * TS 103 176 Clause 5.2.3 "Linkage sets". This information will
  * be encoded in FIG 0/6.
  */
-class LinkageSet {
+class LinkageSet : public RemoteControllable  {
     public:
         LinkageSet(const std::string& name,
                 uint16_t lsn,
                 bool active,
                 bool hard,
-                bool international);
+                bool international) : 
+            RemoteControllable(name),
+            lsn(lsn),
+            active(active),
+            hard(hard),
+            international(international)
+        {   
+            RC_ADD_PARAMETER(active, "Signal this linkage set active [0 or 1]");
+        }
 
-        std::string get_name(void) const { return m_name; }
+        LinkageSet(const LinkageSet& other) :
+            LinkageSet(other.m_rc_name, 
+                       other.lsn, 
+                       other.active, 
+                       other.hard, 
+                       other.international)
+        {   
+        }
+
+        std::string get_name(void) const { return m_rc_name; }
 
         std::list<ServiceLink> id_list;
 
@@ -566,13 +583,22 @@ class LinkageSet {
 
         std::string keyservice; // TODO replace by pointer to service
 
+        //LinkageSet& operator=(const LinkageSet& other) = default;
+
         /* Return a LinkageSet with id_list filtered to include
          * only those links of a given type
          */
         LinkageSet filter_type(const ServiceLinkType type);
 
+                /* Remote control */
+        virtual void set_parameter(const std::string& parameter,
+               const std::string& value);
+
+        /* Getting a parameter always returns a string. */
+        virtual const std::string get_parameter(const std::string& parameter) const;
+
     private:
-        std::string m_name;
+        mutable std::mutex m_active_mutex;
 };
 
 // FIG 0/21

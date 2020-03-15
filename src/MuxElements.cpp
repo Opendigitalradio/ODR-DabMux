@@ -805,22 +805,11 @@ size_t DabSubchannel::readFrame(uint8_t *buffer, size_t size, std::time_t second
     throw logic_error("Unhandled case");
 }
 
-LinkageSet::LinkageSet(const std::string& name,
-        uint16_t lsn,
-        bool active,
-        bool hard,
-        bool international) :
-    lsn(lsn),
-    active(active),
-    hard(hard),
-    international(international),
-    m_name(name)
-{}
 
 
 LinkageSet LinkageSet::filter_type(const ServiceLinkType type)
 {
-    LinkageSet lsd(m_name, lsn, active, hard, international);
+    LinkageSet lsd(m_rc_name, lsn, active, hard, international);
 
     lsd.active = active;
     lsd.keyservice = keyservice;
@@ -832,4 +821,40 @@ LinkageSet LinkageSet::filter_type(const ServiceLinkType type)
     }
 
     return lsd;
+}
+
+
+void LinkageSet::set_parameter(const string& parameter,
+        const string& value)
+{
+    if (parameter == "active") {
+        stringstream ss;
+        ss << value;
+
+        lock_guard<mutex> lock(m_active_mutex);
+        ss >> active;
+    }
+    else {
+        stringstream ss;
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+}
+
+const string LinkageSet::get_parameter(const string& parameter) const
+{
+    using namespace std::chrono;
+
+    stringstream ss;
+    if (parameter == "active") {
+        lock_guard<mutex> lock(m_active_mutex);
+        ss << active;
+    }
+    else {
+        ss << "Parameter '" << parameter <<
+            "' is not exported by controllable " << get_rc_name();
+        throw ParameterError(ss.str());
+    }
+    return ss.str();
 }

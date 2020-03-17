@@ -509,6 +509,11 @@ static void parse_general(ptree& pt,
                 throw runtime_error("Announcement cluster id " +
                         to_string(cl->cluster_id) + " is not allowed");
             }
+            if (cl->cluster_id == 255) {
+                etiLog.level(debug) <<
+                    "Alarm flag for FIG 0/0 is set 1, because announcement group with cluster id oxFF is found.";
+                ensemble->alarm_flag = 1;
+            }
             cl->flags = get_announcement_flag_from_ptree(
                     pt_announcement.get_child("flags"));
             cl->subchanneluid = pt_announcement.get<string>("subchannel");

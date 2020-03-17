@@ -337,6 +337,10 @@ class dabEnsemble : public RemoteControllable {
         static constexpr int RECONFIG_COUNTER_HASH = -2;
         int reconfig_counter = RECONFIG_COUNTER_DISABLED;
 
+        // alarm flag is use for AL flag in FIG 0/0.
+        // set to true if one announcement group with cluster ID 0xFF is available in multiplex file
+        bool alarm_flag = 0;
+
         vec_sp_service services;
         vec_sp_component components;
         vec_sp_subchannel subchannels;

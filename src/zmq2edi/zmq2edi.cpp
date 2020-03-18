@@ -426,8 +426,11 @@ int main(int argc, char **argv)
     try {
         return start(argc, argv);
     }
-    catch (std::runtime_error &e) {
-        etiLog.level(error) << "Error: " << e.what();
+    catch (const std::runtime_error &e) {
+        etiLog.level(error) << "Runtime error: " << e.what();
+    }
+    catch (const std::logic_error &e) {
+        etiLog.level(error) << "Logic error! " << e.what();
     }
 
     return 1;

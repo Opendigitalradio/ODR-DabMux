@@ -103,7 +103,10 @@ std::chrono::system_clock::time_point frame_timestamp_t::to_system_clock() const
     auto ts = chrono::system_clock::from_time_t(to_unix_epoch());
 
     // PPS offset in seconds = tsta / 16384000
-    ts += chrono::nanoseconds(std::lrint(tsta / 0.016384));
+    // We cannot use nanosecond resolution because not all platforms use a
+    // system_clock that has nanosecond precision. It's not really important,
+    // as this function is only used for debugging.
+    ts += chrono::microseconds(std::lrint(tsta / 16.384));
 
     return ts;
 }

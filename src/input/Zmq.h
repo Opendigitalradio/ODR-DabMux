@@ -119,8 +119,8 @@ struct dab_input_zmq_config_t
     std::string curve_encoder_keyfile;
 };
 
-#define ZMQ_ENCODER_FDK 1
-#define ZMQ_ENCODER_TOOLAME 2
+#define ZMQ_ENCODER_AACPLUS 1
+#define ZMQ_ENCODER_MPEG_L2 2
 
 /* This defines the on-wire representation of a ZMQ message header.
  *

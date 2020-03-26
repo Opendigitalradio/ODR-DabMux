@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -347,6 +347,7 @@ int start(int argc, char **argv)
 
                 // Event received: recv will not block
                 zmq_sock.recv(&incoming);
+                const auto received_at = std::chrono::steady_clock::now();
 
                 zmq_dab_message_t* dab_msg = (zmq_dab_message_t*)incoming.data();
 
@@ -358,7 +359,8 @@ int start(int argc, char **argv)
                 int offset = sizeof(dab_msg->version) +
                     NUM_FRAMES_PER_ZMQ_MESSAGE * sizeof(*dab_msg->buflen);
 
-                std::list<std::pair<std::vector<uint8_t>, metadata_t> > all_frames;
+                std::vector<frame_t> all_frames;
+                all_frames.reserve(NUM_FRAMES_PER_ZMQ_MESSAGE);
 
                 for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
                     if (dab_msg->buflen[i] <= 0 or dab_msg->buflen[i] > 6144) {
@@ -367,18 +369,17 @@ int start(int argc, char **argv)
                         error_count++;
                     }
                     else {
-                        std::vector<uint8_t> buf(6144, 0x55);
+                        frame_t frame;
+                        frame.data.resize(6144, 0x55);
+                        frame.received_at = received_at;
 
                         const int framesize = dab_msg->buflen[i];
 
-                        memcpy(&buf.front(),
+                        memcpy(frame.data.data(),
                                 ((uint8_t*)incoming.data()) + offset,
                                 framesize);
 
-                        all_frames.emplace_back(
-                                std::piecewise_construct,
-                                std::make_tuple(std::move(buf)),
-                                std::make_tuple());
+                        all_frames.push_back(std::move(frame));
 
                         offset += framesize;
                     }
@@ -387,7 +388,7 @@ int start(int argc, char **argv)
                 for (auto &f : all_frames) {
                     size_t consumed_bytes = 0;
 
-                    f.second = get_md_one_frame(
+                    f.metadata = get_md_one_frame(
                             static_cast<uint8_t*>(incoming.data()) + offset,
                             incoming.size() - offset,
                             &consumed_bytes);
@@ -396,7 +397,7 @@ int start(int argc, char **argv)
                 }
 
                 for (auto &f : all_frames) {
-                    edisender.push_frame(f);
+                    edisender.push_frame(std::move(f));
                 }
             }
         }

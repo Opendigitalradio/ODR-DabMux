@@ -59,6 +59,8 @@ static void usage()
     cerr << " <source> is a ZMQ URL that points to a ODR-DabMux ZMQ output." << endl;
     cerr << " -w <delay>            Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
     cerr << "                       Negative delay values are also allowed." << endl;
+    cerr << " -C <path to script>   Before starting, run the given script, and only start if it returns 0." << endl;
+    cerr << "                       This is useful for checking that NTP is properly synchronised" << endl;
     cerr << " -x                    Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
     cerr << " -p <destination port> Set the destination port." << endl;
     cerr << " -P                    Disable PFT and send AFPackets." << endl;
@@ -234,12 +236,16 @@ int start(int argc, char **argv)
     int delay_ms = 500;
     bool drop_late_packets = false;
     uint32_t backoff_after_reset_ms = DEFAULT_BACKOFF;
+    std::string startupcheck;
 
     int ch = 0;
     while (ch != -1) {
-        ch = getopt(argc, argv, "d:p:s:S:t:Pf:i:Dva:b:w:xh");
+        ch = getopt(argc, argv, "C:d:p:s:S:t:Pf:i:Dva:b:w:xh");
         switch (ch) {
             case -1:
+                break;
+            case 'C':
+                startupcheck = optarg;
                 break;
             case 'd':
             case 's':
@@ -295,6 +301,25 @@ int start(int argc, char **argv)
             default:
                 usage();
                 return 1;
+        }
+    }
+
+    if (not startupcheck.empty()) {
+        etiLog.level(info) << "Running startup check '" << startupcheck << "'";
+        int wstatus = system(startupcheck.c_str());
+
+        if (WIFEXITED(wstatus)) {
+            if (WEXITSTATUS(wstatus) == 0) {
+                etiLog.level(info) << "Startup check ok";
+            }
+            else {
+                etiLog.level(error) << "Startup check failed, returned " << WEXITSTATUS(wstatus);
+                return 1;
+            }
+        }
+        else {
+            etiLog.level(error) << "Startup check failed, child didn't terminate normally";
+            return 1;
         }
     }
 
@@ -424,8 +449,13 @@ int main(int argc, char **argv)
 #endif
         " starting up";
 
+    int ret = 1;
+
     try {
-        return start(argc, argv);
+        ret = start(argc, argv);
+
+        // To make sure things get printed to stderr
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
     catch (const std::runtime_error &e) {
         etiLog.level(error) << "Runtime error: " << e.what();
@@ -434,5 +464,5 @@ int main(int argc, char **argv)
         etiLog.level(error) << "Logic error! " << e.what();
     }
 
-    return 1;
+    return ret;
 }

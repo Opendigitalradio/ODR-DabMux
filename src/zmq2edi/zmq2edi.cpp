@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -59,6 +59,8 @@ static void usage()
     cerr << " <source> is a ZMQ URL that points to a ODR-DabMux ZMQ output." << endl;
     cerr << " -w <delay>            Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
     cerr << "                       Negative delay values are also allowed." << endl;
+    cerr << " -C <path to script>   Before starting, run the given script, and only start if it returns 0." << endl;
+    cerr << "                       This is useful for checking that NTP is properly synchronised" << endl;
     cerr << " -x                    Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
     cerr << " -p <destination port> Set the destination port." << endl;
     cerr << " -P                    Disable PFT and send AFPackets." << endl;
@@ -234,12 +236,16 @@ int start(int argc, char **argv)
     int delay_ms = 500;
     bool drop_late_packets = false;
     uint32_t backoff_after_reset_ms = DEFAULT_BACKOFF;
+    std::string startupcheck;
 
     int ch = 0;
     while (ch != -1) {
-        ch = getopt(argc, argv, "d:p:s:S:t:Pf:i:Dva:b:w:xh");
+        ch = getopt(argc, argv, "C:d:p:s:S:t:Pf:i:Dva:b:w:xh");
         switch (ch) {
             case -1:
+                break;
+            case 'C':
+                startupcheck = optarg;
                 break;
             case 'd':
             case 's':
@@ -298,6 +304,25 @@ int start(int argc, char **argv)
         }
     }
 
+    if (not startupcheck.empty()) {
+        etiLog.level(info) << "Running startup check '" << startupcheck << "'";
+        int wstatus = system(startupcheck.c_str());
+
+        if (WIFEXITED(wstatus)) {
+            if (WEXITSTATUS(wstatus) == 0) {
+                etiLog.level(info) << "Startup check ok";
+            }
+            else {
+                etiLog.level(error) << "Startup check failed, returned " << WEXITSTATUS(wstatus);
+                return 1;
+            }
+        }
+        else {
+            etiLog.level(error) << "Startup check failed, child didn't terminate normally";
+            return 1;
+        }
+    }
+
     add_edi_destination();
 
     if (optind >= argc) {
@@ -347,6 +372,7 @@ int start(int argc, char **argv)
 
                 // Event received: recv will not block
                 zmq_sock.recv(&incoming);
+                const auto received_at = std::chrono::steady_clock::now();
 
                 zmq_dab_message_t* dab_msg = (zmq_dab_message_t*)incoming.data();
 
@@ -358,7 +384,8 @@ int start(int argc, char **argv)
                 int offset = sizeof(dab_msg->version) +
                     NUM_FRAMES_PER_ZMQ_MESSAGE * sizeof(*dab_msg->buflen);
 
-                std::list<std::pair<std::vector<uint8_t>, metadata_t> > all_frames;
+                std::vector<frame_t> all_frames;
+                all_frames.reserve(NUM_FRAMES_PER_ZMQ_MESSAGE);
 
                 for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
                     if (dab_msg->buflen[i] <= 0 or dab_msg->buflen[i] > 6144) {
@@ -367,18 +394,17 @@ int start(int argc, char **argv)
                         error_count++;
                     }
                     else {
-                        std::vector<uint8_t> buf(6144, 0x55);
+                        frame_t frame;
+                        frame.data.resize(6144, 0x55);
+                        frame.received_at = received_at;
 
                         const int framesize = dab_msg->buflen[i];
 
-                        memcpy(&buf.front(),
+                        memcpy(frame.data.data(),
                                 ((uint8_t*)incoming.data()) + offset,
                                 framesize);
 
-                        all_frames.emplace_back(
-                                std::piecewise_construct,
-                                std::make_tuple(std::move(buf)),
-                                std::make_tuple());
+                        all_frames.push_back(std::move(frame));
 
                         offset += framesize;
                     }
@@ -387,7 +413,7 @@ int start(int argc, char **argv)
                 for (auto &f : all_frames) {
                     size_t consumed_bytes = 0;
 
-                    f.second = get_md_one_frame(
+                    f.metadata = get_md_one_frame(
                             static_cast<uint8_t*>(incoming.data()) + offset,
                             incoming.size() - offset,
                             &consumed_bytes);
@@ -396,7 +422,7 @@ int start(int argc, char **argv)
                 }
 
                 for (auto &f : all_frames) {
-                    edisender.push_frame(f);
+                    edisender.push_frame(std::move(f));
                 }
             }
         }
@@ -423,12 +449,20 @@ int main(int argc, char **argv)
 #endif
         " starting up";
 
+    int ret = 1;
+
     try {
-        return start(argc, argv);
+        ret = start(argc, argv);
+
+        // To make sure things get printed to stderr
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
-    catch (std::runtime_error &e) {
-        etiLog.level(error) << "Error: " << e.what();
+    catch (const std::runtime_error &e) {
+        etiLog.level(error) << "Runtime error: " << e.what();
+    }
+    catch (const std::logic_error &e) {
+        etiLog.level(error) << "Logic error! " << e.what();
     }
 
-    return 1;
+    return ret;
 }

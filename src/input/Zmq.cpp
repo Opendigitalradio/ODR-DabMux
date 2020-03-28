@@ -369,7 +369,7 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     if (    msg.size() >= sizeof(zmq_frame_header_t) and
             msg.size() == ZMQ_FRAME_SIZE(frame) and
             frame->version == 1 and
-            frame->encoder == ZMQ_ENCODER_TOOLAME) {
+            frame->encoder == ZMQ_ENCODER_MPEG_L2) {
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
 
@@ -439,7 +439,7 @@ int ZmqAAC::readFromSocket(size_t framesize)
     if (    msg.size() >= sizeof(zmq_frame_header_t) and
             msg.size() == ZMQ_FRAME_SIZE(frame) and
             frame->version == 1 and
-            frame->encoder == ZMQ_ENCODER_FDK) {
+            frame->encoder == ZMQ_ENCODER_AACPLUS) {
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
 

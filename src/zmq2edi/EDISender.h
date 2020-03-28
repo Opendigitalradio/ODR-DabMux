@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -45,7 +45,11 @@ struct metadata_t {
     uint16_t dlfc;
 };
 
-using frame_t = std::pair<std::vector<uint8_t>, metadata_t>;
+struct frame_t {
+    std::vector<uint8_t> data;
+    metadata_t metadata;
+    std::chrono::steady_clock::time_point received_at;
+};
 
 class EDISender {
     public:
@@ -55,11 +59,11 @@ class EDISender {
         ~EDISender();
         void start(const edi::configuration_t& conf,
                 int delay_ms, bool drop_late_packets);
-        void push_frame(const frame_t& frame);
+        void push_frame(frame_t&& frame);
         void print_configuration(void);
 
     private:
-        void send_eti_frame(uint8_t* p, metadata_t metadata);
+        void send_eti_frame(frame_t& frame);
         void process(void);
 
         int tist_delay_ms;
@@ -67,13 +71,15 @@ class EDISender {
         std::atomic<bool> running;
         std::thread process_thread;
         edi::configuration_t edi_conf;
-        std::chrono::steady_clock::time_point startTime;
         ThreadsafeQueue<frame_t> frames;
 
         std::shared_ptr<edi::Sender> edi_sender;
 
-        // For statistics about wait time before we transmit packets,
-        // in microseconds
-        std::vector<double> wait_times;
+        struct buffering_stat_t {
+            // Time between when we received the packets and when we transmit packets, in microseconds
+            double buffering_time_us = 0.0;
+            bool late = false;
+        };
+        std::vector<buffering_stat_t> buffering_stats;
 
 };

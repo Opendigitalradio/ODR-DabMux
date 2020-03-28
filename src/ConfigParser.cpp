@@ -193,7 +193,6 @@ static void parse_linkage(ptree& pt,
                     linkageset->id_list.push_back(link);
                 }
             }
-            rcs.enrol(linkageset.get());
             ensemble->linkagesets.push_back(linkageset);
         }
     }

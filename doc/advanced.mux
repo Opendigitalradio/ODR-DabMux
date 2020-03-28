@@ -134,6 +134,7 @@ services {
             Finance false
 
             ; a comma separated list of clusters in which the service belongs to
+            ; cluster id 255 is not specified here and is ignored (for FIG 0/18)
             clusters "1,2"
         }
     }

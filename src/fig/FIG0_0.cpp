@@ -67,7 +67,7 @@ FillStatus FIG0_0::fill(uint8_t *buf, size_t max_size)
 
     fig0_0->EId = htons(m_rti->ensemble->id);
     fig0_0->Change = 0;
-    fig0_0->Al = 0;
+    fig0_0->Al = m_rti->ensemble->alarm_flag;
     fig0_0->CIFcnt_hight = (m_rti->currentFrame / 250) % 20;
     fig0_0->CIFcnt_low = (m_rti->currentFrame % 250);
 

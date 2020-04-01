@@ -504,9 +504,14 @@ static void parse_general(ptree& pt,
 
             auto cl = make_shared<AnnouncementCluster>(name);
             cl->cluster_id = hexparse(pt_announcement.get<string>("cluster"));
-            if (cl->cluster_id == 0 or cl->cluster_id == 0xFF) {
+            if (cl->cluster_id == 0) {
                 throw runtime_error("Announcement cluster id " +
                         to_string(cl->cluster_id) + " is not allowed");
+            }
+            if (cl->cluster_id == 255) {
+                etiLog.level(debug) <<
+                    "Alarm flag for FIG 0/0 is set 1, because announcement group with cluster id oxFF is found.";
+                ensemble->alarm_flag = 1;
             }
             cl->flags = get_announcement_flag_from_ptree(
                     pt_announcement.get_child("flags"));
@@ -574,7 +579,13 @@ void parse_ptree(
                     continue;
                 }
                 try {
-                    service->clusters.push_back(hexparse(cluster_s));
+                    auto cluster_id = hexparse(cluster_s);
+                    if (cluster_id == 255) {
+                        etiLog.level(warn) << "Announcement cluster id " +
+                                to_string(cluster_id) + " is not allowed and is ignored in FIG 0/18.";
+                        continue;
+                    }
+                    service->clusters.push_back(cluster_id);
                 }
                 catch (const std::exception& e) {
                     etiLog.level(warn) << "Cannot parse '" << clusterlist <<

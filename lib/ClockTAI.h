@@ -79,14 +79,15 @@ class ClockTAI : public RemoteControllable {
         // Protect all data members, as RC functions are in another thread
         mutable std::mutex m_data_mutex;
 
-        // The currently used TAI-UTC offset
+        // The currently used TAI-UTC offset, extracted from m_bulletin and cached here
+        // to avoid having to parse the bulletin all the time
         int m_offset = 0;
         int m_offset_valid = false;
 
         std::vector<std::string> m_bulletin_urls;
 
         std::string m_bulletin;
-        std::chrono::system_clock::time_point m_bulletin_download_time;
+        std::chrono::system_clock::time_point m_bulletin_refresh_time;
 
         // Update the cache file with the current m_bulletin
         void update_cache(const char* cache_filename);

@@ -1,6 +1,19 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2020-04-15: Matthias P. Braendli <matthias@mpb.li>
+	(v3.1.0):
+		Initialise TIST on startup rounded to 24ms, as it was done before
+		v2.4.0 (see '5b1dea7').
+		Refresh TAI bulletin before it expires.
+		Set SO_REUSEADDR for TCP listening sockets (avoids some startup failures).
+		Add EDI input TIST delay setting, and improve EDI input stats and error handling.
+		Add FIG 0/7 and Alarm announcement support (Thanks to Mathias Kuntze).
+		Add startupcheck functionality to ODR-DabMux and ODR-ZMQ2EDI.
+		ZMQ2EDI will not quit anymore in case of input issues.
+		Handle FCT discontinuity in ZMQ2EDI, and display better statistics
+		which are usable by the new munin stats script doc/stats_zmq2edi_munin.py.
+
 2019-10-30: Matthias P. Braendli <matthias@mpb.li>
 	(v3.0.1):
 		Fix compilation on older systems (like debian jessie)

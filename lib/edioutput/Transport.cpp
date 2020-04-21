@@ -87,9 +87,8 @@ Sender::Sender(const configuration_t& conf) :
             tcp_dispatchers.emplace(tcp_dest.get(), dispatcher);
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_client_t>(edi_dest)) {
-            auto tcp_socket = make_shared<Socket::TCPSocket>();
-            tcp_socket->connect(tcp_dest->dest_addr, tcp_dest->dest_port);
-            tcp_senders.emplace(tcp_dest.get(), tcp_socket);
+            auto tcp_send_client = make_shared<Socket::TCPSendClient>(tcp_dest->dest_addr, tcp_dest->dest_port);
+            tcp_senders.emplace(tcp_dest.get(), tcp_send_client);
         }
         else {
             throw logic_error("EDI destination not implemented");
@@ -127,8 +126,18 @@ void Sender::write(const TagPacket& tagpacket)
             edi_fragments = edi_interleaver.Interleave(edi_fragments);
         }
 
+        if (m_conf.verbose) {
+            fprintf(stderr, "EDI number of PFT fragments %zu\n",
+                    edi_fragments.size());
+        }
+
         // Send over ethernet
-        for (const auto& edi_frag : edi_fragments) {
+        for (auto& edi_frag : edi_fragments) {
+            if (m_conf.dump) {
+                ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+                copy(edi_frag.begin(), edi_frag.end(), debug_iterator);
+            }
+
             for (auto& dest : m_conf.destinations) {
                 if (const auto& udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(dest)) {
                     Socket::InetAddress addr;
@@ -140,26 +149,21 @@ void Sender::write(const TagPacket& tagpacket)
                     tcp_dispatchers.at(tcp_dest.get())->write(edi_frag);
                 }
                 else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_client_t>(dest)) {
-                    tcp_senders.at(tcp_dest.get())->sendall(edi_frag.data(), edi_frag.size());
+                    tcp_senders.at(tcp_dest.get())->sendall(edi_frag);
                 }
                 else {
                     throw logic_error("EDI destination not implemented");
                 }
             }
-
-            if (m_conf.dump) {
-                ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-                copy(edi_frag.begin(), edi_frag.end(), debug_iterator);
-            }
-        }
-
-        if (m_conf.verbose) {
-            fprintf(stderr, "EDI number of PFT fragments %zu\n",
-                    edi_fragments.size());
         }
     }
     else {
         // Send over ethernet
+        if (m_conf.dump) {
+            ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
+            copy(af_packet.begin(), af_packet.end(), debug_iterator);
+        }
+
         for (auto& dest : m_conf.destinations) {
             if (const auto& udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(dest)) {
                 Socket::InetAddress addr;
@@ -171,16 +175,11 @@ void Sender::write(const TagPacket& tagpacket)
                 tcp_dispatchers.at(tcp_dest.get())->write(af_packet);
             }
             else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_client_t>(dest)) {
-                tcp_senders.at(tcp_dest.get())->sendall(af_packet.data(), af_packet.size());
+                tcp_senders.at(tcp_dest.get())->sendall(af_packet);
             }
             else {
                 throw logic_error("EDI destination not implemented");
             }
-        }
-
-        if (m_conf.dump) {
-            ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-            copy(af_packet.begin(), af_packet.end(), debug_iterator);
         }
     }
 }

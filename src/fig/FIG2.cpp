@@ -34,7 +34,7 @@ namespace FIC {
 
 using namespace std;
 
-static void write_fig2_segment_field(
+static uint8_t* write_fig2_segment_field(
         uint8_t *buf, ssize_t& remaining, FIG2_Segments& segments, const DabLabel& label)
 {
     if (segments.current_segment_index() == 0) {
@@ -70,6 +70,7 @@ static void write_fig2_segment_field(
     copy(character_field.begin(), character_field.end(), buf);
     buf += character_field.size();
     remaining -= character_field.size();
+    return buf;
 }
 
 void FIG2_Segments::clear()
@@ -202,7 +203,7 @@ FillStatus FIG2_0::fill(uint8_t *buf, size_t max_size)
     buf += 2;
     remaining -= 2;
 
-    write_fig2_segment_field(buf, remaining, m_segments, ensemble->label);
+    buf = write_fig2_segment_field(buf, remaining, m_segments, ensemble->label);
 
     if (m_segments.complete()) {
         fs.complete_fig_transmitted = true;
@@ -257,7 +258,6 @@ FillStatus FIG2_1_and_5::fill(uint8_t *buf, size_t max_size)
             }
 
             auto fig2 = (FIGtype2*)buf;
-
             fig2->Length = required_bytes - 1;
             fig2->FIGtypeNumber = 2;
 
@@ -283,7 +283,7 @@ FillStatus FIG2_1_and_5::fill(uint8_t *buf, size_t max_size)
             buf += id_length;
             remaining -= id_length;
 
-            write_fig2_segment_field(buf, remaining, segments, (*service)->label);
+            buf = write_fig2_segment_field(buf, remaining, segments, (*service)->label);
 
             if (segments.complete()) {
                 segments.clear();
@@ -386,7 +386,7 @@ FillStatus FIG2_4::fill(uint8_t *buf, size_t max_size)
                 remaining -= sizeof(FIGtype2_4_Data_Identifier);
             }
 
-            write_fig2_segment_field(buf, remaining, segments, (*component)->label);
+            buf = write_fig2_segment_field(buf, remaining, segments, (*component)->label);
 
             if (segments.complete()) {
                 segments.clear();

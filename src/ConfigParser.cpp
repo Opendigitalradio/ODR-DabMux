@@ -95,16 +95,9 @@ static void parse_fig2_label(ptree& pt, DabLabel& label) {
     if (pt_tc) {
         FIG2TextControl tc;
         tc.bidi_flag = pt_tc->get<bool>("bidi", tc.bidi_flag);
-        auto base_direction = pt_tc->get<string>("bidi", "LTR");
+        auto base_direction = pt_tc->get<string>("base_direction", "LTR");
 
-        if (not(base_direction == "LTR" or base_direction == "RTL")) {
-            tc.base_direction_is_rtl = (base_direction == "RTL");
-        }
-        else {
-            etiLog.level(error) << "Invalid value " << base_direction <<
-                " for fig2 text control base direction";
-            throw runtime_error("Invalid FIG2 text control definition");
-        }
+        tc.base_direction_is_rtl = (base_direction == "RTL");
 
         tc.contextual_flag = pt_tc->get<bool>("contextual", tc.contextual_flag);
         tc.combining_flag = pt_tc->get<bool>("combining", tc.combining_flag);

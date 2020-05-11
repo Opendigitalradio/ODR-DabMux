@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -33,7 +33,7 @@ namespace edi {
 
 void configuration_t::print() const
 {
-    etiLog.level(info) << "EDI";
+    etiLog.level(info) << "EDI Output";
     etiLog.level(info) << " verbose     " << verbose;
     for (auto edi_dest : destinations) {
         if (auto udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(edi_dest)) {
@@ -67,7 +67,7 @@ Sender::Sender(const configuration_t& conf) :
     edi_pft(m_conf)
 {
     if (m_conf.verbose) {
-        etiLog.log(info, "Setup EDI");
+        etiLog.log(info, "Setup EDI Output");
     }
 
     for (const auto& edi_dest : m_conf.destinations) {
@@ -104,7 +104,7 @@ Sender::Sender(const configuration_t& conf) :
     }
 
     if (m_conf.verbose) {
-        etiLog.log(info, "EDI set up");
+        etiLog.log(info, "EDI output set up");
     }
 }
 
@@ -118,7 +118,7 @@ void Sender::write(const TagPacket& tagpacket)
         vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(af_packet);
 
         if (m_conf.verbose) {
-            fprintf(stderr, "EDI number of PFT fragment before interleaver %zu\n",
+            fprintf(stderr, "EDI Output: Number of PFT fragment before interleaver %zu\n",
                     edi_fragments.size());
         }
 
@@ -127,7 +127,7 @@ void Sender::write(const TagPacket& tagpacket)
         }
 
         if (m_conf.verbose) {
-            fprintf(stderr, "EDI number of PFT fragments %zu\n",
+            fprintf(stderr, "EDI Output: Number of PFT fragments %zu\n",
                     edi_fragments.size());
         }
 
@@ -168,6 +168,12 @@ void Sender::write(const TagPacket& tagpacket)
             if (const auto& udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(dest)) {
                 Socket::InetAddress addr;
                 addr.resolveUdpDestination(udp_dest->dest_addr, m_conf.dest_port);
+
+                if (af_packet.size() > 1400 and not m_udp_fragmentation_warning_printed) {
+                    fprintf(stderr, "EDI Output: AF packet larger than 1400,"
+                            " consider using PFT to avoid UP fragmentation.\n");
+                    m_udp_fragmentation_warning_printed = true;
+                }
 
                 udp_sockets.at(udp_dest.get())->send(af_packet, addr);
             }

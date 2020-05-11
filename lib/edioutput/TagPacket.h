@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -39,6 +39,9 @@ namespace edi {
 // Assemble function that puts the bytestream together and adds
 // padding such that the total length is a multiple of 8 Bytes.
 //
+// Alternatively, a raw tagpacket can be used instead of the
+// items list
+//
 // ETSI TS 102 821, 5.1 Tag Packet
 class TagPacket
 {
@@ -47,6 +50,8 @@ class TagPacket
         std::vector<uint8_t> Assemble();
 
         std::list<TagItem*> tag_items;
+
+        std::vector<uint8_t> raw_tagpacket;
 
     private:
         unsigned int m_alignment;

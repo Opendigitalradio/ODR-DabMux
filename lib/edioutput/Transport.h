@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -50,6 +50,8 @@ class Sender {
         void write(const TagPacket& tagpacket);
 
     private:
+        bool m_udp_fragmentation_warning_printed = false;
+
         configuration_t m_conf;
         std::ofstream edi_debug_file;
 

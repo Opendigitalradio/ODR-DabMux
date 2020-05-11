@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -41,17 +41,19 @@ TagPacket::TagPacket(unsigned int alignment) : m_alignment(alignment)
 
 std::vector<uint8_t> TagPacket::Assemble()
 {
-    std::list<TagItem*>::iterator tag;
+    if (raw_tagpacket.size() > 0 and tag_items.size() > 0) {
+        throw std::logic_error("TagPacket: both raw and items used!");
+    }
+
+    if (raw_tagpacket.size() > 0) {
+        return raw_tagpacket;
+    }
 
     std::vector<uint8_t> packet;
 
-    //std::cerr << "Assemble TAGPacket" << std::endl;
-
-    for (tag = tag_items.begin(); tag != tag_items.end(); ++tag) {
-        std::vector<uint8_t> tag_data = (*tag)->Assemble();
+    for (auto tag : tag_items) {
+        std::vector<uint8_t> tag_data = tag->Assemble();
         packet.insert(packet.end(), tag_data.begin(), tag_data.end());
-
-        //std::cerr << "     Add TAGItem of length " << tag_data.size() << std::endl;
     }
 
     if (m_alignment == 0) { /* no padding */ }

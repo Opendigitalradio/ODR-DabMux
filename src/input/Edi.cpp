@@ -41,19 +41,21 @@ using namespace std;
 
 namespace Inputs {
 
-constexpr bool VERBOSE = false;
 constexpr size_t TCP_BLOCKSIZE = 2048;
 
 Edi::Edi(const std::string& name, const dab_input_edi_config_t& config) :
     RemoteControllable(name),
     m_tcp_receive_server(TCP_BLOCKSIZE),
     m_sti_writer(bind(&Edi::m_new_sti_frame_callback, this, placeholders::_1)),
-    m_sti_decoder(m_sti_writer, VERBOSE),
+    m_sti_decoder(m_sti_writer),
     m_max_frames_overrun(config.buffer_size),
     m_num_frames_prebuffering(config.prebuffering),
     m_name(name),
     m_stats(name)
 {
+    constexpr bool VERBOSE = false;
+    m_sti_decoder.set_verbose(VERBOSE);
+
     RC_ADD_PARAMETER(buffermanagement,
             "Set type of buffer management to use [prebuffering, timestamped]");
 
@@ -207,63 +209,71 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
     m_stats.notifyBuffer(m_frames.size() * size);
 
     if (m_is_prebuffering) {
-        if (m_pending_sti_frame.frame.empty()) {
-            memset(buffer, 0, size);
-            m_stats.notifyUnderrun();
-            return 0;
-        }
-        else if (m_pending_sti_frame.frame.size() == size) {
-            // readFrame gets called every 24ms, so we allow max 24ms
-            // difference between the input frame timestamp and the requested
-            // timestamp.
-            if (m_pending_sti_frame.timestamp.valid()) {
-                auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
-                ts_req += m_tist_delay;
-                const double offset = m_pending_sti_frame.timestamp.diff_ms(ts_req);
+        size_t num_discarded_wrong_size = 0;
+        size_t num_discarded_invalid_ts = 0;
+        size_t num_discarded_late = 0;
 
-                if (offset < 24e-3) {
-                    m_is_prebuffering = false;
-                    etiLog.level(warn) << "EDI input " << m_name <<
-                        " valid timestamp, pre-buffering complete";
+        while (not m_pending_sti_frame.frame.empty()) {
+            if (m_pending_sti_frame.frame.size() == size) {
+                if (m_pending_sti_frame.timestamp.valid()) {
+                    auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
+                    ts_req += m_tist_delay;
+                    const double offset = ts_req.diff_s(m_pending_sti_frame.timestamp);
 
-                    if (not m_pending_sti_frame.version_data.version.empty()) {
-                        m_stats.notifyVersion(
-                                m_pending_sti_frame.version_data.version,
-                                m_pending_sti_frame.version_data.uptime_s);
+                    if (offset < 0) {
+                        // Too far in the future
+                        break;
                     }
+                    else if (offset < 24e-3) {
+                        // Just right
+                        m_is_prebuffering = false;
+                        etiLog.level(info) <<  "EDI input " << m_name << " valid timestamp, pre-buffering complete." <<
+                            " Wrong size: " << num_discarded_wrong_size <<
+                            " Invalid TS: " << num_discarded_invalid_ts <<
+                            " Late: " << num_discarded_late;
 
-                    m_stats.notifyPeakLevels(m_pending_sti_frame.audio_levels.left,
-                            m_pending_sti_frame.audio_levels.right);
-                    copy(m_pending_sti_frame.frame.cbegin(), m_pending_sti_frame.frame.cend(), buffer);
-                    m_pending_sti_frame.frame.clear();
-                    return size;
+                        if (not m_pending_sti_frame.version_data.version.empty()) {
+                            m_stats.notifyVersion(
+                                    m_pending_sti_frame.version_data.version,
+                                    m_pending_sti_frame.version_data.uptime_s);
+                        }
+
+                        m_stats.notifyPeakLevels(m_pending_sti_frame.audio_levels.left,
+                                m_pending_sti_frame.audio_levels.right);
+                        copy(m_pending_sti_frame.frame.cbegin(), m_pending_sti_frame.frame.cend(), buffer);
+                        m_pending_sti_frame.frame.clear();
+                        return size;
+                    }
+                    else {
+                        // Too late
+                        num_discarded_late++;
+                    }
                 }
                 else {
-                    // Wait more, but erase the front of the frame queue to avoid
-                    // stalling on one frame with incorrect timestamp
-                    if (m_frames.size() >= m_max_frames_overrun) {
-                        m_pending_sti_frame.frame.clear();
-                    }
-                    m_stats.notifyUnderrun();
-                    memset(buffer, 0, size);
-                    return 0;
+                    num_discarded_invalid_ts++;
                 }
             }
             else {
-                etiLog.level(debug) << "EDI input " << m_name <<
-                    " skipping frame without timestamp";
-                m_pending_sti_frame.frame.clear();
-                memset(buffer, 0, size);
-                return 0;
+                num_discarded_wrong_size++;
             }
-        }
-        else {
-            etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
-                m_pending_sti_frame.frame.size() << " received, " << size << " requested";
+
             m_pending_sti_frame.frame.clear();
-            memset(buffer, 0, size);
-            return 0;
+            m_frames.try_pop(m_pending_sti_frame);
         }
+
+        if (num_discarded_wrong_size > 0) {
+            etiLog.level(warn) << "EDI input " << m_name << ": " <<
+                num_discarded_wrong_size << "packets with wrong size.";
+        }
+
+        if (num_discarded_invalid_ts > 0) {
+            etiLog.level(warn) << "EDI input " << m_name << ": " <<
+                num_discarded_wrong_size << "packets with invalid timestamp.";
+        }
+
+        memset(buffer, 0, size);
+        m_stats.notifyUnderrun();
+        return 0;
     }
     else {
         if (m_pending_sti_frame.frame.empty()) {
@@ -285,7 +295,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
         else {
             auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
             ts_req += m_tist_delay;
-            const double offset = m_pending_sti_frame.timestamp.diff_ms(ts_req);
+            const double offset = m_pending_sti_frame.timestamp.diff_s(ts_req);
 
             if (offset > 24e-3) {
                 m_stats.notifyUnderrun();

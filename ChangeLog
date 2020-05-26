@@ -1,6 +1,12 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2020-05-26: Matthias P. Braendli <matthias@mpb.li>
+	(v3.1.1):
+		Fix FIG2 segment count issue.
+		Handle disconnects better in EDI output.
+		Fix buffering issue with timestamped EDI input.
+
 2020-04-15: Matthias P. Braendli <matthias@mpb.li>
 	(v3.1.0):
 		Initialise TIST on startup rounded to 24ms, as it was done before

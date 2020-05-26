@@ -75,7 +75,7 @@ Pascal Charest *pascal [dot] charest [at] crc [dot] ca*
 Acknowledgements
 ================
 
-David Lutton, Yoann Queret and Stefan Pöschel for bug-fix patches,
+David Lutton, Yoann Queret, Stefan Pöschel and Maik for bug-fix patches,
 Wim Nelis for the Xymon monitoring scripts,
 and many more for feedback and bug reports.
 

@@ -96,10 +96,16 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
 
             const size_t num_apps = (*componentFIG0_13)->audio.uaTypes.size();
 
-            const size_t app_length = 2;
+            const size_t xpadapp_length = 2;
             static_assert(sizeof(FIG0_13_shortAppInfo) == 3);
             static_assert(sizeof(FIG0_13_app) == 4);
-            const int required_size = sizeof(FIG0_13_shortAppInfo) + num_apps * (sizeof(FIG0_13_app) + app_length);
+            int required_size = sizeof(FIG0_13_shortAppInfo);
+            for (const auto& ua : (*componentFIG0_13)->audio.uaTypes) {
+                required_size += sizeof(FIG0_13_app) + xpadapp_length;
+                if (ua.uaType == FIG0_13_APPTYPE_SPI) {
+                    required_size += 2; // For the "basic profile" user application data
+                }
+            }
 
             if (fig0 == NULL) {
                 if (remaining < 2 + required_size) {
@@ -130,7 +136,10 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
             for (const auto& ua : (*componentFIG0_13)->audio.uaTypes) {
                 FIG0_13_app* app = (FIG0_13_app*)buf;
                 app->setType(ua.uaType);
-                app->length = app_length;
+                app->length = xpadapp_length;
+                if (ua.uaType == FIG0_13_APPTYPE_SPI) {
+                    app->length += 2;
+                }
 
                 const uint8_t dscty = 60; // TS 101 756 Table 2b (MOT)
                 app->xpad = htons((ua.xpadAppType << 8) | dscty);
@@ -147,6 +156,14 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 buf += sizeof(FIG0_13_app);
                 remaining -= sizeof(FIG0_13_app);
                 fig0->Length += sizeof(FIG0_13_app);
+
+                if (ua.uaType == FIG0_13_APPTYPE_SPI) {
+                    buf[0] = 0x01; // = basic profile
+                    buf[1] = 0x00; // = list terminator
+                    buf += 2;
+                    remaining -= 2;
+                    fig0->Length += 2;
+                }
             }
         }
         else if (not m_transmit_programme and

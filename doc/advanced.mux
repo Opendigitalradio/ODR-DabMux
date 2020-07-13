@@ -304,10 +304,10 @@ components {
         ; If both slideshow (TS 101 499) and SPI (TS 102 818) are carried in PAD, the following
         ; needs to be set for FIG 0/13 to be transmitted correctly.
         user-applications {
-            ; Add uaType 0x2 and specify X-PAD App Type = 12
+            ; Add uaType 0x2 with X-PAD App Type = 12 and empty user application data
             userapp "slideshow"
 
-            ; Add uaType 0x7 and specify X-PAD App Type = 16
+            ; Add uaType 0x7 with X-PAD App Type = 16 and user application data = "Basic profile"
             userapp "spi"
         }
 

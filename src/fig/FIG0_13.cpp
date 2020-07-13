@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -92,9 +92,14 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
         const auto type = (*subchannel)->type;
         if (    m_transmit_programme and
                 (type == subchannel_type_t::DABPlusAudio or type == subchannel_type_t::DABAudio) and
-                (*componentFIG0_13)->audio.uaType != 0xffff) {
+                (*componentFIG0_13)->audio.uaTypes.size() != 0) {
 
-            const int required_size = 3+4+11;
+            const size_t num_apps = (*componentFIG0_13)->audio.uaTypes.size();
+
+            const size_t app_length = 2;
+            static_assert(sizeof(FIG0_13_shortAppInfo) == 3);
+            static_assert(sizeof(FIG0_13_app) == 4);
+            const int required_size = sizeof(FIG0_13_shortAppInfo) + num_apps * (sizeof(FIG0_13_app) + app_length);
 
             if (fig0 == NULL) {
                 if (remaining < 2 + required_size) {
@@ -117,34 +122,42 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
             FIG0_13_shortAppInfo* info = (FIG0_13_shortAppInfo*)buf;
             info->SId = htonl((*componentFIG0_13)->serviceId) >> 16;
             info->SCIdS = (*componentFIG0_13)->SCIdS;
-            info->No = 1;
-            buf += 3;
-            remaining -= 3;
-            fig0->Length += 3;
+            info->No = num_apps;
+            buf += sizeof(FIG0_13_shortAppInfo);
+            remaining -= sizeof(FIG0_13_shortAppInfo);
+            fig0->Length += sizeof(FIG0_13_shortAppInfo);
 
-            FIG0_13_app* app = (FIG0_13_app*)buf;
-            app->setType((*componentFIG0_13)->audio.uaType);
-            app->length = 2;
-            app->xpad = htons(0x0c3c);
-            /* xpad meaning
-               CA        = 0
-               CAOrg     = 0
-               Rfu       = 0
-               AppTy(5)  = 12 (MOT, start of X-PAD data group)
-               DG        = 0 (MSC data groups used)
-               Rfu       = 0
-               DSCTy(6)  = 60 (MOT)
-               */
+            for (const auto& ua : (*componentFIG0_13)->audio.uaTypes) {
+                FIG0_13_app* app = (FIG0_13_app*)buf;
+                app->setType(ua.uaType);
+                app->length = app_length;
 
-            buf += 2 + app->length;
-            remaining -= 2 + app->length;
-            fig0->Length += 2 + app->length;
+                const uint8_t dscty = 60; // TS 101 756 Table 2b (MOT)
+                app->xpad = htons((ua.xpadAppType << 8) | dscty);
+                /* xpad meaning
+                   CA        = 0
+                   CAOrg     = 0 (CAOrg field absent)
+                   Rfu       = 0
+                   AppTy(5)  = depending on config
+                   DG        = 0 (MSC data groups used)
+                   Rfu       = 0
+                   DSCTy(6)  = 60 (MOT)
+                   */
+
+                buf += sizeof(FIG0_13_app);
+                remaining -= sizeof(FIG0_13_app);
+                fig0->Length += sizeof(FIG0_13_app);
+            }
         }
-        else if (!m_transmit_programme &&
-                (*subchannel)->type == subchannel_type_t::Packet &&
-                (*componentFIG0_13)->packet.appType != 0xffff) {
+        else if (not m_transmit_programme and
+                (*subchannel)->type == subchannel_type_t::Packet and
+                (*componentFIG0_13)->packet.uaTypes.size() != 0) {
 
-            const int required_size = 5+2+2;
+            const size_t num_apps = (*componentFIG0_13)->audio.uaTypes.size();
+
+            const size_t app_length = 2;
+            const int required_size = sizeof(FIG0_13_longAppInfo) + num_apps * (sizeof(FIG0_13_app) + app_length);
+            /* is conservative because app_length can be 0 */
 
             if (fig0 == NULL) {
                 if (remaining < 2 + required_size) {
@@ -167,26 +180,36 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
             FIG0_13_longAppInfo* info = (FIG0_13_longAppInfo*)buf;
             info->SId = htonl((*componentFIG0_13)->serviceId);
             info->SCIdS = (*componentFIG0_13)->SCIdS;
-            info->No = 1;
-            buf += 5;
-            remaining -= 5;
-            fig0->Length += 5;
+            info->No = num_apps;
+            buf += sizeof(FIG0_13_longAppInfo);
+            remaining -= sizeof(FIG0_13_longAppInfo);
+            fig0->Length += sizeof(FIG0_13_longAppInfo);
 
-            FIG0_13_app* app = (FIG0_13_app*)buf;
-            app->setType((*componentFIG0_13)->packet.appType);
-            if (app->typeLow == FIG0_13_APPTYPE_EPG) {
-                app->length = 2;
-                app->xpad = htons(0x0100);
-                /* xpad used to hold two bytes of EPG profile information
-                   01 = basic profile
-                   00 = list terminator */
+            for (const auto& ua : (*componentFIG0_13)->audio.uaTypes) {
+                FIG0_13_app* app = (FIG0_13_app*)buf;
+                app->setType(ua.uaType);
+
+                size_t effective_length = sizeof(FIG0_13_app);
+
+                if (ua.uaType == FIG0_13_APPTYPE_SPI) {
+                    // TODO This should probably be user configurable...
+                    app->length = app_length;
+                    app->xpad = htons(0x0100);
+                    /* xpad is actually not the "X-PAD data" as in Figure 25, but is the actual user application data.
+                     * We just recycle the same structure, even though it's a bit ugly.
+                     * It holds two bytes of EPG profile information:
+                     * 01 = basic profile
+                     * 00 = list terminator */
+                }
+                else {
+                    app->length = 0;
+                    effective_length = 1; // FIG0_13_app without xpad
+                }
+
+                buf += effective_length;
+                remaining -= effective_length;
+                fig0->Length += effective_length;
             }
-            else {
-                app->length = 0;
-            }
-            buf += 2 + app->length;
-            remaining -= 2 + app->length;
-            fig0->Length += 2 + app->length;
         }
     }
 

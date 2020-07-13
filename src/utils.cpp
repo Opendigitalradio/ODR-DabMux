@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -37,6 +37,8 @@ using namespace std;
 
 static time_t dab_time_seconds = 0;
 static int dab_time_millis = 0;
+
+static void printServices(const vector<shared_ptr<DabService> >& services);
 
 void update_dab_time()
 {
@@ -100,7 +102,7 @@ void header_message()
     fprintf(stderr,
             "(Communications Research Centre Canada)\n\n");
     fprintf(stderr,
-            "Copyright (C) 2019 Matthias P. Braendli\n");
+            "Copyright (C) 2020 Matthias P. Braendli\n");
     fprintf(stderr,
             "LICENCE: GPLv3+\n\n");
     fprintf(stderr,
@@ -209,6 +211,7 @@ void printServices(const vector<shared_ptr<DabService> >& services)
 {
     int index = 0;
 
+    etiLog.log(info, "--- Services list ---");
     for (auto service : services) {
 
         etiLog.level(info) << "Service       " << service->get_rc_name();
@@ -239,18 +242,7 @@ void printServices(const vector<shared_ptr<DabService> >& services)
     }
 }
 
-void printComponents(const vec_sp_component& components)
-{
-    unsigned int index = 0;
-
-    for (const auto component : components) {
-        etiLog.level(info) << "Component                " << component->get_rc_name();
-        printComponent(component);
-        ++index;
-    }
-}
-
-void printComponent(const shared_ptr<DabComponent>& component)
+void printComponent(const shared_ptr<DabComponent>& component, const std::shared_ptr<dabEnsemble>& ensemble)
 {
     etiLog.log(info, " service id:             0x%x (%u)",
             component->serviceId, component->serviceId);
@@ -264,55 +256,55 @@ void printComponent(const shared_ptr<DabComponent>& component)
     etiLog.log(info, " service component type: 0x%x (%u)", component->type,
             component->type);
 
-    if (component->packet.appType != 0xFFFF) {
+    if (component->isPacketComponent(ensemble->subchannels)) {
         etiLog.log(info, " (packet) id:            0x%x (%u)",
                 component->packet.id, component->packet.id);
         etiLog.log(info, " (packet) address:       %u",
                 component->packet.address);
-
-        etiLog.log(info, " (packet) app type:      %u",
-                component->packet.appType);
-
         etiLog.log(info, " (packet) datagroup:     %u",
                 component->packet.datagroup);
-    }
-    else if (component->audio.uaType != 0xFFFF) {
-        stringstream ss;
-        ss <<            " (audio) app type:       ";
-        switch (component->audio.uaType) {
-            case FIG0_13_APPTYPE_SLIDESHOW:
-                ss << "MOT Slideshow";
-                break;
-            case FIG0_13_APPTYPE_WEBSITE:
-                ss << "MOT Broadcast Website";
-                break;
-            case FIG0_13_APPTYPE_TPEG:
-                ss << "TPEG";
-                break;
-            case FIG0_13_APPTYPE_DGPS:
-                ss << "DGPS";
-                break;
-            case FIG0_13_APPTYPE_TMC:
-                ss << "TMC";
-                break;
-            case FIG0_13_APPTYPE_EPG:
-                ss << "EPG";
-                break;
-            case FIG0_13_APPTYPE_DABJAVA:
-                ss << "DAB Java";
-                break;
-            case FIG0_13_APPTYPE_JOURNALINE:
-                ss << "Journaline";
-                break;
-            default:
-                ss << "Unknown: " << component->audio.uaType;
-                break;
-        }
 
-        etiLog.level(info) << ss.str();
+        for (const auto& userapp : component->packet.uaTypes) {
+            etiLog.log(info, " (packet) app type:      %u",
+                    userapp.uaType);
+        }
     }
     else {
-        etiLog.level(info) << " No app type defined";
+        for (const auto& userapp : component->audio.uaTypes) {
+            stringstream ss;
+            ss <<            " (audio) app type:       ";
+            switch (userapp.uaType) {
+                case FIG0_13_APPTYPE_SLIDESHOW:
+                    ss << "MOT Slideshow";
+                    break;
+                case FIG0_13_APPTYPE_WEBSITE:
+                    ss << "MOT Broadcast Website";
+                    break;
+                case FIG0_13_APPTYPE_TPEG:
+                    ss << "TPEG";
+                    break;
+                case FIG0_13_APPTYPE_DGPS:
+                    ss << "DGPS";
+                    break;
+                case FIG0_13_APPTYPE_TMC:
+                    ss << "TMC";
+                    break;
+                case FIG0_13_APPTYPE_SPI:
+                    ss << "SPI/EPG";
+                    break;
+                case FIG0_13_APPTYPE_DABJAVA:
+                    ss << "DAB Java";
+                    break;
+                case FIG0_13_APPTYPE_JOURNALINE:
+                    ss << "Journaline";
+                    break;
+                default:
+                    ss << "Unknown: " << userapp.uaType;
+                    break;
+            }
+
+            etiLog.level(info) << ss.str();
+        }
     }
 }
 
@@ -321,6 +313,8 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
     int index = 0;
 
     int total_num_cu = 0;
+
+    etiLog.log(info, "--- Subchannels list ---");
 
     for (auto subchannel : subchannels) {
         dabProtection* protection = &subchannel->protection;
@@ -509,6 +503,7 @@ static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)
 
 void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
 {
+    etiLog.log(info, "--- Multiplex configuration ---");
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);
     etiLog.log(info, " ecc:         0x%x (%u)", ensemble->ecc, ensemble->ecc);
@@ -556,6 +551,15 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
 
     printLinking(ensemble);
     printFrequencyInformation(ensemble);
+
+    printSubchannels(ensemble->subchannels);
+    printServices(ensemble->services);
+
+    etiLog.log(info, "--- Components list ---");
+    for (const auto component : ensemble->components) {
+        etiLog.level(info) << "Component                " << component->get_rc_name();
+        printComponent(component, ensemble);
+    }
 }
 
 long hexparse(const std::string& input)

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -422,10 +422,20 @@ public:
     struct dabProtection protection;
 };
 
+/* For FIG 0/13 (EN 300 401 Clause 6.3.6) */
+struct userApplication {
+    /* This 11-bit field identifies the user application that shall be used to decode the data in the channel identified
+     * by SId and SCIdS. The interpretation of this field shall be as defined in ETSI TS 101 756 [3], table 16. */
+    uint16_t uaType = 0xFFFF;
 
+    /* X-PAD Application Type: this 5-bit field shall specify the lowest numbered application type used to transport
+     * this user application (see clause 7.4.3).
+     * Also See EN 300 401 Table 11 "X-PAD Application types" */
+    uint8_t xpadAppType;
+};
 
 struct dabAudioComponent {
-    uint16_t uaType = 0xFFFF; // User Application Type
+    std::vector<userApplication> uaTypes;
 };
 
 
@@ -437,7 +447,7 @@ struct dabDataComponent {
 struct dabPacketComponent {
     uint16_t id = 0;
     uint16_t address = 0;
-    uint16_t appType = 0xFFFF;
+    std::vector<userApplication> uaTypes;
     bool datagroup = false;
 };
 

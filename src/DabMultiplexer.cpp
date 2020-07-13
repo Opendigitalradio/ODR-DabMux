@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -743,17 +743,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 void DabMultiplexer::print_info()
 {
     // Print settings before starting
-    etiLog.log(info, "--- Multiplex configuration ---");
     printEnsemble(ensemble);
-
-    etiLog.log(info, "--- Subchannels list ---");
-    printSubchannels(ensemble->subchannels);
-
-    etiLog.log(info, "--- Services list ---");
-    printServices(ensemble->services);
-
-    etiLog.log(info, "--- Components list ---");
-    printComponents(ensemble->components);
 }
 
 

@@ -749,9 +749,6 @@ void parse_ptree(
             throw runtime_error(ss.str());
         }
 
-        int figType = hexparse(pt_comp.get("figtype", "-1"));
-        int packet_address = hexparse(pt_comp.get("address", "-1"));
-        int packet_datagroup = pt_comp.get("datagroup", false);
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
         auto component = make_shared<DabComponent>(componentuid);
@@ -807,22 +804,67 @@ void parse_ptree(
                 " components are allowed to have labels.";
         }
 
-        if (figType != -1) {
-            if (figType >= (1<<12)) {
-                stringstream ss;
-                ss << "Component with uid " << componentuid <<
-                    ": figtype '" << figType << "' is too large !";
-                throw runtime_error(ss.str());
-            }
+        auto pt_ua = pt_comp.get_child_optional("user-applications");
+        if (pt_ua) {
+            for (const auto& ua_entry : *pt_ua) {
+                const string ua_key = ua_entry.first;
+                const string ua_value = ua_entry.second.data();
 
-            if (component->isPacketComponent(ensemble->subchannels)) {
-                component->packet.appType = figType;
+                if (ua_key != "userapp") {
+                    etiLog.level(error) << "user-applications should only contain 'userapp' keys";
+                    throw runtime_error("component user-applications definition error");
+                }
 
-            }
-            else {
-                component->audio.uaType = figType;
-            }
+                userApplication ua;
 
+                // Values from TS 101 756 Table 16
+
+                if (ua_value == "slideshow") {
+                    ua.uaType = FIG0_13_APPTYPE_SLIDESHOW;
+
+                    // This was previously hardcoded in FIG0/13 and means "MOT, start of X-PAD data group"
+                    ua.xpadAppType = 12;
+                }
+                else if (ua_value == "spi") {
+                    ua.uaType = FIG0_13_APPTYPE_SPI;
+                    ua.xpadAppType = 16;
+                }
+
+                component->audio.uaTypes.push_back(ua);
+            }
+        }
+        else {
+            // Setting only figtype is the old format which allows the definition of a single
+            // user application type only.
+            int figType = hexparse(pt_comp.get("figtype", "-1"));
+            if (figType != -1) {
+
+                etiLog.level(warn) << "The figtype setting is deprecated in favour of user-applications. Please see example configurations.";
+
+                if (figType >= (1<<12)) {
+                    stringstream ss;
+                    ss << "Component with uid " << componentuid <<
+                        ": figtype '" << figType << "' is too large !";
+                    throw runtime_error(ss.str());
+                }
+
+                userApplication ua;
+                ua.uaType = figType;
+
+                // This was previously hardcoded in FIG0/13 and means "MOT, start of X-PAD data group"
+                ua.xpadAppType = 12;
+
+                if (component->isPacketComponent(ensemble->subchannels)) {
+                    component->packet.uaTypes.push_back(ua);
+                }
+                else {
+                    component->audio.uaTypes.push_back(ua);
+                }
+            }
+        }
+
+        if (component->isPacketComponent(ensemble->subchannels)) {
+            int packet_address = hexparse(pt_comp.get("address", "-1"));
             if (packet_address != -1) {
                 if (! component->isPacketComponent(ensemble->subchannels)) {
                     stringstream ss;
@@ -833,6 +875,8 @@ void parse_ptree(
 
                 component->packet.address = packet_address;
             }
+
+            int packet_datagroup = pt_comp.get("datagroup", false);
             if (packet_datagroup) {
                 if (! component->isPacketComponent(ensemble->subchannels)) {
                     stringstream ss;

@@ -297,7 +297,21 @@ components {
         service srv-fu
         subchannel sub-fu
 
-        ; for audio components, the field
+        ; FIG 0/13 user application was previously configured using the figtype setting.
+        ; Now more than one user application can be defined per component, using the
+        ; 'user-applications' entry. Do not use both figtype and user-applications.
+
+        ; If both slideshow (TS 101 499) and SPI (TS 102 818) are carried in PAD, the following
+        ; needs to be set for FIG 0/13 to be transmitted correctly.
+        user-applications {
+            ; Add uaType 0x2 and specify X-PAD App Type = 12
+            userapp "slideshow"
+
+            ; Add uaType 0x7 and specify X-PAD App Type = 16
+            userapp "spi"
+        }
+
+        ; Deprecated figtype setting:
         figtype 0x2
         ; defines the User Application Type according to TS 101 756 Table 16:
         ; 0x2   : MOT Slideshow
@@ -310,19 +324,16 @@ components {
         ; 0x44a : Journaline
         ; If not defined, the FIG 0/13 is not transmitted for this component
 
-        ; for packet components, the fields
-        ; "user application type in FIG 0/13 for packet mode"
-        ;figtype
-        ; and the packet address (mandatory)
+        ; for packet components, set the packet address (mandatory)
         ;address
-        ; are supported, with the same syntax as in the manpage.
-        ; FIG 0/13 is only transmitted when figtype is defined.
-        ; The -d option on the command line is:
-        ;datagroup (true|false)
-        ; and defaults to false. You should normally set
-        ;datagroup true
-        ; if your packet mode subchannel is tranferring an MOT application such
-        ; as EPG or Slideshow.
+        ; Whether to use data groups
+        ;datagroup false
+        ; (defaults to false)
+        ; You should normally set 'datagroup true'
+        ; if your packet mode subchannel is transferring an MOT application such
+        ; as SPI/EPG or Slideshow.
+
+        ; If you specify the user-application "spi", FIG0/13 will set the user application data to "basic profile"
     }
 
     ; If a service is used in more than one component, the primary component has to
@@ -332,13 +343,17 @@ components {
     comp-lu {
         service srv-lu
         subchannel sub-lu
-        figtype 0x2
+        user-applications {
+            userapp "slideshow"
+        }
     }
 
     comp-ri {
         service srv-ri
         subchannel sub-ri
-        figtype 0x2
+        user-applications {
+            userapp "slideshow"
+        }
     }
 }
 

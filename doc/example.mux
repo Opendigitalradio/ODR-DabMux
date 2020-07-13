@@ -260,6 +260,11 @@ components {
     comp-ri {
         service srv-ri
         subchannel sub-ri
+
+        ; If the programme contains slideshow, please also specify the user-application:
+        user-applications {
+            userapp "slideshow"
+        }
     }
 }
 

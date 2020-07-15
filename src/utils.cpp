@@ -242,6 +242,40 @@ void printServices(const vector<shared_ptr<DabService> >& services)
     }
 }
 
+static void write_uatype_to_stringstream(stringstream& ss, uint16_t uaType)
+{
+    ss << "app type:      ";
+    switch (uaType) {
+        case FIG0_13_APPTYPE_SLIDESHOW:
+            ss << "MOT Slideshow";
+            break;
+        case FIG0_13_APPTYPE_WEBSITE:
+            ss << "MOT Broadcast Website";
+            break;
+        case FIG0_13_APPTYPE_TPEG:
+            ss << "TPEG";
+            break;
+        case FIG0_13_APPTYPE_DGPS:
+            ss << "DGPS";
+            break;
+        case FIG0_13_APPTYPE_TMC:
+            ss << "TMC";
+            break;
+        case FIG0_13_APPTYPE_SPI:
+            ss << "SPI/EPG";
+            break;
+        case FIG0_13_APPTYPE_DABJAVA:
+            ss << "DAB Java";
+            break;
+        case FIG0_13_APPTYPE_JOURNALINE:
+            ss << "Journaline";
+            break;
+        default:
+            ss << "Unknown: " << uaType;
+            break;
+    }
+}
+
 void printComponent(const shared_ptr<DabComponent>& component, const std::shared_ptr<dabEnsemble>& ensemble)
 {
     etiLog.log(info, " service id:             0x%x (%u)",
@@ -265,44 +299,17 @@ void printComponent(const shared_ptr<DabComponent>& component, const std::shared
                 component->packet.datagroup);
 
         for (const auto& userapp : component->packet.uaTypes) {
-            etiLog.log(info, " (packet) app type:      %u",
-                    userapp.uaType);
+            stringstream ss;
+            ss << " (packet) ";
+            write_uatype_to_stringstream(ss, userapp.uaType);
+            etiLog.level(info) << ss.str();
         }
     }
     else {
         for (const auto& userapp : component->audio.uaTypes) {
             stringstream ss;
-            ss <<            " (audio) app type:       ";
-            switch (userapp.uaType) {
-                case FIG0_13_APPTYPE_SLIDESHOW:
-                    ss << "MOT Slideshow";
-                    break;
-                case FIG0_13_APPTYPE_WEBSITE:
-                    ss << "MOT Broadcast Website";
-                    break;
-                case FIG0_13_APPTYPE_TPEG:
-                    ss << "TPEG";
-                    break;
-                case FIG0_13_APPTYPE_DGPS:
-                    ss << "DGPS";
-                    break;
-                case FIG0_13_APPTYPE_TMC:
-                    ss << "TMC";
-                    break;
-                case FIG0_13_APPTYPE_SPI:
-                    ss << "SPI/EPG";
-                    break;
-                case FIG0_13_APPTYPE_DABJAVA:
-                    ss << "DAB Java";
-                    break;
-                case FIG0_13_APPTYPE_JOURNALINE:
-                    ss << "Journaline";
-                    break;
-                default:
-                    ss << "Unknown: " << userapp.uaType;
-                    break;
-            }
-
+            ss << " (packet) ";
+            write_uatype_to_stringstream(ss, userapp.uaType);
             etiLog.level(info) << ss.str();
         }
     }

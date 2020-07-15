@@ -830,7 +830,12 @@ void parse_ptree(
                     ua.xpadAppType = 16;
                 }
 
-                component->audio.uaTypes.push_back(ua);
+                if (component->isPacketComponent(ensemble->subchannels)) {
+                    component->packet.uaTypes.push_back(ua);
+                }
+                else {
+                    component->audio.uaTypes.push_back(ua);
+                }
             }
         }
         else {

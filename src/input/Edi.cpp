@@ -297,16 +297,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             ts_req += m_tist_delay;
             const double offset = m_pending_sti_frame.timestamp.diff_s(ts_req);
 
-            if (offset > 24e-3) {
-                m_stats.notifyUnderrun();
-                m_is_prebuffering = true;
-                m_pending_sti_frame.frame.clear();
-                etiLog.level(warn) << "EDI input " << m_name <<
-                    " timestamp out of bounds, re-enabling pre-buffering";
-                memset(buffer, 0, size);
-                return 0;
-            }
-            else {
+            if (-24e-3 < offset and offset <= 0) {
                 if (not m_pending_sti_frame.version_data.version.empty()) {
                     m_stats.notifyVersion(
                             m_pending_sti_frame.version_data.version,
@@ -318,6 +309,15 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
                 copy(m_pending_sti_frame.frame.cbegin(), m_pending_sti_frame.frame.cend(), buffer);
                 m_pending_sti_frame.frame.clear();
                 return size;
+            }
+            else {
+                m_stats.notifyUnderrun();
+                m_is_prebuffering = true;
+                m_pending_sti_frame.frame.clear();
+                etiLog.level(warn) << "EDI input " << m_name <<
+                    " timestamp out of bounds, re-enabling pre-buffering";
+                memset(buffer, 0, size);
+                return 0;
             }
         }
     }

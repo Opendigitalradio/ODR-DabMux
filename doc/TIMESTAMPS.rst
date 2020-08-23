@@ -9,6 +9,7 @@ The following table tries to summarise the differences.
 | ODR-DabMux version          | Meaning of timestamp inside EDI              | ODR-ZMQ2EDI wait time w             | Offset that should be set in the mod          |
 +=============================+==============================================+=====================================+===============================================+
 | Up to and including v2.3.1  | t_frame = t_mux (No offset in mux available) | positive, meaning delay after t_mux | Something larger than w + mod processing time |
++=============================+==============================================+=====================================+===============================================+
 | Later than v2.3.1           | t_frame = t_tx = t_mux + tist_offset         | negative, meaning delay before t_tx | Something larger than mod processing time     |
 +-----------------------------+----------------------------------------------+-------------------------------------+-----------------------------------------------+
 

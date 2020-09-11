@@ -60,7 +60,7 @@ Contributions and Contact
 
 Contributions to this tool are welcome, you can reach users and developers
 through the
-[CRC-mmbTools google group](https://groups.google.com/forum/#!forum/crc-mmbtools)
+[ODR-mmbTools group](https://groups.io/g/odr-mmbtools)
 or any other channels mentioned on the ODR website.
 
 There is a list of ideas and thoughts about new possible features and improvements

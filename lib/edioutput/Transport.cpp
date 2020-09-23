@@ -26,6 +26,7 @@
  */
 #include "Transport.h"
 #include <iterator>
+#include <cmath>
 
 using namespace std;
 
@@ -131,6 +132,12 @@ void Sender::write(const TagPacket& tagpacket)
                     edi_fragments.size());
         }
 
+        /* Spread out the transmission of all fragments over 75% of the 24ms AF packet duration
+         * to reduce the risk of losing fragments because of congestion.
+         *
+         * 75% was chosen so that other outputs still have time to do their thing. */
+        const auto inter_fragment_wait_time = std::chrono::microseconds(llrint(0.75 * 24000.0 / edi_fragments.size()));
+
         // Send over ethernet
         for (auto& edi_frag : edi_fragments) {
             if (m_conf.dump) {
@@ -155,6 +162,8 @@ void Sender::write(const TagPacket& tagpacket)
                     throw logic_error("EDI destination not implemented");
                 }
             }
+
+            std::this_thread::sleep_for(inter_fragment_wait_time);
         }
     }
     else {

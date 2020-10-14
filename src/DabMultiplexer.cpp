@@ -105,14 +105,14 @@ void DabMultiplexer::prepare(bool require_tai_clock)
      */
     using Sec = chrono::seconds;
     const auto now = chrono::system_clock::now();
-    edi_time = chrono::system_clock::to_time_t(chrono::time_point_cast<Sec>(now));
+    m_edi_time = chrono::system_clock::to_time_t(chrono::time_point_cast<Sec>(now));
     auto offset = now - chrono::time_point_cast<Sec>(now);
     if (offset >= chrono::seconds(1)) {
         throw std::logic_error("Invalid startup offset calculation for TIST! " +
                 to_string(chrono::duration_cast<chrono::milliseconds>(offset).count()) +
                 " ms");
     }
-    timestamp = 0;
+    m_timestamp = 0;
     while (offset >= chrono::milliseconds(24)) {
         increment_timestamp();
         offset -= chrono::milliseconds(24);
@@ -361,10 +361,10 @@ void DabMultiplexer::prepare_data_inputs()
 
 void DabMultiplexer::increment_timestamp()
 {
-    timestamp += 24 << 14; // Shift 24ms by 14 to Timestamp level 2
-    if (timestamp > 0xf9FFff) {
-        timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second
-        edi_time += 1;
+    m_timestamp += 24 << 14; // Shift 24ms by 14 to Timestamp level 2
+    if (m_timestamp > 0xf9FFff) {
+        m_timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second
+        m_edi_time += 1;
     }
 }
 
@@ -398,6 +398,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
     }
     update_dab_time();
+
+    const auto edi_time = m_edi_time + m_tist_offset;
 
     // Initialise the ETI frame
     memset(etiFrame, 0, 6144);
@@ -523,11 +525,11 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     if (fc->FP == 0) {
         // update the latched time only when FP==0 to ensure MNSC encodes
         // a consistent time
-        edi_time_latched_for_mnsc = edi_time + m_tist_offset;
+        m_edi_time_latched_for_mnsc = edi_time;
     }
 
     struct tm time_tm;
-    gmtime_r(&edi_time_latched_for_mnsc, &time_tm);
+    gmtime_r(&m_edi_time_latched_for_mnsc, &time_tm);
     switch (fc->FP & 0x3) {
         case 0:
             {
@@ -592,7 +594,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         int sizeSubchannel = subchannel->getSizeByte();
         // no need to check enableTist because we always increment the timestamp
         int result = subchannel->readFrame(&etiFrame[index],
-                        sizeSubchannel, edi_time + m_tist_offset, tai_utc_offset, timestamp);
+                        sizeSubchannel, edi_time, tai_utc_offset, m_timestamp);
 
         if (result < 0) {
             etiLog.log(info,
@@ -637,8 +639,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     bool enableTist = m_pt.get("general.tist", false);
     if (enableTist) {
-        tist->TIST = htonl(timestamp) | 0xff;
-        edi_tagDETI.tsta = timestamp & 0xffffff;
+        tist->TIST = htonl(m_timestamp) | 0xff;
+        edi_tagDETI.tsta = m_timestamp & 0xffffff;
     }
     else {
         tist->TIST = htonl(0xffffff) | 0xff;
@@ -646,7 +648,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     }
 
     if (tist_enabled and m_tai_clock_required) {
-        edi_tagDETI.set_edi_time(edi_time + m_tist_offset, tai_utc_offset);
+        edi_tagDETI.set_edi_time(edi_time, tai_utc_offset);
         edi_tagDETI.atstf = true;
 
         for (auto output : outputs) {
@@ -728,7 +730,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         if (enableTist) {
             etiLog.log(info, "ETI frame number %i Timestamp: %d + %f",
                     currentFrame, edi_time,
-                    (timestamp & 0xFFFFFF) / 16384000.0);
+                    (m_timestamp & 0xFFFFFF) / 16384000.0);
         }
         else {
             etiLog.log(info, "ETI frame number %i Time: %d, no TIST",

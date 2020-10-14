@@ -82,9 +82,9 @@ class DabMultiplexer : public RemoteControllable {
 
         boost::property_tree::ptree m_pt;
 
-        unsigned timestamp = 0;
-        std::time_t edi_time;
-        std::time_t edi_time_latched_for_mnsc;
+        uint32_t m_timestamp = 0;
+        std::time_t m_edi_time;
+        std::time_t m_edi_time_latched_for_mnsc;
 
         edi::configuration_t edi_conf;
         std::shared_ptr<edi::Sender> edi_sender;

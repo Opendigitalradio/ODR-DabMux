@@ -155,8 +155,8 @@ static uint16_t unpack2(const uint8_t *buf)
 void Sti_d_Rtp::open(const std::string& name)
 {
     // Skip the rtp:// part if it is present
-    const string endpoint = (name.substr(0, 10) == "rtp://") ?
-        name.substr(10) : name;
+    const string endpoint = (name.substr(0, 6) == "rtp://") ?
+        name.substr(6) : name;
 
     // The endpoint should be address:port
     const auto colon_pos = endpoint.find_first_of(":");

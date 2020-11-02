@@ -50,7 +50,6 @@ struct FIG0_13_app {
         typeHigh = type >> 3;
         typeLow = type & 0x1f;
     }
-    uint16_t xpad;
 } PACKED;
 
 
@@ -90,18 +89,39 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
         }
 
         const auto type = (*subchannel)->type;
-        if (    m_transmit_programme and
+        if (   (m_transmit_programme and
                 (type == subchannel_type_t::DABPlusAudio or type == subchannel_type_t::DABAudio) and
-                (*componentFIG0_13)->audio.uaTypes.size() != 0) {
+                (*componentFIG0_13)->audio.uaTypes.size() != 0)
+            or (not m_transmit_programme and
+                (*subchannel)->type == subchannel_type_t::Packet and
+                (*componentFIG0_13)->packet.uaTypes.size() != 0)) {
 
-            const size_t num_apps = (*componentFIG0_13)->audio.uaTypes.size();
+            const std::vector<userApplication>& uaTypes = m_transmit_programme ?
+                (*componentFIG0_13)->audio.uaTypes : (*componentFIG0_13)->packet.uaTypes;
+
+            const size_t num_apps = uaTypes.size();
 
             const size_t xpadapp_length = 2;
             static_assert(sizeof(FIG0_13_shortAppInfo) == 3);
-            static_assert(sizeof(FIG0_13_app) == 4);
-            int required_size = sizeof(FIG0_13_shortAppInfo);
-            for (const auto& ua : (*componentFIG0_13)->audio.uaTypes) {
-                required_size += sizeof(FIG0_13_app) + xpadapp_length;
+            static_assert(sizeof(FIG0_13_longAppInfo) == 5);
+            static_assert(sizeof(FIG0_13_app) == 2);
+
+            int required_size = 0;
+            if (m_transmit_programme) {
+                required_size += sizeof(FIG0_13_shortAppInfo);
+            }
+            else {
+                required_size += sizeof(FIG0_13_longAppInfo);
+            }
+
+            for (const auto& ua : uaTypes) {
+                if (m_transmit_programme) {
+                    required_size += sizeof(FIG0_13_app) + xpadapp_length;
+                }
+                else {
+                    required_size += sizeof(FIG0_13_app);
+                }
+
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     required_size += 2; // For the "basic profile" user application data
                 }
@@ -116,7 +136,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 fig0->Length = 1;
                 fig0->CN = 0;
                 fig0->OE = 0;
-                fig0->PD = 0;
+                fig0->PD = m_transmit_programme ? 0 : 1;
                 fig0->Extension = 13;
                 buf += 2;
                 remaining -= 2;
@@ -125,15 +145,26 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 break;
             }
 
-            FIG0_13_shortAppInfo* info = (FIG0_13_shortAppInfo*)buf;
-            info->SId = htonl((*componentFIG0_13)->serviceId) >> 16;
-            info->SCIdS = (*componentFIG0_13)->SCIdS;
-            info->No = num_apps;
-            buf += sizeof(FIG0_13_shortAppInfo);
-            remaining -= sizeof(FIG0_13_shortAppInfo);
-            fig0->Length += sizeof(FIG0_13_shortAppInfo);
+            if (m_transmit_programme) {
+                FIG0_13_shortAppInfo* info = (FIG0_13_shortAppInfo*)buf;
+                info->SId = htonl((*componentFIG0_13)->serviceId) >> 16;
+                info->SCIdS = (*componentFIG0_13)->SCIdS;
+                info->No = num_apps;
+                buf += sizeof(FIG0_13_shortAppInfo);
+                remaining -= sizeof(FIG0_13_shortAppInfo);
+                fig0->Length += sizeof(FIG0_13_shortAppInfo);
+            }
+            else {
+                FIG0_13_longAppInfo* info = (FIG0_13_longAppInfo*)buf;
+                info->SId = htonl((*componentFIG0_13)->serviceId);
+                info->SCIdS = (*componentFIG0_13)->SCIdS;
+                info->No = num_apps;
+                buf += sizeof(FIG0_13_longAppInfo);
+                remaining -= sizeof(FIG0_13_longAppInfo);
+                fig0->Length += sizeof(FIG0_13_longAppInfo);
+            }
 
-            for (const auto& ua : (*componentFIG0_13)->audio.uaTypes) {
+            for (const auto& ua : uaTypes) {
                 FIG0_13_app* app = (FIG0_13_app*)buf;
                 app->setType(ua.uaType);
                 app->length = xpadapp_length;
@@ -141,21 +172,28 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                     app->length += 2;
                 }
 
-                const uint8_t dscty = 60; // TS 101 756 Table 2b (MOT)
-                app->xpad = htons((ua.xpadAppType << 8) | dscty);
-                /* xpad meaning
-                   CA        = 0
-                   CAOrg     = 0 (CAOrg field absent)
-                   Rfu       = 0
-                   AppTy(5)  = depending on config
-                   DG        = 0 (MSC data groups used)
-                   Rfu       = 0
-                   DSCTy(6)  = 60 (MOT)
-                   */
-
                 buf += sizeof(FIG0_13_app);
                 remaining -= sizeof(FIG0_13_app);
                 fig0->Length += sizeof(FIG0_13_app);
+
+                if (m_transmit_programme) {
+                    const uint8_t dscty = 60; // TS 101 756 Table 2b (MOT)
+                    const uint16_t xpadapp = htons((ua.xpadAppType << 8) | dscty);
+                    /* xpad meaning
+                       CA        = 0
+                       CAOrg     = 0 (CAOrg field absent)
+                       Rfu       = 0
+                       AppTy(5)  = depending on config
+                       DG        = 0 (MSC data groups used)
+                       Rfu       = 0
+                       DSCTy(6)  = 60 (MOT)
+                       */
+
+                    memcpy(buf, &xpadapp, 2);
+                    buf += 2;
+                    remaining -= 2;
+                    fig0->Length += 2;
+                }
 
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     buf[0] = 0x01; // = basic profile
@@ -164,68 +202,6 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                     remaining -= 2;
                     fig0->Length += 2;
                 }
-            }
-        }
-        else if (not m_transmit_programme and
-                (*subchannel)->type == subchannel_type_t::Packet and
-                (*componentFIG0_13)->packet.uaTypes.size() != 0) {
-
-            const size_t num_apps = (*componentFIG0_13)->audio.uaTypes.size();
-
-            const size_t app_length = 2;
-            const int required_size = sizeof(FIG0_13_longAppInfo) + num_apps * (sizeof(FIG0_13_app) + app_length);
-            /* is conservative because app_length can be 0 */
-
-            if (fig0 == NULL) {
-                if (remaining < 2 + required_size) {
-                    break;
-                }
-                fig0 = (FIGtype0*)buf;
-                fig0->FIGtypeNumber = 0;
-                fig0->Length = 1;
-                fig0->CN = 0;
-                fig0->OE = 0;
-                fig0->PD = 1;
-                fig0->Extension = 13;
-                buf += 2;
-                remaining -= 2;
-            }
-            else if (remaining < required_size) {
-                break;
-            }
-
-            FIG0_13_longAppInfo* info = (FIG0_13_longAppInfo*)buf;
-            info->SId = htonl((*componentFIG0_13)->serviceId);
-            info->SCIdS = (*componentFIG0_13)->SCIdS;
-            info->No = num_apps;
-            buf += sizeof(FIG0_13_longAppInfo);
-            remaining -= sizeof(FIG0_13_longAppInfo);
-            fig0->Length += sizeof(FIG0_13_longAppInfo);
-
-            for (const auto& ua : (*componentFIG0_13)->audio.uaTypes) {
-                FIG0_13_app* app = (FIG0_13_app*)buf;
-                app->setType(ua.uaType);
-
-                size_t effective_length = sizeof(FIG0_13_app);
-
-                if (ua.uaType == FIG0_13_APPTYPE_SPI) {
-                    // TODO This should probably be user configurable...
-                    app->length = app_length;
-                    app->xpad = htons(0x0100);
-                    /* xpad is actually not the "X-PAD data" as in Figure 25, but is the actual user application data.
-                     * We just recycle the same structure, even though it's a bit ugly.
-                     * It holds two bytes of EPG profile information:
-                     * 01 = basic profile
-                     * 00 = list terminator */
-                }
-                else {
-                    app->length = 0;
-                    effective_length = 1; // FIG0_13_app without xpad
-                }
-
-                buf += effective_length;
-                remaining -= effective_length;
-                fig0->Length += effective_length;
             }
         }
     }

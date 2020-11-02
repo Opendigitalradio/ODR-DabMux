@@ -198,8 +198,8 @@ size_t FIGCarousel::write_fibs(
         CRCtmp ^= 0xffff;
 
         buf += 30;
-        *(buf++) = ((char *) &CRCtmp)[1];
-        *(buf++) = ((char *) &CRCtmp)[0];
+        *(buf++) = (CRCtmp >> 8) & 0x00FF;
+        *(buf++) = CRCtmp & 0x00FF;
     }
 
     return 32 * fibCount;

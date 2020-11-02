@@ -221,7 +221,7 @@ class DabOutputSimul : public DabOutput
  */
 struct zmq_dab_message_t
 {
-    zmq_dab_message_t()
+    zmq_dab_message_t() : buf()
     {
         /* set buf lengths to invalid */
         buflen[0] = -1;

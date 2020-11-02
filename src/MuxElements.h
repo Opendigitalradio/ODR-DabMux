@@ -393,8 +393,9 @@ struct dabProtection {
 class DabSubchannel
 {
 public:
-    DabSubchannel(std::string& uid) :
-            uid(uid) { }
+    DabSubchannel(const std::string& uid) :
+            uid(uid),
+            protection() { }
 
     // Calculate subchannel size in number of CU
     unsigned short getSizeCu(void) const;

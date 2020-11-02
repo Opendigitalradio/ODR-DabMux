@@ -40,9 +40,9 @@
 
 // This metadata gets transmitted in the zmq stream
 struct metadata_t {
-    uint32_t edi_time;
-    int16_t utc_offset;
-    uint16_t dlfc;
+    uint32_t edi_time = 0;
+    int16_t utc_offset = 0;
+    uint16_t dlfc = 0;
 };
 
 struct frame_t {

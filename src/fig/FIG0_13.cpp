@@ -101,26 +101,23 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
 
             const size_t num_apps = uaTypes.size();
 
-            const size_t xpadapp_length = 2;
             static_assert(sizeof(FIG0_13_shortAppInfo) == 3);
             static_assert(sizeof(FIG0_13_longAppInfo) == 5);
             static_assert(sizeof(FIG0_13_app) == 2);
 
+            size_t xpaddata_length = 0;
             int required_size = 0;
             if (m_transmit_programme) {
                 required_size += sizeof(FIG0_13_shortAppInfo);
+                xpaddata_length = 2; // CAOrg is always absent
             }
             else {
                 required_size += sizeof(FIG0_13_longAppInfo);
+                xpaddata_length = 0; // X-PAD data field is absent
             }
 
             for (const auto& ua : uaTypes) {
-                if (m_transmit_programme) {
-                    required_size += sizeof(FIG0_13_app) + xpadapp_length;
-                }
-                else {
-                    required_size += sizeof(FIG0_13_app);
-                }
+                required_size += sizeof(FIG0_13_app) + xpaddata_length;
 
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     required_size += 2; // For the "basic profile" user application data
@@ -167,7 +164,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
             for (const auto& ua : uaTypes) {
                 FIG0_13_app* app = (FIG0_13_app*)buf;
                 app->setType(ua.uaType);
-                app->length = xpadapp_length;
+                app->length = xpaddata_length;
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     app->length += 2;
                 }

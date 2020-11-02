@@ -57,6 +57,18 @@ static void usage()
 
 int main(int argc, char **argv)
 {
+    // Version handling is done very early to ensure nothing else but the version gets printed out
+    if (argc == 2 and strcmp(argv[1], "--version") == 0) {
+        fprintf(stdout, "%s\n",
+#if defined(GITVERSION)
+                GITVERSION
+#else
+                PACKAGE_VERSION
+#endif
+               );
+        return 0;
+    }
+
     etiLog.level(info) << "ZMQ2FarSync ETI converter from " <<
         PACKAGE_NAME << " " <<
 #if defined(GITVERSION)

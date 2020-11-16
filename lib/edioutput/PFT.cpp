@@ -233,7 +233,6 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     vector< vector<uint8_t> > pft_fragments; // These contain PF headers
 
     const bool enable_RS = (m_m > 0);
-    const bool enable_transport = true;
 
     unsigned int findex = 0;
 
@@ -276,7 +275,7 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
             plen |= 0x8000; // Set FEC bit
         }
 
-        if (enable_transport) {
+        if (m_transport_header) {
             plen |= 0x4000; // Set ADDR bit
         }
 
@@ -288,11 +287,10 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
             packet.push_back(zero_pad);    // RSz
         }
 
-        if (enable_transport) {
+        if (m_transport_header) {
             // Source (16 bits)
-            uint16_t addr_source = 0;
-            packet.push_back(addr_source >> 8);
-            packet.push_back(addr_source & 0xFF);
+            packet.push_back(m_addr_source >> 8);
+            packet.push_back(m_addr_source & 0xFF);
 
             // Dest (16 bits)
             packet.push_back(m_dest_port >> 8);

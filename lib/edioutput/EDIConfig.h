@@ -68,6 +68,7 @@ struct configuration_t {
     bool dump          = false;      // dump a file with the EDI packets
     bool verbose       = false;
     bool enable_pft    = false;      // Enable protection and fragmentation
+    bool enable_transport_header = true; // Sets Addr, Source and Dest in PFT
     unsigned int tagpacket_alignment = 0;
     std::vector<std::shared_ptr<destination_t> > destinations;
     unsigned int dest_port = 0;      // common destination port, because it's encoded in the transport layer

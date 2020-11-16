@@ -71,7 +71,10 @@ class PFT
         unsigned int m_dest_port = 12000; // Destination port for transport header
         uint16_t m_pseq = 0;
         size_t m_num_chunks = 0;
-        bool m_verbose = 0;
+        bool m_verbose = false;
+
+        bool m_transport_header = false;
+        const uint16_t m_addr_source = 0;
 };
 
 }

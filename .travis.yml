@@ -1,24 +1,21 @@
-language: c++
+language: cpp
+dist: focal
 
-matrix:
+jobs:
   include:
     # Clang on OSX
     - env: MATRIX_EVAL="" CONF=""
       os: osx
-      osx_image: xcode11
+      osx_image: xcode12.2
       compiler: clang
 
     # GCC builds on Linux
-    - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF="--disable-output-edi"
+    - env: MATRIX_EVAL="CC=gcc-10 CXX=g++-10" CONF="--disable-output-edi"
       os: linux
       arch: amd64
-      dist: bionic
-      sudo: required
       compiler: gcc
       addons: &linuxaddons
         apt:
-          sources: &sources
-            - sourceline: 'ppa:ubuntu-toolchain-r/test'
           packages: &packages
             - libzmq3-dev
             - libzmq5
@@ -26,19 +23,19 @@ matrix:
             - libtool
             - libboost-all-dev
             - libcurl4-openssl-dev
-            - g++-9
+            - g++-10
 
-    - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF="--enable-output-raw"
+    - env: MATRIX_EVAL="CC=gcc-10 CXX=g++-10" CONF="--enable-output-raw"
       arch: amd64
       compiler: gcc
       addons: *linuxaddons
 
-    - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF=""
+    - env: MATRIX_EVAL="CC=gcc-10 CXX=g++-10" CONF=""
       arch: amd64
       compiler: gcc
       addons: *linuxaddons
 
-    - env: MATRIX_EVAL="CC=gcc-9 CXX=g++-9" CONF=""
+    - env: MATRIX_EVAL="CC=gcc-10 CXX=g++-10" CONF=""
       arch: arm64
       compiler: gcc
       addons: *linuxaddons

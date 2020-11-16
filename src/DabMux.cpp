@@ -354,14 +354,15 @@ int main(int argc, char *argv[])
                     edi_conf.dest_port       = pt_edi.get<unsigned int>("port");
                 }
 
-                edi_conf.dump                = pt_edi.get<bool>("dump", false);
-                edi_conf.enable_pft          = pt_edi.get<bool>("enable_pft", false);
-                edi_conf.verbose             = pt_edi.get<bool>("verbose", false);
+                edi_conf.dump = pt_edi.get<bool>("dump", false);
+                edi_conf.enable_pft = pt_edi.get<bool>("enable_pft", false);
+                edi_conf.verbose = pt_edi.get<bool>("verbose", false);
+                edi_conf.enable_transport_header = pt_edi.get<bool>("enable_transport_addressing", true);
 
-                edi_conf.fec                 = pt_edi.get<unsigned int>("fec", 3);
-                edi_conf.chunk_len           = pt_edi.get<unsigned int>("chunk_len", 207);
+                edi_conf.fec = pt_edi.get<unsigned int>("fec", 3);
+                edi_conf.chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
 
-                double interleave_ms         = pt_edi.get<double>("interleave", 0);
+                double interleave_ms = pt_edi.get<double>("interleave", 0);
                 if (interleave_ms != 0.0) {
                     if (interleave_ms < 0) {
                         throw runtime_error("EDI output: negative interleave value is invalid.");

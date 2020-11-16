@@ -430,6 +430,9 @@ outputs {
         ; PFT is not necessary when using TCP.
         enable_pft  false
 
+        enable_transport_addressing true
+        ; Enables the Addr flag in PFT and sets Source and Dest fields.
+
         ; How many lost fragments can be recovered by Reed-Solomon.
         ; Requires enable_pft true.
         ;

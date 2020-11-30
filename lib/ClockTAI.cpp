@@ -350,7 +350,7 @@ int ClockTAI::get_valid_offset()
 #endif
         const auto cache_state = parse_bulletin(cache_bulletin);
 
-        if (cache_state.usable()) {
+        if (cache_state.usable() and not cache_state.expires_soon()) {
             m_bulletin = cache_bulletin;
             offset = cache_state.offset;
             offset_valid = true;

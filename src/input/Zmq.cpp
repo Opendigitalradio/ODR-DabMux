@@ -51,6 +51,7 @@
 #include <limits.h>
 #include "PcDebug.h"
 #include "Log.h"
+#include "zmq.hpp"
 
 #ifdef __MINGW32__
 #   define bzero(s, n) memset(s, 0, n)
@@ -348,7 +349,8 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     zmq::message_t msg;
 
     try {
-        messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
+        auto result = m_zmq_sock.recv(msg, zmq::recv_flags::dontwait);
+        messageReceived = result.has_value();
         if (not messageReceived) {
             return 0;
         }
@@ -417,7 +419,8 @@ int ZmqAAC::readFromSocket(size_t framesize)
     zmq::message_t msg;
 
     try {
-        messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
+        auto result = m_zmq_sock.recv(msg, zmq::recv_flags::dontwait);
+        messageReceived = result.has_value();
         if (not messageReceived) {
             return 0;
         }
@@ -615,4 +618,3 @@ const string ZmqBase::get_parameter(const string& parameter) const
 }
 
 };
-

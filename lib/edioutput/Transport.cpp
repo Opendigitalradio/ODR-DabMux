@@ -38,7 +38,7 @@ void configuration_t::print() const
     etiLog.level(info) << " verbose     " << verbose;
     for (auto edi_dest : destinations) {
         if (auto udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(edi_dest)) {
-            etiLog.level(info) << " UDP to " << udp_dest->dest_addr << ":" << dest_port;
+            etiLog.level(info) << " UDP to " << udp_dest->dest_addr << ":" << udp_dest->dest_port;
             if (not udp_dest->source_addr.empty()) {
                 etiLog.level(info) << "  source      " << udp_dest->source_addr;
                 etiLog.level(info) << "  ttl         " << udp_dest->ttl;
@@ -148,7 +148,7 @@ void Sender::write(const TagPacket& tagpacket)
             for (auto& dest : m_conf.destinations) {
                 if (const auto& udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(dest)) {
                     Socket::InetAddress addr;
-                    addr.resolveUdpDestination(udp_dest->dest_addr, m_conf.dest_port);
+                    addr.resolveUdpDestination(udp_dest->dest_addr, udp_dest->dest_port);
 
                     udp_sockets.at(udp_dest.get())->send(edi_frag, addr);
                 }
@@ -176,7 +176,7 @@ void Sender::write(const TagPacket& tagpacket)
         for (auto& dest : m_conf.destinations) {
             if (const auto& udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(dest)) {
                 Socket::InetAddress addr;
-                addr.resolveUdpDestination(udp_dest->dest_addr, m_conf.dest_port);
+                addr.resolveUdpDestination(udp_dest->dest_addr, udp_dest->dest_port);
 
                 if (af_packet.size() > 1400 and not m_udp_fragmentation_warning_printed) {
                     fprintf(stderr, "EDI Output: AF packet larger than 1400,"

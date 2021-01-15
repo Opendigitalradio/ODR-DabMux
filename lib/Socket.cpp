@@ -862,9 +862,9 @@ TCPReceiveServer::~TCPReceiveServer()
     }
 }
 
-vector<uint8_t> TCPReceiveServer::receive()
+shared_ptr<TCPReceiveMessage> TCPReceiveServer::receive()
 {
-    vector<uint8_t> buffer;
+    shared_ptr<TCPReceiveMessage> buffer = make_shared<TCPReceiveMessageEmpty>();
     m_queue.try_pop(buffer);
 
     // we can ignore try_pop()'s return value, because
@@ -892,11 +892,12 @@ void TCPReceiveServer::process()
                 }
                 else if (r == 0) {
                     sock.close();
+                    m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
                     break;
                 }
                 else {
                     buf.resize(r);
-                    m_queue.push(move(buf));
+                    m_queue.push(make_shared<TCPReceiveMessageData>(move(buf)));
                 }
             }
             catch (const TCPSocket::Interrupted&) {
@@ -904,6 +905,11 @@ void TCPReceiveServer::process()
             }
             catch (const TCPSocket::Timeout&) {
                 num_timeouts++;
+            }
+            catch (const runtime_error& e) {
+                sock.close();
+                // TODO replace fprintf
+                fprintf(stderr, "TCP Receiver restarted after error: %s\n", e.what());
             }
 
             if (num_timeouts > max_num_timeouts) {

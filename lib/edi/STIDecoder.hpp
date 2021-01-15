@@ -34,7 +34,7 @@ struct sti_management_data {
     bool stihf;
     bool atstf;
     bool rfadf;
-    uint16_t dflc;
+    uint16_t dlfc;
 
     uint32_t tsta;
 };
@@ -104,14 +104,15 @@ class STIDecoder {
 
         /* Push bytes into the decoder. The buf can contain more
          * than a single packet. This is useful when reading from streams
-         * (files, TCP)
+         * (files, TCP). Pushing an empty buf will clear the internal decoder
+         * state to ensure realignment (e.g. on stream reconnection)
          */
         void push_bytes(const std::vector<uint8_t> &buf);
 
         /* Push a complete packet into the decoder. Useful for UDP and other
          * datagram-oriented protocols.
          */
-        void push_packet(const std::vector<uint8_t> &buf);
+        void push_packet(Packet &pack);
 
         /* Set the maximum delay in number of AF Packets before we
          * abandon decoding a given pseq.

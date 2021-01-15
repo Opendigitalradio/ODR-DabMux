@@ -147,7 +147,7 @@ class TagDSTI : public TagItem
         bool stihf = false;
         bool atstf = false; // presence of atst data
         bool rfadf = false;
-        uint16_t dflc = 0; // modulo 5000 frame counter
+        uint16_t dlfc = 0; // modulo 5000 frame counter
 
         // STI Header (optional)
         uint8_t stat = 0;

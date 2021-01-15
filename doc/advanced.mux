@@ -389,19 +389,24 @@ outputs {
                 ; example for unicast EDI over UDP
                 ; for unicast EDI, do not set source
                 protocol udp
-                destination "192.168.23.23"
                 sourceport  13000
+                destination "192.168.23.23"
+                port        12000
+
+                ; For compatibility: if port is not specified in the destination itself,
+                ; it is taken from the parent 'destinations' block.
             }
             example_multicast {
                 ; example for multicast EDI, the source IP is required
                 ; so that the data is sent on the correct ethernet interface
                 protocol udp
-                destination "232.20.10.1"
                 source      "192.168.0.50"
+                sourceport  13000
+                destination "232.20.10.1"
+                port        12000
                 ; The multicast TTL has to be adapted according to your network
                 ttl 1
 
-                sourceport  13000
             }
             example_tcp {
                 ; example for EDI TCP server. TCP is reliable, so it is counterproductive to
@@ -420,18 +425,10 @@ outputs {
         }
 
         ; The settings below apply to all destinations
-        ; The destination port cannot be set independently for
-        ; different outputs because it is encoded in the transport
-        ; header of the PFT layer.
-        ; Necessary when using UDP, optional when only using TCP.
-        port        12000
 
         ; Enable the PFT subsystem. If false, AFPackets are sent.
         ; PFT is not necessary when using TCP.
         enable_pft  false
-
-        enable_transport_addressing true
-        ; Enables the Addr flag in PFT and sets Source and Dest fields.
 
         ; How many lost fragments can be recovered by Reed-Solomon.
         ; Requires enable_pft true.

@@ -111,7 +111,6 @@ typedef DWORD32 uint32_t;
 
 using namespace std;
 using boost::property_tree::ptree;
-using boost::property_tree::ptree_error;
 
 volatile sig_atomic_t running = 1;
 
@@ -323,7 +322,6 @@ int main(int argc, char *argv[])
 
             if (outputuid == "edi") {
                 ptree pt_edi = pt_outputs.get_child("edi");
-                bool require_dest_port = false;
 
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
                     const auto proto = pt_edi_dest.second.get<string>("protocol", "udp");
@@ -335,9 +333,16 @@ int main(int argc, char *argv[])
                         dest->source_addr = pt_edi_dest.second.get<string>("source", "");
                         dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
 
-                        edi_conf.destinations.push_back(dest);
+                        dest->dest_port       = pt_edi_dest.second.get<unsigned int>("port", 0);
+                        if (dest->dest_port == 0) {
+                            // Compatiblity: we have removed the transport and addressing in the
+                            // PFT layer, which removed the requirement that all outputs must share
+                            // the same destination port. If missing from the destination specification,
+                            // we read it from the parent block, where it was before.
+                            dest->dest_port       = pt_edi.get<unsigned int>("port");
+                        }
 
-                        require_dest_port = true;
+                        edi_conf.destinations.push_back(dest);
                     }
                     else if (proto == "tcp") {
                         auto dest = make_shared<edi::tcp_server_t>();
@@ -350,14 +355,9 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                if (require_dest_port) {
-                    edi_conf.dest_port       = pt_edi.get<unsigned int>("port");
-                }
-
                 edi_conf.dump = pt_edi.get<bool>("dump", false);
                 edi_conf.enable_pft = pt_edi.get<bool>("enable_pft", false);
                 edi_conf.verbose = pt_edi.get<bool>("verbose", false);
-                edi_conf.enable_transport_header = pt_edi.get<bool>("enable_transport_addressing", true);
 
                 edi_conf.fec = pt_edi.get<unsigned int>("fec", 3);
                 edi_conf.chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);

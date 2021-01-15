@@ -55,7 +55,6 @@ PFT::PFT() { }
 PFT::PFT(const configuration_t &conf) :
     m_k(conf.chunk_len),
     m_m(conf.fec),
-    m_dest_port(conf.dest_port),
     m_pseq(0),
     m_num_chunks(0),
     m_verbose(conf.verbose)

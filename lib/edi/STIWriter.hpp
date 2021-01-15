@@ -32,6 +32,7 @@ namespace EdiDecoder {
 
 struct sti_frame_t {
     std::vector<uint8_t> frame;
+    uint16_t dlfc;
     frame_timestamp_t timestamp;
     audio_level_data audio_levels;
     odr_version_data version_data;

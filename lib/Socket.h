@@ -30,11 +30,12 @@
 
 #include "ThreadsafeQueue.h"
 #include <cstdlib>
-#include <iostream>
-#include <vector>
 #include <atomic>
-#include <thread>
+#include <iostream>
 #include <list>
+#include <memory>
+#include <thread>
+#include <vector>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -265,6 +266,14 @@ class TCPDataDispatcher
         std::list<TCPConnection> m_connections;
 };
 
+struct TCPReceiveMessage { virtual ~TCPReceiveMessage() {}; };
+struct TCPReceiveMessageDisconnected : public TCPReceiveMessage { };
+struct TCPReceiveMessageEmpty : public TCPReceiveMessage { };
+struct TCPReceiveMessageData : public TCPReceiveMessage {
+    TCPReceiveMessageData(std::vector<uint8_t> d) : data(d) {};
+    std::vector<uint8_t> data;
+};
+
 /* A TCP Server to receive data, which abstracts the handling of connects and disconnects.
  */
 class TCPReceiveServer {
@@ -276,15 +285,15 @@ class TCPReceiveServer {
 
         void start(int listen_port, const std::string& address);
 
-        // Return a vector that contains up to blocksize bytes of data, or
-        // and empty vector if no data is available.
-        std::vector<uint8_t> receive();
+        // Return an instance of a subclass of TCPReceiveMessage that contains up to blocksize
+        // bytes of data, or TCPReceiveMessageEmpty if no data is available.
+        std::shared_ptr<TCPReceiveMessage> receive();
 
     private:
         void process();
 
         size_t m_blocksize = 0;
-        ThreadsafeQueue<std::vector<uint8_t> > m_queue;
+        ThreadsafeQueue<std::shared_ptr<TCPReceiveMessage> > m_queue;
         std::atomic<bool> m_running = ATOMIC_VAR_INIT(false);
         std::string m_exception_data;
         std::thread m_listener_thread;

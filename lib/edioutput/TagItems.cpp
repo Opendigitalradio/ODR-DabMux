@@ -212,8 +212,8 @@ std::vector<uint8_t> TagDSTI::Assemble()
     packet.push_back(0);
     packet.push_back(0);
 
-    uint8_t dfctl = dflc % 250;
-    uint8_t dfcth = dflc / 250;
+    uint8_t dfctl = dlfc % 250;
+    uint8_t dfcth = dlfc / 250;
 
 
     uint16_t dstiHeader = dfctl | (dfcth << 8) | (rfadf << 13) | (atstf << 14) | (stihf << 15);
@@ -254,7 +254,7 @@ std::vector<uint8_t> TagDSTI::Assemble()
     packet[6] = (taglength >> 8) & 0xFF;
     packet[7] = taglength & 0xFF;
 
-    dflc = (dflc+1) % 5000;
+    dlfc = (dlfc+1) % 5000;
 
     /*
     std::cerr << "TagItem dsti, packet.size " << packet.size() << std::endl;

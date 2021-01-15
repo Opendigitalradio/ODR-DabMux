@@ -62,7 +62,6 @@ static void usage()
     cerr << " -C <path to script>   Before starting, run the given script, and only start if it returns 0." << endl;
     cerr << "                       This is useful for checking that NTP is properly synchronised" << endl;
     cerr << " -x                    Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
-    cerr << " -p <destination port> Set the destination port." << endl;
     cerr << " -P                    Disable PFT and send AFPackets." << endl;
     cerr << " -f <fec>              Set the FEC." << endl;
     cerr << " -i <interleave>       Enable the interleaver with this latency." << endl;
@@ -73,6 +72,7 @@ static void usage()
 
     cerr << "The following options can be given several times, when more than UDP destination is desired:" << endl;
     cerr << " -d <destination ip>   Set the destination ip." << endl;
+    cerr << " -p <destination port> Set the destination port." << endl;
     cerr << " -s <source port>      Set the source port." << endl;
     cerr << " -S <source ip>        Select the source IP in case we want to use multicast." << endl;
     cerr << " -t <ttl>              Set the packet's TTL." << endl << endl;
@@ -163,6 +163,7 @@ static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_b
  * because several destinations can be given.  */
 
 static std::shared_ptr<edi::udp_destination_t> edi_destination;
+static bool dest_port_set = false;
 static bool source_port_set = false;
 static bool source_addr_set = false;
 static bool ttl_set = false;
@@ -178,6 +179,7 @@ static void add_edi_destination(void)
     edi_conf.destinations.push_back(move(edi_destination));
     edi_destination = std::make_shared<edi::udp_destination_t>();
 
+    dest_port_set = false;
     source_port_set = false;
     source_addr_set = false;
     ttl_set = false;
@@ -191,6 +193,13 @@ static void parse_destination_args(char option)
     }
 
     switch (option) {
+        case 'p':
+            if (dest_port_set) {
+                add_edi_destination();
+            }
+            edi_destination->dest_port = std::stoi(optarg);
+            dest_port_set = true;
+            break;
         case 's':
             if (source_port_set) {
                 add_edi_destination();
@@ -253,10 +262,8 @@ int start(int argc, char **argv)
             case 's':
             case 'S':
             case 't':
-                parse_destination_args(ch);
-                break;
             case 'p':
-                edi_conf.dest_port = std::stoi(optarg);
+                parse_destination_args(ch);
                 break;
             case 'P':
                 edi_conf.enable_pft = false;
@@ -329,11 +336,6 @@ int start(int argc, char **argv)
 
     if (optind >= argc) {
         etiLog.level(error) << "source option is missing";
-        return 1;
-    }
-
-    if (edi_conf.dest_port == 0) {
-        etiLog.level(error) << "No EDI destination port defined";
         return 1;
     }
 

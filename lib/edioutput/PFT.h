@@ -68,13 +68,14 @@ class PFT
     private:
         unsigned int m_k = 207; // length of RS data word
         unsigned int m_m = 3; // number of fragments that can be recovered if lost
-        unsigned int m_dest_port = 12000; // Destination port for transport header
         uint16_t m_pseq = 0;
         size_t m_num_chunks = 0;
         bool m_verbose = false;
 
-        bool m_transport_header = false;
+        // Transport header is always deactivated
+        const bool m_transport_header = false;
         const uint16_t m_addr_source = 0;
+        const unsigned int m_dest_port = 0;
 };
 
 }

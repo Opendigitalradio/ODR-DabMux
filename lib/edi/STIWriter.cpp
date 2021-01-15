@@ -123,6 +123,7 @@ void STIWriter::assemble()
     // TODO check time validity
 
     sti_frame_t stiFrame;
+    stiFrame.dlfc = m_management_data.dlfc;
     stiFrame.frame = move(m_payload.istd);
     stiFrame.timestamp.seconds = m_seconds;
     stiFrame.timestamp.utco = m_utco;

@@ -44,6 +44,7 @@ struct destination_t {
 // Can represent both unicast and multicast destinations
 struct udp_destination_t : public destination_t {
     std::string dest_addr;
+    unsigned int dest_port = 0;
     std::string source_addr;
     unsigned int source_port = 0;
     unsigned int ttl = 10;
@@ -68,10 +69,8 @@ struct configuration_t {
     bool dump          = false;      // dump a file with the EDI packets
     bool verbose       = false;
     bool enable_pft    = false;      // Enable protection and fragmentation
-    bool enable_transport_header = true; // Sets Addr, Source and Dest in PFT
     unsigned int tagpacket_alignment = 0;
     std::vector<std::shared_ptr<destination_t> > destinations;
-    unsigned int dest_port = 0;      // common destination port, because it's encoded in the transport layer
     unsigned int latency_frames = 0; // if nonzero, enable interleaver with a latency of latency_frames * 24ms
 
     bool enabled() const { return destinations.size() > 0; }

@@ -56,6 +56,8 @@ struct InetAddress {
     struct sockaddr *as_sockaddr() { return reinterpret_cast<sockaddr*>(&addr); };
 
     void resolveUdpDestination(const std::string& destination, int port);
+
+    std::string to_string() const;
 };
 
 /** This class represents a UDP packet.
@@ -103,6 +105,8 @@ class UDPSocket
         ~UDPSocket();
         UDPSocket(const UDPSocket& other) = delete;
         const UDPSocket& operator=(const UDPSocket& other) = delete;
+        UDPSocket(UDPSocket&& other);
+        const UDPSocket& operator=(UDPSocket&& other);
 
         /** Close the already open socket, and create a new one. Throws a runtime_error on error.  */
         void reinit(int port);
@@ -121,36 +125,36 @@ class UDPSocket
          */
         void setBlocking(bool block);
 
+        SOCKET getNativeSocket() const;
+        int getPort() const;
+
     protected:
-        SOCKET m_sock;
+        SOCKET m_sock = INVALID_SOCKET;
+        int m_port = 0;
 };
 
-/* Threaded UDP receiver */
+/* UDP packet receiver supporting receiving from several ports at once */
 class UDPReceiver {
     public:
-        UDPReceiver();
-        ~UDPReceiver();
-        UDPReceiver(const UDPReceiver&) = delete;
-        UDPReceiver operator=(const UDPReceiver&) = delete;
+        void add_receive_port(int port, const std::string& bindto, const std::string& mcastaddr);
 
-        // Start the receiver in a separate thread
-        void start(int port, const std::string& bindto, const std::string& mcastaddr, size_t max_packets_queued);
+        struct ReceivedPacket {
+            std::vector<uint8_t> packetdata;
+            InetAddress received_from;
+            int port_received_on;
+        };
 
-        // Get the data contained in a UDP packet, blocks if none available
-        // In case of error, throws a runtime_error
-        std::vector<uint8_t> get_packet_buffer(void);
+        class Interrupted {};
+        class Timeout {};
+        /* Returns one or several packets,
+         * throws a Timeout on timeout, Interrupted on EINTR, a runtime_error
+         * on error. */
+        std::vector<ReceivedPacket> receive(int timeout_ms);
 
     private:
         void m_run(void);
 
-        int m_port = 0;
-        std::string m_bindto;
-        std::string m_mcastaddr;
-        size_t m_max_packets_queued = 1;
-        std::thread m_thread;
-        std::atomic<bool> m_stop = ATOMIC_VAR_INIT(false);
-        ThreadsafeQueue<UDPPacket> m_packets;
-        UDPSocket m_sock;
+        std::vector<UDPSocket> m_sockets;
 };
 
 class TCPSocket {

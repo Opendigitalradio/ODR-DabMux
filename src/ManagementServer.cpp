@@ -280,7 +280,7 @@ void ManagementServer::serverThread()
 
             if (pollItems[0].revents & ZMQ_POLLIN) {
                 zmq::message_t zmq_message;
-                m_zmq_sock.recv(&zmq_message);
+                m_zmq_sock.recv(zmq_message);
                 handle_message(zmq_message);
             }
         }

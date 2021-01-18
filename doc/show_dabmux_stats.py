@@ -22,7 +22,7 @@ def connect():
     sock.connect("tcp://localhost:12720")
 
     sock.send(b"info")
-    infojson = json.loads(sock.recv())
+    infojson = json.loads(sock.recv().decode("utf-8"))
 
     sys.stderr.write("Statistics from ODR-DabMux {}\n".format(infojson['version']))
 
@@ -43,7 +43,7 @@ if len(sys.argv) == 1:
     if socks:
         if socks.get(sock) == zmq.POLLIN:
 
-            data = sock.recv()
+            data = sock.recv().decode("utf-8")
             values = json.loads(data)['values']
 
             tmpl = "{ident:20}{maxfill:>8}{minfill:>8}{under:>8}{over:>8}{audioleft:>8}{audioright:>8}{peakleft:>8}{peakright:>8}{state:>16}{version:>48}{uptime:>8}"

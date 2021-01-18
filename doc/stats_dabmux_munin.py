@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # present statistics from dabmux Stats Server and ZeroMQ RC
 # to munin. Expects Stats server on port 12720 and ZeroMQ RC
@@ -121,7 +121,7 @@ class RCException(Exception):
 
 def do_transaction(command, sock):
     """To a send + receive transaction, quit whole program on timeout"""
-    sock.send(command)
+    sock.send(command.encode("utf-8"))
 
     poller = zmq.Poller()
     poller.register(sock, zmq.POLLIN)
@@ -129,7 +129,7 @@ def do_transaction(command, sock):
     socks = dict(poller.poll(1000))
     if socks:
         if socks.get(sock) == zmq.POLLIN:
-            return sock.recv()
+            return sock.recv().decode("utf-8")
 
     sys.stderr.write("Could not receive data for command '{}'\n".format(command))
     sys.exit(1)

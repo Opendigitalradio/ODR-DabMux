@@ -93,7 +93,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 
     sock.send(b"config")
 
-    config = json.loads(sock.recv())
+    config = json.loads(sock.recv().decode("utf-8"))
 
     print(config['config'])
 

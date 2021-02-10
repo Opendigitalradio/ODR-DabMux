@@ -46,7 +46,7 @@ if len(sys.argv) == 1:
             data = sock.recv().decode("utf-8")
             values = json.loads(data)['values']
 
-            tmpl = "{ident:20}{maxfill:>8}{minfill:>8}{under:>8}{over:>8}{audioleft:>8}{audioright:>8}{peakleft:>8}{peakright:>8}{state:>16}{version:>48}{uptime:>8}"
+            tmpl = "{ident:20}{maxfill:>8}{minfill:>8}{under:>8}{over:>8}{audioleft:>8}{audioright:>8}{peakleft:>8}{peakright:>8}{state:>16}{version:>48}{uptime:>8}{offset:>8}"
             print(tmpl.format(
                 ident="id",
                 maxfill="max",
@@ -59,7 +59,8 @@ if len(sys.argv) == 1:
                 peakright="peak R",
                 state="state",
                 version="version",
-                uptime="uptime"))
+                uptime="uptime",
+                offset="offset"))
 
             for ident in values:
                 v = values[ident]['inputstat']
@@ -85,7 +86,8 @@ if len(sys.argv) == 1:
                     peakright=v['peak_right_slow'],
                     state=v['state'],
                     version=v['version'],
-                    uptime=v['uptime']))
+                    uptime=v['uptime'],
+                    offset=v['last_tist_offset']))
 
 
 elif len(sys.argv) == 2 and sys.argv[1] == "config":

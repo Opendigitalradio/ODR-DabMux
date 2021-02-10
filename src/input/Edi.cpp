@@ -117,6 +117,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
 {
     // Save stats data in bytes, not in frames
     m_stats.notifyBuffer(m_frames.size() * size);
+    m_stats.notifyTimestampOffset(0);
 
     EdiDecoder::sti_frame_t sti;
     if (m_is_prebuffering) {
@@ -221,6 +222,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
                     auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
                     ts_req += m_tist_delay;
                     const double offset = ts_req.diff_s(m_pending_sti_frame.timestamp);
+                    m_stats.notifyTimestampOffset(offset);
 
                     if (offset < 0) {
                         // Too far in the future
@@ -265,12 +267,12 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
 
         if (num_discarded_wrong_size > 0) {
             etiLog.level(warn) << "EDI input " << m_name << ": " <<
-                num_discarded_wrong_size << "packets with wrong size.";
+                num_discarded_wrong_size << " packets with wrong size.";
         }
 
         if (num_discarded_invalid_ts > 0) {
             etiLog.level(warn) << "EDI input " << m_name << ": " <<
-                num_discarded_wrong_size << "packets with invalid timestamp.";
+                num_discarded_wrong_size << " packets with invalid timestamp.";
         }
 
         memset(buffer, 0, size);
@@ -298,6 +300,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
             ts_req += m_tist_delay;
             const double offset = m_pending_sti_frame.timestamp.diff_s(ts_req);
+            m_stats.notifyTimestampOffset(offset);
 
             if (-24e-3 < offset and offset <= 0) {
                 if (not m_pending_sti_frame.version_data.version.empty()) {

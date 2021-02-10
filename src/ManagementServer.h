@@ -97,6 +97,7 @@ class InputStat
         /* This function is called for every frame read by
          * the multiplexer */
         void notifyBuffer(long bufsize);
+        void notifyTimestampOffset(double offset);
         void notifyPeakLevels(int peak_left, int peak_right);
         void notifyUnderrun(void);
         void notifyOverrun(void);
@@ -122,6 +123,9 @@ class InputStat
         // counter of number of overruns and underruns since startup
         uint32_t m_num_underruns = 0;
         uint32_t m_num_overruns = 0;
+
+        // last measured timestamp offset
+        double m_last_tist_offset = 0;
 
         // Peak audio levels (linear 16-bit PCM) for the two channels.
         // Keep a FIFO of values from the last minutes, apply

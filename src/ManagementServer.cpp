@@ -336,7 +336,8 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         }
 
         std::string answerstr(answer.str());
-        m_zmq_sock.send(answerstr.c_str(), answerstr.size());
+        zmq::const_buffer message(answerstr.data(), answerstr.size());
+        m_zmq_sock.send(message, zmq::send_flags::none);
     }
     catch (const std::exception& e) {
         etiLog.level(error) <<
@@ -380,6 +381,13 @@ void InputStat::notifyBuffer(long bufsize)
     m_buffer_fill_stats.push_front({time_now, bufsize});
 
     prune_statistics(time_now);
+}
+
+void InputStat::notifyTimestampOffset(double offset)
+{
+    unique_lock<mutex> lock(m_mutex);
+
+    m_last_tist_offset = offset;
 }
 
 void InputStat::notifyPeakLevels(int peak_left, int peak_right)
@@ -558,6 +566,7 @@ std::string InputStat::encodeValuesJSON()
         "\"peak_right_slow\": " << to_dB(peak_right) << ", "
         "\"num_underruns\": " << m_num_underruns << ", "
         "\"num_overruns\": " << m_num_overruns << ", "
+        "\"last_tist_offset\": " << m_last_tist_offset << ", "
         "\"version\": \"" << version << "\", "
         "\"uptime\": " << m_uptime_s << ", "
         ;

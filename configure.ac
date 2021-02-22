@@ -18,14 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_PREREQ(2.69)
-AC_INIT([ODR-DabMux], [3.1.1], [matthias.braendli@mpb.li])
+AC_PREREQ([2.71])
+AC_INIT([ODR-DabMux],[3.1.1],[matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/DabMux.cpp])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AM_SILENT_RULES([yes])
 
 # Checks for programs.
@@ -42,7 +42,6 @@ AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
 AX_BOOST_SYSTEM
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
 
 # Options

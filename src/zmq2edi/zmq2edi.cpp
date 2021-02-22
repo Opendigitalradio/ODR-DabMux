@@ -274,15 +274,13 @@ int start(int argc, char **argv)
             case 'i':
                 {
                     int spread_percent = std::stoi(optarg);
-                    if (spread_percent != 0) {
-                        if (spread_percent < 0) {
-                            throw std::runtime_error("EDI output: negative spread value is invalid.");
-                        }
+                    if (spread_percent < 0) {
+                        throw std::runtime_error("EDI output: negative spread value is invalid.");
+                    }
 
-                        edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
-                        if (edi_conf.fragment_spreading_factor > 30000) {
-                            throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
-                        }
+                    edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
+                    if (edi_conf.fragment_spreading_factor > 30000) {
+                        throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
                     }
                 }
                 break;

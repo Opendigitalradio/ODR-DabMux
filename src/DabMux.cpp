@@ -363,16 +363,12 @@ int main(int argc, char *argv[])
                 edi_conf.chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
 
                 int spread_percent = pt_edi.get<int>("packet_spread", 95);
-                if (spread_percent != 0) {
-                    if (spread_percent < 0) {
-                        throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
-                    }
-
-                    edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
-
-                    if (edi_conf.fragment_spreading_factor > 30000) {
-                        throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
-                    }
+                if (spread_percent < 0) {
+                    throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
+                }
+                edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
+                if (edi_conf.fragment_spreading_factor > 30000) {
+                    throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
                 }
 
                 edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);

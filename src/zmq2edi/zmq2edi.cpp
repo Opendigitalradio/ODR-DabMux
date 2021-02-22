@@ -64,7 +64,7 @@ static void usage()
     cerr << " -x                    Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
     cerr << " -P                    Disable PFT and send AFPackets." << endl;
     cerr << " -f <fec>              Set the FEC." << endl;
-    cerr << " -i <interleave>       Enable the interleaver with this latency." << endl;
+    cerr << " -i <interleave>       Configure the interleaver with given interleave percentage: 0% send all fragments at once, 100% spread over 24ms, >100% spread and interleave. Default 95%\n";
     cerr << " -D                    Dump the EDI to edi.debug file." << endl;
     cerr << " -v                    Enables verbose mode." << endl;
     cerr << " -a <alignement>       Set the alignment of the TAG Packet (default 8)." << endl;
@@ -273,18 +273,16 @@ int start(int argc, char **argv)
                 break;
             case 'i':
                 {
-                    double interleave_ms = std::stod(optarg);
-                    if (interleave_ms != 0.0) {
-                        if (interleave_ms < 0) {
+                    int interleave_percent = std::stoi(optarg);
+                    if (interleave_percent != 0) {
+                        if (interleave_percent < 0) {
                             throw std::runtime_error("EDI output: negative interleave value is invalid.");
                         }
 
-                        auto latency_rounded = lround(interleave_ms / 24.0);
-                        if (latency_rounded * 24 > 30000) {
+                        edi_conf.fragment_spreading_factor = (double)interleave_percent / 100.0;
+                        if (edi_conf.fragment_spreading_factor > 30000) {
                             throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
                         }
-
-                        edi_conf.latency_frames = latency_rounded;
                     }
                 }
                 break;
@@ -374,7 +372,7 @@ int start(int argc, char **argv)
                 }
                 else {
                     // Event received: recv will not block
-                    zmq_sock.recv(&incoming);
+                    zmq_sock.recv(incoming, zmq::recv_flags::none);
                     const auto received_at = std::chrono::steady_clock::now();
 
                     zmq_dab_message_t* dab_msg = (zmq_dab_message_t*)incoming.data();

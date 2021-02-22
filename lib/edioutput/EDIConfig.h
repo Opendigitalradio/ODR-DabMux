@@ -71,10 +71,11 @@ struct configuration_t {
     bool enable_pft    = false;      // Enable protection and fragmentation
     unsigned int tagpacket_alignment = 0;
     std::vector<std::shared_ptr<destination_t> > destinations;
-    unsigned int latency_frames = 0; // if nonzero, enable interleaver with a latency of latency_frames * 24ms
+    double fragment_spreading_factor = 0.95;
+    // Spread transmission of fragments in time. 1.0 = 100% means spreading over the whole duration of a frame (24ms)
+    // Above 100% means that the fragments are spread over several 24ms periods, interleaving the AF packets.
 
     bool enabled() const { return destinations.size() > 0; }
-    bool interleaver_enabled() const { return latency_frames > 0; }
 
     void print() const;
 };

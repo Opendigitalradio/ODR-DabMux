@@ -85,8 +85,6 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/ConfigParser.h \
 					 src/Eti.h \
 					 src/Eti.cpp \
-					 src/Interleaver.h \
-					 src/Interleaver.cpp \
 					 src/ManagementServer.h \
 					 src/ManagementServer.cpp \
 					 src/MuxElements.cpp \

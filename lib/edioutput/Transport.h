@@ -31,13 +31,16 @@
 #include "EDIConfig.h"
 #include "AFPacket.h"
 #include "PFT.h"
-#include "Interleaver.h"
 #include "Socket.h"
 #include <vector>
+#include <chrono>
+#include <map>
 #include <unordered_map>
 #include <stdexcept>
 #include <fstream>
 #include <cstdint>
+#include <thread>
+#include <mutex>
 
 namespace edi {
 
@@ -46,10 +49,15 @@ namespace edi {
 class Sender {
     public:
         Sender(const configuration_t& conf);
+        Sender(const Sender&) = delete;
+        Sender operator=(const Sender&) = delete;
+        ~Sender();
 
         void write(const TagPacket& tagpacket);
 
     private:
+        void run();
+
         bool m_udp_fragmentation_warning_printed = false;
 
         configuration_t m_conf;
@@ -61,12 +69,16 @@ class Sender {
         // The AF Packet will be protected with reed-solomon and split in fragments
         edi::PFT edi_pft;
 
-        // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
-        edi::Interleaver edi_interleaver;
-
         std::unordered_map<udp_destination_t*, std::shared_ptr<Socket::UDPSocket>> udp_sockets;
         std::unordered_map<tcp_server_t*, std::shared_ptr<Socket::TCPDataDispatcher>> tcp_dispatchers;
         std::unordered_map<tcp_client_t*, std::shared_ptr<Socket::TCPSendClient>> tcp_senders;
+
+        // PFT spreading requires sending UDP packets at specific time, independently of
+        // time when write() gets called
+        std::thread m_thread;
+        std::mutex m_mutex;
+        bool m_running = false;
+        std::map<std::chrono::steady_clock::time_point, edi::PFTFragment> m_pending_frames;
 };
 
 }

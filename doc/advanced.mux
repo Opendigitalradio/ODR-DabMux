@@ -440,12 +440,16 @@ outputs {
         ; Transportation".
         fec         2
 
-        ; Interleave fragments from several ETI frames so as to reduce the
+        ; Spread and interleave fragments from several EDI frames so as to reduce the
         ; probability of errors when several UDP packets are lost in bursts.
         ; This comes at the cost of larger overall latency between multiplexing
-        ; and modulation. This latency is given in milliseconds, and rounded
-        ; to nearest multiple of 24ms. Set to 0 to disable the interleaver.
-        interleave 0
+        ; and modulation.
+        ;
+        ; Configure the packet spreader/interleaver through a percentage:
+        ; 0% send all fragments at once,
+        ; 100% spread over 24ms,
+        ; >100% spread and interleave. Default 95%
+        packet_spread 95
 
         ; Length of a RS chunk, can be overridden
         ;default=207

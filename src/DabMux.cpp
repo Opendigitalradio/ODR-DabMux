@@ -362,18 +362,17 @@ int main(int argc, char *argv[])
                 edi_conf.fec = pt_edi.get<unsigned int>("fec", 3);
                 edi_conf.chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
 
-                double interleave_ms = pt_edi.get<double>("interleave", 0);
-                if (interleave_ms != 0.0) {
-                    if (interleave_ms < 0) {
-                        throw runtime_error("EDI output: negative interleave value is invalid.");
+                int spread_percent = pt_edi.get<int>("packet_spread", 95);
+                if (spread_percent != 0) {
+                    if (spread_percent < 0) {
+                        throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
                     }
 
-                    auto latency_rounded = lround(interleave_ms / 24.0);
-                    if (latency_rounded * 24 > 30000) {
-                        throw runtime_error("EDI output: interleaving set for more than 30 seconds!");
-                    }
+                    edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
 
-                    edi_conf.latency_frames = latency_rounded;
+                    if (edi_conf.fragment_spreading_factor > 30000) {
+                        throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
+                    }
                 }
 
                 edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);

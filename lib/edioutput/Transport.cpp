@@ -135,14 +135,17 @@ void Sender::write(const TagPacket& tagpacket)
                     edi_fragments.size());
         }
 
-        /* Spread out the transmission of all fragments over 25% of the 24ms AF packet duration
+        /* Spread out the transmission of all fragments over part of the 24ms AF packet duration
          * to reduce the risk of losing a burst of fragments because of congestion. */
         using namespace std::chrono;
-        auto inter_fragment_wait_time = microseconds(0);
+        auto inter_fragment_wait_time = microseconds(1);
         if (edi_fragments.size() > 1) {
-            inter_fragment_wait_time = microseconds(
-                    llrint(m_conf.fragment_spreading_factor * 24000.0 / edi_fragments.size())
-                    );
+            if (m_conf.fragment_spreading_factor > 0) {
+                inter_fragment_wait_time =
+                    microseconds(
+                            llrint(m_conf.fragment_spreading_factor * 24000.0 / edi_fragments.size())
+                            );
+            }
         }
 
         /* Separate insertion into map and transmission so as to make spreading possible */

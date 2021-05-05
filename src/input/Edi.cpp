@@ -104,7 +104,7 @@ void Edi::open(const std::string& name)
         m_tcp_receive_server.start(tcp_port, addr);
     }
     else {
-        throw runtime_error("Cannot parse EDI input URI");
+        throw runtime_error(string("Cannot parse EDI input URI '") + name + "'");
     }
 
     m_stats.registerAtServer();

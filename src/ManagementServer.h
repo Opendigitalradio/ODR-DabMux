@@ -58,6 +58,10 @@
 #include <deque>
 #include <thread>
 #include <mutex>
+
+// Suppress an deprecation warning from boost
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <cmath>

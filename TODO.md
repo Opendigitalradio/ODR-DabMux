@@ -20,11 +20,6 @@ and which ones would make sense to add.
 Also, there is no documentation on the possibilites of packet data.
 
 
-Multicast support for the UDP input
------------------------------------
-The current UDP input implementation cannot join a multicast group.
-
-
 Improvements for inputs
 -----------------------
 Add statistics to UDP input, in a similar way that ZeroMQ offers statistics.

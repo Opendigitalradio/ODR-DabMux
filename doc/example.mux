@@ -192,8 +192,14 @@ subchannels {
 
         ; for audio and dabplus, EDI input is available. It supports TCP server and UDP
         inputproto edi
-        ; Accepts connection to port 9001 from any interface
+        ; Accepts connection to port 9001 from any interface. Prefer disabling PFT when using TCP.
         inputuri "tcp://0.0.0.0:9001"
+
+        ; For UDP, PFT should be enabled at the sender.
+        ; Unicast UDP input:
+        ;inputuri "udp://:9001"
+        ; Multicast UDP input:
+        ;inputuri "udp://@239.10.0.1:9001"
 
         ; Two buffer-management types are available: prebuffering and timestamped.
         ; prebuffering will accumulate a few frames before it starts streaming, and each

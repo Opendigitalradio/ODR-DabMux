@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
-   Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2021 Matthias P. Braendli
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -67,11 +67,9 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
     if (m_extended_fields.empty()) {
         map<uint8_t, list<uint16_t> > ecc_to_services;
         for (const auto& srv : ensemble->services) {
-            if (srv->ecc != 0 and srv->ecc != ensemble->ecc and
-                    srv->isProgramme(ensemble)) {
+            if (srv->ecc != 0 and srv->ecc != ensemble->ecc and srv->isProgramme(ensemble)) {
                 if (srv->id > 0xFFFF) {
-                    throw std::logic_error(
-                            "Service ID for programme service > 0xFFFF");
+                    throw std::logic_error("Service ID for programme service > 0xFFFF");
                 }
                 ecc_to_services[srv->ecc].push_back(srv->id);
             }
@@ -99,7 +97,16 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
                 m_extended_fields.push_back(ef);
             }
         }
-        m_current_extended_field = m_extended_fields.begin();
+
+        // Max length of extended field is 25 bytes
+        size_t subfield_required = 0;
+        for (const auto& ef : m_extended_fields) {
+            subfield_required += ef.required_bytes();
+        }
+
+        if (subfield_required > 25) {
+            etiLog.level(error) << "Cannot transmit FIG 0/9: too many services with different ECC";
+        }
 
         for (const auto& ef : m_extended_fields) {
             stringstream ss;
@@ -113,12 +120,12 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
         }
     }
 
+    // Transmitting a FIG0/9 without any extended field was the CEI in EN 300 401 v1.
+    // It went away in v2, and I interpret this that it is impossible to transmit
+    // more than 11 services with a different ECC.
     size_t required = 5;
-
-    // If we have services with different ECC, avoid transmitting a
-    // FIG0/9 without any extended field.
-    if (m_current_extended_field != m_extended_fields.end()) {
-        required += 2 + 2 * m_current_extended_field->sids.size();
+    for (const auto& ef : m_extended_fields) {
+        required += ef.required_bytes();
     }
 
     if (remaining < required) {
@@ -158,40 +165,34 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
     buf += 5;
     remaining -= 5;
 
-    while (m_current_extended_field != m_extended_fields.end() and
-            remaining > m_current_extended_field->required_bytes()) {
-        if (m_current_extended_field->sids.size() > 3) {
+    for (const auto& ef : m_extended_fields) {
+        if (ef.required_bytes() > remaining) {
+            throw logic_error("Wrong FIG0/9 length calculation");
+        }
+
+        if (ef.sids.size() > 3) {
             throw logic_error("Wrong FIG0/9 subfield generation");
         }
 
         auto subfield = (FIGtype0_9_Subfield*)buf;
-        subfield->NumServices = m_current_extended_field->sids.size();
+        subfield->NumServices = ef.sids.size();
         subfield->Rfa2 = 0;
-        subfield->ecc = m_current_extended_field->ecc;
+        subfield->ecc = ef.ecc;
         buf += 2;
         fig0_9->Length += 2;
         remaining -= 2;
 
-        for (uint16_t sid : m_current_extended_field->sids) {
+        for (uint16_t sid : ef.sids) {
             uint16_t *sid_field = (uint16_t*)buf;
             *sid_field = htons(sid);
             buf += 2;
             fig0_9->Length += 2;
             remaining -= 2;
         }
-
-        ++m_current_extended_field;
     }
 
     fs.num_bytes_written = max_size - remaining;
-
-    if (m_current_extended_field == m_extended_fields.end()) {
-        fs.complete_fig_transmitted = true;
-        m_current_extended_field = m_extended_fields.begin();
-    }
-    else {
-        fs.complete_fig_transmitted = false;
-    }
+    fs.complete_fig_transmitted = true;
     return fs;
 }
 

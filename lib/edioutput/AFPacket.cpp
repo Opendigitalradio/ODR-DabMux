@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014
+   Copyright (C) 2021
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -25,7 +25,6 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "config.h"
 #include "crc.h"
 #include "AFPacket.h"
 #include "TagItems.h"
@@ -50,7 +49,7 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
     std::vector<uint8_t> payload = tag_packet.Assemble();
 
     if (m_verbose)
-        std::cerr << "Assemble AFPacket " << seq << std::endl;
+        std::cerr << "Assemble AFPacket " << m_seq << std::endl;
 
     std::string pack_data("AF"); // SYNC
     std::vector<uint8_t> packet(pack_data.begin(), pack_data.end());
@@ -67,10 +66,10 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
     packet.push_back(taglength & 0xFF);
 
     // fill rest of header
-    packet.push_back(seq >> 8);
-    packet.push_back(seq & 0xFF);
-    seq++;
-    packet.push_back((have_crc ? 0x80 : 0) | AFHEADER_VERSION); // ar_cf: CRC=1
+    packet.push_back(m_seq >> 8);
+    packet.push_back(m_seq & 0xFF);
+    m_seq++;
+    packet.push_back((m_have_crc ? 0x80 : 0) | AFHEADER_VERSION); // ar_cf: CRC=1
     packet.push_back(AFHEADER_PT_TAG);
 
     // insert payload, must have a length multiple of 8 bytes
@@ -91,6 +90,11 @@ AFPacket AFPacketiser::Assemble(TagPacket tag_packet)
         std::cerr << "         AFPacket length " << packet.size() << std::endl;
 
     return packet;
+}
+
+void AFPacketiser::OverrideSeq(uint16_t seq)
+{
+    m_seq = seq;
 }
 
 }

@@ -36,6 +36,7 @@ struct sti_frame_t {
     frame_timestamp_t timestamp;
     audio_level_data audio_levels;
     odr_version_data version_data;
+    seq_info_t sequence_counters;
 };
 
 class STIWriter : public STIDataCollector {
@@ -48,22 +49,22 @@ class STIWriter : public STIDataCollector {
         virtual void update_protocol(
                 const std::string& proto,
                 uint16_t major,
-                uint16_t minor);
+                uint16_t minor) override;
 
-        virtual void update_stat(uint8_t stat, uint16_t spid);
+        virtual void update_stat(uint8_t stat, uint16_t spid) override;
 
         virtual void update_edi_time(
                 uint32_t utco,
-                uint32_t seconds);
+                uint32_t seconds) override;
 
-        virtual void update_rfad(std::array<uint8_t, 9> rfad);
-        virtual void update_sti_management(const sti_management_data& data);
-        virtual void add_payload(sti_payload_data&& payload);
+        virtual void update_rfad(std::array<uint8_t, 9> rfad) override;
+        virtual void update_sti_management(const sti_management_data& data) override;
+        virtual void add_payload(sti_payload_data&& payload) override;
 
-        virtual void update_audio_levels(const audio_level_data& data);
-        virtual void update_odr_version(const odr_version_data& data);
+        virtual void update_audio_levels(const audio_level_data& data) override;
+        virtual void update_odr_version(const odr_version_data& data) override;
 
-        virtual void assemble(void);
+        virtual void assemble(seq_info_t seq) override;
     private:
         std::function<void(sti_frame_t&&)> m_frame_callback;
 

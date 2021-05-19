@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019
+   Copyright (C) 2021
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -30,7 +30,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
 #include <vector>
 #include <list>
 #include <cstdio>
@@ -318,6 +317,11 @@ std::vector< PFTFragment > PFT::Assemble(AFPacket af_packet)
     m_pseq++;
 
     return pft_fragments;
+}
+
+void PFT::OverridePSeq(uint16_t pseq)
+{
+    m_pseq = pseq;
 }
 
 }

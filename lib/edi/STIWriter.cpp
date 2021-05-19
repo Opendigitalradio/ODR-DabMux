@@ -106,7 +106,7 @@ void STIWriter::update_edi_time(
 }
 
 
-void STIWriter::assemble()
+void STIWriter::assemble(seq_info_t seq)
 {
     if (not m_proto_valid) {
         throw std::runtime_error("Cannot assemble STI before protocol");
@@ -130,6 +130,7 @@ void STIWriter::assemble()
     stiFrame.timestamp.tsta = m_management_data.tsta;
     stiFrame.audio_levels = m_audio_levels;
     stiFrame.version_data = m_version_data;
+    stiFrame.sequence_counters = seq;
 
     m_frame_callback(move(stiFrame));
 

@@ -87,7 +87,7 @@ class STIDataCollector {
         virtual void update_audio_levels(const audio_level_data& data) = 0;
         virtual void update_odr_version(const odr_version_data& data) = 0;
 
-        virtual void assemble() = 0;
+        virtual void assemble(seq_info_t sequences) = 0;
 };
 
 /* The STIDecoder takes care of decoding the EDI TAGs related to the transport

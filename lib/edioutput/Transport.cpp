@@ -126,6 +126,11 @@ void Sender::write(const TagPacket& tagpacket)
     // Assemble into one AF Packet
     edi::AFPacket af_packet = edi_afPacketiser.Assemble(tagpacket);
 
+    write(af_packet);
+}
+
+void Sender::write(const AFPacket& af_packet)
+{
     if (m_conf.enable_pft) {
         // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
         vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(af_packet);
@@ -192,6 +197,16 @@ void Sender::write(const TagPacket& tagpacket)
             }
         }
     }
+}
+
+void Sender::override_af_sequence(uint16_t seq)
+{
+    edi_afPacketiser.OverrideSeq(seq);
+}
+
+void Sender::override_pft_sequence(uint16_t pseq)
+{
+    edi_pft.OverridePSeq(pseq);
 }
 
 void Sender::run()

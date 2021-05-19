@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include "config.h"
 #include "TagItems.h"
 #include <vector>
 #include <string>

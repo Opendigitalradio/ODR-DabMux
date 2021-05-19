@@ -27,7 +27,6 @@
 
 #pragma once
 
-#include "config.h"
 #include "EDIConfig.h"
 #include "AFPacket.h"
 #include "PFT.h"
@@ -44,7 +43,7 @@
 
 namespace edi {
 
-/** Configuration for EDI output */
+/** STI sender for EDI output */
 
 class Sender {
     public:
@@ -53,7 +52,19 @@ class Sender {
         Sender operator=(const Sender&) = delete;
         ~Sender();
 
+        // Assemble the tagpacket into an AF packet, and if needed,
+        // apply PFT and then schedule for transmission.
         void write(const TagPacket& tagpacket);
+
+        // Schedule an already assembled AF Packet for transmission,
+        // applying PFT if needed.
+        void write(const AFPacket& af_packet);
+
+        // Set the sequence numbers to be used for the next call to write()
+        // seq is for the AF layer
+        // pseq is for the PFT layer
+        void override_af_sequence(uint16_t seq);
+        void override_pft_sequence(uint16_t pseq);
 
     private:
         void run();

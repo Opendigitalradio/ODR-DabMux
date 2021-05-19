@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019
+   Copyright (C) 2021
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -32,7 +32,6 @@
 
 #pragma once
 
-#include "config.h"
 #include <vector>
 #include <list>
 #include <stdexcept>
@@ -64,6 +63,8 @@ class PFT
 
         // Cut a RSBlock into several fragments that can be transmitted
         std::vector< std::vector<uint8_t> > ProtectAndFragment(AFPacket af_packet);
+
+        void OverridePSeq(uint16_t pseq);
 
     private:
         unsigned int m_k = 207; // length of RS data word

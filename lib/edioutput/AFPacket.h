@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014
+   Copyright (C) 2021
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -28,7 +28,6 @@
 
 #pragma once
 
-#include "config.h"
 #include <vector>
 #include <cstdint>
 #include "TagItems.h"
@@ -49,10 +48,12 @@ class AFPacketiser
 
         AFPacket Assemble(TagPacket tag_packet);
 
-    private:
-        static const bool have_crc = true;
+        void OverrideSeq(uint16_t seq);
 
-        uint16_t seq = 0; //counter that overflows at 0xFFFF
+    private:
+        static const bool m_have_crc = true;
+
+        uint16_t m_seq = 0; //counter that overflows at 0xFFFF
 
         bool m_verbose;
 };

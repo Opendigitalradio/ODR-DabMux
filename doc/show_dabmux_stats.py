@@ -62,7 +62,7 @@ if len(sys.argv) == 1:
                 uptime="uptime",
                 offset="offset"))
 
-            for ident in values:
+            for ident in sorted(values):
                 v = values[ident]['inputstat']
 
                 if 'state' not in v:

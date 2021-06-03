@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2021
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -95,34 +95,19 @@ void header_message()
 #endif
             __DATE__, __TIME__);
     fprintf(stderr, "\n\n");
-    fprintf(stderr,
-            "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n");
-    fprintf(stderr,
-            "Her Majesty the Queen in Right of Canada\n");
-    fprintf(stderr,
-            "(Communications Research Centre Canada)\n\n");
-    fprintf(stderr,
-            "Copyright (C) 2020 Matthias P. Braendli\n");
-    fprintf(stderr,
-            "LICENCE: GPLv3+\n\n");
-    fprintf(stderr,
-            "http://opendigitalradio.org\n\n");
+    fprintf(stderr, "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n");
+    fprintf(stderr, "Her Majesty the Queen in Right of Canada\n");
+    fprintf(stderr, "(Communications Research Centre Canada)\n\n");
 
-    std::cerr << "Input URLs supported:" << std::endl <<
-    " prbs" <<
-    " udp" <<
-    " file" <<
-    " zmq" <<
-    std::endl;
+    fprintf(stderr, "Copyright (C) 2021 Matthias P. Braendli\n");
+    fprintf(stderr, "LICENCE: GPLv3+\n\n");
 
-    std::cerr << "Inputs format supported:" << std::endl <<
-    " raw" <<
-    " mpeg" <<
-    " packet" <<
-    " epm" <<
-    std::endl;
+    fprintf(stderr, "http://opendigitalradio.org\n\n");
 
-    std::cerr << "Output URLs supported:" << std::endl <<
+    fprintf(stderr, "Input URLs supported: prbs udp file zmq\n");
+    fprintf(stderr, "Inputs format supported: raw mpeg packet epm\n");
+
+    std::cerr << "Output URLs supported:\n" <<
 #if defined(HAVE_OUTPUT_FILE)
     " file" <<
 #endif
@@ -141,7 +126,7 @@ void header_message()
 #if defined(HAVE_OUTPUT_SIMUL)
     " simul" <<
 #endif
-    std::endl << std::endl;
+    "\n\n";
 
 }
 

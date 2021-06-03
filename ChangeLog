@@ -1,6 +1,17 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2021-06-03: Matthias P. Braendli <matthias@mpb.li>
+	(v4.0.0):
+		Incompatible change: Replace EDI packet interleaving by packet spreading (changes configuration
+		file format for ODR-DabMux and command line options for zmq2edi).
+		Add configurability for EDI UDP multicast input.
+		Simplify FIG 0/9, avoid sending an empty subfield list.
+		FIG 0/13 improvements for packet services, deprecate 'figtype' component setting which is replaced by 'user-application'.
+		Improvements for timestamped input.
+		Add --version command line option to all tools.
+		EDI output: make transport addressing optional.
+
 2020-05-26: Matthias P. Braendli <matthias@mpb.li>
 	(v3.1.1):
 		Fix FIG2 segment count issue.

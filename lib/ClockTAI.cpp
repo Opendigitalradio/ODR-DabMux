@@ -314,7 +314,7 @@ ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) :
         m_bulletin_urls = bulletin_urls;
     }
 
-    for (const auto url : m_bulletin_urls) {
+    for (const auto& url : m_bulletin_urls) {
         etiLog.level(info) << "TAI Bulletin URL: '" << url << "'";
     }
 }
@@ -359,7 +359,7 @@ int ClockTAI::get_valid_offset()
 #endif
         }
         else {
-            for (const auto url : m_bulletin_urls) {
+            for (const auto& url : m_bulletin_urls) {
                 try {
 #if TAI_TEST
                     etiLog.level(info) << "Load bulletin from " << url;

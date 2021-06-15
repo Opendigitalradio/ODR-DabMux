@@ -382,11 +382,13 @@ void Edi::m_run()
         }
         catch (const invalid_argument& e) {
             etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
-            this_thread::sleep_for(chrono::milliseconds(24));
+            m_sti_decoder.push_bytes({}); // Push an empty frame to clear the internal state
+            this_thread::sleep_for(chrono::milliseconds(8));
         }
         catch (const runtime_error& e) {
             etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
-            this_thread::sleep_for(chrono::milliseconds(24));
+            m_sti_decoder.push_bytes({}); // Push an empty frame to clear the internal state
+            this_thread::sleep_for(chrono::milliseconds(8));
         }
     }
 }

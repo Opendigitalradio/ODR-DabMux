@@ -49,6 +49,12 @@ FillStatus FIG0_7::fill(uint8_t *buf, size_t max_size)
 {
     FillStatus fs;
 
+    if (max_size < 4) {
+        fs.complete_fig_transmitted = false;
+        fs.num_bytes_written = 0;
+        return fs;
+    }
+
     auto ensemble = m_rti->ensemble;
 
     if (ensemble->reconfig_counter < 0) {

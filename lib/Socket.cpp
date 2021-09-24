@@ -23,6 +23,7 @@
 */
 
 #include "Socket.h"
+#include "Log.h"
 
 #include <iostream>
 #include <cstdio>
@@ -934,12 +935,16 @@ void TCPReceiveServer::process()
             }
             catch (const runtime_error& e) {
                 sock.close();
-                // TODO replace fprintf
-                fprintf(stderr, "TCP Receiver restarted after error: %s\n", e.what());
+                etiLog.log(warn, "TCP Receiver restarted after error: %s", e.what());
+                m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
+                break;
             }
 
             if (num_timeouts > max_num_timeouts) {
                 sock.close();
+                etiLog.log(warn, "TCP Receiver restarted after timeout");
+                m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
+                break;
             }
         }
     }

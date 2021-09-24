@@ -295,18 +295,20 @@ decode_state_t TagDispatcher::decode_afpacket(
     uint8_t major_revision = (input_data[8] & 0x70) >> 4;
     uint8_t minor_revision = input_data[8] & 0x0F;
     if (major_revision != 1 or minor_revision != 0) {
-        throw invalid_argument("EDI AF Packet has wrong revision " +
-                to_string(major_revision) + "." + to_string(minor_revision));
+        etiLog.level(warn) << "EDI AF Packet has wrong revision " << to_string(major_revision) << "." << to_string(minor_revision);
+        return {false, AFPACKET_HEADER_LEN + taglength + crclength};
     }
     uint8_t pt = input_data[9];
     if (pt != 'T') {
         // only support Tag
-        return {false, 0};
+        etiLog.level(warn) << "AF Packet Unknown protocol type, discarding";
+        return {false, AFPACKET_HEADER_LEN + taglength + crclength};
     }
 
 
     if (not has_crc) {
-        throw invalid_argument("AF packet not supported, has no CRC");
+        etiLog.level(warn) << "AF packet not supported, has no CRC";
+        return {false, AFPACKET_HEADER_LEN + taglength + crclength};
     }
 
     uint16_t crc = 0xffff;
@@ -318,7 +320,8 @@ decode_state_t TagDispatcher::decode_afpacket(
     uint16_t packet_crc = read_16b(input_data.begin() + AFPACKET_HEADER_LEN + taglength);
 
     if (packet_crc != crc) {
-        throw invalid_argument("AF Packet crc wrong");
+        etiLog.level(warn) << "AF Packet crc wrong";
+        return {false, AFPACKET_HEADER_LEN + taglength + crclength};
     }
     else {
         vector<uint8_t> payload(taglength);

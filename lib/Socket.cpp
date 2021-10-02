@@ -936,10 +936,12 @@ void TCPReceiveServer::process()
                 sock.close();
                 // TODO replace fprintf
                 fprintf(stderr, "TCP Receiver restarted after error: %s\n", e.what());
+                m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
             }
 
             if (num_timeouts > max_num_timeouts) {
                 sock.close();
+                m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
             }
         }
     }

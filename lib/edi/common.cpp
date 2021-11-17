@@ -154,6 +154,7 @@ void TagDispatcher::push_bytes(const vector<uint8_t> &buf)
     while (m_input_data.size() > 2) {
         if (m_input_data[0] == 'A' and m_input_data[1] == 'F') {
             const auto r = decode_afpacket(m_input_data);
+            bool leave_loop = false;
             switch (r.st) {
                 case decode_state_e::Ok:
                     m_last_sequences.pseq_valid = false;
@@ -161,9 +162,11 @@ void TagDispatcher::push_bytes(const vector<uint8_t> &buf)
                     break;
                 case decode_state_e::MissingData:
                     /* Continue filling buffer */
+                    leave_loop = true;
                     break;
                 case decode_state_e::Error:
                     m_last_sequences.pseq_valid = false;
+                    leave_loop = true;
                     break;
             }
 
@@ -173,6 +176,10 @@ void TagDispatcher::push_bytes(const vector<uint8_t> &buf)
                         m_input_data.end(),
                         back_inserter(remaining_data));
                 m_input_data = remaining_data;
+            }
+
+            if (leave_loop) {
+                break;
             }
         }
         else if (m_input_data[0] == 'P' and m_input_data[1] == 'F') {

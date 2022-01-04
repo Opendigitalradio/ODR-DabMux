@@ -108,6 +108,7 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
             etiLog.level(error) << "Cannot transmit FIG 0/9: too many services with different ECC";
         }
 
+#if 0
         for (const auto& ef : m_extended_fields) {
             stringstream ss;
             ss << "FIG0_9 Ext ECC 0x" << hex << (int)ef.ecc << dec << ":";
@@ -118,6 +119,7 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
             ss << ".";
             etiLog.level(debug) << ss.str();
         }
+#endif
     }
 
     // Transmitting a FIG0/9 without any extended field was the CEI in EN 300 401 v1.

@@ -183,8 +183,8 @@ FillStatus FIG0_9::fill(uint8_t *buf, size_t max_size)
         remaining -= 2;
 
         for (uint16_t sid : ef.sids) {
-            uint16_t *sid_field = (uint16_t*)buf;
-            *sid_field = htons(sid);
+            const uint16_t sid_field = htons(sid);
+            memcpy(buf, &sid_field, 2);
             buf += 2;
             fig0_9->Length += 2;
             remaining -= 2;

@@ -72,19 +72,28 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         m_initialised = true;
     }
 
-    FIGtype0* fig0 = NULL;
-
-    for (; linkageSetFIG0_6 != linkageSubsets.end();
-            ++linkageSetFIG0_6) {
+    for (; linkageSetFIG0_6 != linkageSubsets.end(); ++linkageSetFIG0_6) {
 
         const bool PD = false;
         const bool ILS = linkageSetFIG0_6->international;
 
+        // Are there earlier subsets to this LSN?
+        // DB key is OE (always 0),P/D (always 0),S/H,ILS,LSN
+        bool database_start = true;
+        for (auto it = linkageSubsets.begin(); it != linkageSetFIG0_6; ++it) {
+            if (    it->hard == linkageSetFIG0_6->hard and
+                    it->international == linkageSetFIG0_6->international and
+                    it->lsn == linkageSetFIG0_6->lsn) {
+                database_start = false;
+            }
+        }
+
         // need to add key service to num_ids, unless it is empty which means we
-        // send a CEI
+        // send a CEI, and unless it's the continuation of the database
         const size_t num_ids = linkageSetFIG0_6->keyservice.empty() ?
             // do not transmit list if keyservice empty, it should anyway be empty
-            0 : (1 + linkageSetFIG0_6->id_list.size());
+            0 : ((database_start ? 1 : 0) + linkageSetFIG0_6->id_list.size());
+
 
         if (num_ids > 0x0F) {
             etiLog.log(error,
@@ -94,29 +103,25 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         }
 
         const size_t headersize = sizeof(struct FIGtype0_6_header);
-        const int required_size = sizeof(struct FIGtype0_6) + headersize +
+        const int required_size = sizeof(FIGtype0) + sizeof(struct FIGtype0_6) + headersize +
             (num_ids > 0 ?
              (PD == 0 ? (ILS == 0 ? 2*num_ids : 3*num_ids) : 4*num_ids) :
              0);
 
-        if (fig0 == NULL) {
-            if (remaining < 2 + required_size) {
-                break;
-            }
-            fig0 = (FIGtype0*)buf;
-            fig0->FIGtypeNumber = 0;
-            fig0->Length = 1;
-            fig0->CN = 0;
-            fig0->OE = 0;
-            fig0->PD = PD;
-            fig0->Extension = 6;
-
-            buf += 2;
-            remaining -= 2;
-        }
-        else if (remaining < required_size) {
+        // Always insert a FIG0 header because it gets too confusing with the database continuation
+        if (remaining < required_size) {
             break;
         }
+        auto *fig0 = (FIGtype0*)buf;
+        fig0->FIGtypeNumber = 0;
+        fig0->Length = 1;
+        fig0->CN = database_start ? 0 : 1;
+        fig0->OE = 0;
+        fig0->PD = PD;
+        fig0->Extension = 6;
+
+        buf += 2;
+        remaining -= 2;
 
         FIGtype0_6 *fig0_6 = (FIGtype0_6*)buf;
 
@@ -130,9 +135,7 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
         buf += sizeof(struct FIGtype0_6);
         remaining -= sizeof(struct FIGtype0_6);
 
-        etiLog.log(debug,
-                "Linkage set 0x%04x wrote %d",
-                linkageSetFIG0_6->lsn, fig0->Length);
+        //etiLog.log(debug, "Linkage set 0x%04x wrote %d", linkageSetFIG0_6->lsn, fig0->Length);
 
         if (num_ids > 0) {
             FIGtype0_6_header *header = (FIGtype0_6_header*)buf;
@@ -161,28 +164,51 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
             buf += headersize;
             remaining -= headersize;
 
-            const std::string keyserviceuid = linkageSetFIG0_6->keyservice;
-            const auto& keyservice = std::find_if(
-                    ensemble->services.begin(),
-                    ensemble->services.end(),
-                    [&](const std::shared_ptr<DabService> srv) {
+            if (database_start) {
+                const std::string keyserviceuid = linkageSetFIG0_6->keyservice;
+                const auto& keyservice = std::find_if(
+                        ensemble->services.begin(),
+                        ensemble->services.end(),
+                        [&](const std::shared_ptr<DabService> srv) {
                         return srv->uid == keyserviceuid;
-                    });
+                        });
 
-            if (keyservice == ensemble->services.end()) {
-                std::stringstream ss;
-                ss << "Invalid key service " << keyserviceuid <<
+                if (keyservice == ensemble->services.end()) {
+                    std::stringstream ss;
+                    ss << "Invalid key service " << keyserviceuid <<
                         " in linkage set 0x" << std::hex << linkageSetFIG0_6->lsn;
-                throw MuxInitException(ss.str());
+                    throw MuxInitException(ss.str());
+                }
+
+                if (not PD and not ILS) {
+                    buf[0] = (*keyservice)->id >> 8;
+                    buf[1] = (*keyservice)->id & 0xFF;
+                    fig0->Length += 2;
+                    buf += 2;
+                    remaining -= 2;
+                }
+                else if (not PD and ILS) {
+                    buf[0] = ((*keyservice)->ecc == 0) ?
+                        ensemble->ecc : (*keyservice)->ecc;
+                    buf[1] = (*keyservice)->id >> 8;
+                    buf[2] = (*keyservice)->id & 0xFF;
+                    fig0->Length += 3;
+                    buf += 3;
+                    remaining -= 3;
+                }
+                else { // PD == true
+                    // TODO if IdLQ is 11, MSB shall be zero
+                    buf[0] = (*keyservice)->id >> 24;
+                    buf[1] = (*keyservice)->id >> 16;
+                    buf[2] = (*keyservice)->id >> 8;
+                    buf[3] = (*keyservice)->id & 0xFF;
+                    fig0->Length += 4;
+                    buf += 4;
+                    remaining -= 4;
+                }
             }
 
             if (not PD and not ILS) {
-                buf[0] = (*keyservice)->id >> 8;
-                buf[1] = (*keyservice)->id & 0xFF;
-                fig0->Length += 2;
-                buf += 2;
-                remaining -= 2;
-
                 for (const auto& l : linkageSetFIG0_6->id_list) {
                     buf[0] = l.id >> 8;
                     buf[1] = l.id & 0xFF;
@@ -192,14 +218,6 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 }
             }
             else if (not PD and ILS) {
-                buf[0] = ((*keyservice)->ecc == 0) ?
-                    ensemble->ecc : (*keyservice)->ecc;
-                buf[1] = (*keyservice)->id >> 8;
-                buf[2] = (*keyservice)->id & 0xFF;
-                fig0->Length += 3;
-                buf += 3;
-                remaining -= 3;
-
                 for (const auto& l : linkageSetFIG0_6->id_list) {
                     buf[0] = l.ecc;
                     buf[1] = l.id >> 8;
@@ -210,15 +228,6 @@ FillStatus FIG0_6::fill(uint8_t *buf, size_t max_size)
                 }
             }
             else { // PD == true
-                // TODO if IdLQ is 11, MSB shall be zero
-                buf[0] = (*keyservice)->id >> 24;
-                buf[1] = (*keyservice)->id >> 16;
-                buf[2] = (*keyservice)->id >> 8;
-                buf[3] = (*keyservice)->id & 0xFF;
-                fig0->Length += 4;
-                buf += 4;
-                remaining -= 4;
-
                 for (const auto& l : linkageSetFIG0_6->id_list) {
                     buf[0] = l.id >> 24;
                     buf[1] = l.id >> 16;
@@ -273,10 +282,10 @@ void FIG0_6::update()
     linkageSetFIG0_6 = linkageSubsets.begin();
 
 #if 0
-    etiLog.log(info, " Linkage Sets");
+    etiLog.log(info, " Linkage Sets rearranged");
     for (const auto& lsd : linkageSubsets) {
 
-        etiLog.log(info,      "   LSN 0x%04x", lsd.lsn);
+        etiLog.log(info,      " * LSN 0x%04x", lsd.lsn);
         etiLog.level(info) << "   active " << (lsd.active ? "true" : "false");
         etiLog.level(info) << "   " << (lsd.hard ? "hard" : "soft");
         etiLog.level(info) << "   international " << (lsd.international ? "true" : "false");

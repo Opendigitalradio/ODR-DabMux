@@ -54,10 +54,6 @@ that did not yet make its way into a release, you can clone the
 
        % ./configure
 
-* On a Raspberry Pi and other ARM systems you might need
-
-       % ./configure --with-boost-libdir=/usr/lib/arm-linux-gnueabihf
-
 * Build ODR-DabMux
 
        % make

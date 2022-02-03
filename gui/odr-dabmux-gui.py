@@ -97,8 +97,9 @@ def rc_post(module, param):
 
     value = rc.get_param_value(module, param)
 
-    return """<p>Parameter is now {}</p>
-<p><a href="/#rcmodules">Return</a></p>""".format(value)
+    return """<html><head>
+              <meta http-equiv="refresh" content="0;url='/'" />
+              </head></html>"""
 
 @route('/')
 def index():

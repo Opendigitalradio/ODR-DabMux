@@ -29,7 +29,7 @@
 
 from muxconfig import *
 from muxrc import *
-from bottle import route, run, template, static_file, request
+from bottle import *
 import json
 
 import argparse
@@ -84,10 +84,19 @@ def rc_get(module, param):
 
     value = rc.get_param_value(module, param)
 
+    if param in paramObj:
+      paramList = paramObj[param]
+      label = paramObj["labels"][param]
+    else:
+      paramList = []
+      label = ""
+
     return template('rcparam',
             module    = module,
             param     = param,
-            value     = value)
+            value     = value,
+            label     = label,
+            list      = paramList)
 
 @route('/rc/<module>/<param>', method="POST")
 def rc_post(module, param):
@@ -153,5 +162,9 @@ if __name__ == '__main__':
 
     rc = MuxRemoteControl(cli_args.mhost, cli_args.rcport)
 
-    run(host=cli_args.host, port=int(cli_args.port), debug=True, reloader=False)
+    # Import selectable paramaters values
+    paramFile = open("rcparam.json")
+    paramStr = paramFile.read()
+    paramObj = json.loads(paramStr)
 
+    run(host=cli_args.host, port=int(cli_args.port), debug=True, reloader=False)

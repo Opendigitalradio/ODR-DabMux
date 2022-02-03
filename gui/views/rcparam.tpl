@@ -9,15 +9,29 @@
     <script type="text/javascript" src="/static/intercooler-1.0.1.min.js"></script>
   </head>
 
-  <body>
-    <h1 class="w3-container w3-blue-grey">Remote-Control of module {{module}}</h1>
-    <div class="w3-container">
-      <form class="w3-container w3-card-4" ic-on-error="alert(str)" ic-post-to="/rc/{{module}}/{{param}}">
+  <body class="w3-container">
+    <h1 class="w3-blue-grey">Remote-Control: module {{module}}</h1>
+    <div class="w3-card-4"> 
+      <form class="w3-container" ic-on-error="alert(str)" ic-post-to="/rc/{{module}}/{{param}}">
         <p />
-        <label>Parameter <b>{{param}}</b></label>
-        <input name="newvalue" type="text" value="{{value}}">
+        % if (len(list) == 0):
+          <label>{{param}}:</label>
+          <input name="newvalue" type="text" value="{{value}}" autofocus>
+        % else:
+          <label>{{label}}:</label>
+          <select id="newvalue" name="newvalue">
+            % for l in list:
+              % if (bytes(l["value"], 'utf-8') == value):
+                <option selected value={{l["value"]}}>{{l["desc"]}}</option>
+              % else:
+                <option value={{l["value"]}}>{{l["desc"]}}</option>
+              % end
+            % end
+          </select>
+        % end
         <p />
         <button class="w3-button w3-blue-grey">Update</button>
+        <p />
       </form>
     </div>
   </body>

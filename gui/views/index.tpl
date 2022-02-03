@@ -4,31 +4,54 @@
     <title>ODR-DabMux Configuration</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
     <script type="text/javascript" src="static/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="static/script.js"></script>
   </head>
-  <body>
+  <body class="w3-container">
     <div class="w3-top w3-bar w3-blue-grey">
-      <a href="#general" class="w3-bar-item w3-button w3-mobile">General Options</a>
-      <a href="#servicelist" class="w3-bar-item w3-button w3-mobile">Services</a>
-      <a href="#subchannels" class="w3-bar-item w3-button w3-mobile">Subchannels</a>
-      <a href="#components" class="w3-bar-item w3-button w3-mobile">Components</a>
-      <a href="#rcmodules" class="w3-bar-item w3-button w3-mobile">RC Modules</a>
+      <a href="#general" class="w3-bar-item w3-button">General Options</a>
+      <a href="#servicelist" class="w3-bar-item w3-button">Services</a>
+      <a href="#subchannels" class="w3-bar-item w3-button">Subchannels</a>
+      <a href="#components" class="w3-bar-item w3-button">Components</a>
+      <a href="#rcmodules" class="w3-bar-item w3-button">RC Modules</a>
     </div>
-    <br /><br />
-    <div class="w3-container">
-      <ul id="general" class="w3-card-4 w3-ul">
-        <li class="w3-blue-grey"><h3>General Multiplex Options</h3></li>
-        <li>Number of frames to encode: {{g.nbframes}}</li>
-        <li>Statistics server port: {{g.statsserverport}}</li>
-        <li>Write SCCA field: {{g.writescca}}</li>
-        <li>Write TIST timestamp: {{g.tist}}</li>
-        <li>DAB Mode: {{g.dabmode}}</li>
-        <li>Log to syslog: {{g.syslog}}</li>
-      </ul>
-      <p />
-      <table id="servicelist" class="w3-card-4 w3-table w3-striped w3-bordered">
+    <div id="general" class="w3-responsive w3-card-4">
+      <br /><br />
+      <table class="w3-table w3-striped w3-bordered">
+        <tr class="w3-blue-grey">
+          <th>General multiplex options</th>
+          <th></th>
+        </tr>
+        <tr>
+          <td>Number of frames to encode</td>
+          <td>{{g.nbframes}}</td>
+        </tr>
+        <tr>
+          <td>Statistics server port</td>
+          <td>{{g.statsserverport}}</td>
+        </tr>
+        <tr>
+          <td>Write SCCA field</td>
+          <td>{{g.writescca}}</td>
+        </tr>
+        <tr>
+          <td>Write TIST timestamp</td>
+          <td>{{g.tist}}</td>
+        </tr>
+        <tr>
+          <td>DAB mode</td>
+          <td>{{g.dabmode}}</td>
+        </tr>
+        <tr>
+          <td>Log to syslog</td>
+          <td>{{g.syslog}}</td>
+        </tr>
+      </table>
+    </div>
+    <div id="servicelist" class="w3-responsive w3-card-4">
+      <br /><br />
+      <table class="w3-table w3-striped w3-bordered">
         <tr class="w3-blue-grey">
           <th>Service</th>
           <th>Id</th>
@@ -44,8 +67,10 @@
           </tr>
         % end
       </table>
-      <p />
-      <table id="subchannels" class="w3-card-4 w3-table w3-striped w3-bordered">
+    </div>
+    <div id="subchannels" class="w3-responsive w3-card-4">
+      <br /><br />
+      <table class="w3-table w3-striped w3-bordered">
         <tr class="w3-blue-grey">
           <th>Sub channel</th>
           <th>Type</th>
@@ -61,8 +86,10 @@
           </tr>
         % end
       </table>
-      <p />
-      <table id="components" class="w3-card-4 w3-table w3-striped w3-bordered">
+    </div>
+    <div id="components" class="w3-responsive w3-card-4">
+      <br /><br />
+      <table class="w3-table w3-striped w3-bordered">
         <tr class="w3-blue-grey">
           <th>Component</th>
           <th>Label</th>
@@ -82,9 +109,11 @@
           </tr>
         % end
       </table>
-      <p />
-      <ul id="rcmodules" class="w3-card w3-ul">
-        <li class="w3-blue-grey"><h3>RC Modules</h3></li>
+    </div>
+    <div id="rcmodules" class="w3-responsive w3-card-4">
+      <br /><br />
+      <ul class="w3-ul">
+        <li class="w3-blue-grey"><b>RC Modules</b></li>
         % for m in rcmodules:
           <li class="w3-light-grey"><b>{{m.name}}</b>
             <ul class="w3-ul">
@@ -95,6 +124,7 @@
           </li>
         % end
       </ul>
+    </div>
   </div>
 
   </body>

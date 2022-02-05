@@ -29,7 +29,8 @@
 
 from muxconfig import *
 from muxrc import *
-from bottle import *
+from bottle import route, run, request, static_file, jinja2_template as template
+import jinja2
 import json
 
 import argparse

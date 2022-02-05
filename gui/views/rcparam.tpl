@@ -14,21 +14,21 @@
     <div class="w3-card-4"> 
       <form class="w3-container" ic-on-error="alert(str)" ic-post-to="/rc/{{module}}/{{param}}">
         <p />
-        % if (len(list) == 0):
+        {% if not list %}
           <label>{{param}}:</label>
-          <input name="newvalue" type="text" value="{{value}}" autofocus>
-        % else:
+          <input name="newvalue" type="text" value="{{value.decode()}}" autofocus>
+        {% else %}
           <label>{{label}}:</label>
           <select id="newvalue" name="newvalue">
-            % for l in list:
-              % if (bytes(l["value"], 'utf-8') == value):
+            {% for l in list %}
+              {% if (l["value"] == value.decode()) %}
                 <option selected value={{l["value"]}}>{{l["desc"]}}</option>
-              % else:
+              {% else %}
                 <option value={{l["value"]}}>{{l["desc"]}}</option>
-              % end
-            % end
+              {% endif %}
+            {% endfor %}
           </select>
-        % end
+        {% endif %}
         <p />
         <button class="w3-button w3-blue-grey">Update</button>
         <p />

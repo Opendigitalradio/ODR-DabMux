@@ -58,14 +58,14 @@
           <th>Label</th>
           <th>Short label</th>
         </tr>
-        % for s in services:
+        {% for s in services %}
           <tr>
             <td>{{s.name}}</td>
             <td>{{s.id}}</td>
             <td>{{s.label}}</td>
             <td>{{s.shortlabel}}</td>
           </tr>
-        % end
+        {% endfor %}
       </table>
     </div>
     <div id="subchannels" class="w3-responsive w3-card-4">
@@ -77,14 +77,14 @@
           <th>Input file</th>
           <th>Bit rate (Kbps)</th>
         </tr>
-        % for s in subchannels:
+        {% for s in subchannels %}
           <tr>
             <td>{{s.name}}</td>
             <td>{{s.type}}</td>
             <td>{{s.inputfile}}</td>
             <td>{{s.bitrate}}</td>
           </tr>
-        % end
+        {% endfor %}
       </table>
     </div>
     <div id="components" class="w3-responsive w3-card-4">
@@ -98,7 +98,7 @@
           <th>Sub-channel</th>
           <th>Fig type</th>
         </tr>
-        % for s in components:
+        {% for s in components %}
           <tr>
             <td>{{s.name}}</td>
             <td>{{s.label}}</td>
@@ -107,22 +107,22 @@
             <td>{{s.subchannel}}</td>
             <td>{{s.figtype}}</td>
           </tr>
-        % end
+        {% endfor %}
       </table>
     </div>
     <div id="rcmodules" class="w3-responsive w3-card-4">
       <br /><br />
       <ul class="w3-ul">
         <li class="w3-blue-grey"><b>RC Modules</b></li>
-        % for m in rcmodules:
+        {% for m in rcmodules %}
           <li class="w3-light-grey"><b>{{m.name}}</b>
             <ul class="w3-ul">
-              % for p in m.parameters:
-                <li class="w3-white"><a href="/rc/{{m.name}}/{{p.param}}" class="w3-hover-blue-grey">{{p.param}}</a> : {{p.value}}</li>
-              % end
+              {% for p in m.parameters %}
+                <li class="w3-white"><a href="/rc/{{m.name}}/{{p.param.decode()}}" class="w3-hover-blue-grey">{{p.param.decode()}}</a> : {{p.value.decode()}}</li>
+              {% endfor %}
             </ul>
           </li>
-        % end
+        {% endfor %}
       </ul>
     </div>
   </div>

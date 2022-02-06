@@ -43,7 +43,7 @@ def config():
 
     return template('configeditor',
             version = conf.get_mux_version(),
-            config  = conf.get_full_configuration(),
+            config  = json.dumps(conf.get_full_configuration(), indent=4),
             message = "")
 
 @route('/config', method="POST")

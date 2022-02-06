@@ -18,7 +18,7 @@
 
   <form action="/config" method="post">
       <p>
-      <textarea name="config" cols="60" rows="50">{{config}}</textarea>
+      <textarea name="config" cols="60" rows="30">{{config}}</textarea>
       </p>
 
       <p>

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ODR-DabMux Configuration Editor</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
-    <script type="text/javascript" src="static/jquery-1.10.2.min.js"></script>
   </head>
 <body class="w3-container">
   <h1>Configuration for {{version}}</h1>

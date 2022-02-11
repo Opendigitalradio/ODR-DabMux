@@ -5,8 +5,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
-    <script type="text/javascript" src="static/jquery-1.10.2.min.js"></script>
-    <script type="text/javascript" src="static/script.js"></script>
   </head>
   <body class="w3-container">
     <div class="w3-top w3-bar w3-blue-grey">

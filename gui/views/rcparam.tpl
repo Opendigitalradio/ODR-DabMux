@@ -5,14 +5,12 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <script type="text/javascript" src="/static/jquery-1.10.2.min.js"></script>
-    <script type="text/javascript" src="/static/intercooler-1.0.1.min.js"></script>
   </head>
 
   <body class="w3-container">
     <h1 class="w3-blue-grey">Remote-Control: module {{module}}</h1>
     <div class="w3-card-4"> 
-      <form class="w3-container" ic-on-error="alert(str)" ic-post-to="/rc/{{module}}/{{param}}">
+      <form class="w3-container" method="post">
         <p />
         {% if not list %}
           <label>{{param}}:</label>
@@ -30,7 +28,7 @@
           </select>
         {% endif %}
         <p />
-        <button class="w3-button w3-blue-grey">Update</button>
+        <button class="w3-button w3-blue-grey" type="submit">Update</button>
         <p />
       </form>
     </div>

@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018 Matthias P. Braendli
+   Copyright (C) 2019 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -51,6 +51,7 @@
 #include <limits.h>
 #include "PcDebug.h"
 #include "Log.h"
+#include "zmq.hpp"
 
 #ifdef __MINGW32__
 #   define bzero(s, n) memset(s, 0, n)
@@ -220,7 +221,7 @@ void ZmqBase::rebind()
     }
 }
 
-int ZmqBase::open(const std::string& inputUri)
+void ZmqBase::open(const std::string& inputUri)
 {
     m_inputUri = inputUri;
 
@@ -229,33 +230,32 @@ int ZmqBase::open(const std::string& inputUri)
 
     // We want to appear in the statistics !
     m_stats.registerAtServer();
-
-    return 0;
 }
 
-int ZmqBase::close()
+void ZmqBase::close()
 {
     m_zmq_sock.close();
-    return 0;
 }
 
 int ZmqBase::setBitrate(int bitrate)
 {
+    if (bitrate <= 0) {
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate) + " for " + m_name);
+    }
+
     m_bitrate = bitrate;
-    return bitrate; // TODO do a nice check here
+    return bitrate;
 }
 
 // size corresponds to a frame size. It is constant for a given bitrate
-int ZmqBase::readFrame(uint8_t* buffer, size_t size)
+size_t ZmqBase::readFrame(uint8_t* buffer, size_t size)
 {
-    int rc;
-
     /* We must *always* read data from the ZMQ socket,
      * to make sure that ZMQ internal buffers are emptied
      * quickly. It's the only way to control the buffers
      * of the whole path from encoder to our frame_buffer.
      */
-    rc = readFromSocket(size);
+    const auto readsize = readFromSocket(size);
 
     /* Notify of a buffer overrun, and drop some frames */
     if (m_frame_buffer.size() >= m_config.buffer_size) {
@@ -269,7 +269,6 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
             size_t over_max = m_frame_buffer.size() - m_config.prebuffering;
 
             while (over_max--) {
-                delete[] m_frame_buffer.front();
                 m_frame_buffer.pop_front();
             }
         }
@@ -289,17 +288,16 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
              *       frames even though we could drop less.
              * */
             for (int frame_del_count = 0; frame_del_count < 5; frame_del_count++) {
-                delete[] m_frame_buffer.front();
                 m_frame_buffer.pop_front();
             }
         }
     }
 
     if (m_prebuf_current > 0) {
-        if (rc > 0)
+        if (readsize > 0)
             m_prebuf_current--;
         if (m_prebuf_current == 0)
-            etiLog.log(info, "inputZMQ %s input pre-buffering complete\n",
+            etiLog.log(info, "inputZMQ %s input pre-buffering complete",
                 m_rc_name.c_str());
 
         /* During prebuffering, give a zeroed frame to the mux */
@@ -312,7 +310,7 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
     m_stats.notifyBuffer(m_frame_buffer.size() * size);
 
     if (m_frame_buffer.empty()) {
-        etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering\n",
+        etiLog.log(warn, "inputZMQ %s input empty, re-enabling pre-buffering",
                 m_rc_name.c_str());
         // reset prebuffering
         m_prebuf_current = m_config.prebuffering;
@@ -324,12 +322,21 @@ int ZmqBase::readFrame(uint8_t* buffer, size_t size)
     }
     else {
         /* Normal situation, give a frame from the frame_buffer */
-        uint8_t* newframe = m_frame_buffer.front();
-        memcpy(buffer, newframe, size);
-        delete[] newframe;
+        auto& newframe = m_frame_buffer.front();
+        if (newframe.size() != size) {
+            throw logic_error("Inconsistent ZMQ sizes");
+        }
+        memcpy(buffer, newframe.data(), newframe.size());
         m_frame_buffer.pop_front();
         return size;
     }
+}
+
+size_t ZmqBase::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
+{
+    // TODO add timestamps into the metadata and implement this
+    memset(buffer, 0, size);
+    return 0;
 }
 
 
@@ -342,7 +349,8 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     zmq::message_t msg;
 
     try {
-        messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
+        auto result = m_zmq_sock.recv(msg, zmq::recv_flags::dontwait);
+        messageReceived = result.has_value();
         if (not messageReceived) {
             return 0;
         }
@@ -363,7 +371,7 @@ int ZmqMPEG::readFromSocket(size_t framesize)
     if (    msg.size() >= sizeof(zmq_frame_header_t) and
             msg.size() == ZMQ_FRAME_SIZE(frame) and
             frame->version == 1 and
-            frame->encoder == ZMQ_ENCODER_TOOLAME) {
+            frame->encoder == ZMQ_ENCODER_MPEG_L2) {
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
 
@@ -382,9 +390,9 @@ int ZmqMPEG::readFromSocket(size_t framesize)
         }
         else if (m_enable_input) {
             // copy the input frame blockwise into the frame_buffer
-            auto framedata = new uint8_t[framesize];
-            memcpy(framedata, data, framesize);
-            m_frame_buffer.push_back(framedata);
+            vector<uint8_t> framedata(framesize);
+            copy(data, data + framesize, framedata.begin());
+            m_frame_buffer.push_back(move(framedata));
         }
         else {
             return 0;
@@ -411,7 +419,8 @@ int ZmqAAC::readFromSocket(size_t framesize)
     zmq::message_t msg;
 
     try {
-        messageReceived = m_zmq_sock.recv(&msg, ZMQ_DONTWAIT);
+        auto result = m_zmq_sock.recv(msg, zmq::recv_flags::dontwait);
+        messageReceived = result.has_value();
         if (not messageReceived) {
             return 0;
         }
@@ -433,7 +442,7 @@ int ZmqAAC::readFromSocket(size_t framesize)
     if (    msg.size() >= sizeof(zmq_frame_header_t) and
             msg.size() == ZMQ_FRAME_SIZE(frame) and
             frame->version == 1 and
-            frame->encoder == ZMQ_ENCODER_FDK) {
+            frame->encoder == ZMQ_ENCODER_AACPLUS) {
         datalen = frame->datasize;
         data = ZMQ_FRAME_DATA(frame);
 
@@ -460,9 +469,9 @@ int ZmqAAC::readFromSocket(size_t framesize)
                 for (uint8_t* framestart = data;
                         framestart < &data[5*framesize];
                         framestart += framesize) {
-                    auto audioframe = new uint8_t[framesize];
-                    memcpy(audioframe, framestart, framesize);
-                    m_frame_buffer.push_back(audioframe);
+                    vector<uint8_t> audioframe(framesize);
+                    copy(framestart, framestart + framesize, audioframe.begin());
+                    m_frame_buffer.push_back(move(audioframe));
                 }
             }
             else {
@@ -609,4 +618,3 @@ const string ZmqBase::get_parameter(const string& parameter) const
 }
 
 };
-

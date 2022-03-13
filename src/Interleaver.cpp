@@ -28,20 +28,14 @@
 #endif // _WIN32
 
 
-Interleaver::Interleaver(unsigned short I, unsigned short M, bool reverse)
+Interleaver::Interleaver(unsigned short I, unsigned short M, bool reverse) :
+    I(I),
+    M(M),
+    N(I * M),
+    memSize((this->N * I) - 1)
 {
-    this->I = I;
-    this->M = M;
-    this->N = I * M;
-    this->memSize = (this->N * I) - 1;
-    this->mem = new char[memSize];
+    mem.resize(memSize);
     setReverse(reverse);
-}
-
-
-Interleaver::~Interleaver()
-{
-    delete []mem;
 }
 
 
@@ -56,7 +50,7 @@ void Interleaver::reset()
 {
     j = 0;
     index = 0;
-    bzero(mem, memSize);
+    memset(mem.data(), 0, memSize * sizeof(mem[0]));
 }
 
 

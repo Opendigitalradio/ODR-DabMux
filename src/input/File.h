@@ -36,10 +36,11 @@ namespace Inputs {
 
 class FileBase : public InputBase {
     public:
-        virtual int open(const std::string& name);
-        virtual int readFrame(uint8_t* buffer, size_t size) = 0;
+        virtual void open(const std::string& name);
+        virtual size_t readFrame(uint8_t *buffer, size_t size) = 0;
+        virtual size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
         virtual int setBitrate(int bitrate);
-        virtual int close();
+        virtual void close();
 
         virtual void setNonblocking(bool nonblock);
 
@@ -63,7 +64,7 @@ class FileBase : public InputBase {
 
 class MPEGFile : public FileBase {
     public:
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
         virtual int setBitrate(int bitrate);
 
     private:
@@ -72,13 +73,13 @@ class MPEGFile : public FileBase {
 
 class RawFile : public FileBase {
     public:
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
 };
 
 class PacketFile : public FileBase {
     public:
         PacketFile(bool enhancedPacketMode);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
 
     protected:
         std::array<uint8_t, 96> m_packetData;

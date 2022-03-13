@@ -37,10 +37,11 @@ namespace Inputs {
 
 class Prbs : public InputBase {
     public:
-        virtual int open(const std::string& name);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual void open(const std::string& name);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
         virtual int setBitrate(int bitrate);
-        virtual int close();
+        virtual void close();
 
     private:
         virtual int rewind();

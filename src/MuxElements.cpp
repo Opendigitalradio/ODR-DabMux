@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -184,13 +184,13 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
 int DabLabel::setLabel(const std::string& label)
 {
     try {
-        auto ebu_label = charset_converter.convert(label, false);
+        auto ebu_label = charset_converter.utf8_to_ebu(label, false);
         size_t len = ebu_label.length();
         if (len > DABLABEL_LENGTH) {
             return -3;
         }
 
-        m_label = ebu_label;
+        m_fig1_label = ebu_label;
     }
     catch (const utf8::exception& e) {
         etiLog.level(warn) << "Failed to convert label '" << label <<
@@ -201,10 +201,10 @@ int DabLabel::setLabel(const std::string& label)
             return -3;
         }
 
-        m_label = label;
+        m_fig1_label = label;
     }
 
-    m_flag = 0xFF00; // truncate the label to the eight first characters
+    m_fig1_flag = 0xFF00; // truncate the label to the eight first characters
 
     return 0;
 }
@@ -212,23 +212,23 @@ int DabLabel::setLabel(const std::string& label)
 int DabLabel::setLabel(const std::string& label, const std::string& short_label)
 {
     DabLabel newlabel;
-    newlabel.m_flag = 0xFF00;
+    newlabel.m_fig1_flag = 0xFF00;
 
     try {
-        newlabel.m_label = charset_converter.convert(label, false);
+        newlabel.m_fig1_label = charset_converter.utf8_to_ebu(label, false);
 
-        size_t len = newlabel.m_label.length();
+        size_t len = newlabel.m_fig1_label.length();
         if (len > DABLABEL_LENGTH) {
             return -3;
         }
 
-        int flag = newlabel.setShortLabel(
-                charset_converter.convert(short_label, false));
+        int flag = newlabel.setFIG1ShortLabel(
+                charset_converter.utf8_to_ebu(short_label, false));
         if (flag < 0) {
             return flag;
         }
 
-        m_flag = flag & 0xFFFF;
+        m_fig1_flag = flag & 0xFFFF;
     }
     catch (const utf8::exception& e) {
         etiLog.level(warn) << "Failed to convert label '" << label <<
@@ -241,8 +241,8 @@ int DabLabel::setLabel(const std::string& label, const std::string& short_label)
             return -3;
         }
 
-        newlabel.m_label = label;
-        newlabel.m_flag = 0xFF00;
+        newlabel.m_fig1_label = label;
+        newlabel.m_fig1_flag = 0xFF00;
 
         int result = newlabel.setLabel(label);
         if (result < 0) {
@@ -250,16 +250,16 @@ int DabLabel::setLabel(const std::string& label, const std::string& short_label)
         }
 
         /* First check if we can actually create the short label */
-        int flag = newlabel.setShortLabel(short_label);
+        int flag = newlabel.setFIG1ShortLabel(short_label);
         if (flag < 0) {
             return flag;
         }
 
-        m_flag = flag & 0xFFFF;
+        m_fig1_flag = flag & 0xFFFF;
     }
 
     // short label is valid.
-    m_label = newlabel.m_label;
+    m_fig1_label = newlabel.m_fig1_label;
     return 0;
 }
 
@@ -280,7 +280,7 @@ int DabLabel::setLabel(const std::string& label, const std::string& short_label)
  *          -1 if the short_label is not a representable
  *          -2 if the short_label is too long
  */
-int DabLabel::setShortLabel(const std::string& slabel)
+int DabLabel::setFIG1ShortLabel(const std::string& slabel)
 {
     const char* slab = slabel.c_str();
     uint16_t flag = 0x0;
@@ -288,8 +288,8 @@ int DabLabel::setShortLabel(const std::string& slabel)
     /* Iterate over the label and set the bits in the flag
      * according to the characters in the slabel
      */
-    for (size_t i = 0; i < m_label.size(); ++i) {
-        if (*slab == m_label[i]) {
+    for (size_t i = 0; i < m_fig1_label.size(); ++i) {
+        if (*slab == m_fig1_label[i]) {
             flag |= 0x8000 >> i;
             if (*(++slab) == '\0') {
                 break;
@@ -321,26 +321,49 @@ int DabLabel::setShortLabel(const std::string& slabel)
 
 const string DabLabel::long_label() const
 {
-    return charset_converter.convert_ebu_to_utf8(m_label);
+    return charset_converter.ebu_to_utf8(m_fig1_label);
 }
 
 const string DabLabel::short_label() const
 {
     stringstream shortlabel;
-    for (size_t i = 0; i < m_label.size(); ++i) {
-        if (m_flag & 0x8000 >> i) {
-            shortlabel << m_label[i];
+    for (size_t i = 0; i < m_fig1_label.size(); ++i) {
+        if (m_fig1_flag & 0x8000 >> i) {
+            shortlabel << m_fig1_label[i];
         }
     }
 
-    return charset_converter.convert_ebu_to_utf8(shortlabel.str());
+    return charset_converter.ebu_to_utf8(shortlabel.str());
+}
+
+const string DabLabel::fig2_label() const
+{
+    return m_fig2_label;
+}
+
+int DabLabel::setFIG2Label(const std::string& label)
+{
+    m_fig2_label = label;
+    return 0;
+}
+
+void DabLabel::setFIG2CharacterField(uint16_t character_field)
+{
+    m_fig2_use_text_control = false;
+    m_fig2_character_field = character_field;
+}
+
+void DabLabel::setFIG2TextControl(FIG2TextControl tc)
+{
+    m_fig2_use_text_control = true;
+    m_fig2_text_control = tc;
 }
 
 void DabLabel::writeLabel(uint8_t* buf) const
 {
     memset(buf, ' ', DABLABEL_LENGTH);
-    if (m_label.size() <= DABLABEL_LENGTH) {
-        std::copy(m_label.begin(), m_label.end(), (char*)buf);
+    if (m_fig1_label.size() <= DABLABEL_LENGTH) {
+        std::copy(m_fig1_label.begin(), m_fig1_label.end(), (char*)buf);
     }
 }
 
@@ -377,6 +400,16 @@ vec_sp_component::iterator getComponent(
     return components.end();
 }
 
+uint8_t dabProtection::to_tpl() const
+{
+    if (form == UEP) {
+        return 0x10 | ProtectionLevelTable[uep.tableIndex];
+    }
+    else if (form == EEP) {
+        return 0x20 | (eep.GetOption() << 2) | level;
+    }
+    throw logic_error("Invalid protection form");
+}
 
 vec_sp_component::iterator getComponent(
         vec_sp_component& components,
@@ -498,24 +531,17 @@ subchannel_type_t DabService::getType(
 
 bool DabService::isProgramme(const std::shared_ptr<dabEnsemble>& ensemble) const
 {
-    bool ret = false;
     switch (getType(ensemble)) {
-        case subchannel_type_t::Audio: // Audio
-            ret = true;
-            break;
+        case subchannel_type_t::DABAudio:
+        case subchannel_type_t::DABPlusAudio:
+            return true;
         case subchannel_type_t::DataDmb:
-        case subchannel_type_t::Fidc:
         case subchannel_type_t::Packet:
-            ret = false;
-            break;
+            return false;
         default:
-            etiLog.log(error,
-                    "Error, unknown service type: %u",
-                    getType(ensemble));
-            throw runtime_error("DabService::isProgramme unknown service type");
+            etiLog.log(error, "Error, unknown service type: %u", getType(ensemble));
+            throw logic_error("DabService::isProgramme unknown service type");
     }
-
-    return ret;
 }
 
 
@@ -766,6 +792,17 @@ unsigned short DabSubchannel::getSizeWord() const
 unsigned short DabSubchannel::getSizeDWord() const
 {
     return (bitrate * 3) >> 3;
+}
+
+size_t DabSubchannel::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
+{
+    switch (input->getBufferManagement()) {
+        case Inputs::BufferManagement::Prebuffering:
+            return input->readFrame(buffer, size);
+        case Inputs::BufferManagement::Timestamped:
+            return input->readFrame(buffer, size, seconds, utco, tsta);
+    }
+    throw logic_error("Unhandled case");
 }
 
 LinkageSet::LinkageSet(const std::string& name,

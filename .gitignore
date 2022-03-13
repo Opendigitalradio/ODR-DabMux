@@ -4,10 +4,10 @@
 .*.swp
 .directory
 
-src/odr-zmq2farsync
-src/zmqinput-keygen
-src/odr-bridgetest
-src/odr-dabmux
+odr-dabmux
+odr-zmq2farsync
+odr-zmq2edi
+zmqinput-keygen
 src/dabOutput/.deps/
 src/dabOutput/.dirstamp
 

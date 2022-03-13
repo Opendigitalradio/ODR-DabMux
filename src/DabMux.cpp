@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -99,8 +99,7 @@ typedef DWORD32 uint32_t;
 
 #include "dabOutput/dabOutput.h"
 #include "crc.h"
-#include "UdpSocket.h"
-#include "InetAddress.h"
+#include "Socket.h"
 #include "PcDebug.h"
 #include "DabMux.h"
 #include "MuxElements.h"
@@ -112,7 +111,6 @@ typedef DWORD32 uint32_t;
 
 using namespace std;
 using boost::property_tree::ptree;
-using boost::property_tree::ptree_error;
 
 volatile sig_atomic_t running = 1;
 
@@ -160,6 +158,18 @@ void signalHandler(int signum)
 
 int main(int argc, char *argv[])
 {
+    // Version handling is done very early to ensure nothing else but the version gets printed out
+    if (argc == 2 and strcmp(argv[1], "--version") == 0) {
+        fprintf(stdout, "%s\n",
+#if defined(GITVERSION)
+                GITVERSION
+#else
+                PACKAGE_VERSION
+#endif
+               );
+        return 0;
+    }
+
     header_message();
 
     struct sigaction sa;
@@ -240,6 +250,26 @@ int main(int argc, char *argv[])
             etiLog.register_backend(std::make_shared<LogToSyslog>());
         }
 
+        const auto startupcheck = pt.get<string>("general.startupcheck", "");
+        if (not startupcheck.empty()) {
+            etiLog.level(info) << "Running startup check '" << startupcheck << "'";
+            int wstatus = system(startupcheck.c_str());
+
+            if (WIFEXITED(wstatus)) {
+                if (WEXITSTATUS(wstatus) == 0) {
+                    etiLog.level(info) << "Startup check ok";
+                }
+                else {
+                    etiLog.level(error) << "Startup check failed, returned " << WEXITSTATUS(wstatus);
+                    return 1;
+                }
+            }
+            else {
+                etiLog.level(error) << "Startup check failed, child didn't terminate normally";
+                return 1;
+            }
+        }
+
         int mgmtserverport = pt.get<int>("general.managementport",
                              pt.get<int>("general.statsserverport", 0) );
 
@@ -271,7 +301,7 @@ int main(int argc, char *argv[])
                 " starting up";
 
 
-        edi_configuration_t edi_conf;
+        edi::configuration_t edi_conf;
 
         /******************** READ OUTPUT PARAMETERS ***************/
         set<string> all_output_names;
@@ -291,48 +321,59 @@ int main(int argc, char *argv[])
             }
 
             if (outputuid == "edi") {
-#if HAVE_OUTPUT_EDI
                 ptree pt_edi = pt_outputs.get_child("edi");
+
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
-                    edi_destination_t dest;
-                    dest.dest_addr   = pt_edi_dest.second.get<string>("destination");
-                    dest.ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
+                    const auto proto = pt_edi_dest.second.get<string>("protocol", "udp");
+                    if (proto == "udp") {
+                        auto dest = make_shared<edi::udp_destination_t>();
+                        dest->dest_addr   = pt_edi_dest.second.get<string>("destination");
+                        dest->ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
 
-                    dest.source_addr = pt_edi_dest.second.get<string>("source", "");
-                    dest.source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
+                        dest->source_addr = pt_edi_dest.second.get<string>("source", "");
+                        dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
 
-                    edi_conf.destinations.push_back(dest);
+                        dest->dest_port       = pt_edi_dest.second.get<unsigned int>("port", 0);
+                        if (dest->dest_port == 0) {
+                            // Compatiblity: we have removed the transport and addressing in the
+                            // PFT layer, which removed the requirement that all outputs must share
+                            // the same destination port. If missing from the destination specification,
+                            // we read it from the parent block, where it was before.
+                            dest->dest_port       = pt_edi.get<unsigned int>("port");
+                        }
+
+                        edi_conf.destinations.push_back(dest);
+                    }
+                    else if (proto == "tcp") {
+                        auto dest = make_shared<edi::tcp_server_t>();
+                        dest->listen_port = pt_edi_dest.second.get<unsigned int>("listenport");
+                        dest->max_frames_queued = pt_edi_dest.second.get<size_t>("max_frames_queued", 500);
+                        edi_conf.destinations.push_back(dest);
+                    }
+                    else {
+                        throw runtime_error("Unknown EDI protocol " + proto);
+                    }
                 }
 
-                edi_conf.dest_port           = pt_edi.get<unsigned int>("port");
+                edi_conf.dump = pt_edi.get<bool>("dump", false);
+                edi_conf.enable_pft = pt_edi.get<bool>("enable_pft", false);
+                edi_conf.verbose = pt_edi.get<bool>("verbose", false);
 
-                edi_conf.dump                = pt_edi.get<bool>("dump");
-                edi_conf.enable_pft          = pt_edi.get<bool>("enable_pft");
-                edi_conf.verbose             = pt_edi.get<bool>("verbose");
+                edi_conf.fec = pt_edi.get<unsigned int>("fec", 3);
+                edi_conf.chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
 
-                edi_conf.fec                 = pt_edi.get<unsigned int>("fec", 3);
-                edi_conf.chunk_len           = pt_edi.get<unsigned int>("chunk_len", 207);
-
-                double interleave_ms         = pt_edi.get<double>("interleave", 0);
-                if (interleave_ms != 0.0) {
-                    if (interleave_ms < 0) {
-                        throw runtime_error("EDI output: negative interleave value is invalid.");
-                    }
-
-                    auto latency_rounded = lround(interleave_ms / 24.0);
-                    if (latency_rounded * 24 > 30000) {
-                        throw runtime_error("EDI output: interleaving set for more than 30 seconds!");
-                    }
-
-                    edi_conf.latency_frames = latency_rounded;
+                int spread_percent = pt_edi.get<int>("packet_spread", 95);
+                if (spread_percent < 0) {
+                    throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
+                }
+                edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
+                if (edi_conf.fragment_spreading_factor > 30000) {
+                    throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
                 }
 
                 edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);
 
                 mux.set_edi_config(edi_conf);
-#else
-                throw runtime_error("EDI output not compiled in");
-#endif
             }
             else if (outputuid == "zeromq") {
 #if defined(HAVE_OUTPUT_ZEROMQ)
@@ -463,23 +504,9 @@ int main(int argc, char *argv[])
         etiLog.log(info, "--- Output list ---");
         printOutputs(outputs);
 
-#if HAVE_OUTPUT_EDI
         if (edi_conf.enabled()) {
-            etiLog.level(info) << "EDI";
-            etiLog.level(info) << " verbose     " << edi_conf.verbose;
-            for (auto& edi_dest : edi_conf.destinations) {
-                etiLog.level(info) << " to " << edi_dest.dest_addr << ":" << edi_conf.dest_port;
-                if (not edi_dest.source_addr.empty()) {
-                    etiLog.level(info) << "  source      " << edi_dest.source_addr;
-                    etiLog.level(info) << "  ttl         " << edi_dest.ttl;
-                }
-                etiLog.level(info) << "  source port " << edi_dest.source_port;
-            }
-            if (edi_conf.interleaver_enabled()) {
-                etiLog.level(info) << " interleave     " << edi_conf.latency_frames * 24 << " ms";
-            }
+            edi_conf.print();
         }
-#endif
 
         size_t limit = pt.get("general.nbframes", 0);
 

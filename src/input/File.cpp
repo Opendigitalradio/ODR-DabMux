@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018 Matthias P. Braendli
+   Copyright (C) 2019 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    */
@@ -35,6 +35,8 @@
 #include "mpeg.h"
 #include "ReedSolomon.h"
 
+using namespace std;
+
 namespace Inputs {
 
 #ifdef _WIN32
@@ -58,7 +60,7 @@ __attribute((packed))
 ;
 
 
-int FileBase::open(const std::string& name)
+void FileBase::open(const std::string& name)
 {
     int flags = O_RDONLY | O_BINARY;
     if (m_nonblock) {
@@ -67,30 +69,35 @@ int FileBase::open(const std::string& name)
 
     m_fd = ::open(name.c_str(), flags);
     if (m_fd == -1) {
-        throw std::runtime_error("Could not open input file " + name + ": " +
+        throw runtime_error("Could not open input file " + name + ": " +
             strerror(errno));
     }
+}
+
+size_t FileBase::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
+{
+    // Will not be implemented, as there is no obvious way to carry timestamps
+    // in files.
+    memset(buffer, 0, size);
     return 0;
 }
 
 int FileBase::setBitrate(int bitrate)
 {
     if (bitrate <= 0) {
-        etiLog.log(error, "Invalid bitrate (%i)", bitrate);
-        return -1;
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate));
     }
 
     return bitrate;
 }
 
 
-int FileBase::close()
+void FileBase::close()
 {
     if (m_fd != -1) {
         ::close(m_fd);
         m_fd = -1;
     }
-    return 0;
 }
 
 void FileBase::setNonblocking(bool nonblock)
@@ -105,11 +112,13 @@ int FileBase::rewind()
 
 ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
 {
+    using namespace std;
+
     ssize_t ret = 0;
     if (m_nonblock) {
         if (size > m_nonblock_buffer.size()) {
-            size_t required_len = size - m_nonblock_buffer.size();
-            std::vector<uint8_t> buf(required_len);
+            const size_t required_len = size - m_nonblock_buffer.size();
+            vector<uint8_t> buf(required_len);
             ret = read(m_fd, buf.data(), required_len);
 
             /* If no process has the pipe open for writing, read() shall return 0
@@ -128,27 +137,24 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
                 return -1;
             }
 
-            if (buf.size() + ret == size) {
-                std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.end(),
-                        buffer);
-                buffer += m_nonblock_buffer.size();
-                m_nonblock_buffer.clear();
-                std::copy(buf.begin(), buf.end(), buffer);
-                return size;
-            }
+            // read() might read less data than requested
+            buf.resize(ret);
+
+            copy(buf.begin(), buf.end(), back_inserter(m_nonblock_buffer));
         }
-        else {
-            std::copy(m_nonblock_buffer.begin(), m_nonblock_buffer.begin() + size,
-                    buffer);
 
-            std::vector<uint8_t> remaining_buf;
-            std::copy(m_nonblock_buffer.begin() + size, m_nonblock_buffer.end(),
-                    std::back_inserter(remaining_buf));
+        if (m_nonblock_buffer.size() >= size) {
+            copy(m_nonblock_buffer.begin(), m_nonblock_buffer.begin() + size, buffer);
 
-            m_nonblock_buffer = std::move(remaining_buf);
+            vector<uint8_t> remaining_buf;
+            copy(m_nonblock_buffer.begin() + size, m_nonblock_buffer.end(), back_inserter(remaining_buf));
+            m_nonblock_buffer = move(remaining_buf);
+
             return size;
         }
-        return 0;
+        else {
+            return 0;
+        }
     }
     else {
         ret = read(m_fd, buffer, size);
@@ -183,7 +189,7 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
     return size;
 }
 
-int MPEGFile::readFrame(uint8_t* buffer, size_t size)
+size_t MPEGFile::readFrame(uint8_t *buffer, size_t size)
 {
     int result;
     bool do_rewind = false;
@@ -276,12 +282,18 @@ MUTE_SUBCHANNEL:
                 }
             }
     }
+
+    // TODO this is probably wrong, because it should return
+    // the number of bytes written.
     return result;
 }
 
 int MPEGFile::setBitrate(int bitrate)
 {
-    if (bitrate == 0) {
+    if (bitrate < 0) {
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate));
+    }
+    else if (bitrate == 0) {
         uint8_t buffer[4];
 
         if (readFrame(buffer, 4) == 0) {
@@ -295,7 +307,7 @@ int MPEGFile::setBitrate(int bitrate)
     return bitrate;
 }
 
-int RawFile::readFrame(uint8_t* buffer, size_t size)
+size_t RawFile::readFrame(uint8_t *buffer, size_t size)
 {
     return readFromFile(buffer, size);
 }
@@ -305,7 +317,7 @@ PacketFile::PacketFile(bool enhancedPacketMode)
     m_enhancedPacketEnabled = enhancedPacketMode;
 }
 
-int PacketFile::readFrame(uint8_t* buffer, size_t size)
+size_t PacketFile::readFrame(uint8_t *buffer, size_t size)
 {
     size_t written = 0;
     int length;
@@ -358,7 +370,7 @@ int PacketFile::readFrame(uint8_t* buffer, size_t size)
                     length = 24;
                 }
                 else {
-                    std::copy(m_packetData.begin(),
+                    copy(m_packetData.begin(),
                             m_packetData.begin() + m_packetLength,
                             buffer);
                     length = m_packetLength;
@@ -366,7 +378,7 @@ int PacketFile::readFrame(uint8_t* buffer, size_t size)
                 }
             }
             else {
-                std::copy(m_packetData.begin(),
+                copy(m_packetData.begin(),
                         m_packetData.begin() + m_packetLength,
                         buffer);
                 length = m_packetLength;

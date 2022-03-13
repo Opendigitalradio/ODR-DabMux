@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -31,6 +31,7 @@
 #include <numeric>
 #include <map>
 #include <algorithm>
+#include <limits>
 
 using namespace std;
 
@@ -47,88 +48,39 @@ EDISender::~EDISender()
     }
 }
 
-void EDISender::start(const edi_configuration_t& conf,
-        int delay_ms, bool drop_late_packets)
+void EDISender::start(const edi::configuration_t& conf, int delay_ms, bool drop_late_packets)
 {
     edi_conf = conf;
     tist_delay_ms = delay_ms;
     drop_late = drop_late_packets;
 
-    if (edi_conf.verbose) {
-        etiLog.log(info, "Setup EDI");
-    }
+    edi_sender = make_shared<edi::Sender>(edi_conf);
 
-    if (edi_conf.dump) {
-        edi_debug_file.open("./edi.debug");
-    }
-
-    if (edi_conf.enabled()) {
-        for (auto& edi_destination : edi_conf.destinations) {
-            auto edi_output = make_shared<UdpSocket>(edi_destination.source_port);
-
-            if (not edi_destination.source_addr.empty()) {
-                int err = edi_output->setMulticastSource(edi_destination.source_addr.c_str());
-                if (err) {
-                    throw runtime_error("EDI socket set source failed!");
-                }
-                err = edi_output->setMulticastTTL(edi_destination.ttl);
-                if (err) {
-                    throw runtime_error("EDI socket set TTL failed!");
-                }
-            }
-
-            edi_destination.socket = edi_output;
-        }
-    }
-
-    if (edi_conf.verbose) {
-        etiLog.log(info, "EDI set up");
-    }
-
-    // The AF Packet will be protected with reed-solomon and split in fragments
-    edi::PFT pft(edi_conf);
-    edi_pft = pft;
-
-    if (edi_conf.interleaver_enabled()) {
-        edi_interleaver.SetLatency(edi_conf.latency_frames);
-    }
-
-    startTime = std::chrono::steady_clock::now();
     running.store(true);
     process_thread = thread(&EDISender::process, this);
 }
 
-void EDISender::push_frame(const frame_t& frame)
+void EDISender::push_frame(frame_t&& frame)
 {
-    frames.push(frame);
+    frames.push(move(frame));
 }
 
 void EDISender::print_configuration()
 {
     if (edi_conf.enabled()) {
-        etiLog.level(info) << "EDI";
-        etiLog.level(info) << " verbose     " << edi_conf.verbose;
-        for (auto& edi_dest : edi_conf.destinations) {
-            etiLog.level(info) << " to " << edi_dest.dest_addr << ":" << edi_conf.dest_port;
-            if (not edi_dest.source_addr.empty()) {
-                etiLog.level(info) << "  source      " << edi_dest.source_addr;
-                etiLog.level(info) << "  ttl         " << edi_dest.ttl;
-            }
-            etiLog.level(info) << "  source port " << edi_dest.source_port;
-        }
-        if (edi_conf.interleaver_enabled()) {
-            etiLog.level(info) << " interleave     " << edi_conf.latency_frames * 24 << " ms";
-        }
+        edi_conf.print();
     }
     else {
         etiLog.level(info) << "EDI disabled";
     }
 }
 
-void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
+void EDISender::send_eti_frame(frame_t& frame)
 {
+    uint8_t *p = frame.data.data();
+
     edi::TagDETI edi_tagDETI;
-    edi::TagStarPTR edi_tagStarPtr;
+    edi::TagStarPTR edi_tagStarPtr("DETI");
     map<int, edi::TagESTn> edi_subchannelToTag;
     // The above Tag Items will be assembled into a TAG Packet
     edi::TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
@@ -137,12 +89,12 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
     edi_tagDETI.stat = p[0];
 
     // LIDATA FCT
-    edi_tagDETI.dlfc = metadata.dlfc;
+    edi_tagDETI.dlfc = frame.metadata.dlfc;
 
     const int fct = p[4];
-    if (metadata.dlfc % 250 != fct) {
+    if (frame.metadata.dlfc % 250 != fct) {
         etiLog.level(warn) << "Frame FCT=" << fct <<
-            " does not correspond to DLFC=" << metadata.dlfc;
+            " does not correspond to DLFC=" << frame.metadata.dlfc;
     }
 
     bool ficf = (p[5] & 0x80) >> 7;
@@ -192,8 +144,8 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
         edi_subchannelToTag[i] = tag_ESTn;
     }
 
-    const uint16_t mnsc = p[8 + 4*nst] * 256 + \
-                          p[8 + 4*nst + 1];
+    uint16_t mnsc = 0;
+    std::memcpy(&mnsc, p + 8 + 4*nst, sizeof(uint16_t));
     edi_tagDETI.mnsc = mnsc;
 
     /*const uint16_t crc1 = p[8 + 4*nst + 2]*256 + \
@@ -229,36 +181,36 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
 
     using namespace std::chrono;
 
-    const auto seconds = metadata.edi_time;
     const auto pps_offset = milliseconds(std::lrint((tist & 0xFFFFFF) / 16384.0));
     const auto t_frame = system_clock::from_time_t(
-            seconds + posix_timestamp_1_jan_2000) + pps_offset;
+            frame.metadata.edi_time + posix_timestamp_1_jan_2000 - frame.metadata.utc_offset) + pps_offset;
 
     const auto t_release = t_frame + milliseconds(tist_delay_ms);
     const auto t_now = system_clock::now();
 
-    /*
-    etiLog.level(debug) << "seconds " << seconds + posix_timestamp_1_jan_2000;
-    etiLog.level(debug) << "now " << system_clock::to_time_t(t_now);
-    etiLog.level(debug) << "wait " << wait_time.count();
-    */
+    const bool late = t_release < t_now;
 
-    const auto wait_time = t_release - t_now;
-    wait_times.push_back(duration_cast<microseconds>(wait_time).count());
+    buffering_stat_t stat;
+    stat.late = late;
 
-    if (t_release > t_now) {
+    if (not late) {
+        const auto wait_time = t_release - t_now;
         std::this_thread::sleep_for(wait_time);
     }
-    else if (drop_late) {
+
+    stat.buffering_time_us = duration_cast<microseconds>(steady_clock::now() - frame.received_at).count();
+    buffering_stats.push_back(std::move(stat));
+
+    if (late and drop_late) {
         return;
     }
 
     edi_tagDETI.tsta = tist;
     edi_tagDETI.atstf = 1;
-    edi_tagDETI.utco = metadata.utc_offset;
-    edi_tagDETI.seconds = metadata.edi_time;
+    edi_tagDETI.utco = frame.metadata.utc_offset;
+    edi_tagDETI.seconds = frame.metadata.edi_time;
 
-    if (edi_conf.enabled()) {
+    if (edi_sender and edi_conf.enabled()) {
         // put tags *ptr, DETI and all subchannels into one TagPacket
         edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
         edi_tagpacket.tag_items.push_back(&edi_tagDETI);
@@ -267,58 +219,7 @@ void EDISender::send_eti_frame(uint8_t* p, metadata_t metadata)
             edi_tagpacket.tag_items.push_back(&tag.second);
         }
 
-        // Assemble into one AF Packet
-        edi::AFPacket edi_afpacket = edi_afPacketiser.Assemble(edi_tagpacket);
-
-        if (edi_conf.enable_pft) {
-            // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
-            vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(edi_afpacket);
-
-            if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragment before interleaver %zu\n",
-                        edi_fragments.size());
-            }
-
-            if (edi_conf.interleaver_enabled()) {
-                edi_fragments = edi_interleaver.Interleave(edi_fragments);
-            }
-
-            // Send over ethernet
-            for (const auto& edi_frag : edi_fragments) {
-                for (auto& dest : edi_conf.destinations) {
-                    InetAddress addr;
-                    addr.setAddress(dest.dest_addr.c_str());
-                    addr.setPort(edi_conf.dest_port);
-
-                    dest.socket->send(edi_frag, addr);
-                }
-
-                if (edi_conf.dump) {
-                    std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-                    std::copy(edi_frag.begin(), edi_frag.end(), debug_iterator);
-                }
-            }
-
-            if (edi_conf.verbose) {
-                fprintf(stderr, "EDI number of PFT fragments %zu\n",
-                        edi_fragments.size());
-            }
-        }
-        else {
-            // Send over ethernet
-            for (auto& dest : edi_conf.destinations) {
-                InetAddress addr;
-                addr.setAddress(dest.dest_addr.c_str());
-                addr.setPort(edi_conf.dest_port);
-
-                dest.socket->send(edi_afpacket, addr);
-            }
-
-            if (edi_conf.dump) {
-                std::ostream_iterator<uint8_t> debug_iterator(edi_debug_file);
-                std::copy(edi_afpacket.begin(), edi_afpacket.end(), debug_iterator);
-            }
-        }
+        edi_sender->write(edi_tagpacket);
     }
 }
 
@@ -328,53 +229,69 @@ void EDISender::process()
         frame_t frame;
         frames.wait_and_pop(frame);
 
-        if (not running.load() or frame.first.empty()) {
+        if (not running.load() or frame.data.empty()) {
             break;
         }
 
-        if (frame.first.size() == 6144) {
-            send_eti_frame(frame.first.data(), frame.second);
+        if (frame.data.size() == 6144) {
+            send_eti_frame(frame);
         }
         else {
             etiLog.level(warn) << "Ignoring short ETI frame, "
-                "DFLC=" << frame.second.dlfc << ", len=" <<
-                frame.first.size();
+                "DFLC=" << frame.metadata.dlfc << ", len=" <<
+                frame.data.size();
         }
 
-        if (wait_times.size() == 250) { // every six seconds
-            const double n = wait_times.size();
+        if (buffering_stats.size() == 250) { // every six seconds
+            const double n = buffering_stats.size();
 
-            double sum = accumulate(wait_times.begin(), wait_times.end(), 0);
-            size_t num_late = std::count_if(wait_times.begin(), wait_times.end(),
-                    [](double v){ return v < 0; });
+            size_t num_late = std::count_if(buffering_stats.begin(), buffering_stats.end(),
+                    [](const buffering_stat_t& s){ return s.late; });
+
+            double sum = 0.0;
+            double min = std::numeric_limits<double>::max();
+            double max = -std::numeric_limits<double>::max();
+            for (const auto& s : buffering_stats) {
+                // convert to milliseconds
+                const double t = s.buffering_time_us / 1000.0;
+                sum += t;
+
+                if (t < min) {
+                    min = t;
+                }
+
+                if (t > max) {
+                    max = t;
+                }
+            }
             double mean = sum / n;
 
             double sq_sum = 0;
-            for (const auto t : wait_times) {
+            for (const auto& s : buffering_stats) {
+                const double t = s.buffering_time_us / 1000.0;
                 sq_sum += (t-mean) * (t-mean);
             }
             double stdev = sqrt(sq_sum / n);
-            auto min_max = minmax_element(wait_times.begin(), wait_times.end());
 
             /* Debug code
             stringstream ss;
             ss << "times:";
-            for (const auto t : wait_times) {
-                ss << " " << t;
+            for (const auto t : buffering_stats) {
+                ss << " " << lrint(t.buffering_time_us / 1000.0);
             }
             etiLog.level(debug) << ss.str();
-            */
+            // */
 
-            etiLog.level(info) << "Wait time statistics [microseconds]:"
-                " min: " << *min_max.first <<
-                " max: " << *min_max.second <<
+            etiLog.level(info) << "Buffering time statistics [milliseconds]:"
+                " min: " << min <<
+                " max: " << max <<
                 " mean: " << mean <<
                 " stdev: " << stdev <<
                 " late: " <<
-                num_late << " of " << wait_times.size() << " (" <<
+                num_late << " of " << buffering_stats.size() << " (" <<
                 num_late * 100.0 / n << "%)";
 
-            wait_times.clear();
+            buffering_stats.clear();
         }
     }
 }

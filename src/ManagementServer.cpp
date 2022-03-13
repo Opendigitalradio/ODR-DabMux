@@ -280,7 +280,7 @@ void ManagementServer::serverThread()
 
             if (pollItems[0].revents & ZMQ_POLLIN) {
                 zmq::message_t zmq_message;
-                m_zmq_sock.recv(&zmq_message);
+                m_zmq_sock.recv(zmq_message);
                 handle_message(zmq_message);
             }
         }
@@ -336,7 +336,8 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         }
 
         std::string answerstr(answer.str());
-        m_zmq_sock.send(answerstr.c_str(), answerstr.size());
+        zmq::const_buffer message(answerstr.data(), answerstr.size());
+        m_zmq_sock.send(message, zmq::send_flags::none);
     }
     catch (const std::exception& e) {
         etiLog.level(error) <<
@@ -379,14 +380,14 @@ void InputStat::notifyBuffer(long bufsize)
     const auto time_now = steady_clock::now();
     m_buffer_fill_stats.push_front({time_now, bufsize});
 
-    // Keep only stats whose timestamp are more recent than
-    // BUFFER_STATS_KEEP_DURATION ago
-    m_buffer_fill_stats.erase(remove_if(
-                m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
-                [&](const fill_stat_t& fs) {
-                    return fs.timestamp + BUFFER_STATS_KEEP_DURATION < time_now;
-                }),
-                m_buffer_fill_stats.end());
+    prune_statistics(time_now);
+}
+
+void InputStat::notifyTimestampOffset(double offset)
+{
+    unique_lock<mutex> lock(m_mutex);
+
+    m_last_tist_offset = offset;
 }
 
 void InputStat::notifyPeakLevels(int peak_left, int peak_right)
@@ -395,17 +396,9 @@ void InputStat::notifyPeakLevels(int peak_left, int peak_right)
 
     using namespace std::chrono;
     const auto time_now = steady_clock::now();
-
     m_peak_stats.push_front({time_now, peak_left, peak_right});
 
-    // Keep only stats whose timestamp are more recent than
-    // BUFFER_STATS_KEEP_DURATION ago
-    m_peak_stats.erase(remove_if(
-                m_peak_stats.begin(), m_peak_stats.end(),
-                [&](const peak_stat_t& ps) {
-                    return ps.timestamp + PEAK_STATS_KEEP_DURATION < time_now;
-                }),
-                m_peak_stats.end());
+    prune_statistics(time_now);
 
     if (m_peak_stats.size() >= 2) {
         // Calculate the peak over the short window
@@ -485,6 +478,14 @@ void InputStat::notifyOverrun(void)
     }
 }
 
+void InputStat::notifyVersion(const std::string& version, uint32_t uptime_s)
+{
+    unique_lock<mutex> lock(m_mutex);
+
+    m_version = version;
+    m_uptime_s = uptime_s;
+}
+
 std::string InputStat::encodeValuesJSON()
 {
     std::ostringstream ss;
@@ -548,6 +549,13 @@ std::string InputStat::encodeValuesJSON()
         return dB;
     };
 
+    auto version = m_version;
+    size_t pos = 0;
+    while ((pos = version.find("\"", pos)) != std::string::npos) {
+         version.replace(pos, 1, "\\\"");
+         pos++;
+    }
+
     ss <<
     "{ \"inputstat\" : {"
         "\"min_fill\": " << min_fill_buffer << ", "
@@ -557,7 +565,11 @@ std::string InputStat::encodeValuesJSON()
         "\"peak_left_slow\": " << to_dB(peak_left) << ", "
         "\"peak_right_slow\": " << to_dB(peak_right) << ", "
         "\"num_underruns\": " << m_num_underruns << ", "
-        "\"num_overruns\": " << m_num_overruns << ", ";
+        "\"num_overruns\": " << m_num_overruns << ", "
+        "\"last_tist_offset\": " << m_last_tist_offset << ", "
+        "\"version\": \"" << version << "\", "
+        "\"uptime\": " << m_uptime_s << ", "
+        ;
 
     ss << "\"state\": ";
 
@@ -584,6 +596,8 @@ std::string InputStat::encodeValuesJSON()
 input_state_t InputStat::determineState()
 {
     const auto now = std::chrono::steady_clock::now();
+    prune_statistics(now);
+
     input_state_t state;
 
     /* if the last event was more that INPUT_COUNTER_RESET_TIME
@@ -622,5 +636,26 @@ input_state_t InputStat::determineState()
     }
 
     return state;
+}
+
+void InputStat::prune_statistics(const std::chrono::time_point<std::chrono::steady_clock>& time_now)
+{
+    // Keep only stats whose timestamp are more recent than
+    // BUFFER_STATS_KEEP_DURATION ago
+    m_buffer_fill_stats.erase(remove_if(
+                m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),
+                [&](const fill_stat_t& fs) {
+                    return fs.timestamp + BUFFER_STATS_KEEP_DURATION < time_now;
+                }),
+                m_buffer_fill_stats.end());
+
+    // Keep only stats whose timestamp are more recent than
+    // BUFFER_STATS_KEEP_DURATION ago
+    m_peak_stats.erase(remove_if(
+                m_peak_stats.begin(), m_peak_stats.end(),
+                [&](const peak_stat_t& ps) {
+                    return ps.timestamp + PEAK_STATS_KEEP_DURATION < time_now;
+                }),
+                m_peak_stats.end());
 }
 

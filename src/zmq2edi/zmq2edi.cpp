@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -27,11 +27,13 @@
 
 #include "Log.h"
 #include "zmq.hpp"
-#include <math.h>
 #include <getopt.h>
-#include <string.h>
+#include <cmath>
+#include <cstring>
+#include <chrono>
 #include <iostream>
 #include <iterator>
+#include <thread>
 #include <vector>
 
 #include "EDISender.h"
@@ -39,12 +41,13 @@
 
 constexpr size_t MAX_ERROR_COUNT = 10;
 constexpr long ZMQ_TIMEOUT_MS = 1000;
+constexpr long DEFAULT_BACKOFF = 5000;
 
-static edi_configuration_t edi_conf;
+static edi::configuration_t edi_conf;
 
 static EDISender edisender;
 
-void usage(void)
+static void usage()
 {
     using namespace std;
 
@@ -54,23 +57,27 @@ void usage(void)
     cerr << "Options:" << endl;
     cerr << "The following options can be given only once:" << endl;
     cerr << " <source> is a ZMQ URL that points to a ODR-DabMux ZMQ output." << endl;
-    cerr << " -w <delay> Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
-    cerr << " -x Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
-    cerr << " -p <destination port> sets the destination port." << endl;
-    cerr << " -P Disable PFT and send AFPackets." << endl;
-    cerr << " -f <fec> sets the FEC." << endl;
-    cerr << " -i <interleave> enables the interleaved with this latency." << endl;
-    cerr << " -D dumps the EDI to edi.debug file." << endl;
-    cerr << " -v Enables verbose mode." << endl;
-    cerr << " -a <tagpacket alignement> sets the alignment of the TAG Packet (default 8)." << endl << endl;
+    cerr << " -w <delay>            Keep every ETI frame until TIST is <delay> milliseconds after current system time." << endl;
+    cerr << "                       Negative delay values are also allowed." << endl;
+    cerr << " -C <path to script>   Before starting, run the given script, and only start if it returns 0." << endl;
+    cerr << "                       This is useful for checking that NTP is properly synchronised" << endl;
+    cerr << " -x                    Drop frames where for which the wait time would be negative, i.e. frames that arrived too late." << endl;
+    cerr << " -P                    Disable PFT and send AFPackets." << endl;
+    cerr << " -f <fec>              Set the FEC." << endl;
+    cerr << " -i <spread>           Configure the UDP packet spread/interleaver with given percentage: 0% send all fragments at once, 100% spread over 24ms, >100% spread and interleave. Default 95%\n";
+    cerr << " -D                    Dump the EDI to edi.debug file." << endl;
+    cerr << " -v                    Enables verbose mode." << endl;
+    cerr << " -a <alignement>       Set the alignment of the TAG Packet (default 8)." << endl;
+    cerr << " -b <backoff>          Number of milliseconds to backoff after an input reset (default " << DEFAULT_BACKOFF << ")." << endl << endl;
 
-    cerr << "The following options can be given several times, when more than once destination is addressed:" << endl;
-    cerr << " -d <destination ip> sets the destination ip." << endl;
-    cerr << " -s <source port> sets the source port." << endl;
-    cerr << " -S <source ip> select the source IP in case we want to use multicast." << endl;
-    cerr << " -t <ttl> set the packet's TTL." << endl << endl;
+    cerr << "The following options can be given several times, when more than UDP destination is desired:" << endl;
+    cerr << " -d <destination ip>   Set the destination ip." << endl;
+    cerr << " -p <destination port> Set the destination port." << endl;
+    cerr << " -s <source port>      Set the source port." << endl;
+    cerr << " -S <source ip>        Select the source IP in case we want to use multicast." << endl;
+    cerr << " -t <ttl>              Set the packet's TTL." << endl << endl;
 
-    cerr << "odr-zmq2edi will quit if it does not receive data for " <<
+    cerr << "The input socket will be reset if no data is received for " <<
         (int)(MAX_ERROR_COUNT * ZMQ_TIMEOUT_MS / 1000.0) << " seconds." << endl;
     cerr << "It is best practice to run this tool under a process supervisor that will restart it automatically." << endl;
 }
@@ -155,7 +162,8 @@ static metadata_t get_md_one_frame(uint8_t *buf, size_t size, size_t *consumed_b
 /* There is some state inside the parsing of destination arguments,
  * because several destinations can be given.  */
 
-static edi_destination_t edi_destination;
+static std::shared_ptr<edi::udp_destination_t> edi_destination;
+static bool dest_port_set = false;
 static bool source_port_set = false;
 static bool source_addr_set = false;
 static bool ttl_set = false;
@@ -168,10 +176,10 @@ static void add_edi_destination(void)
                 std::to_string(edi_conf.destinations.size() + 1));
     }
 
-    edi_conf.destinations.push_back(edi_destination);
-    edi_destination_t newdest;
-    edi_destination = newdest;
+    edi_conf.destinations.push_back(move(edi_destination));
+    edi_destination = std::make_shared<edi::udp_destination_t>();
 
+    dest_port_set = false;
     source_port_set = false;
     source_addr_set = false;
     ttl_set = false;
@@ -180,39 +188,52 @@ static void add_edi_destination(void)
 
 static void parse_destination_args(char option)
 {
+    if (not edi_destination) {
+        edi_destination = std::make_shared<edi::udp_destination_t>();
+    }
+
     switch (option) {
+        case 'p':
+            if (dest_port_set) {
+                add_edi_destination();
+            }
+            edi_destination->dest_port = std::stoi(optarg);
+            dest_port_set = true;
+            break;
         case 's':
             if (source_port_set) {
                 add_edi_destination();
             }
-            edi_destination.source_port = std::stoi(optarg);
+            edi_destination->source_port = std::stoi(optarg);
             source_port_set = true;
             break;
         case 'S':
             if (source_addr_set) {
                 add_edi_destination();
             }
-            edi_destination.source_addr = optarg;
+            edi_destination->source_addr = optarg;
             source_addr_set = true;
             break;
         case 't':
             if (ttl_set) {
                 add_edi_destination();
             }
-            edi_destination.ttl = std::stoi(optarg);
+            edi_destination->ttl = std::stoi(optarg);
             ttl_set = true;
             break;
         case 'd':
             if (dest_addr_set) {
                 add_edi_destination();
             }
-            edi_destination.dest_addr = optarg;
+            edi_destination->dest_addr = optarg;
             dest_addr_set = true;
             break;
         default:
             throw std::logic_error("parse_destination_args invalid");
     }
 }
+
+class FCTDiscontinuity { };
 
 int start(int argc, char **argv)
 {
@@ -225,21 +246,24 @@ int start(int argc, char **argv)
 
     int delay_ms = 500;
     bool drop_late_packets = false;
+    uint32_t backoff_after_reset_ms = DEFAULT_BACKOFF;
+    std::string startupcheck;
 
     int ch = 0;
     while (ch != -1) {
-        ch = getopt(argc, argv, "d:p:s:S:t:Pf:i:Dva:w:x");
+        ch = getopt(argc, argv, "C:d:p:s:S:t:Pf:i:Dva:b:w:xh");
         switch (ch) {
             case -1:
+                break;
+            case 'C':
+                startupcheck = optarg;
                 break;
             case 'd':
             case 's':
             case 'S':
             case 't':
-                parse_destination_args(ch);
-                break;
             case 'p':
-                edi_conf.dest_port = std::stoi(optarg);
+                parse_destination_args(ch);
                 break;
             case 'P':
                 edi_conf.enable_pft = false;
@@ -249,18 +273,14 @@ int start(int argc, char **argv)
                 break;
             case 'i':
                 {
-                    double interleave_ms = std::stod(optarg);
-                    if (interleave_ms != 0.0) {
-                        if (interleave_ms < 0) {
-                            throw std::runtime_error("EDI output: negative interleave value is invalid.");
-                        }
+                    int spread_percent = std::stoi(optarg);
+                    if (spread_percent < 0) {
+                        throw std::runtime_error("EDI output: negative spread value is invalid.");
+                    }
 
-                        auto latency_rounded = lround(interleave_ms / 24.0);
-                        if (latency_rounded * 24 > 30000) {
-                            throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
-                        }
-
-                        edi_conf.latency_frames = latency_rounded;
+                    edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
+                    if (edi_conf.fragment_spreading_factor > 30000) {
+                        throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
                     }
                 }
                 break;
@@ -272,6 +292,9 @@ int start(int argc, char **argv)
                 break;
             case 'a':
                 edi_conf.tagpacket_alignment = std::stoi(optarg);
+                break;
+            case 'b':
+                backoff_after_reset_ms = std::stoi(optarg);
                 break;
             case 'w':
                 delay_ms = std::stoi(optarg);
@@ -286,15 +309,29 @@ int start(int argc, char **argv)
         }
     }
 
+    if (not startupcheck.empty()) {
+        etiLog.level(info) << "Running startup check '" << startupcheck << "'";
+        int wstatus = system(startupcheck.c_str());
+
+        if (WIFEXITED(wstatus)) {
+            if (WEXITSTATUS(wstatus) == 0) {
+                etiLog.level(info) << "Startup check ok";
+            }
+            else {
+                etiLog.level(error) << "Startup check failed, returned " << WEXITSTATUS(wstatus);
+                return 1;
+            }
+        }
+        else {
+            etiLog.level(error) << "Startup check failed, child didn't terminate normally";
+            return 1;
+        }
+    }
+
     add_edi_destination();
 
     if (optind >= argc) {
         etiLog.level(error) << "source option is missing";
-        return 1;
-    }
-
-    if (edi_conf.dest_port == 0) {
-        etiLog.level(error) << "No EDI destination port defined";
         return 1;
     }
 
@@ -310,91 +347,122 @@ int start(int argc, char **argv)
 
     const char* source_url = argv[optind];
 
-
-    size_t frame_count = 0;
-    size_t error_count = 0;
-
+    zmq::context_t zmq_ctx(1);
     etiLog.level(info) << "Opening ZMQ input: " << source_url;
 
-    zmq::context_t zmq_ctx(1);
-    zmq::socket_t zmq_sock(zmq_ctx, ZMQ_SUB);
-    zmq_sock.connect(source_url);
-    zmq_sock.setsockopt(ZMQ_SUBSCRIBE, NULL, 0); // subscribe to all messages
+    while (true) {
+        zmq::socket_t zmq_sock(zmq_ctx, ZMQ_SUB);
+        zmq_sock.connect(source_url);
+        zmq_sock.setsockopt(ZMQ_SUBSCRIBE, NULL, 0); // subscribe to all messages
 
-    while (error_count < MAX_ERROR_COUNT) {
-        zmq::message_t incoming;
-        zmq::pollitem_t items[1];
-        items[0].socket = zmq_sock;
-        items[0].events = ZMQ_POLLIN;
-        const int num_events = zmq::poll(items, 1, ZMQ_TIMEOUT_MS);
-        if (num_events == 0) { // timeout
-            error_count++;
-        }
-        else {
-            // Event received: recv will not block
-            zmq_sock.recv(&incoming);
+        size_t error_count = 0;
+        int previous_fct = -1;
 
-            zmq_dab_message_t* dab_msg = (zmq_dab_message_t*)incoming.data();
-
-            if (dab_msg->version != 1) {
-                etiLog.level(error) << "ZeroMQ wrong packet version " << dab_msg->version;
-                error_count++;
-            }
-
-            int offset = sizeof(dab_msg->version) +
-                NUM_FRAMES_PER_ZMQ_MESSAGE * sizeof(*dab_msg->buflen);
-
-            std::list<std::pair<std::vector<uint8_t>, metadata_t> > all_frames;
-
-            for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
-                if (dab_msg->buflen[i] <= 0 or dab_msg->buflen[i] > 6144) {
-                    etiLog.level(error) << "ZeroMQ buffer " << i <<
-                        " has invalid length " << dab_msg->buflen[i];
+        try {
+            while (error_count < MAX_ERROR_COUNT) {
+                zmq::message_t incoming;
+                zmq::pollitem_t items[1];
+                items[0].socket = zmq_sock;
+                items[0].events = ZMQ_POLLIN;
+                const int num_events = zmq::poll(items, 1, ZMQ_TIMEOUT_MS);
+                if (num_events == 0) { // timeout
                     error_count++;
                 }
                 else {
-                    std::vector<uint8_t> buf(6144, 0x55);
+                    // Event received: recv will not block
+                    zmq_sock.recv(incoming, zmq::recv_flags::none);
+                    const auto received_at = std::chrono::steady_clock::now();
 
-                    const int framesize = dab_msg->buflen[i];
+                    zmq_dab_message_t* dab_msg = (zmq_dab_message_t*)incoming.data();
 
-                    memcpy(&buf.front(),
-                            ((uint8_t*)incoming.data()) + offset,
-                            framesize);
+                    if (dab_msg->version != 1) {
+                        etiLog.level(error) << "ZeroMQ wrong packet version " << dab_msg->version;
+                        error_count++;
+                    }
 
-                    all_frames.emplace_back(
-                            std::piecewise_construct,
-                            std::make_tuple(std::move(buf)),
-                            std::make_tuple());
+                    int offset = sizeof(dab_msg->version) +
+                        NUM_FRAMES_PER_ZMQ_MESSAGE * sizeof(*dab_msg->buflen);
 
-                    offset += framesize;
+                    std::vector<frame_t> all_frames;
+                    all_frames.reserve(NUM_FRAMES_PER_ZMQ_MESSAGE);
+
+                    for (int i = 0; i < NUM_FRAMES_PER_ZMQ_MESSAGE; i++) {
+                        if (dab_msg->buflen[i] <= 0 or dab_msg->buflen[i] > 6144) {
+                            etiLog.level(error) << "ZeroMQ buffer " << i <<
+                                " has invalid length " << dab_msg->buflen[i];
+                            error_count++;
+                        }
+                        else {
+                            frame_t frame;
+                            frame.data.resize(6144, 0x55);
+                            frame.received_at = received_at;
+
+                            const int framesize = dab_msg->buflen[i];
+
+                            memcpy(frame.data.data(),
+                                    ((uint8_t*)incoming.data()) + offset,
+                                    framesize);
+
+                            const int fct = frame.data[4];
+
+                            const int expected_fct = (previous_fct + 1) % 250;
+                            if (previous_fct != -1 and expected_fct != fct) {
+                                etiLog.level(error) << "ETI wrong frame counter FCT=" << fct << " expected " << expected_fct;
+                                throw FCTDiscontinuity();
+                            }
+                            previous_fct = fct;
+
+                            all_frames.push_back(std::move(frame));
+
+                            offset += framesize;
+                        }
+                    }
+
+                    for (auto &f : all_frames) {
+                        size_t consumed_bytes = 0;
+
+                        f.metadata = get_md_one_frame(
+                                static_cast<uint8_t*>(incoming.data()) + offset,
+                                incoming.size() - offset,
+                                &consumed_bytes);
+
+                        offset += consumed_bytes;
+                    }
+
+                    for (auto &f : all_frames) {
+                        edisender.push_frame(std::move(f));
+                    }
                 }
             }
 
-            for (auto &f : all_frames) {
-                size_t consumed_bytes = 0;
-
-                f.second = get_md_one_frame(
-                        static_cast<uint8_t*>(incoming.data()) + offset,
-                        incoming.size() - offset,
-                        &consumed_bytes);
-
-                offset += consumed_bytes;
-            }
-
-            for (auto &f : all_frames) {
-                edisender.push_frame(f);
-                frame_count++;
-            }
+            etiLog.level(info) << "Backoff " << backoff_after_reset_ms <<
+                "ms due to ZMQ input (" << source_url << ") timeout";
         }
-    }
+        catch (const FCTDiscontinuity&) {
+            etiLog.level(info) << "Backoff " << backoff_after_reset_ms << "ms FCT discontinuity";
+        }
 
-    etiLog.level(info) << "Quitting after " << frame_count << " frames transferred";
+        zmq_sock.close();
+        std::this_thread::sleep_for(std::chrono::milliseconds(backoff_after_reset_ms));
+    }
 
     return 0;
 }
 
 int main(int argc, char **argv)
 {
+    // Version handling is done very early to ensure nothing else but the version gets printed out
+    if (argc == 2 and strcmp(argv[1], "--version") == 0) {
+        fprintf(stdout, "%s\n",
+#if defined(GITVERSION)
+                GITVERSION
+#else
+                PACKAGE_VERSION
+#endif
+               );
+        return 0;
+    }
+
     etiLog.level(info) << "ZMQ2EDI converter from " <<
         PACKAGE_NAME << " " <<
 #if defined(GITVERSION)
@@ -404,12 +472,20 @@ int main(int argc, char **argv)
 #endif
         " starting up";
 
+    int ret = 1;
+
     try {
-        return start(argc, argv);
+        ret = start(argc, argv);
+
+        // To make sure things get printed to stderr
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
-    catch (std::runtime_error &e) {
-        etiLog.level(error) << "Error: " << e.what();
+    catch (const std::runtime_error &e) {
+        etiLog.level(error) << "Runtime error: " << e.what();
+    }
+    catch (const std::logic_error &e) {
+        etiLog.level(error) << "Logic error! " << e.what();
     }
 
-    return 1;
+    return ret;
 }

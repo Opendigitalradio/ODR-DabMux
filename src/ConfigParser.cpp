@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -40,6 +40,7 @@
 #include "utils.h"
 #include "DabMux.h"
 #include "ManagementServer.h"
+#include "input/Edi.h"
 #include "input/Prbs.h"
 #include "input/Zmq.h"
 #include "input/File.h"
@@ -50,11 +51,12 @@
 #include <boost/algorithm/string/split.hpp>
 #include <cstdint>
 #include <cstring>
-#include <memory>
+#include <chrono>
 #include <exception>
 #include <iostream>
-#include <string>
 #include <map>
+#include <memory>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -81,13 +83,35 @@ static uint16_t get_announcement_flag_from_ptree(ptree& pt)
     return flags;
 }
 
+static void parse_fig2_label(ptree& pt, DabLabel& label) {
+    label.setFIG2Label(pt.get<string>("fig2_label", ""));
+
+    uint16_t character_field = hexparse(pt.get("fig2_label_character_flag", "0"));
+    if (character_field) {
+        label.setFIG2CharacterField(character_field);
+    }
+
+    auto pt_tc = pt.get_child_optional("fig2_label_text_control");
+    if (pt_tc) {
+        FIG2TextControl tc;
+        tc.bidi_flag = pt_tc->get<bool>("bidi", tc.bidi_flag);
+        auto base_direction = pt_tc->get<string>("base_direction", "LTR");
+
+        tc.base_direction_is_rtl = (base_direction == "RTL");
+
+        tc.contextual_flag = pt_tc->get<bool>("contextual", tc.contextual_flag);
+        tc.combining_flag = pt_tc->get<bool>("combining", tc.combining_flag);
+
+        label.setFIG2TextControl(tc);
+    }
+}
+
 // Parse the linkage section
 static void parse_linkage(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
     auto pt_linking = pt.get_child_optional("linking");
-    if (pt_linking)
-    {
+    if (pt_linking) {
         for (const auto& it : *pt_linking) {
             const string setuid = it.first;
             const ptree pt_set = it.second;
@@ -388,7 +412,23 @@ static void parse_general(ptree& pt,
         etiLog.level(warn) << "ECC is 0!";
     }
 
-    ensemble->international_table = pt_ensemble.get("international-table", 1);
+    ensemble->international_table = pt_ensemble.get("international-table", ensemble->international_table);
+
+    bool reconfig_counter_is_hash = false;
+    try {
+        if (pt_ensemble.get<string>("reconfig-counter") == "hash") {
+            reconfig_counter_is_hash = true;
+        }
+    }
+    catch (const ptree_error &e) {
+    }
+
+    if (reconfig_counter_is_hash) {
+        ensemble->reconfig_counter = -2;
+    }
+    else {
+        ensemble->reconfig_counter = pt_ensemble.get("reconfig-counter", ensemble->reconfig_counter);
+    }
 
     string lto_auto = pt_ensemble.get("local-time-offset", "");
     if (lto_auto == "auto") {
@@ -412,7 +452,7 @@ static void parse_general(ptree& pt,
     }
 
     int success = -5;
-    string ensemble_label = pt_ensemble.get<string>("label");
+    string ensemble_label = pt_ensemble.get<string>("label", "");
     string ensemble_short_label(ensemble_label);
     try {
         ensemble_short_label = pt_ensemble.get<string>("shortlabel");
@@ -447,6 +487,8 @@ static void parse_general(ptree& pt,
             abort();
     }
 
+    parse_fig2_label(pt_ensemble, ensemble->label);
+
     try {
         ptree pt_announcements = pt_ensemble.get_child("announcements");
         for (auto announcement : pt_announcements) {
@@ -455,9 +497,14 @@ static void parse_general(ptree& pt,
 
             auto cl = make_shared<AnnouncementCluster>(name);
             cl->cluster_id = hexparse(pt_announcement.get<string>("cluster"));
-            if (cl->cluster_id == 0 or cl->cluster_id == 0xFF) {
+            if (cl->cluster_id == 0) {
                 throw runtime_error("Announcement cluster id " +
                         to_string(cl->cluster_id) + " is not allowed");
+            }
+            if (cl->cluster_id == 255) {
+                etiLog.level(debug) <<
+                    "Alarm flag for FIG 0/0 is set 1, because announcement group with cluster id oxFF is found.";
+                ensemble->alarm_flag = 1;
             }
             cl->flags = get_announcement_flag_from_ptree(
                     pt_announcement.get_child("flags"));
@@ -525,7 +572,13 @@ void parse_ptree(
                     continue;
                 }
                 try {
-                    service->clusters.push_back(hexparse(cluster_s));
+                    auto cluster_id = hexparse(cluster_s);
+                    if (cluster_id == 255) {
+                        etiLog.level(warn) << "Announcement cluster id " +
+                                to_string(cluster_id) + " is not allowed and is ignored in FIG 0/18.";
+                        continue;
+                    }
+                    service->clusters.push_back(cluster_id);
                 }
                 catch (const std::exception& e) {
                     etiLog.level(warn) << "Cannot parse '" << clusterlist <<
@@ -549,7 +602,7 @@ void parse_ptree(
 
         int success = -5;
 
-        string servicelabel = pt_service.get<string>("label");
+        string servicelabel = pt_service.get<string>("label", "");
         string serviceshortlabel(servicelabel);
         try {
             serviceshortlabel = pt_service.get<string>("shortlabel");
@@ -583,6 +636,8 @@ void parse_ptree(
                     "Service short label definition: program error !";
                 abort();
         }
+
+        parse_fig2_label(pt_service, service->label);
 
         service->id = new_service_id;
         service->ecc = hexparse(pt_service.get("ecc", "0"));
@@ -694,9 +749,6 @@ void parse_ptree(
             throw runtime_error(ss.str());
         }
 
-        int figType = hexparse(pt_comp.get("figtype", "-1"));
-        int packet_address = hexparse(pt_comp.get("address", "-1"));
-        int packet_datagroup = pt_comp.get("datagroup", false);
         uint8_t component_type = hexparse(pt_comp.get("type", "0"));
 
         auto component = make_shared<DabComponent>(componentuid);
@@ -744,28 +796,80 @@ void parse_ptree(
                 abort();
         }
 
+        parse_fig2_label(pt_comp, component->label);
+
         if (component->SCIdS == 0 and not component->label.long_label().empty()) {
             etiLog.level(warn) << "Primary component " << component->uid <<
                 " has label set. Since V2.1.1 of the specification, only secondary"
                 " components are allowed to have labels.";
         }
 
-        if (figType != -1) {
-            if (figType >= (1<<12)) {
-                stringstream ss;
-                ss << "Component with uid " << componentuid <<
-                    ": figtype '" << figType << "' is too large !";
-                throw runtime_error(ss.str());
-            }
+        auto pt_ua = pt_comp.get_child_optional("user-applications");
+        if (pt_ua) {
+            for (const auto& ua_entry : *pt_ua) {
+                const string ua_key = ua_entry.first;
+                const string ua_value = ua_entry.second.data();
 
-            if (component->isPacketComponent(ensemble->subchannels)) {
-                component->packet.appType = figType;
+                if (ua_key != "userapp") {
+                    etiLog.level(error) << "user-applications should only contain 'userapp' keys";
+                    throw runtime_error("component user-applications definition error");
+                }
 
-            }
-            else {
-                component->audio.uaType = figType;
-            }
+                userApplication ua;
 
+                // Values from TS 101 756 Table 16
+
+                if (ua_value == "slideshow") {
+                    ua.uaType = FIG0_13_APPTYPE_SLIDESHOW;
+
+                    // This was previously hardcoded in FIG0/13 and means "MOT, start of X-PAD data group"
+                    ua.xpadAppType = 12;
+                }
+                else if (ua_value == "spi") {
+                    ua.uaType = FIG0_13_APPTYPE_SPI;
+                    ua.xpadAppType = 16;
+                }
+
+                if (component->isPacketComponent(ensemble->subchannels)) {
+                    component->packet.uaTypes.push_back(ua);
+                }
+                else {
+                    component->audio.uaTypes.push_back(ua);
+                }
+            }
+        }
+        else {
+            // Setting only figtype is the old format which allows the definition of a single
+            // user application type only.
+            int figType = hexparse(pt_comp.get("figtype", "-1"));
+            if (figType != -1) {
+
+                etiLog.level(warn) << "The figtype setting is deprecated in favour of user-applications. Please see example configurations.";
+
+                if (figType >= (1<<12)) {
+                    stringstream ss;
+                    ss << "Component with uid " << componentuid <<
+                        ": figtype '" << figType << "' is too large !";
+                    throw runtime_error(ss.str());
+                }
+
+                userApplication ua;
+                ua.uaType = figType;
+
+                // This was previously hardcoded in FIG0/13 and means "MOT, start of X-PAD data group"
+                ua.xpadAppType = 12;
+
+                if (component->isPacketComponent(ensemble->subchannels)) {
+                    component->packet.uaTypes.push_back(ua);
+                }
+                else {
+                    component->audio.uaTypes.push_back(ua);
+                }
+            }
+        }
+
+        if (component->isPacketComponent(ensemble->subchannels)) {
+            int packet_address = hexparse(pt_comp.get("address", "-1"));
             if (packet_address != -1) {
                 if (! component->isPacketComponent(ensemble->subchannels)) {
                     stringstream ss;
@@ -776,6 +880,8 @@ void parse_ptree(
 
                 component->packet.address = packet_address;
             }
+
+            int packet_datagroup = pt_comp.get("datagroup", false);
             if (packet_datagroup) {
                 if (! component->isPacketComponent(ensemble->subchannels)) {
                     stringstream ss;
@@ -841,40 +947,57 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         type = pt.get<string>("type");
     }
     catch (const ptree_error &e) {
-        stringstream ss;
-        ss << "Subchannel with uid " << subchanuid << " has no type defined!";
-        throw runtime_error(ss.str());
+        throw runtime_error("Subchannel with uid " + subchanuid + " has no type defined!");
     }
 
-    /* Both inputfile and inputuri are supported, and are equivalent.
-     * inputuri has precedence
+    /* Up to v2.3.1, both inputfile and inputuri are supported, and are
+     * equivalent.  inputuri has precedence.
+     *
+     * After that, either inputfile or the (inputproto, inputuri) pair must be given, but not both.
      */
     string inputUri = pt.get<string>("inputuri", "");
+    string proto = pt.get<string>("inputproto", "");
 
-    if (inputUri == "") {
+    if (inputUri.empty() and proto.empty()) {
         try {
+            /* Old approach, derives proto from scheme used in the URL.
+             * This makes it impossible to distinguish between ZMQ tcp:// and
+             * EDI tcp://
+             */
             inputUri = pt.get<string>("inputfile");
+            size_t protopos = inputUri.find("://");
+
+            if (protopos == string::npos) {
+                proto = "file";
+            }
+            else {
+                proto = inputUri.substr(0, protopos);
+
+                if (proto == "tcp" or proto == "epgm" or proto == "ipc") {
+                    proto = "zmq";
+                }
+                else if (proto == "sti-rtp") {
+                    proto = "sti";
+                }
+            }
         }
         catch (const ptree_error &e) {
-            stringstream ss;
-            ss << "Subchannel with uid " << subchanuid << " has no inputUri defined!";
-            throw runtime_error(ss.str());
+            throw runtime_error("Subchannel with uid " + subchanuid + " has no input defined!");
         }
     }
-
-    string proto;
-    size_t protopos = inputUri.find("://");
-    if (protopos == string::npos) {
-        proto = "file";
-    }
-    else {
-        proto = inputUri.substr(0, protopos);
+    else if (inputUri.empty() or proto.empty()) {
+        throw runtime_error("Must define both inputuri and inputproto for uid " + subchanuid);
     }
 
     subchan->inputUri = inputUri;
 
     if (type == "dabplus" or type == "audio") {
-        subchan->type = subchannel_type_t::Audio;
+        if(type == "dabplus") {
+            subchan->type = subchannel_type_t::DABPlusAudio;
+        } else {
+            subchan->type = subchannel_type_t::DABAudio;
+        }
+
         subchan->bitrate = 0;
 
         if (proto == "file") {
@@ -888,7 +1011,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
                 throw logic_error("Incomplete handling of file input");
             }
         }
-        else if (proto == "tcp"  or proto == "epgm" or proto == "ipc") {
+        else if (proto == "zmq") {
             auto zmqconfig = setup_zmq_input(pt, subchanuid);
 
             if (type == "audio") {
@@ -901,15 +1024,16 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
                 rcs.enrol(inzmq.get());
                 subchan->input = inzmq;
             }
-
-            if (proto == "epgm") {
-                etiLog.level(warn) << "Using untested epgm:// zeromq input";
-            }
-            else if (proto == "ipc") {
-                etiLog.level(warn) << "Using untested ipc:// zeromq input";
-            }
         }
-        else if (proto == "sti-rtp") {
+        else if (proto == "edi") {
+            Inputs::dab_input_edi_config_t config;
+            config.buffer_size = pt.get("buffer", config.buffer_size);
+            config.prebuffering = pt.get("prebuffering", config.prebuffering);
+            auto inedi = make_shared<Inputs::Edi>(subchanuid, config);
+            rcs.enrol(inedi.get());
+            subchan->input = inedi;
+        }
+        else if (proto == "stp") {
             subchan->input = make_shared<Inputs::Sti_d_Rtp>();
         }
         else {
@@ -971,6 +1095,20 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
             etiLog.level(warn) << "The nonblock option is not supported";
         }
     }
+
+    const string bufferManagement = pt.get("buffer-management", "prebuffering");
+    if (bufferManagement == "prebuffering") {
+        subchan->input->setBufferManagement(Inputs::BufferManagement::Prebuffering);
+    }
+    else if (bufferManagement == "timestamped") {
+        subchan->input->setBufferManagement(Inputs::BufferManagement::Timestamped);
+    }
+    else {
+        throw runtime_error("Subchannel with uid " + subchanuid + " has invalid buffer-management !");
+    }
+
+    const int32_t tist_delay = pt.get("tist-delay", 0);
+    subchan->input->setTistDelay(chrono::milliseconds(tist_delay));
 
     subchan->startAddress = 0;
 

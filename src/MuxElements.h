@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -44,6 +44,43 @@
 #include "RemoteControl.h"
 #include "Eti.h"
 
+// Protection levels and bitrates for UEP.
+const unsigned char ProtectionLevelTable[64] = {
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 2, 1, 0,
+    4, 3, 1,
+    4, 2, 0
+};
+
+const unsigned short BitRateTable[64] = {
+    32, 32, 32, 32, 32,
+    48, 48, 48, 48, 48,
+    56, 56, 56, 56,
+    64, 64, 64, 64, 64,
+    80, 80, 80, 80, 80,
+    96, 96, 96, 96, 96,
+    112, 112, 112, 112,
+    128, 128, 128, 128, 128,
+    160, 160, 160, 160, 160,
+    192, 192, 192, 192, 192,
+    224, 224, 224, 224, 224,
+    256, 256, 256, 256, 256,
+    320, 320, 320,
+    384, 384, 384
+};
+
+
+
 class MuxInitException : public std::exception
 {
     public:
@@ -58,10 +95,10 @@ class MuxInitException : public std::exception
 
 
 enum class subchannel_type_t {
-    Audio = 0,
-    DataDmb = 1,
-    Fidc = 2,
-    Packet = 3
+    DABAudio,
+    DABPlusAudio,
+    DataDmb,
+    Packet
 };
 
 
@@ -143,6 +180,13 @@ struct dabOutput {
 
 #define DABLABEL_LENGTH 16
 
+struct FIG2TextControl {
+    bool bidi_flag = false;
+    bool base_direction_is_rtl = false;
+    bool contextual_flag = false;
+    bool combining_flag = false;
+};
+
 class DabLabel
 {
     public:
@@ -166,27 +210,68 @@ class DabLabel
          */
         int setLabel(const std::string& label);
 
+        /* Set the FIG2 label. label must be UTF-8.
+         *
+         * returns:  0 on success
+         */
+        int setFIG2Label(const std::string& label);
+
+        /* FIG2 can either be sent with a character field (old spec)
+         * or with a text control (draftETSI TS 103 176 v2.2.1).
+         *
+         * Setting one clears the other, and selects the value of the
+         * Rfu bit in the FIG 2 Data Field
+         */
+        void setFIG2CharacterField(uint16_t character_field);
+        void setFIG2TextControl(FIG2TextControl tc);
+
+        // For FIG 1
+
         /* Write the label to the 16-byte buffer given in buf
          * In the DAB standard, the label is 16 bytes long, and is
          * padded using spaces.
          */
         void writeLabel(uint8_t* buf) const;
 
-        uint16_t flag() const { return m_flag; }
+        bool has_fig1_label() const { return not m_fig1_label.empty(); }
+        uint16_t flag() const { return m_fig1_flag; }
         const std::string long_label() const;
         const std::string short_label() const;
 
+        // For FIG 2
+        bool has_fig2_label() const { return not m_fig2_label.empty(); }
+        bool fig2_uses_text_control() const { return m_fig2_use_text_control; }
+        FIG2TextControl fig2_text_control() const { return m_fig2_text_control; }
+        uint16_t fig2_character_field() const { return m_fig2_character_field; }
+
+        const std::string fig2_label() const;
+
+        /* FIG 2 labels are either in UCS-2 or in UTF-8. Because there are upcoming
+         * changes in the spec regarding the encoding of FIG2 (currently in draft
+         * ETSI TS 103 176 v2.2.1), the character flag is not implemented yet.
+         *
+         * Both FIG 1 and FIG 2 labels can be sent, and receiver will show the one
+         * they support.
+         */
+
     private:
+        /* The m_fig1_label is not padded in any way. Stored in EBU Latin Charset */
+        std::string m_fig1_label;
+
         /* The flag field selects which label characters make
          * up the short label
          */
-        uint16_t m_flag = 0xFFFF;
+        uint16_t m_fig1_flag = 0xFFFF;
 
-        /* The m_label is not padded in any way */
-        std::string m_label;
+        /* FIG2 label, stored in UTF-8. TODO: support UCS-2 */
+        std::string m_fig2_label;
+
+        bool m_fig2_use_text_control = true; // Default to the new variant
+        uint16_t m_fig2_character_field = 0xFF00;
+        FIG2TextControl m_fig2_text_control;
 
         /* Checks and calculates the flag. slabel must be EBU Latin Charset */
-        int setShortLabel(const std::string& slabel);
+        int setFIG1ShortLabel(const std::string& slabel);
 };
 
 
@@ -244,6 +329,18 @@ class dabEnsemble : public RemoteControllable {
         // 2 corresponds to program types used in north america
         int international_table = 1;
 
+        // Modulo-1024 counter for FIG0/7.
+        // Set to RECONFIG_COUNTER_DISABLED to disable FIG0/7.
+        // Set to RECONFIG_COUNTER_HASH to calculate the counter value using a hash function
+        // on relevant ensemble configuration parameters.
+        static constexpr int RECONFIG_COUNTER_DISABLED = -1;
+        static constexpr int RECONFIG_COUNTER_HASH = -2;
+        int reconfig_counter = RECONFIG_COUNTER_DISABLED;
+
+        // alarm flag is use for AL flag in FIG 0/0.
+        // set to true if one announcement group with cluster ID 0xFF is available in multiplex file
+        bool alarm_flag = 0;
+
         vec_sp_service services;
         vec_sp_component components;
         vec_sp_subchannel subchannels;
@@ -282,27 +379,23 @@ enum dab_protection_form_t {
 };
 
 struct dabProtection {
-    unsigned char level;
+    uint8_t level;
     dab_protection_form_t form;
     union {
         dabProtectionUEP uep;
         dabProtectionEEP eep;
     };
+
+    // According to ETSI EN 300 799 5.4.1.2
+    uint8_t to_tpl() const;
 };
 
 class DabSubchannel
 {
 public:
-    DabSubchannel(std::string& uid) :
+    DabSubchannel(const std::string& uid) :
             uid(uid),
-            input(),
-            id(0),
-            type(subchannel_type_t::Audio),
-            startAddress(0),
-            bitrate(0),
-            protection()
-    {
-    }
+            protection() { }
 
     // Calculate subchannel size in number of CU
     unsigned short getSizeCu(void) const;
@@ -316,24 +409,34 @@ public:
     // Calculate subchannel size in number of uint64_t
     unsigned short getSizeDWord(void) const;
 
+    // Read from the input, using the correct buffer management
+    size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
+
     std::string uid;
 
     std::string inputUri;
     std::shared_ptr<Inputs::InputBase> input;
-    unsigned char id;
-    subchannel_type_t type;
-    uint16_t startAddress;
-    uint16_t bitrate;
-    dabProtection protection;
+    unsigned char id = 0;
+    subchannel_type_t type = subchannel_type_t::DABAudio;
+    uint16_t startAddress = 0;
+    uint16_t bitrate = 0;
+    struct dabProtection protection;
 };
 
+/* For FIG 0/13 (EN 300 401 Clause 6.3.6) */
+struct userApplication {
+    /* This 11-bit field identifies the user application that shall be used to decode the data in the channel identified
+     * by SId and SCIdS. The interpretation of this field shall be as defined in ETSI TS 101 756 [3], table 16. */
+    uint16_t uaType = 0xFFFF;
 
+    /* X-PAD Application Type: this 5-bit field shall specify the lowest numbered application type used to transport
+     * this user application (see clause 7.4.3).
+     * Also See EN 300 401 Table 11 "X-PAD Application types" */
+    uint8_t xpadAppType;
+};
 
 struct dabAudioComponent {
-    dabAudioComponent() :
-        uaType(0xFFFF) {}
-
-    uint16_t uaType; // User Application Type
+    std::vector<userApplication> uaTypes;
 };
 
 
@@ -341,21 +444,12 @@ struct dabDataComponent {
 };
 
 
-struct dabFidcComponent {
-};
-
 
 struct dabPacketComponent {
-    dabPacketComponent() :
-        id(0),
-        address(0),
-        appType(0xFFFF),
-        datagroup(false) { }
-
-    uint16_t id;
-    uint16_t address;
-    uint16_t appType;
-    bool datagroup;
+    uint16_t id = 0;
+    uint16_t address = 0;
+    std::vector<userApplication> uaTypes;
+    bool datagroup = false;
 };
 
 class DabComponent : public RemoteControllable
@@ -371,14 +465,13 @@ class DabComponent : public RemoteControllable
         std::string uid;
 
         DabLabel label;
-        uint32_t serviceId;
-        uint8_t subchId;
-        uint8_t type;
-        uint8_t SCIdS;
+        uint32_t serviceId = 0;
+        uint8_t subchId = 0;
+        uint8_t type = 0;
+        uint8_t SCIdS = 0;
 
         dabAudioComponent audio;
         dabDataComponent data;
-        dabFidcComponent fidc;
         dabPacketComponent packet;
 
         bool isPacketComponent(vec_sp_subchannel& subchannels) const;

@@ -44,7 +44,7 @@ namespace Inputs {
 // Preferred polynomial is G(x) = x^20 + x^17 + 1
 const uint32_t PRBS_DEFAULT_POLY = (1 << 20) | (1 << 17) | (1 << 0);
 
-int Prbs::open(const string& name)
+void Prbs::open(const string& name)
 {
     if (name.substr(0, 7) != "prbs://") {
         throw logic_error("Invalid PRBS name");
@@ -73,11 +73,9 @@ int Prbs::open(const string& name)
         m_prbs.setup(polynomial);
     }
     rewind();
-
-    return 0;
 }
 
-int Prbs::readFrame(uint8_t* buffer, size_t size)
+size_t Prbs::readFrame(uint8_t *buffer, size_t size)
 {
     for (size_t i = 0; i < size; ++i) {
         buffer[i] = m_prbs.step();
@@ -86,14 +84,22 @@ int Prbs::readFrame(uint8_t* buffer, size_t size)
     return size;
 }
 
+size_t Prbs::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta)
+{
+    memset(buffer, 0, size);
+    return 0;
+}
+
 int Prbs::setBitrate(int bitrate)
 {
+    if (bitrate <= 0) {
+        throw invalid_argument("Invalid bitrate " + to_string(bitrate));
+    }
     return bitrate;
 }
 
-int Prbs::close()
+void Prbs::close()
 {
-    return 0;
 }
 
 int Prbs::rewind()

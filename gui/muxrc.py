@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#   Copyright (C) 2016
+#   Copyright (C) 2019
 #   Matthias P. Braendli, matthias.braendli@mpb.li
 #
 #    http://www.opendigitalradio.org
@@ -56,7 +56,7 @@ class MuxRemoteControl(object):
                 f = zmq.SNDMORE
 
             print("Send {} {}".format(i, part))
-            sock.send(part, flags=f)
+            sock.send(part.encode(), flags=f)
 
         print("Poll")
 
@@ -73,16 +73,19 @@ class MuxRemoteControl(object):
 
     def load(self):
         """Load the list of RC modules"""
-        module_names = self.zRead([b'list'])
+        module_jsons = self.zRead(['list'])
 
         self.module_list = []
 
-        for name in module_names:
+        for module_json in module_jsons:
+            module = json.loads(module_json)
+            name = module['name']
             mod = RCModule(name)
-            module_params = self.zRead([b'show', name])
+            module_params = self.zRead(['show', name])
+            print("m_p", module_params)
 
             for param in module_params:
-                p, v = param.split(': ')
+                p, v = param.split(b': ')
                 mod.parameters.append(RCParameter(p, v))
 
             self.module_list.append(mod)
@@ -91,14 +94,14 @@ class MuxRemoteControl(object):
         return self.module_list
 
     def get_param_value(self, module, param):
-        value = self.zRead([b'get', module, param])
+        value = self.zRead(['get', module, param])
         if value[0] == b'fail':
             raise ValueError("Error getting param: {}".format(value[1]))
         else:
             return value[0]
 
     def set_param_value(self, module, param, value):
-        ret = self.zRead([b'set', module, param, value])
+        ret = self.zRead(['set', module, param, value])
         if ret[0] == b'fail':
             raise ValueError("Error getting param: {}".format(ret[1]))
 

@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017 Matthias P. Braendli
+   Copyright (C) 2019 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    ZeroMQ input. see www.zeromq.org for more info
@@ -45,7 +45,8 @@
 
 #include <list>
 #include <string>
-#include <stdint.h>
+#include <vector>
+#include <cstdint>
 #include "zmq.hpp"
 #include "input/inputs.h"
 #include "ManagementServer.h"
@@ -118,8 +119,8 @@ struct dab_input_zmq_config_t
     std::string curve_encoder_keyfile;
 };
 
-#define ZMQ_ENCODER_FDK 1
-#define ZMQ_ENCODER_TOOLAME 2
+#define ZMQ_ENCODER_AACPLUS 1
+#define ZMQ_ENCODER_MPEG_L2 2
 
 /* This defines the on-wire representation of a ZMQ message header.
  *
@@ -156,6 +157,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
             m_bitrate(0),
             m_enable_input(true),
             m_config(config),
+            m_name(name),
             m_stats(name),
             m_prebuf_current(config.prebuffering) {
                 RC_ADD_PARAMETER(enable,
@@ -180,10 +182,11 @@ class ZmqBase : public InputBase, public RemoteControllable {
                 INVALIDATE_KEY(m_curve_encoder_key);
             }
 
-        virtual int open(const std::string& inputUri);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual void open(const std::string& inputUri);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
         virtual int setBitrate(int bitrate);
-        virtual int close();
+        virtual void close();
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -210,7 +213,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
         bool m_enable_input;
 
         /* stores elements of type char[<superframesize>] */
-        std::list<uint8_t*> m_frame_buffer;
+        std::list<std::vector<uint8_t> > m_frame_buffer;
 
         dab_input_zmq_config_t m_config;
 
@@ -220,6 +223,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
         char m_curve_encoder_key[CURVE_KEYLEN+1];
 
         std::string m_inputUri;
+        std::string m_name;
 
         InputStat m_stats;
 

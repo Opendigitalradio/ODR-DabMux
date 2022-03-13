@@ -5,7 +5,7 @@
 ;
 ; It contains two services, one DAB and one DAB+, and also shows
 ; both the file input useful for offline processing, and the
-; ZeroMQ input useful in a 24/7 scenario.
+; EDI input useful in a 24/7 scenario.
 
 ; More information about the usage of the tools is available
 ; in the guide, which can be found on the
@@ -61,10 +61,16 @@ general {
     ; statistics data (buffers, overruns, underruns, etc)
     ; which can then be graphed a tool like Munin
     ; The doc/stats_dabmux_multi.py tool is a suitable
-    ; plugin for that.
+    ; plugin for that. The data fields are documented in doc/STATS.md
     ; If the port is zero, or the line commented, the server
     ; is not started.
     managementport 12720
+
+    ; At startup, run the command and abort if is it not returning 0.
+    ; This may be a script. Useful for checking if the NTP client on your
+    ; system has had time to setup the clock.
+    ;startupcheck "chronyc waitsync 10 0.01"
+    ;startupcheck "ntp-wait -fv"
 }
 
 remotecontrol {
@@ -103,10 +109,23 @@ ensemble {
                             ; or
     ;local-time-offset 1    ; in hours, supports half-hour offsets
 
+    ; The presence of reconfig-counter enables FIG0/7, which specifies that
+    ; the ensemble is compliant to EN 300 401 version 2.
+    ; You can either set a number which will be used for the Count field in FIG0/7,
+    ;reconfig-counter 23
+    ; or set
+    reconfig-counter hash
+    ; to let ODR-DabMux calculate a hash that depends on your multiplex configuration,
+    ; ensuring that when you change the configuration, the FIG 0/7 Count also changes
+    ;
+    ; Leave the option commented-out if you do not wish to transmit FIG 0/7.
+
     ; If you want to run your machine in UTC time, but still take advantage of the
     ; automatic calculation of the local time offset, set the environment variable TZ
     ; to your timezone (e.g. TZ=Europe/Rome) before you launch ODR-DabMux
 
+    ; FIG1 labels are given with the 'label' and 'shortlabel' keys.
+    ;
     ; All labels are maximum 16 characters in length.
     ; Labels that are valid utf-8 will be converted to EBU Latin Character set
     ; as defined in ETSI TS 101 756, in Annex C. If it's not valid utf-8, the
@@ -118,6 +137,23 @@ ensemble {
     ; be longer than 8 characters. If omitted, it will be truncated from the
     ; label
     shortlabel "ODR"
+
+    ; The FIG2 label can be up to 16 characters long, and is in UTF-8.
+    ;fig2_label "ÓpêñÐigıtålRadiō"
+
+    ; FIG2 labels can either be sent with a character field (old spec)
+    ; or with a text control (new draftETSI TS 103 176 v2.2.1).
+    ; If unspecified, defaults to setting the text control with the values
+    ; shown in the example below.
+    ;
+    ;fig2_label_character_flag "0xFF00"
+    ;
+    ;fig2_label_text_control {
+    ; bidi false
+    ; base_direction "LTR"
+    ; contextual false
+    ; combining false
+    ;}
 }
 
 ; Definition of DAB services
@@ -127,7 +163,7 @@ services {
     srv-fu {
         id 0x4daa
         label "Fünk"
-        ; You can define a shortlabel too.
+        ; You can define a shortlabel and a fig2_label too.
     }
     srv-ri {
         ; If your ensemble contains a service from another country,
@@ -142,40 +178,77 @@ subchannels {
     sub-fu {
         ; This is our DAB programme, using a file input
         type audio
-        inputfile "funk.mp2"
         bitrate 128
         id 10
         protection 3
+
+        inputfile "funk.mp2"
+    }
+    sub-bla {
+        type audio
+        bitrate 96
+        id 1
+        protection 1
+
+        ; for audio and dabplus, EDI input is available. It supports TCP server and UDP
+        inputproto edi
+        ; Accepts connection to port 9001 from any interface. Prefer disabling PFT when using TCP.
+        inputuri "tcp://0.0.0.0:9001"
+
+        ; For UDP, PFT should be enabled at the sender.
+        ; Unicast UDP input:
+        ;inputuri "udp://:9001"
+        ; Multicast UDP input:
+        ;inputuri "udp://@239.10.0.1:9001"
+
+        ; Two buffer-management types are available: prebuffering and timestamped.
+        ; prebuffering will accumulate a few frames before it starts streaming, and each
+        ; time there is a buffer underrun (similar to how the ZMQ input works)
+        ;
+        ; timestamped takes into account the TIST inside EDI and inserts the encoded
+        ; audio frame into the ETI frame with the same timestamp
+        buffer-management prebuffering
+
+        ; In an ideal scenario, where the input rate exactly corresponds
+        ; to the rate at which the frames are consumed by dabmux, you
+        ; see the buffer level staying around the prebuffering value.
+        ; Network latency jitter can make it temporarily go lower or higher.
+        ; Encoder clock drift will make the buffer either slowly fill or
+        ; empty, which will create intermittent glitches.
+
+        ; Maximum size of input buffer, in frames (24ms)
+        ; when this buffer size is reached, some frames will be
+        ; discarded to get the size again below this value.
+        buffer 40
+
+        ; At startup or after an underrun, the buffer is filled to this
+        ; amount of frames before streaming starts.
+        prebuffering 20
     }
     sub-ri {
-        ; This is our DAB+ programme, using a ZeroMQ
+        ; This is our DAB+ programme, using a ZeroMQ input
         type dabplus
-        ; Accepts connections to port 9000 from any interface.
-        ; Use ODR-AudioEnc as encoder
-        inputfile "tcp://*:9000"
         bitrate 96
         id 1
         protection 3
 
-        ; ZMQ specific options, mandatory:
+        ; Accepts connections to port 9000 from any interface.
+        ; Use ODR-AudioEnc as encoder, accepts only connection
+        ; from the local machine.
+        inputproto edi
+        inputuri "tcp://127.0.0.1:9000"
 
-        ; Maximum size of input buffer, in AAC frames (24ms)
-        ; when this buffer size is reached, some frames will be
-        ; discarded to get the size again below this value.
-        ; As the present implementation discards entire AAC superframes,
-        ; (5 frames = 120ms) the effect will clearly be audible.
-        zmq-buffer 40
+        buffer-management timestamped
 
-        ; At startup or after an underrun, the buffer is filled to this
-        ; amount of AAC frames before streaming starts.
-        zmq-prebuffering 20
+        ; When using timestamped, the prebuffering is without effect.
+        ; The buffer setting however still dictates the maximum buffer size, to
+        ; avoid runaway memory usage in case of issues.
+        buffer 500
+        ; 500 * 24ms = 12 seconds
 
-        ; In an ideal scenario, where the input rate exactly corresponds
-        ; to the rate at which the frames are consumed by dabmux, you
-        ; see the buffer level staying around the zmq-prebuffering value.
-        ; Network latency jitter can make it temporarily go lower or higher.
-        ; Encoder clock drift will make the buffer either slowly fill or
-        ; empty, which will create intermittent glitches.
+        ; Specify the additional delay in milliseconds to add to the TIST. Positive values
+        ; mean the content will be inserted later.
+        tist-delay 10
     }
 }
 
@@ -193,6 +266,11 @@ components {
     comp-ri {
         service srv-ri
         subchannel sub-ri
+
+        ; If the programme contains slideshow, please also specify the user-application:
+        user-applications {
+            userapp "slideshow"
+        }
     }
 }
 
@@ -204,33 +282,19 @@ outputs {
     ; Output RAW ETI NI to standard output
     stdout "fifo:///dev/stdout?type=raw"
 
-    ; ZeroMQ output example, new configuration format. Several
-    ; zeromq blocks can be added here.
-    ; This output does not back-pressure the multiplexer.
-    zeromq {
-        ; Listen on all interfaces, on port 9100
-        endpoint "tcp://*:9100"
-
-        ; Transmit backward compatible metadata containing
-        ; EDI time and UTC offset when TIST is enabled.
-        ;
-        ; If TIST is enabled, requires leap-second information (see example.mux)
-        ;
-        ; WARNING! requires ODR-DabMux to be compiled with
-        ; EDI output, and this will enable leap second download
-        ; as for the EDI output!
-        allowmetadata true
+    edi {
+        ; Example EDI-over-TCP output
+        ; If TIST is enabled, requires leap-second information
+        destinations {
+            example_tcp {
+                protocol tcp
+                listenport 13000
+            }
+        }
     }
 
-    ; Output ETI-over-TCP. This is like piping a RAW ETI NI data stream
-    ; into a TCP socket, except that the output can handle simultaneous
-    ; connections.
-    ; 0.0.0.0 means "listen on all interfaces"
-    ; This output does not back-pressure the multiplexer.
-    ;tcp "tcp://0.0.0.0:9200"
-
     ; Throttle output to real-time (one ETI frame every 24ms)
-    ;throttle "simul://"
+    throttle "simul://"
 
     ; Important! For real-time operation, you need to have exactly one
     ; output that applies back-pressure to ODR-DabMux, otherwise it will run
@@ -239,7 +303,8 @@ outputs {
     ; For an output to a pipe, the data consumer at the other end of the pipe
     ; will dictate the multiplexing rate to ODR-DabMux.
     ;
-    ; If you use the zmq+tcp:// or the tcp:// output,
-    ; you must also enable a simul:// output!
+    ; If you use the EDI output, you must also enable a simul:// output!
+
+    ; More options are given in doc/advanced.mux
 }
 

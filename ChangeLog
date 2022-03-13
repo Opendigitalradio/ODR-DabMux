@@ -1,6 +1,75 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2021-06-03: Matthias P. Braendli <matthias@mpb.li>
+	(v4.0.0):
+		Incompatible change: Replace EDI packet interleaving by packet spreading (changes configuration
+		file format for ODR-DabMux and command line options for zmq2edi).
+		Add configurability for EDI UDP multicast input.
+		Simplify FIG 0/9, avoid sending an empty subfield list.
+		FIG 0/13 improvements for packet services, deprecate 'figtype' component setting which is replaced by 'user-application'.
+		Improvements for timestamped input.
+		Add --version command line option to all tools.
+		EDI output: make transport addressing optional.
+
+2020-05-26: Matthias P. Braendli <matthias@mpb.li>
+	(v3.1.1):
+		Fix FIG2 segment count issue.
+		Handle disconnects better in EDI output.
+		Fix buffering issue with timestamped EDI input.
+
+2020-04-15: Matthias P. Braendli <matthias@mpb.li>
+	(v3.1.0):
+		Initialise TIST on startup rounded to 24ms, as it was done before
+		v2.4.0 (see '5b1dea7').
+		Refresh TAI bulletin before it expires.
+		Set SO_REUSEADDR for TCP listening sockets (avoids some startup failures).
+		Add EDI input TIST delay setting, and improve EDI input stats and error handling.
+		Add FIG 0/7 and Alarm announcement support (Thanks to Mathias Kuntze).
+		Add startupcheck functionality to ODR-DabMux and ODR-ZMQ2EDI.
+		ZMQ2EDI will not quit anymore in case of input issues.
+		Handle FCT discontinuity in ZMQ2EDI, and display better statistics
+		which are usable by the new munin stats script doc/stats_zmq2edi_munin.py.
+
+2019-10-30: Matthias P. Braendli <matthias@mpb.li>
+	(v3.0.1):
+		Fix compilation on older systems (like debian jessie)
+
+2019-10-29: Matthias P. Braendli <matthias@mpb.li>
+	(v3.0.0):
+		Add EDI input with support for timestamps, which requires a change
+		in the configuration file format for the input specification. This
+		marks the beginning of a transition away from the ZMQ contribution
+		protocol towards the standard EDI, including EDI-over-TCP.
+		Move code shared with other mmbTools into a separate `common`
+		repository.
+		Change default TAI clock cache storage location to
+		`/var/tmp/odr-leap-seconds.cache`.
+		Add encoder version and uptime to stats if available (carried over
+		EDI, not ZMQ).
+		Fix nonblocking file input.
+		Modify ODR-zmq2edi and ODR-zmq2farsync timeout behaviour.
+
+2019-12-20: Matthias P. Braendli <matthias@mpb.li>
+	(v2.4.2):
+		Backport the file input nonblock fix to v2.4.1.
+
+2019-06-25: Matthias P. Braendli <matthias@mpb.li>
+	(v2.4.1):
+		Fix bug when odr-zmq2edi is used with more than one destination.
+
+2019-06-07: Matthias P. Braendli <matthias@mpb.li>
+	(v2.4.0):
+		Add timestamp offset setting, and fix bug due to UTCO offset
+		not being properly applied. See doc/TIMESTAMPS.rst for more
+		details.
+		Implement FIG2 labels.
+		Fix bug for DAB MP2 in EEP_A.
+		Fix FIG0/24 for DAB+ services.
+		ODR-ZMQ2EDI: fix MNSC endianness swap bug.
+		Pull some RC changes from ODR-DabMod.
+		Implement EDI-over-TCP output.
+
 2019-01-07: Matthias P. Braendli <matthias@mpb.li>
 	(v2.3.1):
 		Happy new year!

@@ -31,7 +31,7 @@
 #include <deque>
 #include <boost/thread.hpp>
 #include "input/inputs.h"
-#include "UdpSocket.h"
+#include "Socket.h"
 
 namespace Inputs {
 
@@ -40,13 +40,14 @@ namespace Inputs {
  */
 class Udp : public InputBase {
     public:
-        virtual int open(const std::string& name);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual void open(const std::string& name);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
+        virtual size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
         virtual int setBitrate(int bitrate);
-        virtual int close();
+        virtual void close();
 
     protected:
-        UdpSocket m_sock;
+        Socket::UDPSocket m_sock;
         std::string m_name;
 
         void openUdpSocket(const std::string& endpoint);
@@ -67,8 +68,8 @@ class Sti_d_Rtp : public Udp {
     using vec_u8 = std::vector<uint8_t>;
 
     public:
-        virtual int open(const std::string& name);
-        virtual int readFrame(uint8_t* buffer, size_t size);
+        virtual void open(const std::string& name);
+        virtual size_t readFrame(uint8_t *buffer, size_t size);
 
     private:
         void receive_packet(void);

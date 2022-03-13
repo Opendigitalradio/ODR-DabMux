@@ -73,7 +73,7 @@ CharsetConverter::CharsetConverter()
     }
 }
 
-std::string CharsetConverter::convert(std::string line_utf8, bool up_to_first_error)
+std::string CharsetConverter::utf8_to_ebu(std::string line_utf8, bool up_to_first_error)
 {
     string::iterator end_it;
 
@@ -107,7 +107,7 @@ std::string CharsetConverter::convert(std::string line_utf8, bool up_to_first_er
     return encoded_line;
 }
 
-std::string CharsetConverter::convert_ebu_to_utf8(const std::string& str)
+std::string CharsetConverter::ebu_to_utf8(const std::string& str)
 {
     string utf8_str;
     for (const uint8_t c : str) {

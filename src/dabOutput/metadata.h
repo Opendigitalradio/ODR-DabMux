@@ -54,6 +54,8 @@ enum class output_metadata_id_e {
 };
 
 struct OutputMetadata {
+    virtual ~OutputMetadata() {};
+
     virtual output_metadata_id_e getId(void) const = 0;
     virtual size_t getLength(void) const = 0;
 

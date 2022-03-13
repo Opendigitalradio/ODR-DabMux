@@ -58,6 +58,10 @@
 #include <deque>
 #include <thread>
 #include <mutex>
+
+// Suppress an deprecation warning from boost
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <cmath>
@@ -97,14 +101,19 @@ class InputStat
         /* This function is called for every frame read by
          * the multiplexer */
         void notifyBuffer(long bufsize);
+        void notifyTimestampOffset(double offset);
         void notifyPeakLevels(int peak_left, int peak_right);
         void notifyUnderrun(void);
         void notifyOverrun(void);
+        void notifyVersion(const std::string& version, uint32_t uptime_s);
         std::string encodeValuesJSON(void);
         input_state_t determineState(void);
 
     private:
         std::string m_name;
+
+        // Remove all expired fill and peak stats
+        void prune_statistics(const std::chrono::time_point<std::chrono::steady_clock>& timestamp);
 
         /************ STATISTICS ***********/
         // Keep track of buffer fill with timestamps, so that we
@@ -119,6 +128,9 @@ class InputStat
         uint32_t m_num_underruns = 0;
         uint32_t m_num_overruns = 0;
 
+        // last measured timestamp offset
+        double m_last_tist_offset = 0;
+
         // Peak audio levels (linear 16-bit PCM) for the two channels.
         // Keep a FIFO of values from the last minutes, apply
         // a short window to also see short-term fluctuations.
@@ -130,6 +142,9 @@ class InputStat
         std::deque<peak_stat_t> m_peak_stats;
 
         size_t m_short_window_length = 0;
+
+        std::string m_version;
+        uint32_t m_uptime_s = 0;
 
         /************* STATE ***************/
         /* Variables used for determining the input state */

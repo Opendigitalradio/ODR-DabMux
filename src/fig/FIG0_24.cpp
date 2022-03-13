@@ -93,7 +93,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
             }
         }
 
-        subchannel_type_t type = subchannel_type_t::Audio;
+        subchannel_type_t type = subchannel_type_t::DABAudio;
         bool isProgramme = true;
         bool oe = true;
 
@@ -107,10 +107,9 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
                 oe,
                 serviceFIG0_24->service_id,
                 m_inserting_audio_not_data ? "AUDIO" : "DATA",
-                type == subchannel_type_t::Audio ? "Audio" :
+                type == subchannel_type_t::DABAudio ? "Audio" :
                 type == subchannel_type_t::Packet ? "Packet" :
-                type == subchannel_type_t::DataDmb ? "DataDmb" :
-                type == subchannel_type_t::Fidc ? "Fidc" : "?");
+                type == subchannel_type_t::DataDmb ? "DataDmb" : "?");
 
         if (last_oe != oe) {
             fig0 = nullptr;
@@ -147,13 +146,13 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        if (type == subchannel_type_t::Audio) {
-            auto fig0_2serviceAudio = (FIGtype0_24_audioservice*)buf;
+        if (isProgramme) {
+            auto fig0_24_audioservice = (FIGtype0_24_audioservice*)buf;
 
-            fig0_2serviceAudio->SId = htons(serviceFIG0_24->service_id);
-            fig0_2serviceAudio->rfa = 0;
-            fig0_2serviceAudio->CAId = 0;
-            fig0_2serviceAudio->Length = serviceFIG0_24->other_ensembles.size();
+            fig0_24_audioservice->SId = htons(serviceFIG0_24->service_id);
+            fig0_24_audioservice->rfa = 0;
+            fig0_24_audioservice->CAId = 0;
+            fig0_24_audioservice->Length = serviceFIG0_24->other_ensembles.size();
             buf += 3;
             fig0->Length += 3;
             remaining -= 3;
@@ -162,12 +161,12 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
                serviceFIG0_24->service_id);
         }
         else {
-            auto fig0_2serviceData = (FIGtype0_24_dataservice*)buf;
+            auto fig0_24_dataservice = (FIGtype0_24_dataservice*)buf;
 
-            fig0_2serviceData->SId = htonl(serviceFIG0_24->service_id);
-            fig0_2serviceData->rfa = 0;
-            fig0_2serviceData->CAId = 0;
-            fig0_2serviceData->Length = serviceFIG0_24->other_ensembles.size();
+            fig0_24_dataservice->SId = htonl(serviceFIG0_24->service_id);
+            fig0_24_dataservice->rfa = 0;
+            fig0_24_dataservice->CAId = 0;
+            fig0_24_dataservice->Length = serviceFIG0_24->other_ensembles.size();
             buf += 4;
             fig0->Length += 4;
             remaining -= 4;

@@ -3,8 +3,8 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
-   Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2021 Matthias P. Braendli
+    http://www.opendigitalradio.org
    */
 /*
    This file is part of ODR-DabMux.
@@ -57,7 +57,6 @@ class FIG0_9 : public IFIG
             }
         };
         std::list<FIG0_9_Extended_Field> m_extended_fields;
-        std::list<FIG0_9_Extended_Field>::iterator m_current_extended_field;
 
 };
 

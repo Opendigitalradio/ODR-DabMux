@@ -39,12 +39,12 @@ class CharsetConverter
          *  stream. If up_to_first_error is set, convert as much text as possible.
          *  If false, raise an utf8::exception in case of conversion errors.
          */
-        std::string convert(std::string line_utf8, bool up_to_first_error = true);
+        std::string utf8_to_ebu(std::string line_utf8, bool up_to_first_error = true);
 
         /*! Convert a EBU Latin byte stream to a UTF-8 encoded string.
          *  Invalid input characters are converted to ⁇ (unicode U+2047).
          */
-        std::string convert_ebu_to_utf8(const std::string& str);
+        std::string ebu_to_utf8(const std::string& str);
 
     private:
         // Representation of the table in 32-bit unicode

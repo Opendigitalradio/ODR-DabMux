@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2017
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -32,6 +32,7 @@
 #include "fig/FIG.h"
 #include "fig/FIG0.h"
 #include "fig/FIG1.h"
+#include "fig/FIG2.h"
 #include <list>
 #include <map>
 #include <memory>
@@ -97,6 +98,7 @@ class FIGCarousel {
         FIG0_3 m_fig0_3;
         FIG0_5 m_fig0_5;
         FIG0_6 m_fig0_6;
+        FIG0_7 m_fig0_7;
         FIG0_17 m_fig0_17;
         FIG0_8 m_fig0_8;
         FIG1_0 m_fig1_0;
@@ -110,6 +112,10 @@ class FIGCarousel {
         FIG0_19 m_fig0_19;
         FIG0_21 m_fig0_21;
         FIG0_24 m_fig0_24;
+        FIG2_0 m_fig2_0;
+        FIG2_1_and_5 m_fig2_1;
+        FIG2_1_and_5 m_fig2_5;
+        FIG2_4 m_fig2_4;
 };
 
 } // namespace FIC

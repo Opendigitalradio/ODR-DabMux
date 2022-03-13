@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*

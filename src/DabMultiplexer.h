@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2019
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -30,16 +30,14 @@
 #endif
 
 #include "dabOutput/dabOutput.h"
-#include "dabOutput/edi/TagItems.h"
-#include "dabOutput/edi/TagPacket.h"
-#include "dabOutput/edi/AFPacket.h"
-#include "dabOutput/edi/PFT.h"
-#include "dabOutput/edi/Interleaver.h"
+#include "edioutput/TagItems.h"
+#include "edioutput/TagPacket.h"
+#include "edioutput/AFPacket.h"
+#include "edioutput/Transport.h"
 #include "fig/FIGCarousel.h"
 #include "crc.h"
 #include "utils.h"
-#include "UdpSocket.h"
-#include "InetAddress.h"
+#include "Socket.h"
 #include "PcDebug.h"
 #include "MuxElements.h"
 #include "RemoteControl.h"
@@ -67,7 +65,7 @@ class DabMultiplexer : public RemoteControllable {
 
         void print_info(void);
 
-        void set_edi_config(const edi_configuration_t& new_edi_conf);
+        void set_edi_config(const edi::configuration_t& new_edi_conf);
 
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -80,36 +78,25 @@ class DabMultiplexer : public RemoteControllable {
         void prepare_subchannels(void);
         void prepare_services_components(void);
         void prepare_data_inputs(void);
+        void increment_timestamp(void);
 
         boost::property_tree::ptree m_pt;
 
-        unsigned timestamp;
-        bool MNSC_increment_time;
-        struct timeval mnsc_time;
-        std::chrono::system_clock::time_point edi_time;
+        uint32_t m_timestamp = 0;
+        std::time_t m_edi_time = 0;
+        std::time_t m_edi_time_latched_for_mnsc = 0;
 
-        edi_configuration_t edi_conf;
+        edi::configuration_t edi_conf;
+        std::shared_ptr<edi::Sender> edi_sender;
 
-        uint32_t sync;
-        unsigned long currentFrame;
+        uint32_t sync = 0x49C5F8;
+        unsigned long currentFrame = 0;
 
         std::shared_ptr<dabEnsemble> ensemble;
 
-        bool m_tai_clock_required;
+        int m_tist_offset = 0;
+        bool m_tai_clock_required = false;
         ClockTAI m_clock_tai;
-
-#if HAVE_OUTPUT_EDI
-        std::ofstream edi_debug_file;
-
-        // The TagPacket will then be placed into an AFPacket
-        edi::AFPacketiser edi_afPacketiser;
-
-        // The AF Packet will be protected with reed-solomon and split in fragments
-        edi::PFT edi_pft;
-
-        // To mitigate for burst packet loss, PFT fragments can be sent out-of-order
-        edi::Interleaver edi_interleaver;
-#endif // HAVE_OUTPUT_EDI
 
         /* New FIG Carousel */
         FIC::FIGCarousel fig_carousel;

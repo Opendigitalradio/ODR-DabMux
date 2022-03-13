@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2021
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -25,6 +25,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <cstring>
+#include <climits>
 #include <iostream>
 #include <memory>
 #include <boost/algorithm/string/join.hpp>
@@ -36,6 +37,8 @@ using namespace std;
 
 static time_t dab_time_seconds = 0;
 static int dab_time_millis = 0;
+
+static void printServices(const vector<shared_ptr<DabService> >& services);
 
 void update_dab_time()
 {
@@ -92,34 +95,19 @@ void header_message()
 #endif
             __DATE__, __TIME__);
     fprintf(stderr, "\n\n");
-    fprintf(stderr,
-            "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n");
-    fprintf(stderr,
-            "Her Majesty the Queen in Right of Canada\n");
-    fprintf(stderr,
-            "(Communications Research Centre Canada)\n\n");
-    fprintf(stderr,
-            "Copyright (C) 2019 Matthias P. Braendli\n");
-    fprintf(stderr,
-            "LICENCE: GPLv3+\n\n");
-    fprintf(stderr,
-            "http://opendigitalradio.org\n\n");
+    fprintf(stderr, "Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012\n");
+    fprintf(stderr, "Her Majesty the Queen in Right of Canada\n");
+    fprintf(stderr, "(Communications Research Centre Canada)\n\n");
 
-    std::cerr << "Input URLs supported:" << std::endl <<
-    " prbs" <<
-    " udp" <<
-    " file" <<
-    " zmq" <<
-    std::endl;
+    fprintf(stderr, "Copyright (C) 2021 Matthias P. Braendli\n");
+    fprintf(stderr, "LICENCE: GPLv3+\n\n");
 
-    std::cerr << "Inputs format supported:" << std::endl <<
-    " raw" <<
-    " mpeg" <<
-    " packet" <<
-    " epm" <<
-    std::endl;
+    fprintf(stderr, "http://opendigitalradio.org\n\n");
 
-    std::cerr << "Output URLs supported:" << std::endl <<
+    fprintf(stderr, "Input URLs supported: prbs udp file zmq\n");
+    fprintf(stderr, "Inputs format supported: raw mpeg packet epm\n");
+
+    std::cerr << "Output URLs supported:\n" <<
 #if defined(HAVE_OUTPUT_FILE)
     " file" <<
 #endif
@@ -138,7 +126,7 @@ void header_message()
 #if defined(HAVE_OUTPUT_SIMUL)
     " simul" <<
 #endif
-    std::endl << std::endl;
+    "\n\n";
 
 }
 
@@ -208,15 +196,15 @@ void printServices(const vector<shared_ptr<DabService> >& services)
 {
     int index = 0;
 
+    etiLog.log(info, "--- Services list ---");
     for (auto service : services) {
 
         etiLog.level(info) << "Service       " << service->get_rc_name();
-        etiLog.level(info) << " label:       " <<
-                service->label.long_label();
-        etiLog.level(info) << " short label: " <<
-                service->label.short_label();
-
+        etiLog.level(info) << " label:       " << service->label.long_label();
+        etiLog.level(info) << " short label: " << service->label.short_label();
         etiLog.log(info, " (0x%x)", service->label.flag());
+        etiLog.level(info) << " FIG2 label:  " << service->label.fig2_label();
+
         etiLog.log(info, " id:            0x%lx (%lu)", service->id,
                 service->id);
 
@@ -239,81 +227,76 @@ void printServices(const vector<shared_ptr<DabService> >& services)
     }
 }
 
-void printComponents(const vec_sp_component& components)
+static void write_uatype_to_stringstream(stringstream& ss, uint16_t uaType)
 {
-    unsigned int index = 0;
-
-    for (const auto component : components) {
-        etiLog.level(info) << "Component     " << component->get_rc_name();
-        printComponent(component);
-        ++index;
+    ss << "app type:      ";
+    switch (uaType) {
+        case FIG0_13_APPTYPE_SLIDESHOW:
+            ss << "MOT Slideshow";
+            break;
+        case FIG0_13_APPTYPE_WEBSITE:
+            ss << "MOT Broadcast Website";
+            break;
+        case FIG0_13_APPTYPE_TPEG:
+            ss << "TPEG";
+            break;
+        case FIG0_13_APPTYPE_DGPS:
+            ss << "DGPS";
+            break;
+        case FIG0_13_APPTYPE_TMC:
+            ss << "TMC";
+            break;
+        case FIG0_13_APPTYPE_SPI:
+            ss << "SPI/EPG";
+            break;
+        case FIG0_13_APPTYPE_DABJAVA:
+            ss << "DAB Java";
+            break;
+        case FIG0_13_APPTYPE_JOURNALINE:
+            ss << "Journaline";
+            break;
+        default:
+            ss << "Unknown: " << uaType;
+            break;
     }
 }
 
-void printComponent(const shared_ptr<DabComponent>& component)
+void printComponent(const shared_ptr<DabComponent>& component, const std::shared_ptr<dabEnsemble>& ensemble)
 {
     etiLog.log(info, " service id:             0x%x (%u)",
             component->serviceId, component->serviceId);
     etiLog.log(info, " subchannel id:          0x%x (%u)",
             component->subchId, component->subchId);
-    etiLog.level(info) << " label:                  " <<
-            component->label.long_label();
-    etiLog.level(info) << " short label:            " <<
-            component->label.short_label();
-
+    etiLog.level(info) << " label:                  " << component->label.long_label();
+    etiLog.level(info) << " short label:            " << component->label.short_label();
     etiLog.log(info, " (0x%x)", component->label.flag());
+    etiLog.level(info) << " FIG2 label:             " << component->label.fig2_label();
+
     etiLog.log(info, " service component type: 0x%x (%u)", component->type,
             component->type);
 
-    if (component->packet.appType != 0xFFFF) {
+    if (component->isPacketComponent(ensemble->subchannels)) {
         etiLog.log(info, " (packet) id:            0x%x (%u)",
                 component->packet.id, component->packet.id);
         etiLog.log(info, " (packet) address:       %u",
                 component->packet.address);
-
-        etiLog.log(info, " (packet) app type:      %u",
-                component->packet.appType);
-
         etiLog.log(info, " (packet) datagroup:     %u",
                 component->packet.datagroup);
-    }
-    else if (component->audio.uaType != 0xFFFF) {
-        stringstream ss;
-        ss <<            " (audio) app type:       ";
-        switch (component->audio.uaType) {
-            case FIG0_13_APPTYPE_SLIDESHOW:
-                ss << "MOT Slideshow";
-                break;
-            case FIG0_13_APPTYPE_WEBSITE:
-                ss << "MOT Broadcast Website";
-                break;
-            case FIG0_13_APPTYPE_TPEG:
-                ss << "TPEG";
-                break;
-            case FIG0_13_APPTYPE_DGPS:
-                ss << "DGPS";
-                break;
-            case FIG0_13_APPTYPE_TMC:
-                ss << "TMC";
-                break;
-            case FIG0_13_APPTYPE_EPG:
-                ss << "EPG";
-                break;
-            case FIG0_13_APPTYPE_DABJAVA:
-                ss << "DAB Java";
-                break;
-            case FIG0_13_APPTYPE_JOURNALINE:
-                ss << "Journaline";
-                break;
-            default:
-                ss << "Unknown: " << component->audio.uaType;
-                break;
-        }
 
-        etiLog.level(info) << ss.str();
+        for (const auto& userapp : component->packet.uaTypes) {
+            stringstream ss;
+            ss << " (packet) ";
+            write_uatype_to_stringstream(ss, userapp.uaType);
+            etiLog.level(info) << ss.str();
+        }
     }
     else {
-        etiLog.level(info) << " No app type defined";
+        for (const auto& userapp : component->audio.uaTypes) {
+            stringstream ss;
+            ss << " (packet) ";
+            write_uatype_to_stringstream(ss, userapp.uaType);
+            etiLog.level(info) << ss.str();
+        }
     }
 }
 
@@ -323,20 +306,22 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
 
     int total_num_cu = 0;
 
+    etiLog.log(info, "--- Subchannels list ---");
+
     for (auto subchannel : subchannels) {
         dabProtection* protection = &subchannel->protection;
         etiLog.level(info) << "Subchannel   " << subchannel->uid;
         etiLog.log(info, " input");
         etiLog.level(info) << "   URI:     " << subchannel->inputUri;
         switch (subchannel->type) {
-            case subchannel_type_t::Audio:
-                etiLog.log(info, " type:       audio");
+            case subchannel_type_t::DABAudio:
+                etiLog.log(info, " type:       DABAudio");
+                break;
+            case subchannel_type_t::DABPlusAudio:
+                etiLog.log(info, " type:       DABPlusAudio");
                 break;
             case subchannel_type_t::DataDmb:
                 etiLog.log(info, " type:       data");
-                break;
-            case subchannel_type_t::Fidc:
-                etiLog.log(info, " type:       fidc");
                 break;
             case subchannel_type_t::Packet:
                 etiLog.log(info, " type:       packet");
@@ -510,15 +495,15 @@ static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)
 
 void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
 {
+    etiLog.log(info, "--- Multiplex configuration ---");
     etiLog.log(info, "Ensemble");
     etiLog.log(info, " id:          0x%lx (%lu)", ensemble->id, ensemble->id);
     etiLog.log(info, " ecc:         0x%x (%u)", ensemble->ecc, ensemble->ecc);
-    etiLog.level(info) << " label:       " <<
-            ensemble->label.long_label();
-    etiLog.level(info) << " short label: " <<
-            ensemble->label.short_label();
-
+    etiLog.level(info) << " label:       " << ensemble->label.long_label();
+    etiLog.level(info) << " short label: " << ensemble->label.short_label();
     etiLog.log(info, " (0x%x)", ensemble->label.flag());
+    etiLog.level(info) << " FIG2 label:  " << ensemble->label.fig2_label();
+
     switch (ensemble->transmission_mode) {
         case TransmissionMode_e::TM_I:
             etiLog.log(info, " mode:        TM I");
@@ -536,8 +521,9 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
 
     if (ensemble->lto_auto) {
         time_t now = time(nullptr);
-        struct tm* ltime = localtime(&now);
-        time_t now2 = timegm(ltime);
+        struct tm ltime;
+        localtime_r(&now, &ltime);
+        time_t now2 = timegm(&ltime);
         etiLog.log(info, " lto:         %2.1f hours", 0.5 * (now2 - now) / 1800);
     }
     else {
@@ -557,6 +543,15 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
 
     printLinking(ensemble);
     printFrequencyInformation(ensemble);
+
+    printSubchannels(ensemble->subchannels);
+    printServices(ensemble->services);
+
+    etiLog.log(info, "--- Components list ---");
+    for (const auto component : ensemble->components) {
+        etiLog.level(info) << "Component                " << component->get_rc_name();
+        printComponent(component, ensemble);
+    }
 }
 
 long hexparse(const std::string& input)
@@ -576,22 +571,28 @@ long hexparse(const std::string& input)
         input.c_str() + 2 :
         input.c_str();
 
-    value = strtol(input.c_str(), &endptr, base);
+    // Comments taken from manpage
 
+    value = strtol(startptr, &endptr, base);
     if ((value == LONG_MIN or value == LONG_MAX) and errno == ERANGE) {
+        // If an underflow occurs, strtol() returns LONG_MIN.
+        // If an overflow occurs, strtol() returns LONG_MAX.
+        // In both cases, errno is set to ERANGE.
         throw out_of_range("hexparse: value out of range");
     }
     else if (value == 0 and errno != 0) {
+        // The implementation may also set errno to EINVAL in case no
+        // conversion was performed (no digits seen, and 0 returned).
         stringstream ss;
         ss << "hexparse: " << strerror(errno);
         throw invalid_argument(ss.str());
     }
-
-    if (startptr == endptr) {
+    else if (startptr == endptr) {
+        // If there were no digits at all, strtol() stores the original value
+        // of nptr in *endptr (and returns 0).
         throw out_of_range("hexparse: no value found");
     }
-
-    if (*endptr != '\0') {
+    else if (*endptr != '\0') {
         throw out_of_range("hexparse: superfluous characters after value found: '" + input + "'");
     }
 

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    This file contains a set of utility functions that are used to show
@@ -68,17 +68,10 @@ void printUsageConfigfile(char *name, FILE* out = stderr);
  * resp. subchannels*/
 void printOutputs(const std::vector<std::shared_ptr<DabOutput> >& outputs);
 
-void printServices(const std::vector<std::shared_ptr<DabService> >& services);
-
-void printComponents(const vec_sp_component& components);
-
-void printSubchannels(const vec_sp_subchannel& subchannels);
-
 /* Print information about the whole ensemble */
 void printEnsemble(const std::shared_ptr<dabEnsemble>& ensemble);
 
-/* Print detailed component information */
-void printComponent(const std::shared_ptr<DabComponent>& component);
+void printSubchannels(const vec_sp_subchannel& subchannels);
 
 long hexparse(const std::string& input);
 

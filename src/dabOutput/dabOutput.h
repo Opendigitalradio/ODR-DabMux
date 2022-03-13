@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "UdpSocket.h"
+#include "Socket.h"
 #include "Log.h"
 #include "string.h"
 #include <stdexcept>
@@ -47,34 +47,6 @@
 #endif
 #include "dabOutput/metadata.h"
 
-/** Configuration for EDI output */
-
-// Can represent both unicast and multicast destinations
-struct edi_destination_t {
-    std::string dest_addr;
-    std::string source_addr;
-    unsigned int source_port = 0;
-    unsigned int ttl = 10;
-
-    std::shared_ptr<UdpSocket> socket;
-};
-
-struct edi_configuration_t {
-    unsigned chunk_len = 207;        // RSk, data length of each chunk
-    unsigned fec       = 0;          // number of fragments that can be recovered
-    bool dump          = false;      // dump a file with the EDI packets
-    bool verbose       = false;
-    bool enable_pft    = false;      // Enable protection and fragmentation
-    unsigned int tagpacket_alignment = 0;
-    std::vector<edi_destination_t> destinations;
-    unsigned int dest_port = 0;      // common destination port, because it's encoded in the transport layer
-    unsigned int latency_frames = 0; // if nonzero, enable interleaver with a latency of latency_frames * 24ms
-
-    bool enabled() const { return destinations.size() > 0; }
-    bool interleaver_enabled() const { return latency_frames > 0; }
-};
-
-
 // Abstract base class for all outputs
 class DabOutput
 {
@@ -84,6 +56,8 @@ class DabOutput
         {
             return Open(name.c_str());
         }
+
+        // Return -1 on failure
         virtual int Write(void* buffer, int size) = 0;
         virtual int Close() = 0;
 
@@ -172,15 +146,7 @@ class DabOutputRaw : public DabOutput
 class DabOutputUdp : public DabOutput
 {
     public:
-        DabOutputUdp() {
-            packet_ = new UdpPacket(6144);
-            socket_ = new UdpSocket();
-        }
-
-        virtual ~DabOutputUdp() {
-            delete socket_;
-            delete packet_;
-        }
+        DabOutputUdp();
 
         int Open(const char* name);
         int Write(void* buffer, int size);
@@ -198,12 +164,11 @@ class DabOutputUdp : public DabOutput
         DabOutputUdp operator=(const DabOutputUdp& other) = delete;
 
         std::string uri_;
-        UdpSocket* socket_;
-        UdpPacket* packet_;
+        Socket::UDPSocket socket_;
+        Socket::UDPPacket packet_;
 };
 
 // -------------- TCP ------------------
-class TCPDataDispatcher;
 class DabOutputTcp : public DabOutput
 {
     public:
@@ -218,7 +183,7 @@ class DabOutputTcp : public DabOutput
     private:
         std::string uri_;
 
-        std::shared_ptr<TCPDataDispatcher> dispatcher_;
+        std::shared_ptr<Socket::TCPDataDispatcher> dispatcher_;
 };
 
 // -------------- Simul ------------------
@@ -256,7 +221,7 @@ class DabOutputSimul : public DabOutput
  */
 struct zmq_dab_message_t
 {
-    zmq_dab_message_t()
+    zmq_dab_message_t() : buf()
     {
         /* set buf lengths to invalid */
         buflen[0] = -1;

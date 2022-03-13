@@ -25,17 +25,10 @@ else
 GITVERSION_FLAGS =
 endif
 
-bin_PROGRAMS=odr-dabmux zmqinput-keygen
+bin_PROGRAMS=odr-dabmux zmqinput-keygen odr-zmq2edi
 
 if HAVE_OUTPUT_RAW_TEST
 bin_PROGRAMS+=odr-zmq2farsync
-endif
-
-if HAVE_EDI_TEST
-bin_PROGRAMS+=odr-zmq2edi
-CURL_LIBS    =-lcurl
-else
-CURL_LIBS    =
 endif
 
 FARSYNC_DIR=lib/farsync/linux
@@ -58,10 +51,10 @@ lib_charset_sources = lib/charset/charset.cpp \
 					  lib/charset/utf8/unchecked.h \
 					  lib/charset/utf8.h
 
-odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(GITVERSION_FLAGS)
-odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
-odr_dabmux_LDADD    =$(ZMQ_LIBS) $(CURL_LIBS) $(BOOST_LDFLAGS) \
-					 -lpthread $(BOOST_SYSTEM_LIB) $(BOOST_THREAD_LIB) $(BOOST_ASIO_LIB)
+odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS)
+odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(PTHREAD_CXXFLAGS) $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
+odr_dabmux_LDADD    =$(ZMQ_LIBS) $(BOOST_LDFLAGS) \
+					 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
 
 odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/DabMux.h \
@@ -76,6 +69,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/input/File.h \
 					 src/input/Udp.cpp \
 					 src/input/Udp.h \
+					 src/input/Edi.cpp \
+					 src/input/Edi.h \
 					 src/dabOutput/dabOutput.h \
 					 src/dabOutput/dabOutputFile.cpp \
 					 src/dabOutput/dabOutputFifo.cpp \
@@ -86,44 +81,15 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/dabOutput/dabOutputZMQ.cpp \
 					 src/dabOutput/metadata.h \
 					 src/dabOutput/metadata.cpp \
-					 src/dabOutput/edi/AFPacket.cpp \
-					 src/dabOutput/edi/AFPacket.h \
-					 src/dabOutput/edi/TagItems.cpp \
-					 src/dabOutput/edi/TagItems.h \
-					 src/dabOutput/edi/TagPacket.cpp \
-					 src/dabOutput/edi/TagPacket.h \
-					 src/dabOutput/edi/PFT.cpp \
-					 src/dabOutput/edi/PFT.h \
-					 src/dabOutput/edi/Interleaver.cpp \
-					 src/dabOutput/edi/Interleaver.h \
-					 src/ClockTAI.h \
-					 src/ClockTAI.cpp \
 					 src/ConfigParser.cpp \
 					 src/ConfigParser.h \
 					 src/Eti.h \
 					 src/Eti.cpp \
-					 src/InetAddress.h \
-					 src/InetAddress.cpp \
-					 src/Interleaver.h \
-					 src/Interleaver.cpp \
-					 src/Log.h \
-					 src/Log.cpp \
 					 src/ManagementServer.h \
 					 src/ManagementServer.cpp \
 					 src/MuxElements.cpp \
 					 src/MuxElements.h \
 					 src/PcDebug.h \
-					 src/ReedSolomon.h \
-					 src/ReedSolomon.cpp \
-					 src/RemoteControl.cpp \
-					 src/RemoteControl.h \
-					 src/TcpSocket.h \
-					 src/TcpSocket.cpp \
-					 src/UdpSocket.h \
-					 src/UdpSocket.cpp \
-					 src/ThreadsafeQueue.h \
-					 src/crc.h \
-					 src/crc.c \
 					 src/fig/FIG.h \
 					 src/fig/FIG.cpp \
 					 src/fig/FIG0.h \
@@ -140,6 +106,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG0_5.h \
 					 src/fig/FIG0_6.cpp \
 					 src/fig/FIG0_6.h \
+                                         src/fig/FIG0_7.cpp \
+                                         src/fig/FIG0_7.h \
 					 src/fig/FIG0_8.cpp \
 					 src/fig/FIG0_8.h \
 					 src/fig/FIG0_9.cpp \
@@ -160,6 +128,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG0_24.h \
 					 src/fig/FIG1.cpp \
 					 src/fig/FIG1.h \
+					 src/fig/FIG2.cpp \
+					 src/fig/FIG2.h \
 					 src/fig/FIGCarousel.cpp \
 					 src/fig/FIGCarousel.h \
 					 src/fig/TransitionHandler.h \
@@ -169,6 +139,40 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/PrbsGenerator.h \
 					 src/utils.cpp \
 					 src/utils.h \
+					 lib/crc.h \
+					 lib/crc.c \
+					 lib/ClockTAI.h \
+					 lib/ClockTAI.cpp \
+					 lib/Globals.cpp \
+					 lib/Log.h \
+					 lib/Log.cpp \
+					 lib/RemoteControl.cpp \
+					 lib/RemoteControl.h \
+					 lib/edi/STIDecoder.cpp \
+					 lib/edi/STIDecoder.h \
+					 lib/edi/STIWriter.cpp \
+					 lib/edi/STIWriter.h \
+					 lib/edi/PFT.cpp \
+					 lib/edi/PFT.h \
+					 lib/edi/common.cpp \
+					 lib/edi/common.h \
+					 lib/edi/buffer_unpack.hpp \
+					 lib/edioutput/AFPacket.cpp \
+					 lib/edioutput/AFPacket.h \
+					 lib/edioutput/EDIConfig.h \
+					 lib/edioutput/PFT.cpp \
+					 lib/edioutput/PFT.h \
+					 lib/edioutput/TagItems.cpp \
+					 lib/edioutput/TagItems.h \
+					 lib/edioutput/TagPacket.cpp \
+					 lib/edioutput/TagPacket.h \
+					 lib/edioutput/Transport.cpp \
+					 lib/edioutput/Transport.h \
+					 lib/ReedSolomon.h \
+					 lib/ReedSolomon.cpp \
+					 lib/Socket.h \
+					 lib/Socket.cpp \
+					 lib/ThreadsafeQueue.h \
 					 lib/zmq.hpp \
 					 $(lib_fec_sources) \
 					 $(lib_charset_sources)
@@ -180,13 +184,18 @@ zmqinput_keygen_CFLAGS   = -Wall $(GITVERSION_FLAGS) $(ZMQ_CPPFLAGS)
 odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 						   src/dabOutput/dabOutput.h \
 						   src/dabOutput/dabOutputRaw.cpp \
-						   src/Log.h \
-						   src/Log.cpp \
+						   lib/Globals.cpp \
+						   lib/Log.h \
+						   lib/Log.cpp \
+						   lib/RemoteControl.cpp \
+						   lib/RemoteControl.h \
+						   lib/Socket.h \
+						   lib/Socket.cpp \
 						   lib/zmq.hpp
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
-odr_zmq2farsync_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2farsync_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
 odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/zmq2edi/EDISender.h \
@@ -194,32 +203,35 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/dabOutput/dabOutput.h \
 					   src/dabOutput/metadata.h \
 					   src/dabOutput/metadata.cpp \
-					   src/dabOutput/edi/AFPacket.cpp \
-					   src/dabOutput/edi/AFPacket.h \
-					   src/dabOutput/edi/TagItems.cpp \
-					   src/dabOutput/edi/TagItems.h \
-					   src/dabOutput/edi/TagPacket.cpp \
-					   src/dabOutput/edi/TagPacket.h \
-					   src/dabOutput/edi/PFT.cpp \
-					   src/dabOutput/edi/PFT.h \
-					   src/dabOutput/edi/Interleaver.cpp \
-					   src/dabOutput/edi/Interleaver.h \
-					   src/InetAddress.h \
-					   src/InetAddress.cpp \
-					   src/UdpSocket.h \
-					   src/UdpSocket.cpp \
-					   src/ReedSolomon.h \
-					   src/ReedSolomon.cpp \
-					   src/Log.h \
-					   src/Log.cpp \
-					   src/crc.h \
-					   src/crc.c \
+					   lib/edioutput/AFPacket.cpp \
+					   lib/edioutput/AFPacket.h \
+					   lib/edioutput/EDIConfig.h \
+					   lib/edioutput/PFT.cpp \
+					   lib/edioutput/PFT.h \
+					   lib/edioutput/TagItems.cpp \
+					   lib/edioutput/TagItems.h \
+					   lib/edioutput/TagPacket.cpp \
+					   lib/edioutput/TagPacket.h \
+					   lib/edioutput/Transport.cpp \
+					   lib/edioutput/Transport.h \
+					   lib/Globals.cpp \
+					   lib/Log.h \
+					   lib/Log.cpp \
+					   lib/RemoteControl.cpp \
+					   lib/RemoteControl.h \
+					   lib/crc.h \
+					   lib/crc.c \
+					   lib/ReedSolomon.h \
+					   lib/ReedSolomon.cpp \
+					   lib/Socket.h \
+					   lib/Socket.cpp \
+					   lib/ThreadsafeQueue.h \
 					   lib/zmq.hpp \
 					   $(lib_fec_sources)
 
-odr_zmq2edi_LDADD    = $(ZMQ_LIBS) -lpthread $(BOOST_THREAD_LIB) $(BOOST_SYSTEM_LIB)
-odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
+odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
 
 EXTRA_DIST	= COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO doc \

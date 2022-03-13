@@ -26,13 +26,12 @@
 #   include "config.h"
 #endif
 
+#include <vector>
 
 class Interleaver
 {
 public:
     Interleaver(unsigned short I, unsigned short M, bool reverse = false);
-    Interleaver(Interleaver& clone);
-    virtual ~Interleaver();
 
     void setReverse(bool state);
     void encode(void* data, unsigned long size);
@@ -48,7 +47,7 @@ private:
     unsigned long j;
     unsigned long index;
     unsigned long memSize;
-    char* mem;
+    std::vector<char> mem;
     bool reverse;
 };
 

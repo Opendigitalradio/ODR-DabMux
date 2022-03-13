@@ -15,21 +15,25 @@ Features of ODR-DabMux:
 - Standards-compliant DAB multiplexer
 - Configuration file, see doc/example.mux
 - Timestamping support required for SFN
-- ZeroMQ and TCP ETI outputs that can be used with ODR-DabMod
-- ZeroMQ input that can be used with ODR-AudioEnc
-  which supports CURVE authentication
-- Experimental STI-D(PI, X)/RTP input intended to be compatible
-  with compliant encoders.
 - Logging to syslog
 - Monitoring using munin tool
 - Includes a Telnet and ZMQ Remote Control for setting/getting parameters
-- EDI output
+- EDI input and output, both over UDP and TCP
 - Support for FarSync TE1 and TE1e cards (G.703)
 - Something that will (with your help?) one day become a nice GUI for
   configuration, see `gui/README.md`
+- Experimental STI-D(PI, X)/RTP input intended to be compatible
+  with compliant encoders.
+- ZeroMQ and TCP ETI outputs that can be used with ODR-DabMod
+- ZeroMQ input that can be used with ODR-AudioEnc
+  which supports CURVE authentication
 
-Additional tools: `odr-zmq2edi`, a tool that can convert a ZeroMQ ETI stream
-to an EDI stream. `odr-zmq2farsync`, a tool that can drive a FarSync card from
+Additional tools:
+
+`odr-zmq2edi`, a tool that can convert a ZeroMQ ETI stream
+to an EDI stream.
+
+`odr-zmq2farsync`, a tool that can drive a FarSync card from
 a ZeroMQ ETI stream.
 
 The `src/` directory contains the source code of ODR-DabMux and the additional
@@ -56,11 +60,11 @@ Contributions and Contact
 
 Contributions to this tool are welcome, you can reach users and developers
 through the
-[CRC-mmbTools google group](https://groups.google.com/forum/#!forum/crc-mmbtools)
+[ODR-mmbTools group](https://groups.io/g/odr-mmbtools)
 or any other channels mentioned on the ODR website.
 
 There is a list of ideas and thoughts about new possible features and improvements
-in the `TODO` file.
+in the `TODO.md` file.
 
 Developed by:
 
@@ -71,7 +75,7 @@ Pascal Charest *pascal [dot] charest [at] crc [dot] ca*
 Acknowledgements
 ================
 
-David Lutton, Yoann Queret and Stefan Pöschel for bug-fix patches,
+David Lutton, Yoann Queret, Stefan Pöschel and Maik for bug-fix patches,
 Wim Nelis for the Xymon monitoring scripts,
 and many more for feedback and bug reports.
 

@@ -89,8 +89,8 @@ FillStatus FIG0_14::fill(uint8_t *buf, size_t max_size)
                 fig0->FIGtypeNumber = 0;
                 fig0->Length = required_size;
                 fig0->CN = 0;
-                fig0->OE = 0;
-                fig0->PD = 1; // Only ever applicable to data services
+                fig0->OE = 0; // Rfu
+                fig0->PD = 0; // Rfu
                 fig0->Extension = 14;
                 buf += 2;
                 remaining -= 2;

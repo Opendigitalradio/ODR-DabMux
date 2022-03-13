@@ -35,8 +35,8 @@ namespace FIC {
 // See EN 300 401, Clause 6.2.2 for the FIG0_14 description
 
 struct FIG0_14_AppInfo {
-    uint8_t subchId:6;
     uint8_t fecScheme:2;
+    uint8_t subchId:6;
 } PACKED;
 
 

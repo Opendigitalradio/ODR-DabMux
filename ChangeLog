@@ -1,6 +1,14 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2022-03-15: Matthias P. Braendli <matthias@mpb.li>
+	(v4.1.0):
+		Improve EDI input.
+		Fix crash when FIG0/7 doesn't have enough space.
+		Fix FIG0/6 (service linking) database continuation flag.
+		Simplify compilation on ARM.
+		Rework web GUI (Thanks to Robin)
+
 2021-06-03: Matthias P. Braendli <matthias@mpb.li>
 	(v4.0.0):
 		Incompatible change: Replace EDI packet interleaving by packet spreading (changes configuration

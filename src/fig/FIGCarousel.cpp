@@ -87,6 +87,7 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     m_fig0_8(&m_rti),
     m_fig1_0(&m_rti),
     m_fig0_13(&m_rti),
+    m_fig0_14(&m_rti),
     m_fig0_10(&m_rti),
     m_fig0_9(&m_rti),
     m_fig1_1(&m_rti),
@@ -123,6 +124,7 @@ FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
     load_and_allocate(m_fig0_6, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_8, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_13, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_14, FIBAllocation::FIB_ANY);
 
     load_and_allocate(m_fig0_17, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig1_0, FIBAllocation::FIB_ANY);

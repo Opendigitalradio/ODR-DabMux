@@ -106,6 +106,7 @@ class FIGCarousel {
         FIG0_8 m_fig0_8;
         FIG1_0 m_fig1_0;
         FIG0_13 m_fig0_13;
+        FIG0_14 m_fig0_14;
         FIG0_10 m_fig0_10;
         FIG0_9 m_fig0_9;
         FIG1_1 m_fig1_1;

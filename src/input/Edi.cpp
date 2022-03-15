@@ -280,7 +280,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
 
         if (num_discarded_invalid_ts > 0) {
             etiLog.level(warn) << "EDI input " << m_name << ": " <<
-                num_discarded_wrong_size << " packets with invalid timestamp.";
+                num_discarded_invalid_ts << " packets with invalid timestamp.";
         }
 
         memset(buffer, 0, size);

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2022
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -418,6 +418,7 @@ public:
     std::shared_ptr<Inputs::InputBase> input;
     unsigned char id = 0;
     subchannel_type_t type = subchannel_type_t::DABAudio;
+    bool packet_enhanced = false; // Enables additional FEC and FIG0/14
     uint16_t startAddress = 0;
     uint16_t bitrate = 0;
     struct dabProtection protection;

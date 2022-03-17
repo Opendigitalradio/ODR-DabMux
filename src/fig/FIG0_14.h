@@ -5,7 +5,7 @@
 
    Copyright (C) 2020
    Matthias P. Braendli, matthias.braendli@mpb.li
-   
+
    Copyright (C) 2022
    Nick Piggott, nick@piggott.eu
    */
@@ -48,7 +48,6 @@ class FIG0_14 : public IFIG
     private:
         FIGRuntimeInformation *m_rti;
         bool m_initialised;
-        bool m_transmit_programme;
         vec_sp_component::iterator componentFIG0_14;
 };
 

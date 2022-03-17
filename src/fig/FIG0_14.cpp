@@ -3,9 +3,9 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2022
    Matthias P. Braendli, matthias.braendli@mpb.li
-   
+
    Copyright (C) 2022
    Nick Piggott, nick@piggott.eu
    */
@@ -32,7 +32,7 @@
 
 namespace FIC {
 
-// See EN 300 401, Clause 6.2.2 for the FIG0_14 description
+// See EN 300 401, Clause 6.2.2 for the FIG0/14 description
 
 struct FIG0_14_AppInfo {
     uint8_t fecScheme:2;
@@ -53,17 +53,15 @@ FillStatus FIG0_14::fill(uint8_t *buf, size_t max_size)
     ssize_t remaining = max_size;
 
     if (not m_initialised) {
-        componentFIG0_14 = m_rti->ensemble->components.end();
+        componentFIG0_14 = m_rti->ensemble->components.begin();
         m_initialised = true;
     }
 
-    FIGtype0* fig0 = NULL;
+    FIGtype0 *fig0 = nullptr;
 
-    for (; componentFIG0_14 != ensemble->components.end();
-            ++componentFIG0_14) {
-
-        auto subchannel = getSubchannel(ensemble->subchannels,
-                (*componentFIG0_14)->subchId);
+    for (; componentFIG0_14 != ensemble->components.end(); ++componentFIG0_14) {
+        const auto subchannel = getSubchannel(
+                ensemble->subchannels, (*componentFIG0_14)->subchId);
 
         if (subchannel == ensemble->subchannels.end()) {
             etiLog.log(error,
@@ -74,14 +72,12 @@ FillStatus FIG0_14::fill(uint8_t *buf, size_t max_size)
             continue;
         }
 
-        if (   ((*subchannel)->type == subchannel_type_t::Packet and
-                true)) { // Need to do a test here to see if a packet channel is normal or enhanced
-
-            static_assert(sizeof(FIG0_14_AppInfo) == 1);
+        if ((*subchannel)->type == subchannel_type_t::Packet and
+            (*subchannel)->packet_enhanced) {
 
             int required_size = 1; // FIG0_14 data field is 6 bits subchanID and 2 bits fec scheme
-            
-            if (fig0 == NULL) {
+
+            if (fig0 == nullptr) {
                 if (remaining < 2 + required_size) {
                     break;
                 }
@@ -98,10 +94,13 @@ FillStatus FIG0_14::fill(uint8_t *buf, size_t max_size)
             else if (remaining < required_size) {
                 break;
             }
+
+            static_assert(sizeof(FIG0_14_AppInfo) == 1);
+            /* No alignment issues in this cast because the sizeof() == 1 */
             FIG0_14_AppInfo* app = (FIG0_14_AppInfo*)buf;
             app->subchId = (*componentFIG0_14)->subchId;
-            app->fecScheme = 1; // only 1 fec_scheme is defined
-            buf += 1 ;
+            app->fecScheme = 1; // 1=FEC Scheme according to EN 300 401 clause 5.3.5 is the only value allowed
+            buf += 1;
             remaining -= 1;
             fig0->Length += 1;
         }
@@ -109,13 +108,10 @@ FillStatus FIG0_14::fill(uint8_t *buf, size_t max_size)
 
     if (componentFIG0_14 == ensemble->components.end()) {
         componentFIG0_14 = ensemble->components.begin();
-
         fs.complete_fig_transmitted = true;
-
     }
 
     fs.num_bytes_written = max_size - remaining;
     return fs;
 }
-
 }

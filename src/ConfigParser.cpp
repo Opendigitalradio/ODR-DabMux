@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2022
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -1077,8 +1077,8 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         subchan->type = subchannel_type_t::Packet;
         subchan->bitrate = DEFAULT_PACKET_BITRATE;
 
-        bool enhanced = (type == "enhancedpacket");
-        subchan->input = make_shared<Inputs::PacketFile>(enhanced);
+        subchan->packet_enhanced = (type == "enhancedpacket");
+        subchan->input = make_shared<Inputs::PacketFile>(subchan->packet_enhanced);
     }
     else {
         stringstream ss;

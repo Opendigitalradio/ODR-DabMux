@@ -433,7 +433,8 @@ struct userApplication {
     /* X-PAD Application Type: this 5-bit field shall specify the lowest numbered application type used to transport
      * this user application (see clause 7.4.3).
      * Also See EN 300 401 Table 11 "X-PAD Application types" */
-    uint8_t xpadAppType;
+    bool xpadAppType_valid = false;
+    uint8_t xpadAppType = 0;
 };
 
 struct dabAudioComponent {

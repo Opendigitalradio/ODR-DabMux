@@ -168,12 +168,18 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     app->length += 1;
                 }
+                else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE) {
+                    app->length += 2;
+                }
 
                 buf += sizeof(FIG0_13_app);
                 remaining -= sizeof(FIG0_13_app);
                 fig0->Length += sizeof(FIG0_13_app);
 
-                if (m_transmit_programme) {
+                if (m_transmit_programme and !ua.xpadAppType_valid) {
+                    throw MuxInitException("FIG0/13 combination unsupported");
+                }
+                else if (m_transmit_programme and ua.xpadAppType_valid) {
                     const uint8_t dscty = 60; // TS 101 756 Table 2b (MOT)
                     const uint16_t xpadapp = htons((ua.xpadAppType << 8) | dscty);
                     /* xpad meaning
@@ -197,6 +203,13 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                     buf += 1;
                     remaining -= 1;
                     fig0->Length += 1;
+                }
+                else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE) {
+                    buf[0] = 0x01; // = basic integrated receiver profile
+                    buf[1] = 0xFF; // = unrestricted (PC) profile
+                    buf += 2;
+                    remaining -= 2;
+                    fig0->Length += 2;
                 }
             }
         }

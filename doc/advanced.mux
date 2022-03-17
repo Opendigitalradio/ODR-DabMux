@@ -297,18 +297,26 @@ components {
         service srv-fu
         subchannel sub-fu
 
-        ; FIG 0/13 user application was previously configured using the figtype setting.
-        ; Now more than one user application can be defined per component, using the
-        ; 'user-applications' entry. Do not use both figtype and user-applications.
+        ; FIG 0/13 user application was previously configured using the figtype setting, which
+        ; allowed only a single user application.
+        ; Using the 'user-applications' section, several can be defined per component.
+        ; Do not use both figtype and user-applications.
 
         ; If both slideshow (TS 101 499) and SPI (TS 102 818) are carried in PAD, the following
         ; needs to be set for FIG 0/13 to be transmitted correctly.
+        ; The same section is also applicable to packet services.
         user-applications {
             ; Add uaType 0x2 with X-PAD App Type = 12 and empty user application data
             userapp "slideshow"
 
             ; Add uaType 0x7 with X-PAD App Type = 16 and user application data = "Basic profile"
             userapp "spi"
+
+            ; Broadcast website, add uaType 0x3 and user application data
+            ; 0x01 "basic integrated receiver profile" and
+            ; 0xFF "unrestricted profile"
+            ; Only for packet-mode, not X-PAD.
+            userapp "website"
         }
 
         ; Deprecated figtype setting:

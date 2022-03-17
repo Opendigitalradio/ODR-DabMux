@@ -176,10 +176,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 remaining -= sizeof(FIG0_13_app);
                 fig0->Length += sizeof(FIG0_13_app);
 
-                if (m_transmit_programme and !ua.xpadAppType_valid) {
-                    throw MuxInitException("FIG0/13 combination unsupported");
-                }
-                else if (m_transmit_programme and ua.xpadAppType_valid) {
+                if (m_transmit_programme) {
                     const uint8_t dscty = 60; // TS 101 756 Table 2b (MOT)
                     const uint16_t xpadapp = htons((ua.xpadAppType << 8) | dscty);
                     /* xpad meaning

@@ -824,15 +824,14 @@ void parse_ptree(
 
                     // This was previously hardcoded in FIG0/13 and means "MOT, start of X-PAD data group"
                     ua.xpadAppType = 12;
-                    ua.xpadAppType_valid = true;
                 }
                 else if (ua_value == "spi") {
                     ua.uaType = FIG0_13_APPTYPE_SPI;
                     ua.xpadAppType = 16;
-                    ua.xpadAppType_valid = true;
                 }
                 else if (ua_value == "website") {
                     ua.uaType = FIG0_13_APPTYPE_WEBSITE;
+                    ua.xpadAppType = 12;
                 }
 
                 if (component->isPacketComponent(ensemble->subchannels)) {
@@ -863,7 +862,6 @@ void parse_ptree(
 
                 // This was previously hardcoded in FIG0/13 and means "MOT, start of X-PAD data group"
                 ua.xpadAppType = 12;
-                ua.xpadAppType_valid = true;
 
                 if (component->isPacketComponent(ensemble->subchannels)) {
                     component->packet.uaTypes.push_back(ua);

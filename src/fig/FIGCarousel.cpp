@@ -42,12 +42,6 @@ namespace FIC {
 void FIGCarouselElement::reduce_deadline()
 {
     deadline -= 24; //ms
-
-    if (deadline < 0) {
-        etiLog.level(debug) <<
-            "Could not respect repetition rate for FIG " <<
-            fig->name() << " (" << deadline << "ms late)";
-    }
 }
 
 void FIGCarouselElement::increase_deadline()
@@ -157,6 +151,16 @@ void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
 void FIGCarousel::update(unsigned long currentFrame)
 {
     m_rti.currentFrame = currentFrame;
+
+    if ((currentFrame % 250) == 0 and m_missed_deadlines.size() > 0) {
+        std::stringstream ss;
+        for (const auto& fig_missed_count : m_missed_deadlines) {
+            ss << " " << fig_missed_count;
+        }
+        m_missed_deadlines.clear();
+
+        etiLog.level(info) << "Could not respect repetition rates for FIGs:" << ss.str();
+    }
 }
 
 void dumpfib(const uint8_t *buf, size_t bufsize) {
@@ -177,6 +181,10 @@ size_t FIGCarousel::write_fibs(
         auto& fig = fib_fig.second;
         for (auto& fig_el : fig) {
             fig_el.reduce_deadline();
+
+            if (fig_el.deadline < 0) {
+                m_missed_deadlines.insert(fig_el.fig->name());
+            }
         }
     }
 

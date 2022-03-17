@@ -25,6 +25,7 @@
 */
 
 #include "FIG.h"
+#include <stdexcept>
 
 namespace FIC {
 
@@ -42,7 +43,7 @@ int rate_increment_ms(FIG_rate rate)
         case FIG_rate::D:         return 30000;
         case FIG_rate::E:         return 120000;
     }
-    return 1000; //some default value, shouldn't be used
+    throw std::logic_error("Invalid FIG_rate");
 }
 
 } // namespace FIC

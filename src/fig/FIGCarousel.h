@@ -35,6 +35,7 @@
 #include "fig/FIG2.h"
 #include <list>
 #include <map>
+#include <unordered_set>
 #include <memory>
 #include "MuxElements.h"
 
@@ -85,6 +86,8 @@ class FIGCarousel {
         size_t carousel(int fib, uint8_t *buf, size_t bufsize, int framephase);
 
         void load_and_allocate(IFIG& fig, FIBAllocation fib);
+
+        std::unordered_set<std::string> m_missed_deadlines;
 
         FIGRuntimeInformation m_rti;
 

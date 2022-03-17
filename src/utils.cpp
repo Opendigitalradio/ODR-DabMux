@@ -548,7 +548,7 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
     printServices(ensemble->services);
 
     etiLog.log(info, "--- Components list ---");
-    for (const auto component : ensemble->components) {
+    for (const auto& component : ensemble->components) {
         etiLog.level(info) << "Component                " << component->get_rc_name();
         printComponent(component, ensemble);
     }

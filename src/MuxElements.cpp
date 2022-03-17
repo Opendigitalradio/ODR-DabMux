@@ -422,7 +422,7 @@ vec_sp_service::iterator getService(
         vec_sp_service& services)
 {
     size_t i = 0;
-    for (const auto service : services) {
+    for (const auto& service : services) {
         if (service->id == component->serviceId) {
             return services.begin() + i;
         }

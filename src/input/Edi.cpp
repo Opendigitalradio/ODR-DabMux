@@ -280,7 +280,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
 
         if (num_discarded_invalid_ts > 0) {
             etiLog.level(warn) << "EDI input " << m_name << ": " <<
-                num_discarded_wrong_size << " packets with invalid timestamp.";
+                num_discarded_invalid_ts << " packets with invalid timestamp.";
         }
 
         memset(buffer, 0, size);
@@ -339,55 +339,56 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
 void Edi::m_run()
 {
     while (m_running) {
-        switch (m_input_used) {
-            case InputUsed::UDP:
-                {
-                    constexpr size_t packsize = 2048;
-                    auto packet = m_udp_sock.receive(packsize);
-                    if (packet.buffer.size() == packsize) {
-                        fprintf(stderr, "Warning, possible UDP truncation\n");
-                    }
-                    if (not packet.buffer.empty()) {
-                        try {
+        try {
+            switch (m_input_used) {
+                case InputUsed::UDP:
+                    {
+                        constexpr size_t packsize = 2048;
+                        auto packet = m_udp_sock.receive(packsize);
+                        if (packet.buffer.size() == packsize) {
+                            fprintf(stderr, "Warning, possible UDP truncation\n");
+                        }
+
+                        if (not packet.buffer.empty()) {
                             EdiDecoder::Packet p(move(packet.buffer));
                             m_sti_decoder.push_packet(p);
                         }
-                        catch (const runtime_error& e) {
-                            etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
-                            this_thread::sleep_for(chrono::milliseconds(24));
+                        else {
+                            this_thread::sleep_for(chrono::milliseconds(12));
                         }
                     }
-                    else {
-                        this_thread::sleep_for(chrono::milliseconds(12));
-                    }
-                }
-                break;
-            case InputUsed::TCP:
-                {
-                    auto message = m_tcp_receive_server.receive();
-                    if (auto data = dynamic_pointer_cast<Socket::TCPReceiveMessageData>(message)) {
-                        try {
+                    break;
+                case InputUsed::TCP:
+                    {
+                        auto message = m_tcp_receive_server.receive();
+                        if (auto data = dynamic_pointer_cast<Socket::TCPReceiveMessageData>(message)) {
                             m_sti_decoder.push_bytes(data->data);
                         }
-                        catch (const runtime_error& e) {
-                            etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
-                            this_thread::sleep_for(chrono::milliseconds(24));
+                        else if (dynamic_pointer_cast<Socket::TCPReceiveMessageDisconnected>(message)) {
+                            etiLog.level(info) << "EDI input " << m_name << " disconnected";
+                            m_sti_decoder.push_bytes({}); // Push an empty frame to clear the internal state
+                        }
+                        else if (dynamic_pointer_cast<Socket::TCPReceiveMessageEmpty>(message)) {
+                            this_thread::sleep_for(chrono::milliseconds(12));
+                        }
+                        else {
+                            throw logic_error("unimplemented TCPReceiveMessage type");
                         }
                     }
-                    else if (dynamic_pointer_cast<Socket::TCPReceiveMessageDisconnected>(message)) {
-                        etiLog.level(info) << "EDI input " << m_name << " disconnected";
-                        m_sti_decoder.push_bytes({}); // Push an empty frame to clear the internal state
-                    }
-                    else if (dynamic_pointer_cast<Socket::TCPReceiveMessageEmpty>(message)) {
-                        this_thread::sleep_for(chrono::milliseconds(12));
-                    }
-                    else {
-                        throw logic_error("unimplemented TCPReceiveMessage type");
-                    }
-                }
-                break;
-            default:
-                throw logic_error("unimplemented input");
+                    break;
+                default:
+                    throw logic_error("unimplemented input");
+            }
+        }
+        catch (const invalid_argument& e) {
+            etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
+            m_sti_decoder.push_bytes({}); // Push an empty frame to clear the internal state
+            this_thread::sleep_for(chrono::milliseconds(8));
+        }
+        catch (const runtime_error& e) {
+            etiLog.level(warn) << "EDI input " << m_name << " exception: " << e.what();
+            m_sti_decoder.push_bytes({}); // Push an empty frame to clear the internal state
+            this_thread::sleep_for(chrono::milliseconds(8));
         }
     }
 }

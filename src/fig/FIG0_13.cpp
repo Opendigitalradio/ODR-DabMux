@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2022
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -166,7 +166,7 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 app->setType(ua.uaType);
                 app->length = xpaddata_length;
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
-                    app->length += 2;
+                    app->length += 1;
                 }
 
                 buf += sizeof(FIG0_13_app);
@@ -194,10 +194,9 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
 
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     buf[0] = 0x01; // = basic profile
-                    buf[1] = 0x00; // = list terminator
-                    buf += 2;
-                    remaining -= 2;
-                    fig0->Length += 2;
+                    buf += 1;
+                    remaining -= 1;
+                    fig0->Length += 1;
                 }
             }
         }

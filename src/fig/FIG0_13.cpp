@@ -120,7 +120,10 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 required_size += sizeof(FIG0_13_app) + xpaddata_length;
 
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
-                    required_size += 2; // For the "basic profile" user application data
+                    required_size += 1;
+                }
+                else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE) {
+                    required_size += 2;
                 }
             }
 

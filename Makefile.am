@@ -151,13 +151,13 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/RemoteControl.cpp \
 					 lib/RemoteControl.h \
 					 lib/edi/STIDecoder.cpp \
-					 lib/edi/STIDecoder.h \
+					 lib/edi/STIDecoder.hpp \
 					 lib/edi/STIWriter.cpp \
-					 lib/edi/STIWriter.h \
+					 lib/edi/STIWriter.hpp \
 					 lib/edi/PFT.cpp \
-					 lib/edi/PFT.h \
+					 lib/edi/PFT.hpp \
 					 lib/edi/common.cpp \
-					 lib/edi/common.h \
+					 lib/edi/common.hpp \
 					 lib/edi/buffer_unpack.hpp \
 					 lib/edioutput/AFPacket.cpp \
 					 lib/edioutput/AFPacket.h \
@@ -236,9 +236,9 @@ odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAG
 odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
 man_MANS = 	man/odr-dabmux.1 \
-			man/odr-zmq2edi.1
+		man/odr-zmq2edi.1
 
-EXTRA_DIST	= COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO doc \
+EXTRA_DIST	= COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO.md doc \
 			  lib/fec/README.md lib/fec/LICENSE \
 			  lib/farsync/linux lib/farsync/windows \
 			  lib/charset/README

@@ -235,6 +235,8 @@ odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYS
 odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
+man_MANS = 	man/odr-dabmux.1 \
+			man/odr-zmq2edi.1
 
 EXTRA_DIST	= COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO doc \
 			  lib/fec/README.md lib/fec/LICENSE \

@@ -1,0 +1,22 @@
+.TH ODR-DABMUX "1" "April 2022" "odr-dabmux 4.1.0" "User Commands"
+.SH NAME
+\fBodr\-dabmux\fR \- A software DAB multiplexer
+.SH SYNOPSIS
+odr\-dabmux <configuration_file>
+.PP
+This software requires a configuration file. See doc/example.config for an example format for the configuration file
+.SH DESCRIPTION
+odr\-dabmux implements a DAB multiplexer that combines all audio and data
+inputs into an ETI output. It can be used off-line (i.e. not real-time) to generate
+ETI data for later processing, or in a real-time streaming scenario (e.g. in a
+transmitter).
+.PP
+odr\-dabmux can read input audio or data from files (“.mp2” for DAB, “.dabp”
+for DAB+), FIFOs (also called “named pipes”), or from a network connection. This
+network connection can use UDP (STI-D) or EDI.
+.PP
+The configuration of the multiplexer is given in a configuration file, whose
+format is defined in the example files in the doc/ folder inside the ODR-DabMux
+repository.
+.SH SEE ALSO
+odr\-audioenc(1), odr\-audioenc(1), odr\-dabmod(1)

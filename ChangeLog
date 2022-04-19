@@ -1,6 +1,13 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2022-04-19: Matthias P. Braendli <matthias@mpb.li>
+	(v4.2.0):
+		Add FIG 0/14 FEC scheme defintion, for enhancedpacket mode subchannels.
+		Remove useless List Terminator for FIG0/13, and add support for Broadcast WebSite.
+		Add timestamps to log output.
+		Update manpages.
+
 2022-03-15: Matthias P. Braendli <matthias@mpb.li>
 	(v4.1.0):
 		Improve EDI input.

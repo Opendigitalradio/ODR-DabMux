@@ -42,6 +42,7 @@
 
 #include <ctime>
 #include <cstdio>
+#include <cstring>
 #include <cerrno>
 #if SUPPORT_SETTING_CLOCK_TAI
 #  include <sys/timex.h>

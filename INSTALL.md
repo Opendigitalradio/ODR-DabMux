@@ -75,7 +75,7 @@ that did not yet make its way into a release, you can clone the
    ```
 1. Configure the project
    ```
-   cd ODR-PadEnc
+   cd ODR-DabMux
    ./bootstrap
    ./configure
    ```

@@ -285,6 +285,9 @@ outputs {
     edi {
         ; Example EDI-over-TCP output
         ; If TIST is enabled, requires leap-second information
+        ;
+        ; When a new client connects, it will receive a pre-roll of 1.5x tist_offset seconds
+        ; worth of EDI data, so that it can quickly fill its buffers.
         destinations {
             example_tcp {
                 protocol tcp

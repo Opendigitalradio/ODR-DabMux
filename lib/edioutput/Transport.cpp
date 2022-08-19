@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2020
+   Copyright (C) 2022
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -66,7 +66,7 @@ Sender::Sender(const configuration_t& conf) :
     edi_pft(m_conf)
 {
     if (m_conf.verbose) {
-        etiLog.log(info, "Setup EDI Output");
+        etiLog.level(info) << "Setup EDI Output, TCP output preroll " << m_conf.tcp_server_preroll_buffers;
     }
 
     for (const auto& edi_dest : m_conf.destinations) {
@@ -81,7 +81,9 @@ Sender::Sender(const configuration_t& conf) :
             udp_sockets.emplace(udp_dest.get(), udp_socket);
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(edi_dest)) {
-            auto dispatcher = make_shared<Socket::TCPDataDispatcher>(tcp_dest->max_frames_queued);
+            auto dispatcher = make_shared<Socket::TCPDataDispatcher>(
+                    tcp_dest->max_frames_queued, m_conf.tcp_server_preroll_buffers);
+
             dispatcher->start(tcp_dest->listen_port, "0.0.0.0");
             tcp_dispatchers.emplace(tcp_dest.get(), dispatcher);
         }
@@ -135,9 +137,10 @@ void Sender::write(const AFPacket& af_packet)
         // Apply PFT layer to AF Packet (Reed Solomon FEC and Fragmentation)
         vector<edi::PFTFragment> edi_fragments = edi_pft.Assemble(af_packet);
 
-        if (m_conf.verbose) {
-            fprintf(stderr, "EDI Output: Number of PFT fragments %zu\n",
+        if (m_conf.verbose and m_last_num_pft_fragments != edi_fragments.size()) {
+            etiLog.log(debug, "EDI Output: Number of PFT fragments %zu\n",
                     edi_fragments.size());
+            m_last_num_pft_fragments = edi_fragments.size();
         }
 
         /* Spread out the transmission of all fragments over part of the 24ms AF packet duration

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2022
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -354,6 +354,11 @@ int main(int argc, char *argv[])
                         throw runtime_error("Unknown EDI protocol " + proto);
                     }
                 }
+
+                const auto tist_offset = pt.get<int>("general.tist_offset", 0);
+                // By keeping 1.5 x tist_offset worth of EDI in the pre-roll buffer, we ensure that a new client can
+                // immediately send out frames according to their timestamp.
+                edi_conf.tcp_server_preroll_buffers = ceil(1.5 * (tist_offset / 24e-3));
 
                 edi_conf.dump = pt_edi.get<bool>("dump", false);
                 edi_conf.enable_pft = pt_edi.get<bool>("enable_pft", false);

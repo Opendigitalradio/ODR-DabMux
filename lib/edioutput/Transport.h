@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2020
+   Copyright (C) 2022
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -90,6 +90,8 @@ class Sender {
         std::mutex m_mutex;
         bool m_running = false;
         std::map<std::chrono::steady_clock::time_point, edi::PFTFragment> m_pending_frames;
+
+        size_t m_last_num_pft_fragments = 0;
 };
 
 }

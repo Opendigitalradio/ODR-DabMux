@@ -53,6 +53,9 @@ struct udp_destination_t : public destination_t {
 struct tcp_server_t : public destination_t {
     unsigned int listen_port = 0;
     size_t max_frames_queued = 1024;
+
+    // The TCP Server output can preroll a fixed number of previous buffers each time a new client connects.
+    size_t tcp_server_preroll_buffers = 0;
 };
 
 // TCP client that connects to one endpoint
@@ -73,9 +76,6 @@ struct configuration_t {
     double fragment_spreading_factor = 0.95;
     // Spread transmission of fragments in time. 1.0 = 100% means spreading over the whole duration of a frame (24ms)
     // Above 100% means that the fragments are spread over several 24ms periods, interleaving the AF packets.
-
-    // TCP Server output can preroll a fixed number of previous buffers each time a new client connects.
-    size_t tcp_server_preroll_buffers = 0;
 
     bool enabled() const { return destinations.size() > 0; }
 

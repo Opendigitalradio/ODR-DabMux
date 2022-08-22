@@ -348,17 +348,15 @@ int main(int argc, char *argv[])
                         auto dest = make_shared<edi::tcp_server_t>();
                         dest->listen_port = pt_edi_dest.second.get<unsigned int>("listenport");
                         dest->max_frames_queued = pt_edi_dest.second.get<size_t>("max_frames_queued", 500);
+                        double preroll = pt_edi_dest.second.get<double>("preroll-burst", 0.0);
+                        dest->tcp_server_preroll_buffers = ceil(preroll / 24e-3);
+
                         edi_conf.destinations.push_back(dest);
                     }
                     else {
                         throw runtime_error("Unknown EDI protocol " + proto);
                     }
                 }
-
-                const auto tist_offset = pt.get<int>("general.tist_offset", 0);
-                // By keeping 1.5 x tist_offset worth of EDI in the pre-roll buffer, we ensure that a new client can
-                // immediately send out frames according to their timestamp.
-                edi_conf.tcp_server_preroll_buffers = ceil(1.5 * (tist_offset / 24e-3));
 
                 edi_conf.dump = pt_edi.get<bool>("dump", false);
                 edi_conf.enable_pft = pt_edi.get<bool>("enable_pft", false);

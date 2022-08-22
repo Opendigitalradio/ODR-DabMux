@@ -50,6 +50,11 @@ general {
     ; your file is still valid.
     tist false
 
+    ; On startup, the timestamp is initialised to system time. If you want
+    ; to add an offset, uncomment the following line and give a number
+    ; in seconds.
+    ; tist_offset 0
+
     ; The URLs used to fetch the TAI bulletin can be overridden if needed.
     ; URLs are given as a pipe-separated list, and the default value is:
     ;tai_clock_bulletins "https://www.ietf.org/timezones/data/leap-seconds.list|https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list"
@@ -285,13 +290,15 @@ outputs {
     edi {
         ; Example EDI-over-TCP output
         ; If TIST is enabled, requires leap-second information
-        ;
-        ; When a new client connects, it will receive a pre-roll of 1.5x tist_offset seconds
-        ; worth of EDI data, so that it can quickly fill its buffers.
         destinations {
             example_tcp {
                 protocol tcp
                 listenport 13000
+                ; (Optional) When a new client connects, it will receive a pre-roll burst of EDI data, so that it can quickly fill
+                ; its buffers. The value given is the duration of the pre-roll in seconds.
+                ; It makes sense to have a value slightly larger than tist-offset to ensure the destination will receive
+                ; data that will allow it to start transmitting immediately.
+                ;preroll-burst 2.0
             }
         }
     }

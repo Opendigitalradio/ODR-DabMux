@@ -66,7 +66,7 @@ Sender::Sender(const configuration_t& conf) :
     edi_pft(m_conf)
 {
     if (m_conf.verbose) {
-        etiLog.level(info) << "Setup EDI Output, TCP output preroll " << m_conf.tcp_server_preroll_buffers;
+        etiLog.level(info) << "Setup EDI Output";
     }
 
     for (const auto& edi_dest : m_conf.destinations) {
@@ -82,7 +82,7 @@ Sender::Sender(const configuration_t& conf) :
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(edi_dest)) {
             auto dispatcher = make_shared<Socket::TCPDataDispatcher>(
-                    tcp_dest->max_frames_queued, m_conf.tcp_server_preroll_buffers);
+                    tcp_dest->max_frames_queued, tcp_dest->tcp_server_preroll_buffers);
 
             dispatcher->start(tcp_dest->listen_port, "0.0.0.0");
             tcp_dispatchers.emplace(tcp_dest.get(), dispatcher);

@@ -75,3 +75,4 @@ void printSubchannels(const vec_sp_subchannel& subchannels);
 
 long hexparse(const std::string& input);
 
+bool stringEndsWith(std::string const &fullString, std::string const &ending);

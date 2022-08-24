@@ -3,6 +3,9 @@
 ; It doesn't show all possible options. A more detailed example
 ; is available in doc/advanced.mux
 ;
+; The configuration file can also be given in JSON format, an
+; example is given in doc/example.json
+;
 ; It contains two services, one DAB and one DAB+, and also shows
 ; both the file input useful for offline processing, and the
 ; EDI input useful in a 24/7 scenario.

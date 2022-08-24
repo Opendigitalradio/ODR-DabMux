@@ -599,3 +599,8 @@ long hexparse(const std::string& input)
     return value;
 }
 
+bool stringEndsWith(const std::string& fullString, const std::string& ending)
+{
+    return fullString.length() >= ending.length() and
+        fullString.compare(fullString.length() - ending.length(), ending.length(), ending) == 0;
+}

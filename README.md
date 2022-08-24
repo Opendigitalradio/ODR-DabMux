@@ -13,7 +13,7 @@ ODR-mmbTools is available in the *guide*, available on the
 Features of ODR-DabMux:
 
 - Standards-compliant DAB multiplexer
-- Configuration file, see doc/example.mux
+- Configuration file, see doc/example.mux and doc/example.json
 - Timestamping support required for SFN
 - Logging to syslog
 - Monitoring using munin tool

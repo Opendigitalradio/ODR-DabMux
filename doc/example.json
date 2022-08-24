@@ -1,0 +1,94 @@
+{
+    "_comment": "This is the same as example.mux, but in JSON format. JSON doesn't really support comments, so please refer to the example.mux and advanced.mux for documentation of the settings",
+    "general": {
+        "dabmode": 1,
+        "nbframes": 0,
+        "syslog": false,
+        "tist": false,
+        "tist_offset": 0,
+        "managementport": 12720
+    },
+    "remotecontrol": {
+        "telnetport": 12721,
+        "zmqendpoint": "tcp://lo:12722"
+    },
+    "ensemble": {
+        "id": "0x4fff",
+        "ecc": "0xe1",
+        "local-time-offset": "auto",
+        "reconfig-counter": "hash",
+        "label": "OpenDigitalRadio",
+        "shortlabel": "ODR"
+    },
+    "services": {
+        "srv-fu": {
+            "id": "0x4daa",
+            "label": "Fünk"
+        },
+        "srv-ri": {
+            "id": "0x5dab",
+            "ecc": "0xe0",
+            "label": "Rick"
+        }
+    },
+    "subchannels": {
+        "sub-fu": {
+            "type": "audio",
+            "bitrate": 128,
+            "id": 10,
+            "protection": 3,
+            "inputfile": "funk.mp2"
+        },
+        "sub-bla": {
+            "type": "audio",
+            "bitrate": 96,
+            "id": 1,
+            "protection": 1,
+
+            "inputproto": "edi",
+            "inputuri": "tcp://0.0.0.0:9001",
+            "buffer-management": "prebuffering",
+            "buffer": 40,
+            "prebuffering": 20
+        },
+        "sub-ri": {
+            "type": "dabplus",
+            "bitrate": 96,
+            "id": 1,
+            "protection": 3,
+
+            "inputproto": "edi",
+            "inputuri": "tcp://127.0.0.1:9000",
+            "buffer-management": "timestamped",
+
+            "buffer": 500,
+            "tist-delay": 10
+        }
+    },
+    "components": {
+        "comp-fu": {
+            "service": "srv-fu",
+            "subchannel": "sub-fu"
+        },
+        "comp-ri": {
+            "service": "srv-ri",
+            "subchannel": "sub-ri",
+
+            "user-applications": {
+                "userapp": "slideshow"
+            }
+        }
+    },
+    "outputs": {
+        "throttle": "simul://",
+        "stdout": "fifo:///dev/stdout?type=raw",
+        "edi": {
+            "destinations": {
+                "example_tcp": {
+                    "protocol": "tcp",
+                    "listenport": 13000
+                }
+            }
+        }
+    }
+}

@@ -133,7 +133,8 @@ class TagESTn : public TagItem
         uint8_t* mst_data;
         size_t mst_length; // STLn * 8 bytes
 
-        uint8_t id;
+        // id is 1-indexed.
+        uint8_t id = 1;
 };
 
 // ETSI TS 102 693, 5.1.2 DAB STI-D(LI) Management
@@ -209,7 +210,8 @@ class TagSSm : public TagItem
         const uint8_t *istd_data;
         size_t istd_length; // bytes
 
-        uint16_t id = 0;
+        // id is 1-indexed.
+        uint16_t id = 1;
 };
 
 // ETSI TS 102 821, 5.2.2.2 Dummy padding

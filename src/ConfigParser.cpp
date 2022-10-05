@@ -1090,13 +1090,21 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         throw runtime_error(ss.str());
     }
 
-    const bool nonblock = pt.get("nonblock", false);
-    if (nonblock) {
+    if (pt.get("nonblock", false)) {
         if (auto filein = dynamic_pointer_cast<Inputs::FileBase>(subchan->input)) {
-            filein->setNonblocking(nonblock);
+            filein->setNonblocking(true);
         }
         else {
             etiLog.level(warn) << "The nonblock option is not supported";
+        }
+    }
+
+    if (pt.get("load_entire_file", false)) {
+        if (auto filein = dynamic_pointer_cast<Inputs::FileBase>(subchan->input)) {
+            filein->setLoadEntireFile(true);
+        }
+        else {
+            etiLog.level(warn) << "The load_entire_file option is not supported";
         }
     }
 

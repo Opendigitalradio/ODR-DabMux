@@ -278,6 +278,20 @@ subchannels {
        ; (1 << 20) + (1 << 17) + (1 << 0) = 0x120001
        ;inputuri "prbs://:0x120001
    }
+
+   ; An example using 'enhancedpacket' to send out epg data
+   ; See http://wiki.opendigitalradio.org/How_to_configure_SPI_(Service_and_Programme_Information)_for_ODR-DabMux
+    sub-data {
+        id 6
+        type enhancedpacket
+        ; Settings this flag to true makes ODR-DabMux preload the entire file contents into memory
+        ; This allows you to replace the file contents while the current file data still gets transmitted to the
+        ; end.
+        load_entire_file true
+        inputfile "./epg.dat"
+        protection 1
+        bitrate 32
+    }
 }
 
 ; For now, each component links one service to one subchannel
@@ -299,6 +313,7 @@ components {
 
         ; FIG 0/13 user application was previously configured using the figtype setting, which
         ; allowed only a single user application.
+        ; Now more than one user application can be defined per component, using the
         ; Using the 'user-applications' section, several can be defined per component.
         ; Do not use both figtype and user-applications.
 

@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019 Matthias P. Braendli
+   Copyright (C) 2022 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    */
@@ -62,15 +62,22 @@ __attribute((packed))
 
 void FileBase::open(const std::string& name)
 {
-    int flags = O_RDONLY | O_BINARY;
-    if (m_nonblock) {
-        flags |= O_NONBLOCK;
-    }
+    m_filename = name;
 
-    m_fd = ::open(name.c_str(), flags);
-    if (m_fd == -1) {
-        throw runtime_error("Could not open input file " + name + ": " +
-            strerror(errno));
+    if (m_load_entire_file) {
+        load_entire_file();
+    }
+    else {
+        int flags = O_RDONLY | O_BINARY;
+        if (m_nonblock) {
+            flags |= O_NONBLOCK;
+        }
+
+        m_fd = ::open(name.c_str(), flags);
+        if (m_fd == -1) {
+            throw runtime_error("Could not open input file " + name + ": " +
+                    strerror(errno));
+        }
     }
 }
 
@@ -102,15 +109,82 @@ void FileBase::close()
 
 void FileBase::setNonblocking(bool nonblock)
 {
+    if (m_load_entire_file) {
+        throw runtime_error("Cannot set both nonblock and load_entire_file");
+    }
     m_nonblock = nonblock;
 }
 
-int FileBase::rewind()
+void FileBase::setLoadEntireFile(bool load_entire_file)
 {
-    return ::lseek(m_fd, 0, SEEK_SET);
+    if (m_nonblock) {
+        throw runtime_error("Cannot set both nonblock and load_entire_file");
+    }
+    m_load_entire_file = load_entire_file;
 }
 
-ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
+ssize_t FileBase::rewind()
+{
+    if (m_load_entire_file) {
+        return load_entire_file();
+    }
+    else if (m_fd) {
+        return ::lseek(m_fd, 0, SEEK_SET);
+    }
+    else {
+        throw runtime_error("Cannot rewind");
+    }
+}
+
+ssize_t FileBase::load_entire_file()
+{
+    m_file_contents_offset = 0;
+    // Read entire file in chunks of 4MiB
+    constexpr size_t blocksize = 4 * 1024 * 1024;
+    constexpr int flags = O_RDONLY | O_BINARY;
+    m_fd = ::open(m_filename.c_str(), flags);
+    if (m_fd == -1) {
+        if (not m_file_open_alert_shown) {
+            etiLog.level(error) << "Could not open input file " << m_filename << ": " <<
+                strerror(errno);
+        }
+        m_file_open_alert_shown = true;
+        return -1;
+    }
+
+    // Do not clear the buffer if the file open fails
+    m_file_contents.clear();
+    ssize_t offset = 0;
+    ssize_t r = 0;
+    do {
+        m_file_contents.resize(offset + blocksize);
+        uint8_t *buffer = m_file_contents.data() + offset;
+
+        r = read(m_fd, buffer, blocksize);
+
+        if (r == -1) {
+            if (not m_file_open_alert_shown) {
+                etiLog.level(error) << "Can't read file " << strerror(errno);
+            }
+            m_file_contents.clear(); // ensures size is not larger than what we read
+            close();
+            m_file_open_alert_shown = true;
+            return -1;
+        }
+
+        m_file_contents.resize(offset + r);
+        offset += r;
+    } while (r > 0);
+
+    close();
+    if (m_file_open_alert_shown) {
+        etiLog.level(info) << "Loaded " << m_file_contents.size() << " bytes from " << m_filename;
+    }
+    m_file_open_alert_shown = false;
+    return m_file_contents.size();
+}
+
+ssize_t FileBase::readFromFile(uint8_t *buffer, size_t size)
 {
     using namespace std;
 
@@ -133,7 +207,7 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
                 return 0;
             }
             else if (ret == -1) {
-                etiLog.level(alert) << "ERROR: Can't read file " << strerror(errno);
+                etiLog.level(error) << "Can't read file " << strerror(errno);
                 return -1;
             }
 
@@ -156,11 +230,37 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
             return 0;
         }
     }
+    else if (m_load_entire_file) {
+        // Handle file read errors.
+        if (m_file_contents.size() == 0) {
+            rewind();
+        }
+
+        if (m_file_contents.size() == 0) {
+            memset(buffer, 0, size);
+        }
+        else {
+            size_t remain = size;
+
+            while (m_file_contents_offset + remain > m_file_contents.size()) {
+                copy(   m_file_contents.begin() + m_file_contents_offset,
+                        m_file_contents.end(), buffer);
+                size_t copied = m_file_contents.size() - m_file_contents_offset;
+                remain -= copied;
+                rewind();
+            }
+
+            copy(   m_file_contents.begin() + m_file_contents_offset,
+                    m_file_contents.begin() + m_file_contents_offset + remain, buffer);
+            m_file_contents_offset += remain;
+        }
+        return size;
+    }
     else {
         ret = read(m_fd, buffer, size);
 
         if (ret == -1) {
-            etiLog.level(alert) << "ERROR: Can't read file " << strerror(errno);
+            etiLog.level(error) << "Can't read file " << strerror(errno);
             return -1;
         }
 
@@ -168,19 +268,19 @@ ssize_t FileBase::readFromFile(uint8_t* buffer, size_t size)
             ssize_t sizeOut = ret;
             etiLog.log(info, "reach end of file -> rewinding");
             if (rewind() == -1) {
-                etiLog.log(alert, "ERROR: Can't rewind file");
+                etiLog.log(error, "Can't rewind file");
                 return -1;
             }
 
             ret = read(m_fd, buffer + sizeOut, size - sizeOut);
             if (ret == -1) {
-                etiLog.log(alert, "ERROR: Can't read file");
+                etiLog.log(error, "Can't read file");
                 perror("");
                 return -1;
             }
 
             if (ret < (ssize_t)size) {
-                etiLog.log(alert, "ERROR: Not enough data in file");
+                etiLog.log(error, "Not enough data in file");
                 return -1;
             }
         }
@@ -228,20 +328,20 @@ READ_SUBCHANNEL:
                 goto READ_SUBCHANNEL;
             }
         case MPEG_FILE_ERROR:
-            etiLog.log(alert, "can't read file (%i) -> frame muted", errno);
+            etiLog.log(error, "can't read file (%i) -> frame muted", errno);
             perror("");
             goto MUTE_SUBCHANNEL;
         case MPEG_SYNC_NOT_FOUND:
-            etiLog.log(alert, "mpeg sync not found, maybe is not a valid file "
+            etiLog.log(error, "mpeg sync not found, maybe is not a valid file "
                     "-> frame muted");
             goto MUTE_SUBCHANNEL;
         case MPEG_INVALID_FRAME:
-            etiLog.log(alert, "file is not a valid mpeg file "
+            etiLog.log(error, "file is not a valid mpeg file "
                     "-> frame muted");
             goto MUTE_SUBCHANNEL;
         default:
             if (result < 0) {
-                etiLog.log(alert,
+                etiLog.log(error,
                         "unknown error (code = %i) -> frame muted",
                         result);
 MUTE_SUBCHANNEL:
@@ -275,7 +375,7 @@ MUTE_SUBCHANNEL:
                         break;
                     default:
                         if (result < 0) {
-                            etiLog.log(alert, "mpeg file has an invalid DAB "
+                            etiLog.log(error, "mpeg file has an invalid DAB "
                                     "mpeg frame (unknown reason: %i)", result);
                         }
                         break;

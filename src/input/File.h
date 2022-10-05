@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018 Matthias P. Braendli
+   Copyright (C) 2022 Matthias P. Braendli
     http://www.opendigitalradio.org
 
    */
@@ -43,23 +43,32 @@ class FileBase : public InputBase {
         virtual void close();
 
         virtual void setNonblocking(bool nonblock);
+        virtual void setLoadEntireFile(bool load_entire_file);
 
+    protected:
         /* Rewind the file
          * Returns -1 on failure, 0 on success
          */
-        virtual int rewind();
-    protected:
+        virtual ssize_t rewind();
         /* Read len bytes from the file into buf, and return
          * the number of bytes read, or -1 in case of error.
          */
         virtual ssize_t readFromFile(uint8_t* buf, size_t len);
 
+        virtual ssize_t load_entire_file();
+
         // We use unix open() instead of fopen() because
         // of non-blocking I/O
         int m_fd = -1;
 
+        std::string m_filename;
         bool m_nonblock = false;
+        bool m_load_entire_file = false;
         std::vector<uint8_t> m_nonblock_buffer;
+
+        size_t m_file_contents_offset = 0;
+        std::vector<uint8_t> m_file_contents;
+        bool m_file_open_alert_shown = false;
 };
 
 class MPEGFile : public FileBase {

@@ -554,16 +554,16 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
     }
 }
 
-long hexparse(const std::string& input)
+unsigned long hexparse(const std::string& input)
 {
-    long value = 0;
+    unsigned long value = 0;
     errno = 0;
 
     char* endptr = nullptr;
 
     const bool is_hex = (input.find("0x") == 0);
 
-    // Do not use strtol's base=0 because
+    // Do not use strtoul's base=0 because
     // we do not want to accept octal.
     const int base = is_hex ? 16 : 10;
 
@@ -573,10 +573,9 @@ long hexparse(const std::string& input)
 
     // Comments taken from manpage
 
-    value = strtol(startptr, &endptr, base);
-    if ((value == LONG_MIN or value == LONG_MAX) and errno == ERANGE) {
-        // If an underflow occurs, strtol() returns LONG_MIN.
-        // If an overflow occurs, strtol() returns LONG_MAX.
+    value = strtoul(startptr, &endptr, base);
+    if (value == ULONG_MAX and errno == ERANGE) {
+        // If an overflow occurs, strtoul() returns ULONG_MAX.
         // In both cases, errno is set to ERANGE.
         throw out_of_range("hexparse: value out of range");
     }
@@ -588,7 +587,7 @@ long hexparse(const std::string& input)
         throw invalid_argument(ss.str());
     }
     else if (startptr == endptr) {
-        // If there were no digits at all, strtol() stores the original value
+        // If there were no digits at all, strtoul() stores the original value
         // of nptr in *endptr (and returns 0).
         throw out_of_range("hexparse: no value found");
     }

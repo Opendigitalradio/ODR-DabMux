@@ -73,6 +73,6 @@ void printEnsemble(const std::shared_ptr<dabEnsemble>& ensemble);
 
 void printSubchannels(const vec_sp_subchannel& subchannels);
 
-long hexparse(const std::string& input);
+unsigned long hexparse(const std::string& input);
 
 bool stringEndsWith(std::string const &fullString, std::string const &ending);

@@ -138,7 +138,11 @@ ssize_t FileBase::rewind()
 
 ssize_t FileBase::load_entire_file()
 {
+    // Clear the buffer if the file open fails, this allows user to stop transmission
+    // of the current data.
+    m_file_contents.clear();
     m_file_contents_offset = 0;
+
     // Read entire file in chunks of 4MiB
     constexpr size_t blocksize = 4 * 1024 * 1024;
     constexpr int flags = O_RDONLY | O_BINARY;
@@ -152,8 +156,6 @@ ssize_t FileBase::load_entire_file()
         return -1;
     }
 
-    // Do not clear the buffer if the file open fails
-    m_file_contents.clear();
     ssize_t offset = 0;
     ssize_t r = 0;
     do {
@@ -243,15 +245,21 @@ ssize_t FileBase::readFromFile(uint8_t *buffer, size_t size)
             size_t remain = size;
 
             while (m_file_contents_offset + remain > m_file_contents.size()) {
-                copy(   m_file_contents.begin() + m_file_contents_offset,
-                        m_file_contents.end(), buffer);
+                copy(   m_file_contents.cbegin() + m_file_contents_offset,
+                        m_file_contents.cend(), buffer);
                 size_t copied = m_file_contents.size() - m_file_contents_offset;
                 remain -= copied;
                 rewind();
+
+                // In case rewind() fails
+                if (m_file_contents.size() == 0) {
+                    memset(buffer, 0, size);
+                    return size;
+                }
             }
 
-            copy(   m_file_contents.begin() + m_file_contents_offset,
-                    m_file_contents.begin() + m_file_contents_offset + remain, buffer);
+            copy(   m_file_contents.cbegin() + m_file_contents_offset,
+                    m_file_contents.cbegin() + m_file_contents_offset + remain, buffer);
             m_file_contents_offset += remain;
         }
         return size;

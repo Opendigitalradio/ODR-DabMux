@@ -140,6 +140,7 @@ ssize_t FileBase::load_entire_file()
 {
     // Clear the buffer if the file open fails, this allows user to stop transmission
     // of the current data.
+    vector<uint8_t> old_file_contents = move(m_file_contents);
     m_file_contents.clear();
     m_file_contents_offset = 0;
 
@@ -179,7 +180,7 @@ ssize_t FileBase::load_entire_file()
     } while (r > 0);
 
     close();
-    if (m_file_open_alert_shown) {
+    if (old_file_contents != m_file_contents) {
         etiLog.level(info) << "Loaded " << m_file_contents.size() << " bytes from " << m_filename;
     }
     m_file_open_alert_shown = false;

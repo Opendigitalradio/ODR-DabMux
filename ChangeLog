@@ -1,6 +1,14 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2022-10-18: Matthias P. Braendli <matthias@mpb.li>
+	(v4.3.0):
+		Add "load_entire_file" configuration setting for file inputs.
+		Add EDI/TCP output pre-roll burst to reduce downtime on new connections.
+		Support reading the mux config in JSON format.
+		Fix a 32-bit SId parse issue on 32-bit systems.
+		Improve installation instructions in INSTALL.md.
+
 2022-04-19: Matthias P. Braendli <matthias@mpb.li>
 	(v4.2.1):
 		Fix `make dist`

@@ -105,6 +105,9 @@ class Edi : public InputBase, public RemoteControllable {
         // State variable used in prebuffering-based buffer management
         bool m_is_prebuffering = true;
 
+        // Display the 'size mismatch' warning only once
+        bool m_size_mismatch_printed = false;
+
         /* When using prebuffering, consider the buffer to be full on the
          * receive side if it's above the overrun threshold.
          *

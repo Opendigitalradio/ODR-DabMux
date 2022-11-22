@@ -140,8 +140,11 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
     else if (not m_pending_sti_frame.frame.empty()) {
         // Can only happen when switching from timestamp-based buffer management!
         if (m_pending_sti_frame.frame.size() != size) {
-            etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
-                m_pending_sti_frame.frame.size() << " received, " << size << " requested";
+            if (not m_size_mismatch_printed) {
+                etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
+                    m_pending_sti_frame.frame.size() << " received, " << size << " requested";
+                m_size_mismatch_printed = true;
+            }
             memset(buffer, 0, size * sizeof(*buffer));
             m_stats.notifyUnderrun();
             return 0;
@@ -158,6 +161,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
                     m_pending_sti_frame.frame.end(),
                     buffer);
             m_pending_sti_frame.frame.clear();
+            m_size_mismatch_printed = false;
             return size;
         }
     }
@@ -192,11 +196,15 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
             m_stats.notifyPeakLevels(sti.audio_levels.left, sti.audio_levels.right);
 
             copy(sti.frame.cbegin(), sti.frame.cend(), buffer);
+            m_size_mismatch_printed = false;
             return size;
         }
         else {
-            etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
-                sti.frame.size() << " received, " << size << " requested";
+            if (not m_size_mismatch_printed) {
+                etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
+                    sti.frame.size() << " received, " << size << " requested";
+                m_size_mismatch_printed = true;
+            }
             memset(buffer, 0, size * sizeof(*buffer));
             m_stats.notifyUnderrun();
             return 0;
@@ -206,6 +214,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
         memset(buffer, 0, size * sizeof(*buffer));
         m_is_prebuffering = true;
         etiLog.level(info) << "EDI input " << m_name << " re-enabling pre-buffering";
+        m_size_mismatch_printed = false;
         m_stats.notifyUnderrun();
         return 0;
     }

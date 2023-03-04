@@ -99,24 +99,51 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         throw MuxInitException();
     }
 
-    /* Ensure edi_time and TIST represent current time. Keep
-     * a granularity of 24ms, which corresponds to the
-     * duration of an ETI frame, to get nicer timestamps.
+    /* At startup, derive edi_time, TIST and CIF count such that there is
+     * a consistency across mux restarts. Ensure edi_time and TIST represent
+     * current time.
+     *
+     * Every 6s, FCT overflows. m_currentFrame overflows at 5000 every 120s.
+     *
+     * Keep a granularity of 24ms, which corresponds to the duration of an ETI
+     * frame, to get nicer timestamps.
      */
     using Sec = chrono::seconds;
     const auto now = chrono::system_clock::now();
-    m_edi_time = chrono::system_clock::to_time_t(chrono::time_point_cast<Sec>(now));
-    auto offset = now - chrono::time_point_cast<Sec>(now);
+    const time_t t_now = chrono::system_clock::to_time_t(chrono::time_point_cast<Sec>(now));
+
+    m_edi_time = t_now - (t_now % 6);
+    m_currentFrame = 0;
+    time_t edi_time_at_cif0 = t_now - (t_now % 120);
+    while (edi_time_at_cif0 < m_edi_time) {
+        edi_time_at_cif0 += 6;
+        m_currentFrame += 250;
+    }
+
+    if (edi_time_at_cif0 != m_edi_time) {
+        throw std::logic_error("Invalid startup offset calculation for CIF!");
+    }
+
+    const auto offset = now - chrono::time_point_cast<Sec>(now);
     if (offset >= chrono::seconds(1)) {
         throw std::logic_error("Invalid startup offset calculation for TIST! " +
                 to_string(chrono::duration_cast<chrono::milliseconds>(offset).count()) +
                 " ms");
     }
+
+    int64_t offset_ms = chrono::duration_cast<chrono::milliseconds>(offset).count();
+    offset_ms += 1000 * (t_now - m_edi_time);
+
     m_timestamp = 0;
-    while (offset >= chrono::milliseconds(24)) {
+    while (offset_ms >= 24) {
         increment_timestamp();
-        offset -= chrono::milliseconds(24);
+        m_currentFrame++;
+        offset_ms -= 24;
     }
+
+    etiLog.log(info, "Startup CIF Count %i with timestamp: %d + %f",
+            m_currentFrame, m_edi_time,
+            (m_timestamp & 0xFFFFFF) / 16384000.0);
 
     // Try to load offset once
 
@@ -415,8 +442,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     //****** Field FSYNC *****//
     // See ETS 300 799, 6.2.1.2
-    sync ^= 0xffffff;
-    etiSync->FSYNC = sync;
+    if ((m_currentFrame & 1) == 0) {
+        etiSync->FSYNC = ETI_FSYNC1;
+    }
+    else {
+        etiSync->FSYNC = ETI_FSYNC1 ^ 0xffffff;
+    }
 
     /**********************************************************************
      ***********   Section LIDATA of ETI(NI, G703)   **********************
@@ -430,8 +461,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     //****** FCT ******//
     // Incremente for each frame, overflows at 249
-    fc->FCT = currentFrame % 250;
-    edi_tagDETI.dlfc = currentFrame % 5000;
+    fc->FCT = m_currentFrame % 250;
+    edi_tagDETI.dlfc = m_currentFrame % 5000;
 
     //****** FICF ******//
     // Fast Information Channel Flag, 1 bit, =1 if FIC present
@@ -448,7 +479,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     /* Frame Phase, 3 bit counter, tells the COFDM generator
      * when to insert the TII. Is also used by the MNSC.
      */
-    fc->FP = edi_tagDETI.fp = currentFrame & 0x7;
+    fc->FP = edi_tagDETI.fp = m_currentFrame & 0x7;
 
     //****** MID ******//
     //Mode Identity, 2 bits, 01 ModeI, 10 modeII, 11 ModeIII, 00 ModeIV
@@ -580,9 +611,9 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.fic_length = FICL * 4;
 
     // Insert all FIBs
-    fig_carousel.update(currentFrame);
+    fig_carousel.update(m_currentFrame);
     const bool fib3_present = (ensemble->transmission_mode == TransmissionMode_e::TM_III);
-    index += fig_carousel.write_fibs(&etiFrame[index], currentFrame % 4, fib3_present);
+    index += fig_carousel.write_fibs(&etiFrame[index], m_currentFrame % 4, fib3_present);
 
     /**********************************************************************
      ******  Input Data Reading *******************************************
@@ -599,7 +630,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         if (result < 0) {
             etiLog.log(info,
                     "Subchannel %d read failed at ETI frame number: %d",
-                    subchannel->id, currentFrame);
+                    subchannel->id, m_currentFrame);
         }
 
         // save pointer to Audio or Data Stream into correct TagESTn for EDI
@@ -661,7 +692,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             output->setMetadata(md_edi_time);
 
             shared_ptr<OutputMetadata> md_dlfc =
-                make_shared<OutputMetadataDLFC>(currentFrame % 5000);
+                make_shared<OutputMetadataDLFC>(m_currentFrame % 5000);
             output->setMetadata(md_dlfc);
         }
     }
@@ -726,20 +757,20 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     /**********************************************************************
      ***********   Output a small message *********************************
      **********************************************************************/
-    if (currentFrame % 100 == 0) {
+    if (m_currentFrame % 100 == 0) {
         if (enableTist) {
             etiLog.log(info, "ETI frame number %i Timestamp: %d + %f",
-                    currentFrame, edi_time,
+                    m_currentFrame, edi_time,
                     (m_timestamp & 0xFFFFFF) / 16384000.0);
         }
         else {
             etiLog.log(info, "ETI frame number %i Time: %d, no TIST",
-                    currentFrame, edi_time);
+                    m_currentFrame, edi_time);
         }
     }
 #endif
 
-    currentFrame++;
+    m_currentFrame++;
 }
 
 void DabMultiplexer::print_info()
@@ -775,7 +806,7 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
 {
     stringstream ss;
     if (parameter == "frames") {
-        ss << currentFrame;
+        ss << m_currentFrame;
     }
     else if (parameter == "tist_offset") {
         ss << m_tist_offset;

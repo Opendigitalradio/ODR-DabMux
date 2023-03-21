@@ -357,6 +357,33 @@ int main(int argc, char *argv[])
 
                         edi_conf.destinations.push_back(dest);
                     }
+                    else if (proto == "ts") {
+                        auto dest = make_shared<edi::ts_destination_t>();
+                         dest->dest_addr   = pt_edi_dest.second.get<string>("destination");
+                        dest->ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
+
+                        dest->source_addr = pt_edi_dest.second.get<string>("source", "");
+                        dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
+
+                        dest->dest_port       = pt_edi_dest.second.get<unsigned int>("port", 0);
+                        if (dest->dest_port == 0) {
+                            // Compatiblity: we have removed the transport and addressing in the
+                            // PFT layer, which removed the requirement that all outputs must share
+                            // the same destination port. If missing from the destination specification,
+                            // we read it from the parent block, where it was before.
+                            dest->dest_port       = pt_edi.get<unsigned int>("port");
+                        }
+
+                        dest->payload_pid = pt_edi_dest.second.get<unsigned int>("payload_pid");
+                        dest->pmt_pid =     pt_edi_dest.second.get<unsigned int>("pmt_pid");
+                        dest->service_id =  pt_edi_dest.second.get<unsigned int>("service_id");
+                        dest->service_name = pt_edi_dest.second.get<string>("service_name", "");
+                        dest->service_type = pt_edi_dest.second.get<unsigned int>("service_type");
+                        dest->output       = pt_edi_dest.second.get<string>("output");
+                        dest->output_host  = pt_edi_dest.second.get<string>("output_host");
+                        dest->output_port  = pt_edi_dest.second.get<unsigned int>("output_port");
+                        edi_conf.destinations.push_back(dest);
+                    }
                     else {
                         throw runtime_error("Unknown EDI protocol " + proto);
                     }

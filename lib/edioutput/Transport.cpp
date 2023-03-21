@@ -46,6 +46,22 @@ void configuration_t::print() const
             }
             etiLog.level(info) << "  source port " << udp_dest->source_port;
         }
+        else if (auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(edi_dest)) {
+            etiLog.level(info) << " TS to " << ts_dest->dest_addr << ":" << ts_dest->dest_port;
+            if (not ts_dest->source_addr.empty()) {
+                etiLog.level(info) << " source       " << ts_dest->source_addr;
+                etiLog.level(info) << " ttl          " << ts_dest->ttl;
+                etiLog.level(info) << " payload pid  " << ts_dest->payload_pid;
+                etiLog.level(info) << " pmt pid      " << ts_dest->pmt_pid;
+                etiLog.level(info) << " service id   " << ts_dest->service_id;
+                etiLog.level(info) << " service name " << ts_dest->service_name;
+                etiLog.level(info) << " service type  " << ts_dest->service_type;
+                etiLog.level(info) << " output  " << ts_dest->output;
+                etiLog.level(info) << " output host  " << ts_dest->output_host;
+                etiLog.level(info) << " output port " << ts_dest->output_port;
+            }
+            etiLog.level(info) << " source port  " << ts_dest->source_port;
+        }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(edi_dest)) {
             etiLog.level(info) << " TCP listening on port " << tcp_dest->listen_port;
             etiLog.level(info) << "  max frames queued    " << tcp_dest->max_frames_queued;
@@ -79,6 +95,33 @@ Sender::Sender(const configuration_t& conf) :
             }
 
             udp_sockets.emplace(udp_dest.get(), udp_socket);
+        }
+        //TODO
+        else if (const auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(edi_dest)) {
+            
+            auto ts = std::make_shared<edi_ts>();
+            
+            //Move this into the contructor
+            ts->dest_addr = ts_dest->dest_addr;
+            ts->dest_port = ts_dest->dest_port;
+            ts->payload_pid = ts_dest->payload_pid;
+            ts->pmt_pid = ts_dest->pmt_pid;
+            ts->service_id = ts_dest->service_id;
+            ts->service_name = ts_dest->service_name;
+            ts->service_type = ts_dest->service_type;
+            ts->source_addr = ts_dest->source_addr;
+            ts->source_port = ts_dest->source_port;
+            ts->output = ts_dest->output;
+            ts->output_host = ts_dest->output_host;
+            ts->output_port = ts_dest->output_port;
+
+            //if (not ts_dest->source_addr.empty()) {
+            //    tsudp_socket->setMulticastSource(tsudp_dest->source_addr.c_str());
+            //    tsudp_socket->setMulticastTTL(tsudp_dest->ttl);
+            //}
+            
+            ts->Open("test");
+            ts_senders.emplace(ts_dest.get(), ts);
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(edi_dest)) {
             auto dispatcher = make_shared<Socket::TCPDataDispatcher>(
@@ -189,6 +232,20 @@ void Sender::write(const AFPacket& af_packet)
 
                 udp_sockets.at(udp_dest.get())->send(af_packet, addr);
             }
+            //TODO
+            else if (auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(dest)) {
+                //Socket::InetAddress addr;
+                //addr.resolveUdpDestination(udp_dest->dest_addr, udp_dest->dest_port);
+
+                if (af_packet.size() > 1400 and not m_udp_fragmentation_warning_printed) {
+                    fprintf(stderr, "EDI Output: AF packet larger than 1400,"
+                            " consider using PFT to avoid UP fragmentation.\n");
+                    m_udp_fragmentation_warning_printed = true;
+                }
+
+            ts_senders.at(ts_dest.get())->send(af_packet);
+           
+            }
             else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(dest)) {
                 tcp_dispatchers.at(tcp_dest.get())->write(af_packet);
             }
@@ -240,6 +297,9 @@ void Sender::run()
                     }
                     else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_client_t>(dest)) {
                         tcp_senders.at(tcp_dest.get())->sendall(edi_frag);
+                    }
+                    else if (auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(dest)) {
+                        //tcp_senders.at(tcp_dest.get())->sendall(edi_frag);
                     }
                     else {
                         throw logic_error("EDI destination not implemented");

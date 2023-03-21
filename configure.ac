@@ -41,6 +41,13 @@ AX_PTHREAD([], AC_MSG_ERROR([requires pthread]))
 AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
 AX_BOOST_SYSTEM
 
+PKG_CHECK_MODULES([TSDUCK], [tsduck >= 3.0.0], [
+    TSDUCK_CPPFLAGS=`tsconfig --cflags`
+    TSDUCK_LIBS=`tsconfig --libs`
+    TSDUCK_PREFIX=`pkg-config --variable=prefix tsduck`
+    AC_SUBST(TSDUCK_PREFIX)])
+
+
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
 
@@ -64,6 +71,13 @@ AC_ARG_ENABLE([output_udp],
         [], [enable_output_udp=yes])
 AS_IF([test "x$enable_output_udp" = "xyes"],
         [AC_DEFINE(HAVE_OUTPUT_UDP, [1], [Define if UDP output is enabled])])
+# TS
+AC_ARG_ENABLE([output_ts],
+        [AS_HELP_STRING([--disable-output-ts], [Disable TS output])],
+        [], [enable_output_ts=yes])
+AS_IF([test "x$enable_output_ts" = "xyes"],
+        [AC_DEFINE(HAVE_OUTPUT_TS, [1], [Define if TS output is enabled])])
+
 # TCP
 AC_ARG_ENABLE([output_tcp],
         [AS_HELP_STRING([--disable-output-tcp], [Disable TCP output])],
@@ -150,7 +164,7 @@ echo
 echo "Outputs:"
 enabled=""
 disabled=""
-for output in file fifo udp tcp raw simul
+for output in file fifo udp ts tcp raw simul
 do
     eval var=\$enable_output_$output
     AS_IF([test "x$var" = "xyes"],

@@ -1,0 +1,116 @@
+general {
+    dabmode 1
+    nbframes 0
+    syslog false
+    tist false
+    managementport 12720
+}
+
+remotecontrol {
+    telnetport 12721
+    zmqendpoint tcp://lo:12722
+}
+
+ensemble {
+    id 0xc1f1
+    ecc 0xe1
+    local-time-offset auto
+    international-table 1
+    reconfig-counter hash
+    label "TestMux"
+    shortlabel "SCNH"
+
+announcements {
+        test_announcement {
+            cluster 1
+            flags {
+                Traffic true
+            }
+
+            subchannel sub-01
+        }
+    }
+}
+
+services {
+    srv-01 {
+        id 0xc001
+        ecc 0xe1
+        label "Service 1"
+        shortlabel "SVC 1"
+        pty 10
+        pty-sd static
+announcements {
+            Alarm false
+            Traffic true
+            Travel false
+            Warning false
+            News false
+            Weather false
+            Event false
+            Special false
+            ProgrammeInfo false
+            Sports false
+            Finance false
+
+            ; a comma separated list of clusters in which the service belongs to
+            ; cluster id 255 is not specified here and is ignored (for FIG 0/18)
+            clusters "1"
+        }
+    }
+    }
+    subchannels {
+    sub-01 {
+        type dabplus
+        bitrate 48
+        id 1
+        protection 3
+        inputproto edi
+        inputuri "tcp://127.0.0.1:9001"
+        buffer-management prebuffering
+        buffer 40
+        prebuffering 20
+    }
+}
+
+components {
+    comp-01 {
+        service srv-01
+        subchannel sub-01
+        user-applications {
+            userapp "slideshow"
+        }
+    }
+    }
+
+    outputs {
+    tcp "tcp://0.0.0.0:9200"
+
+    edi {
+        destinations {
+            edi_tcp {
+                protocol tcp
+                listenport 9201
+            }
+            example_ts {
+                protocol ts
+                source 127.0.0.1
+                sourceport 13001
+                destination "239.199.100.1"
+                port 5001
+                service_id 1
+                service_name "DabMux"
+                payload_pid 1234
+                pmt_pid 256
+                service_type 5
+                output srt
+                output_host 192.168.105.2
+                output_port 5186
+            }
+
+        }
+    }
+
+    ; Throttle output to real-time (one ETI frame every 24ms)
+    throttle "simul://"
+}

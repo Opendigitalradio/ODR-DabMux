@@ -52,9 +52,9 @@ lib_charset_sources = lib/charset/charset.cpp \
 					  lib/charset/utf8.h
 
 odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS)
-odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(PTHREAD_CXXFLAGS) $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
+odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(PTHREAD_CXXFLAGS) $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS) $(TSDUCK_CFLAGS)
 odr_dabmux_LDADD    =$(ZMQ_LIBS) $(BOOST_LDFLAGS) \
-					 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
+					 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB) $(TSDUCK_LIBS)
 
 odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/DabMux.h \
@@ -106,8 +106,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG0_5.h \
 					 src/fig/FIG0_6.cpp \
 					 src/fig/FIG0_6.h \
-                                         src/fig/FIG0_7.cpp \
-                                         src/fig/FIG0_7.h \
+                     src/fig/FIG0_7.cpp \
+                     src/fig/FIG0_7.h \
 					 src/fig/FIG0_8.cpp \
 					 src/fig/FIG0_8.h \
 					 src/fig/FIG0_9.cpp \
@@ -170,6 +170,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/edioutput/TagPacket.h \
 					 lib/edioutput/Transport.cpp \
 					 lib/edioutput/Transport.h \
+					 lib/edioutput/edi_ts.h \
+					 lib/edioutput/edi_ts.cpp \
 					 lib/ReedSolomon.h \
 					 lib/ReedSolomon.cpp \
 					 lib/Socket.h \
@@ -216,6 +218,8 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   lib/edioutput/TagPacket.h \
 					   lib/edioutput/Transport.cpp \
 					   lib/edioutput/Transport.h \
+					   lib/edioutput/edi_ts.h \
+					   lib/edioutput/edi_ts.cpp \
 					   lib/Globals.cpp \
 					   lib/Log.h \
 					   lib/Log.cpp \
@@ -231,9 +235,9 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   lib/zmq.hpp \
 					   $(lib_fec_sources)
 
-odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
+odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB) $(TSDUCK_LIBS)
 odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE) $(TSDUCK_CFLAGS)
 
 man_MANS = 	man/odr-dabmux.1 \
 		man/odr-zmq2edi.1

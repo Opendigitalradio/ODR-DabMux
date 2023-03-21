@@ -6,7 +6,7 @@
 
 class CircularBuffer {
 public:
-    void push(const ts::TSPacketVector& data) {
+    void push(const std::vector<uint8_t>&data) {
         std::unique_lock<std::mutex> lock(mutex_);
         buffer_.push(data);
         //printf("pushed, len: %ld\n", buffer_.size());
@@ -14,12 +14,12 @@ public:
         cond_.notify_one();     
     }
 
-    ts::TSPacketVector pop() {
+    std::vector<uint8_t> pop() {
         std::unique_lock<std::mutex> lock(mutex_);
         while (buffer_.empty()) {
             cond_.wait(lock);
         }
-        ts::TSPacketVector data = buffer_.front();
+        std::vector<uint8_t> data = buffer_.front();
         buffer_.pop();
         //printf("popped\n");
         return data;
@@ -31,7 +31,7 @@ public:
     }
 
 private:
-    std::queue<ts::TSPacketVector> buffer_;
+    std::queue<std::vector<uint8_t>> buffer_;
     mutable std::mutex mutex_;
     std::condition_variable cond_;
 };

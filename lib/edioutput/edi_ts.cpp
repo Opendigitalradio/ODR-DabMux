@@ -36,25 +36,27 @@ InputHandler::InputHandler(ts::Report &report, CircularBuffer &buffer) : _report
 void InputHandler::handlePluginEvent(const ts::PluginEventContext &context)
 {
     ts::PluginEventData *data = dynamic_cast<ts::PluginEventData *>(context.pluginData());
+    
     if (data != nullptr)
     {
-        ts::TSPacketVector _data = _buffer.pop();
-        for (ts::TSPacketVector::const_iterator it = _data.begin(); it != _data.end(); ++it)
-            {
-                if (data->maxSize() >= ts::PKT_SIZE)
+
+
+        //std::cout << "packet:\n" << ts::UString::Dump(&(_data), 188, ts::UString::SINGLE_LINE) << std::endl;
+        //printf("maxsize: %ld", data->maxSize());
+        if (data->maxSize() >= ts::PKT_SIZE)
+        {
+                std::vector<uint8_t> _data = _buffer.pop();
+                if (data->append(_data.data(), ts::PKT_SIZE))
                 {
-                    if (data->append(&(*it), ts::PKT_SIZE))
-                    {
-//                        printf("Data accepted\n");
-                    }
-                    else
-                    {
-                        printf("******** NOT ACCEPTED\n");
-                    }
+                    //printf("Data accepted\n");
                 }
-            }
+                else
+                {
+                    printf("******** NOT ACCEPTED\n");
+                }
         }
     }
+}
 
 void edi_ts::Open(const std::string &test)
 {
@@ -114,39 +116,35 @@ void edi_ts::SetupMux()
 
 void edi_ts::send(const std::vector<uint8_t> &data)
 {
-    ts::TSPacketVector packets;
     int offset = 12;
     int pid = 1051;
 
-    packets.reserve(data.size() / (TS_SIZE - offset) + 1);
-
     offset += 4;
-    unsigned long int packet_count = 0;
-    for (size_t i = 0; i < data.size(); i += TS_SIZE - offset)
+    
+    for (size_t i = 0; i < data.size(); i += (TS_SIZE - offset))
     {
         ts::TSPacket p_ts;
+        if (offset == 1)
+        {
+            p_ts.b[0] = 0x47;
+        }
+        else
+        {
+            p_ts.init();
+        }
 
-        p_ts.init();
         if (offset >= 16)
         {
             p_ts.setPID(pid);
             p_ts.setCC(++i_last_cc);
-            // printf("CC: %d\n", i_last_cc);
         }
 
         size_t read_size = std::min(static_cast<size_t>(TS_SIZE - offset), data.size() - i);
         std::copy_n(data.begin() + i, read_size, p_ts.b + offset);
 
-        packets.push_back(p_ts);
-        packet_count++;
+        std::vector<uint8_t> packet_data(sizeof(p_ts));
+        std::memcpy(packet_data.data(), &p_ts, sizeof(p_ts));
+        buffer.push(packet_data);
+        
     }
-
-        for (ts::TSPacketVector::const_iterator it = packets.begin(); it != packets.end(); ++it)
-        {
-        std::cout << "Packet data in:\n" << ts::UString::Dump(&(*it), ts::PKT_SIZE, ts::UString::SINGLE_LINE) << std::endl;
-        }
-
-
-    buffer.push(packets);
-    // printf("Packets Q Size: %d\n", static_cast<int>(packets.size()));
 }

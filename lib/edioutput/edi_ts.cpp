@@ -36,47 +36,25 @@ InputHandler::InputHandler(ts::Report &report, CircularBuffer &buffer) : _report
 void InputHandler::handlePluginEvent(const ts::PluginEventContext &context)
 {
     ts::PluginEventData *data = dynamic_cast<ts::PluginEventData *>(context.pluginData());
-    // printf("******************************** Start Loop ********************\n");
     if (data != nullptr)
     {
-        // Wait to fill packets
-        while (static_cast<int>(_buffer.size()) == 0)
-        {
-            usleep(50);
-        }
-
-        int buffer_size = static_cast<int>(_buffer.size());
-        //printf("buffer_size at top of call: %d...\n", buffer_size);
-
-        int packet_no = 0;
-        while (buffer_size > 0)
-        {
-            //printf("buffer_size: %d...\n", buffer_size);
-            ts::TSPacketVector _data = _buffer.pop();
-
-            for (ts::TSPacketVector::const_iterator it = _data.begin(); it != _data.end(); ++it)
+        ts::TSPacketVector _data = _buffer.pop();
+        for (ts::TSPacketVector::const_iterator it = _data.begin(); it != _data.end(); ++it)
             {
                 if (data->maxSize() >= ts::PKT_SIZE)
                 {
-
                     if (data->append(&(*it), ts::PKT_SIZE))
                     {
-                        //printf("Data accepted\n");
+//                        printf("Data accepted\n");
                     }
                     else
                     {
-                        //printf("******** NOT ACCEPTED\n");
+                        printf("******** NOT ACCEPTED\n");
                     }
-
-                    packet_no++;
-                    // std::cout << "Packet data: " << ts::UString::Dump(&(*it), ts::PKT_SIZE, ts::UString::SINGLE_LINE) << std::endl;
                 }
             }
-            buffer_size -= 1;
         }
-        //printf("******************************** Exited Loop ********************\n");
     }
-}
 
 void edi_ts::Open(const std::string &test)
 {
@@ -116,7 +94,7 @@ void edi_ts::SetupMux()
     opt.plugins = {
         {u"inject", {u"<?xml version=\"1.0\" encoding=\"UTF-8\"?><tsduck><PAT version=\"0\" transport_stream_id=\"0x0001\" network_PID=\"0x0010\"><service service_id=\"0x0001\" program_map_PID=\"256\"/></PAT></tsduck>", u"--pid", u"0", u"-s", u"--inter-packet", u"100"}},
         {u"inject", {u"<?xml version=\"1.0\" encoding=\"UTF-8\"?><tsduck><PMT version=\"4\" service_id=\"0x0001\"><component elementary_PID=\"1051\" stream_type=\"0x12\"/></PMT></tsduck>", u"--pid", u"256", u"-s", u"--inter-packet", u"100"}},
-        {u"inject", {u"<?xml version=\"1.0\" encoding=\"UTF-8\"?><tsduck><SDT version=\"0\" current=\"true\" transport_stream_id=\"1\" original_network_id=\"2\" actual=\"true\"> <service service_id=\"1\" EIT_schedule=\"false\" EIT_present_following=\"false\" running_status=\"running\" CA_mode=\"false\"><service_descriptor service_type=\"0x0C\" service_name=\"DABMux\" service_provider_name=\"M0MUX\"/> </service></SDT></tsduck>", u"--pid", u"17", u"-s", u"--inter-packet", u"1000"}},
+        {u"inject", {u"<?xml version=\"1.0\" encoding=\"UTF-8\"?><tsduck><SDT version=\"0\" current=\"true\" transport_stream_id=\"1\" original_network_id=\"2\" actual=\"true\"> <service service_id=\"1\" EIT_schedule=\"false\" EIT_present_following=\"false\" running_status=\"running\" CA_mode=\"false\"><service_descriptor service_type=\"0x0C\" service_name=\"SCambs DAB\" service_provider_name=\"Andy Test\"/> </service></SDT></tsduck>", u"--pid", u"17", u"-s", u"--inter-packet", u"1000"}},
     };
 
     opt.output = {u"srt", {u"-c", u"192.168.105.2:5001", u"--passphrase", u"testtesttest"}};
@@ -153,12 +131,6 @@ void edi_ts::send(const std::vector<uint8_t> &data)
         {
             p_ts.setPID(pid);
             p_ts.setCC(++i_last_cc);
-
-            if (i_last_cc == 15)
-            {
-                i_last_cc = 0;
-            }
-
             // printf("CC: %d\n", i_last_cc);
         }
 
@@ -166,16 +138,14 @@ void edi_ts::send(const std::vector<uint8_t> &data)
         std::copy_n(data.begin() + i, read_size, p_ts.b + offset);
 
         packets.push_back(p_ts);
-        //        printf("blah #%d: %s", 1, ts::UString::Dump(&packets, ts::PKT_SIZE, ts::UString::COMPACT));
         packet_count++;
+    }
 
-        /*
         for (ts::TSPacketVector::const_iterator it = packets.begin(); it != packets.end(); ++it)
         {
         std::cout << "Packet data in:\n" << ts::UString::Dump(&(*it), ts::PKT_SIZE, ts::UString::SINGLE_LINE) << std::endl;
         }
-        */
-    }
+
 
     buffer.push(packets);
     // printf("Packets Q Size: %d\n", static_cast<int>(packets.size()));

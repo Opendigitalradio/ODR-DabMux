@@ -2,6 +2,7 @@
 #include <memory>
 #include <tsduck.h>
 #include "CircularBuffer.h"
+#include "ThreadsafeQueue.h"
 
 class edi_ts {
 public:
@@ -26,5 +27,5 @@ public:
   private:
     void SetupMux();
     ts::TSPacketVector packetise_payload(const std::vector<uint8_t>& data, int offset, int pid);
-    
+    ThreadsafeQueue<std::vector<uint8_t> > m_queue;  
 };

@@ -299,7 +299,7 @@ void Sender::run()
                         tcp_senders.at(tcp_dest.get())->sendall(edi_frag);
                     }
                     else if (auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(dest)) {
-                        //tcp_senders.at(tcp_dest.get())->sendall(edi_frag);
+                          ts_senders.at(ts_dest.get())->send(edi_frag);
                     }
                     else {
                         throw logic_error("EDI destination not implemented");

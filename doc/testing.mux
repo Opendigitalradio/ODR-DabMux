@@ -18,7 +18,7 @@ ensemble {
     international-table 1
     reconfig-counter hash
     label "TestMux"
-    shortlabel "SCNH"
+    shortlabel "Test"
 
 announcements {
         test_announcement {
@@ -37,7 +37,7 @@ services {
         id 0xc001
         ecc 0xe1
         label "Service 1"
-        shortlabel "SVC 1"
+        shortlabel "Service"
         pty 10
         pty-sd static
 announcements {

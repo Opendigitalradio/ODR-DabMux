@@ -6,18 +6,19 @@
 
 class edi_ts {
 public:
-    std::string dest_addr;
-    unsigned int dest_port;
     unsigned int payload_pid;
     unsigned int pmt_pid;
+    unsigned int ts_id;
+    unsigned int service_type;
     unsigned int service_id;
     std::string service_name;
-    unsigned int service_type;
-    std::string source_addr;
-    unsigned int source_port;
+    std::string service_provider_name;
     std::string output;
     std::string output_host;
     unsigned int output_port;
+    unsigned int output_ttl;
+    std::string output_srt_passphrase;
+    std::string output_source_address;
     uint8_t i_last_cc = -1;
     CircularBuffer buffer;
 

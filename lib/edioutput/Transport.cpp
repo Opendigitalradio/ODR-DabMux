@@ -47,20 +47,25 @@ void configuration_t::print() const
             etiLog.level(info) << "  source port " << udp_dest->source_port;
         }
         else if (auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(edi_dest)) {
-            etiLog.level(info) << " TS to " << ts_dest->dest_addr << ":" << ts_dest->dest_port;
-            if (not ts_dest->source_addr.empty()) {
-                etiLog.level(info) << " source       " << ts_dest->source_addr;
-                etiLog.level(info) << " ttl          " << ts_dest->ttl;
-                etiLog.level(info) << " payload pid  " << ts_dest->payload_pid;
-                etiLog.level(info) << " pmt pid      " << ts_dest->pmt_pid;
-                etiLog.level(info) << " service id   " << ts_dest->service_id;
-                etiLog.level(info) << " service name " << ts_dest->service_name;
-                etiLog.level(info) << " service type  " << ts_dest->service_type;
-                etiLog.level(info) << " output  " << ts_dest->output;
-                etiLog.level(info) << " output host  " << ts_dest->output_host;
-                etiLog.level(info) << " output port " << ts_dest->output_port;
+            etiLog.level(info) << " TS to " << ts_dest->output << "://" << ts_dest->output_host << ":" << ts_dest->output_port;
+            etiLog.level(info) << " payload pid  " << ts_dest->payload_pid;
+            etiLog.level(info) << " pmt pid      " << ts_dest->pmt_pid;
+            etiLog.level(info) << " ts id      " << ts_dest->ts_id;
+            etiLog.level(info) << " service type " << ts_dest->service_type;
+            etiLog.level(info) << " service id   " << ts_dest->service_id;
+            etiLog.level(info) << " service name " << ts_dest->service_name;
+            etiLog.level(info) << " service provider name  " << ts_dest->service_provider_name;
+            etiLog.level(info) << " output  " << ts_dest->output;
+            etiLog.level(info) << " output host  " << ts_dest->output_host;
+            etiLog.level(info) << " output port " << ts_dest->output_port;
+            etiLog.level(info) << " output ttl  " << ts_dest->output_ttl;
+            etiLog.level(info) << " output source ip " << ts_dest->output_source_address;
+            
+            if (ts_dest->output == "srt")
+            {
+                etiLog.level(info) << " SRT Passphrase " << ts_dest->output_srt_passphrase;
             }
-            etiLog.level(info) << " source port  " << ts_dest->source_port;
+
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(edi_dest)) {
             etiLog.level(info) << " TCP listening on port " << tcp_dest->listen_port;
@@ -101,26 +106,25 @@ Sender::Sender(const configuration_t& conf) :
             
             auto ts = std::make_shared<edi_ts>();
             
-            //Move this into the contructor
-            ts->dest_addr = ts_dest->dest_addr;
-            ts->dest_port = ts_dest->dest_port;
             ts->payload_pid = ts_dest->payload_pid;
             ts->pmt_pid = ts_dest->pmt_pid;
+            ts->ts_id = ts_dest->ts_id;
             ts->service_id = ts_dest->service_id;
-            ts->service_name = ts_dest->service_name;
             ts->service_type = ts_dest->service_type;
-            ts->source_addr = ts_dest->source_addr;
-            ts->source_port = ts_dest->source_port;
+            ts->service_name = ts_dest->service_name;
+            ts->service_provider_name = ts_dest->service_provider_name;
             ts->output = ts_dest->output;
             ts->output_host = ts_dest->output_host;
             ts->output_port = ts_dest->output_port;
-
-            //if (not ts_dest->source_addr.empty()) {
-            //    tsudp_socket->setMulticastSource(tsudp_dest->source_addr.c_str());
-            //    tsudp_socket->setMulticastTTL(tsudp_dest->ttl);
-            //}
+            ts->output_ttl = ts_dest->output_ttl;
+            ts->output_source_address = ts_dest->output_source_address;
             
-            ts->Open("test");
+            if (ts_dest->output == "srt")
+            {
+            ts->output_srt_passphrase = ts_dest->output_srt_passphrase;
+            }
+
+            ts->Open("TS_" + ts_dest->output_host);
             ts_senders.emplace(ts_dest.get(), ts);
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(edi_dest)) {

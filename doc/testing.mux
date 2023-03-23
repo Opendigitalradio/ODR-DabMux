@@ -92,22 +92,37 @@ components {
                 protocol tcp
                 listenport 9201
             }
-            example_ts {
+;            example_ts_udp {
+;                protocol ts
+;                ts_id 1
+;                service_id 1
+;                service_name "DabMux"
+;                service_provider_name "ODR-DabMux"
+;                payload_pid 1234
+;                pmt_pid 256
+;                service_type 5
+;                output udp
+;                output_host 192.168.105.2
+;                output_port 5186
+;                output_source_address 192.168.104.6
+;                output_ttl 64
+;            }
+            example_ts_srt {
                 protocol ts
-                source 127.0.0.1
-                sourceport 13001
-                destination "239.199.100.1"
-                port 5001
+                ts_id 1
                 service_id 1
                 service_name "DabMux"
+                service_provider_name "ODR-DabMux"
                 payload_pid 1234
                 pmt_pid 256
                 service_type 5
                 output srt
                 output_host 192.168.105.2
-                output_port 5186
+                output_port 5001
+                output_source_address 172.27.159.171
+                output_srt_passphrase testtesttest
+                output_ttl 64
             }
-
         }
     }
 

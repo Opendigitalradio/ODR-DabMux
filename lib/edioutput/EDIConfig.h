@@ -51,19 +51,19 @@ struct udp_destination_t : public destination_t {
 
 struct ts_destination_t : public destination_t {
     
-    unsigned int source_port = 0;
-    std::string dest_addr;
-    unsigned int dest_port = 0;
-    std::string source_addr;
+    unsigned int payload_pid;
+    unsigned int pmt_pid;
+    unsigned int ts_id;
+    unsigned int service_type;
     unsigned int service_id;
     std::string service_name;
-    unsigned int payload_pid = 1234;
-    unsigned int pmt_pid = 256;
-    unsigned int service_type = 5;
-    unsigned int ttl = 10;
+    std::string service_provider_name;
     std::string output;
     std::string output_host;
-    unsigned int output_port; 
+    unsigned int output_port;
+    unsigned int output_ttl;
+    std::string output_srt_passphrase;
+    std::string output_source_address;
 };
 
 // TCP server that can accept multiple connections

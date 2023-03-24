@@ -4,12 +4,11 @@
 #include <vector>
 #include <tsduck.h>
 
-class CircularBuffer {
+class PacketBuffer {
 public:
     void push(const std::vector<uint8_t>&data) {
         std::unique_lock<std::mutex> lock(mutex_);
         buffer_.push(data);
-        //printf("pushed, len: %ld\n", buffer_.size());
         lock.unlock();
         cond_.notify_one();     
     }
@@ -21,7 +20,6 @@ public:
         }
         std::vector<uint8_t> data = buffer_.front();
         buffer_.pop();
-        //printf("popped\n");
         return data;
     }
 

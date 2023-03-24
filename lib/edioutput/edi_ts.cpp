@@ -9,25 +9,23 @@
 #include <algorithm>
 #include <iomanip>
 
-#define TS_SIZE 188
-
 class InputHandler : public ts::PluginEventHandlerInterface
 {
 public:
     // Constructors.
     InputHandler() = delete;
-    InputHandler(ts::Report &report, CircularBuffer &buffer);
+    InputHandler(ts::Report &report, PacketBuffer &buffer);
 
     // Event handling (from ts::PluginEventHandlerInterface).
     virtual void handlePluginEvent(const ts::PluginEventContext &context) override;
 
 private:
     ts::Report &_report;
-    CircularBuffer &_buffer;
+    PacketBuffer &_buffer;
 };
 
 // Constructor.
-InputHandler::InputHandler(ts::Report &report, CircularBuffer &buffer) : _report(report),
+InputHandler::InputHandler(ts::Report &report, PacketBuffer &buffer) : _report(report),
                                                                          _buffer(buffer)
 {
 }
@@ -36,23 +34,16 @@ InputHandler::InputHandler(ts::Report &report, CircularBuffer &buffer) : _report
 void InputHandler::handlePluginEvent(const ts::PluginEventContext &context)
 {
     ts::PluginEventData *data = dynamic_cast<ts::PluginEventData *>(context.pluginData());
-
+    
     if (data != nullptr)
     {
-
-        // std::cout << "packet:\n" << ts::UString::Dump(&(_data), 188, ts::UString::SINGLE_LINE) << std::endl;
-        // printf("maxsize: %ld", data->maxSize());
         if (data->maxSize() >= ts::PKT_SIZE)
         {
             std::vector<uint8_t> _data = _buffer.pop();
-            if (data->append(_data.data(), ts::PKT_SIZE))
+            if (!data->append(_data.data(), ts::PKT_SIZE))
             {
-                // printf("Data accepted\n");
-            }
-            else
-            {
-                printf("******** NOT ACCEPTED\n");
-            }
+                printf("******** PACKETS NOT ACCEPTED INTO MUX\n");
+            } 
         }
     }
 }
@@ -63,18 +54,9 @@ void edi_ts::Open(const std::string &test)
     ts_thread.detach();
 }
 
-void edi_ts::Close()
-{
-    // implementation for closing the connection
-}
-
 void edi_ts::SetupMux()
 {
-
-    // Use an asynchronous logger to report errors, logs, debug, etc.
-    // Make it display all messages up to debug level (default is info level).
-    // ts::AsyncReport report(ts::Severity::Debug);
-    ts::AsyncReport report(ts::Severity::Debug);
+    ts::AsyncReport report(ts::Severity::Info);
 
     InputHandler meminput(report, buffer);
 
@@ -85,9 +67,7 @@ void edi_ts::SetupMux()
     // Build tsp options. Accept most default values, except a few ones.
     ts::TSProcessorArgs opt;
     opt.app_name = u"odr-dabmux"; // for error messages only.
-    opt.instuff_start = 10;       // insert 10 null packets at start of stream.
-    opt.instuff_stop = 5;         // insert 5 null packets at end of stream.
-    opt.instuff_nullpkt = 50;
+    opt.instuff_nullpkt = 50; //Stuff more packets into the input, we'll trim to get CBR later.
     opt.instuff_inpkt = 2;
 
     opt.input = {u"memory", {}};
@@ -146,7 +126,7 @@ void edi_ts::send(const std::vector<uint8_t> &data)
 
     offset += 4;
 
-    for (size_t i = 0; i < data.size(); i += (TS_SIZE - offset))
+    for (size_t i = 0; i < data.size(); i += (ts::PKT_SIZE - offset))
     {
         ts::TSPacket p_ts;
         if (offset == 1)
@@ -164,7 +144,7 @@ void edi_ts::send(const std::vector<uint8_t> &data)
             p_ts.setCC(++i_last_cc);
         }
 
-        size_t read_size = std::min(static_cast<size_t>(TS_SIZE - offset), data.size() - i);
+        size_t read_size = std::min(static_cast<size_t>(ts::PKT_SIZE - offset), data.size() - i);
         std::copy_n(data.begin() + i, read_size, p_ts.b + offset);
 
         std::vector<uint8_t> packet_data(sizeof(p_ts));

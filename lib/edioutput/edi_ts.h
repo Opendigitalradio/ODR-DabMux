@@ -1,7 +1,7 @@
 #include <string>
 #include <memory>
 #include <tsduck.h>
-#include "CircularBuffer.h"
+#include "PacketBuffer.h"
 #include "ThreadsafeQueue.h"
 
 class edi_ts {
@@ -20,7 +20,7 @@ public:
     std::string output_srt_passphrase;
     std::string output_source_address;
     uint8_t i_last_cc = -1;
-    CircularBuffer buffer;
+    PacketBuffer buffer;
 
     void Open(const std::string& test);
     void Close();

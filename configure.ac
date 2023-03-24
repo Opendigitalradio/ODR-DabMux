@@ -74,7 +74,7 @@ AC_ARG_ENABLE([output_ts],
 AS_IF([test "x$enable_output_ts" = "xyes"],
   [    
         AC_DEFINE([HAVE_OUTPUT_TS], [1], [Define if TS output is enabled])
-        PKG_CHECK_MODULES([TSDUCK], [tsduck >= 3.0.0], [      
+        PKG_CHECK_MODULES([TSDUCK], [tsduck >= 3.34.0], [      
                 TSDUCK_CPPFLAGS=`tsconfig --cflags`      
                 TSDUCK_LIBS=`tsconfig --libs`      
                 TSDUCK_PREFIX=`pkg-config --variable=prefix tsduck`      

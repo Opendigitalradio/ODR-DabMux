@@ -117,7 +117,7 @@ void header_message()
 #if defined(HAVE_OUTPUT_UDP)
     " udp" <<
 #endif
-#if defined(HAVE_OUTPUT_TS)
+#if HAVE_OUTPUT_TS
     " ts" <<
 #endif
 #if defined(HAVE_OUTPUT_TCP)

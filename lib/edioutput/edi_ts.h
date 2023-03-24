@@ -1,3 +1,9 @@
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
+#if HAVE_OUTPUT_TS
+
 #include <string>
 #include <memory>
 #include <tsduck.h>
@@ -29,3 +35,4 @@ public:
     ts::TSPacketVector packetise_payload(const std::vector<uint8_t>& data, int offset, int pid);
     ThreadsafeQueue<std::vector<uint8_t> > m_queue;  
 };
+#endif

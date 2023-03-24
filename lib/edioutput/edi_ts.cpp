@@ -1,3 +1,9 @@
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
+#if HAVE_OUTPUT_TS
+
 #include "edi_ts.h"
 #include "AFPacket.h"
 #include <thread>
@@ -150,3 +156,4 @@ void edi_ts::send(const std::vector<uint8_t> &data)
         buffer.push(packet_data);
     }
 }
+#endif

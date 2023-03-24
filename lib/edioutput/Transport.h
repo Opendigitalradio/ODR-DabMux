@@ -27,6 +27,10 @@
 
 #pragma once
 
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
+
 #include "EDIConfig.h"
 #include "edi_ts.h"
 #include "AFPacket.h"
@@ -84,7 +88,10 @@ class Sender {
         std::unordered_map<udp_destination_t*, std::shared_ptr<Socket::UDPSocket>> udp_sockets;
         std::unordered_map<tcp_server_t*, std::shared_ptr<Socket::TCPDataDispatcher>> tcp_dispatchers;
         std::unordered_map<tcp_client_t*, std::shared_ptr<Socket::TCPSendClient>> tcp_senders;
+        
+        #if HAVE_OUTPUT_TS
         std::unordered_map<ts_destination_t*, std::shared_ptr<edi_ts>> ts_senders;
+        #endif
 
         // PFT spreading requires sending UDP packets at specific time, independently of
         // time when write() gets called

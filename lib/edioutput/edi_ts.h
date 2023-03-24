@@ -23,7 +23,6 @@ public:
     PacketBuffer buffer;
 
     void Open(const std::string& test);
-    void Close();
     void send(const std::vector<uint8_t>& data);
   private:
     void SetupMux();

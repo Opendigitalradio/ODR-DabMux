@@ -86,9 +86,8 @@ void edi_ts::SetupMux()
     ts::UString port = ts::UString::Decimal(output_port, 0, true, u"", false, ts::SPACE);
     if (output == "srt")
     {
-        printf("SRT ");
         if (output_srt_passphrase != "")
-        {   printf("pass: %s\n", output_srt_passphrase.c_str());
+        {   
             opt.output = {u"srt", {u"-c", ts::UString::FromUTF8(output_host) + u":" + port, u"-e", u"--local-interface", ts::UString::FromUTF8(output_source_address), u"--ipttl", ts::UString::Decimal(output_ttl), u"--passphrase", ts::UString::FromUTF8(output_srt_passphrase) }};
         }
         else
@@ -122,8 +121,7 @@ void edi_ts::SetupMux()
 void edi_ts::send(const std::vector<uint8_t> &data)
 {
     int offset = 12;
-    int pid = 1051;
-
+    
     offset += 4;
 
     for (size_t i = 0; i < data.size(); i += (ts::PKT_SIZE - offset))
@@ -140,7 +138,7 @@ void edi_ts::send(const std::vector<uint8_t> &data)
 
         if (offset >= 16)
         {
-            p_ts.setPID(pid);
+            p_ts.setPID(payload_pid);
             p_ts.setCC(++i_last_cc);
         }
 

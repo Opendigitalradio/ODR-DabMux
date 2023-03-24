@@ -101,7 +101,6 @@ Sender::Sender(const configuration_t& conf) :
 
             udp_sockets.emplace(udp_dest.get(), udp_socket);
         }
-        //TODO
         else if (const auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(edi_dest)) {
             
             auto ts = std::make_shared<edi_ts>();
@@ -236,7 +235,6 @@ void Sender::write(const AFPacket& af_packet)
 
                 udp_sockets.at(udp_dest.get())->send(af_packet, addr);
             }
-            //TODO
             else if (auto ts_dest = dynamic_pointer_cast<edi::ts_destination_t>(dest)) {
                 //Socket::InetAddress addr;
                 //addr.resolveUdpDestination(udp_dest->dest_addr, udp_dest->dest_port);

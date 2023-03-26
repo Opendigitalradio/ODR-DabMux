@@ -543,6 +543,23 @@ outputs {
         ;allowmetadata true
     ;}
 
+    ts {
+                allow_metadata true
+                ts_id 1
+                service_id 1
+                service_name "DabMux"
+                service_provider_name "ODR-DabMux"
+                payload_pid 1234
+                pmt_pid 256
+                service_type 5
+                output srt
+                output_host 192.168.105.2
+                output_port 5001
+                output_source_address 172.27.159.171
+                output_srt_passphrase testtesttest
+                output_ttl 64
+            }
+
     ; Legacy format for ZeroMQ output example. See example.mux
     ; for newer format.
     ;zmq  "zmq+tcp://*:9100"

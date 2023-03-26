@@ -79,6 +79,7 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/dabOutput/dabOutputTcp.cpp \
 					 src/dabOutput/dabOutputUdp.cpp \
 					 src/dabOutput/dabOutputZMQ.cpp \
+					 src/dabOutput/dabOutputTS.cpp \
 					 src/dabOutput/metadata.h \
 					 src/dabOutput/metadata.cpp \
 					 src/ConfigParser.cpp \

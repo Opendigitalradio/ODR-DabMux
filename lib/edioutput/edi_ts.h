@@ -7,7 +7,7 @@
 #include <string>
 #include <memory>
 #include <tsduck.h>
-#include "PacketBuffer.h"
+#include "../../src/PacketBuffer.h"
 #include "ThreadsafeQueue.h"
 
 class edi_ts {
@@ -26,13 +26,12 @@ public:
     std::string output_srt_passphrase;
     std::string output_source_address;
     uint8_t i_last_cc = -1;
-    PacketBuffer buffer;
+    PacketBuffer pbuffer;
 
     void Open(const std::string& test);
     void send(const std::vector<uint8_t>& data);
   private:
     void SetupMux();
-    ts::TSPacketVector packetise_payload(const std::vector<uint8_t>& data, int offset, int pid);
-    ThreadsafeQueue<std::vector<uint8_t> > m_queue;  
+    
 };
 #endif

@@ -483,6 +483,52 @@ int main(int argc, char *argv[])
                 throw runtime_error("ZeroMQ output not compiled in");
 #endif
             }
+            else if (outputuid == "ts")
+            {
+#if (HAVE_OUTPUT_TS)
+                ptree pt_ts = pt_outputs.get_child("ts");
+                
+                
+                bool allow_metadata = pt_ts.get<bool>("allowmetadata");
+                shared_ptr<DabOutputTS> output = make_shared<DabOutputTS>(allow_metadata);
+                
+                output->payload_pid = pt_ts.get<unsigned int>("payload_pid");
+                output->pmt_pid = pt_ts.get<unsigned int>("pmt_pid");
+                output->ts_id = pt_ts.get<unsigned int>("ts_id");
+                output->service_type = pt_ts.get<unsigned int>("service_type");
+                output->service_id = pt_ts.get<unsigned int>("service_id");
+                output->service_name = pt_ts.get<string>("service_name");
+                output->service_provider_name = pt_ts.get<string>("service_provider_name");
+                output->output = pt_ts.get<string>("output");
+                output->output_host = pt_ts.get<string>("output_host");
+                output->output_port = pt_ts.get<unsigned int>("output_port");
+                output->output_source_address = pt_ts.get<string>("output_source_address");
+                output->output_ttl = pt_ts.get<unsigned int>("output_ttl");
+
+                if (output->output == "srt")
+                {
+                    output->output_srt_passphrase = pt_ts.get<string>("output_srt_passphrase");
+                }
+
+                output_require_tai_clock |= allow_metadata;
+
+                if (not output)
+                {
+                    etiLog.level(error) << "Unable to init ts output: " << output->output_host << ":" << output->output_port;
+                    return -1;
+                }
+
+                if (output->Open("TS") == -1)
+                {
+                    etiLog.level(error) << "Unable to open ts output: " << output->output_host << ":" << output->output_port;
+                    return -1;
+                }
+
+                outputs.push_back(output);
+#else
+                throw runtime_error("TS output not compiled in");
+#endif
+            }
             else
             {
                 string uri = pt_outputs.get<string>(outputuid);

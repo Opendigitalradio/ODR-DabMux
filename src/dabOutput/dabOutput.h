@@ -46,6 +46,11 @@
 #  include "zmq.hpp"
 #endif
 #include "dabOutput/metadata.h"
+#include "PacketBuffer.h"
+
+#ifdef HAVE_CONFIG_H
+#   include "config.h"
+#endif
 
 // Abstract base class for all outputs
 class DabOutput
@@ -185,6 +190,58 @@ class DabOutputTcp : public DabOutput
 
         std::shared_ptr<Socket::TCPDataDispatcher> dispatcher_;
 };
+
+
+#if HAVE_OUTPUT_TS
+class DabOutputTS : public DabOutput
+{
+    public:
+        DabOutputTS(bool allow_metadata) :
+            m_allow_metadata(allow_metadata)
+        { }
+
+        DabOutputTS(const DabOutputTS& other) = delete;
+        DabOutputTS& operator=(const DabOutputTS& other) = delete;
+
+        virtual ~DabOutputTS()
+        {
+            //zmq_pub_sock_.close();
+        }
+
+       std::string get_info(void) const {
+            return "ts: ";
+        }
+
+    unsigned int payload_pid;
+    unsigned int pmt_pid;
+    unsigned int ts_id;
+    unsigned int service_type;
+    unsigned int service_id;
+    std::string service_name;
+    std::string service_provider_name;
+    std::string output;
+    std::string output_host;
+    unsigned int output_port;
+    unsigned int output_ttl;
+    std::string output_srt_passphrase;
+    std::string output_source_address;
+    uint8_t i_last_cc = -1;
+    PacketBuffer pbuffer;
+
+
+        int Open(const char* name);
+        int Write(void* buffer, int size);
+        int Close();
+        void setMetadata(std::shared_ptr<OutputMetadata> &md);
+
+    private:
+        
+        void SetupMux();
+        bool m_allow_metadata;
+        std::vector<std::shared_ptr<OutputMetadata> > meta_;
+};
+
+#endif
 
 // -------------- Simul ------------------
 class DabOutputSimul : public DabOutput

@@ -84,6 +84,25 @@ components {
     }
 
     outputs {
+ 
+         ts {
+                allowmetadata false
+                ts_id 1
+                service_id 1
+                service_name "DabMux"
+                service_provider_name "ODR-DabMux"
+                payload_pid 1234
+                pmt_pid 256
+                service_type 5
+                output srt
+                output_host 192.168.105.2
+                output_port 5001
+                output_source_address 172.27.159.171
+                output_srt_passphrase testtesttest
+                output_ttl 64
+            }
+
+ 
     tcp "tcp://0.0.0.0:9200"
 
     edi {
@@ -107,22 +126,22 @@ components {
 ;                output_source_address 192.168.104.6
 ;                output_ttl 64
 ;            }
-            example_ts_srt {
-                protocol ts
-                ts_id 1
-                service_id 1
-                service_name "DabMux"
-                service_provider_name "ODR-DabMux"
-                payload_pid 1234
-                pmt_pid 256
-                service_type 5
-                output srt
-                output_host 192.168.105.2
-                output_port 5001
-                output_source_address 172.27.159.171
-                output_srt_passphrase testtesttest
-                output_ttl 64
-            }
+;            example_ts_srt {
+;                protocol ts
+;                ts_id 1
+;                service_id 1
+;                service_name "DabMux"
+;                service_provider_name "ODR-DabMux"
+;                payload_pid 1234
+;                pmt_pid 256
+;                service_type 5
+;                output srt
+;                output_host 192.168.105.2
+;                output_port 5001
+;                output_source_address 172.27.159.171
+;                output_srt_passphrase testtesttest
+;                output_ttl 64
+;            }
         }
     }
 

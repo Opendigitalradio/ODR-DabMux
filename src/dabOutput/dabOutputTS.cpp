@@ -1,26 +1,67 @@
+/*
+   Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the Queen in
+   Right of Canada (Communications Research Center Canada)
+
+   Copyright (C) 2018
+   Matthias P. Braendli, matthias.braendli@mpb.li
+   Andy Mace, andy.mace@mediauk.net
+
+    http://www.opendigitalradio.org
+
+   TS output
+   */
+/*
+   This file is part of ODR-DabMux.
+
+   ODR-DabMux is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the
+   License, or (at your option) any later version.
+
+   ODR-DabMux is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
+   */
+
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
 
-#if HAVE_OUTPUT_TS
-
-#include "edi_ts.h"
-#include "AFPacket.h"
-#include <thread>
-#include <vector>
-#include <cstdint>
+//#if HAVE_OUTPUT_TS
 #include <cstring>
-#include <iostream>
+#include <cstdio>
+#include <signal.h>
+#include <limits.h>
+#include "dabOutput.h"
+#include <unistd.h>
+#include <sys/time.h>
+#include <list>
 #include <vector>
-#include <algorithm>
-#include <iomanip>
+#include <atomic>
+#include <thread>
+#include "ThreadsafeQueue.h"
+#include <tsduck.h>
 
-class InputHandler : public ts::PluginEventHandlerInterface
+using namespace std;
+
+using vec_u8 = std::vector<uint8_t>;
+
+// In ETI one element would be an ETI frame of 6144 bytes.
+// 250 frames correspond to 6 seconds. This is mostly here
+// to ensure we do not accumulate data for faulty sockets, delay
+// management has to be done on the receiver end.
+const size_t MAX_QUEUED_ETI_FRAMES = 250;
+
+class ETIInputHandler : public ts::PluginEventHandlerInterface
 {
 public:
     // Constructors.
-    InputHandler() = delete;
-    InputHandler(ts::Report &report, PacketBuffer &buffer);
+    ETIInputHandler() = delete;
+    ETIInputHandler(ts::Report &report, PacketBuffer &buffer);
 
     // Event handling (from ts::PluginEventHandlerInterface).
     virtual void handlePluginEvent(const ts::PluginEventContext &context) override;
@@ -31,40 +72,50 @@ private:
 };
 
 // Constructor.
-InputHandler::InputHandler(ts::Report &report, PacketBuffer &buffer) : _report(report),
+ETIInputHandler::ETIInputHandler(ts::Report &report, PacketBuffer &buffer) : _report(report),
                                                                          _buffer(buffer)
 {
 }
 
 // This event handler is called each time the memory plugin needs input packets.
-void InputHandler::handlePluginEvent(const ts::PluginEventContext &context)
+void ETIInputHandler::handlePluginEvent(const ts::PluginEventContext &context)
 {
     ts::PluginEventData *data = dynamic_cast<ts::PluginEventData *>(context.pluginData());
     
     if (data != nullptr)
-    {
-        if (data->maxSize() >= ts::PKT_SIZE)
+    {   
+        int data_size = data->maxSize();
+
+        while (data_size >= static_cast<int>(ts::PKT_SIZE))
         {
             std::vector<uint8_t> _data = _buffer.pop();
+        
             if (!data->append(_data.data(), ts::PKT_SIZE))
             {
                 printf("******** PACKETS NOT ACCEPTED INTO MUX\n");
-            } 
+            }
+            data_size -= ts::PKT_SIZE; 
         }
     }
 }
 
-void edi_ts::Open(const std::string &test)
+std::string DabOutput::get_info() const
 {
-    std::thread ts_thread(&edi_ts::SetupMux, this);
-    ts_thread.detach();
+    return "TODO";
 }
 
-void edi_ts::SetupMux()
+int DabOutputTS::Open(const char* name)
+{
+    std::thread ts_thread(&DabOutputTS::SetupMux, this);
+    ts_thread.detach();
+    return 0;
+}
+
+void DabOutputTS::SetupMux()
 {
     ts::AsyncReport report(ts::Severity::Info);
 
-    InputHandler meminput(report, pbuffer);
+    ETIInputHandler meminput(report, pbuffer);
 
     // Create and start a background system monitor.
     ts::SystemMonitor monitor(report);
@@ -73,7 +124,7 @@ void edi_ts::SetupMux()
     // Build tsp options. Accept most default values, except a few ones.
     ts::TSProcessorArgs opt;
     opt.app_name = u"odr-dabmux"; // for error messages only.
-    opt.instuff_nullpkt = 50; //Stuff more packets into the input, we'll trim to get CBR later.
+    opt.instuff_nullpkt = 25; //Stuff more packets into the input, we'll trim to get CBR later.
     opt.instuff_inpkt = 2;
 
     opt.input = {u"memory", {}};
@@ -124,13 +175,22 @@ void edi_ts::SetupMux()
     tsproc.waitForTermination();
 }
 
-void edi_ts::send(const std::vector<uint8_t> &data)
+
+
+int DabOutputTS::Write(void* buffer, int size)
 {
     int offset = 12;
-    
     offset += 4;
 
-    for (size_t i = 0; i < data.size(); i += (ts::PKT_SIZE - offset))
+    vec_u8 data(6144);
+    uint8_t* buffer_u8 = (uint8_t*)buffer;
+
+    std::copy(buffer_u8, buffer_u8 + size, data.begin());
+
+    // Pad to 6144 bytes
+    std::fill(data.begin() + size, data.end(), 0x55);
+    
+    for (size_t i = 0; i < data.size(); i += (static_cast<int>(ts::PKT_SIZE) - offset))
     {
         ts::TSPacket p_ts;
         if (offset == 1)
@@ -153,7 +213,24 @@ void edi_ts::send(const std::vector<uint8_t> &data)
 
         std::vector<uint8_t> packet_data(sizeof(p_ts));
         std::memcpy(packet_data.data(), &p_ts, sizeof(p_ts));
+        
         pbuffer.push(packet_data);
     }
+
+    return size;
 }
-#endif
+
+
+int DabOutputTS::Close()
+{
+    return 0;
+}
+
+void DabOutputTS::setMetadata(std::shared_ptr<OutputMetadata> &md)
+{
+    if (m_allow_metadata) {
+        meta_.push_back(md);
+    }
+}
+
+//#endif

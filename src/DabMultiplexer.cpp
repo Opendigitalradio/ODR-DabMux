@@ -408,7 +408,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     // For EDI, save ETI(LI) Management data into a TAG Item DETI
     edi::TagDETI edi_tagDETI;
     edi::TagStarPTR edi_tagStarPtr("DETI");
-    map<DabSubchannel*, edi::TagESTn> edi_subchannelToTag;
+    vector<edi::TagESTn> edi_est_tags;
 
     // The above Tag Items will be assembled into a TAG Packet
     edi::TagPacket edi_tagpacket(edi_conf.tagpacket_alignment);
@@ -541,7 +541,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         tag_ESTn.mst_data = nullptr;
         assert(subchannel->getSizeByte() % 8 == 0);
 
-        edi_subchannelToTag[subchannel.get()] = tag_ESTn;
+        edi_est_tags.push_back(std::move(tag_ESTn));
         index += 4;
     }
 
@@ -619,8 +619,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      ******  Input Data Reading *******************************************
      **********************************************************************/
 
-    for (auto subchannel : ensemble->subchannels) {
-        edi::TagESTn& tag = edi_subchannelToTag[subchannel.get()];
+    for (size_t i = 0; i < ensemble->subchannels.size(); i++) {
+        auto& subchannel = ensemble->subchannels[i];
 
         int sizeSubchannel = subchannel->getSizeByte();
         // no need to check enableTist because we always increment the timestamp
@@ -634,7 +634,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
 
         // save pointer to Audio or Data Stream into correct TagESTn for EDI
-        tag.mst_data = &etiFrame[index];
+        edi_est_tags[i].mst_data = &etiFrame[index];
 
         index += sizeSubchannel;
     }
@@ -746,8 +746,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         edi_tagpacket.tag_items.push_back(&edi_tagStarPtr);
         edi_tagpacket.tag_items.push_back(&edi_tagDETI);
 
-        for (auto& tag : edi_subchannelToTag) {
-            edi_tagpacket.tag_items.push_back(&tag.second);
+        for (auto& tag : edi_est_tags) {
+            edi_tagpacket.tag_items.push_back(&tag);
         }
 
         edi_sender->write(edi_tagpacket);

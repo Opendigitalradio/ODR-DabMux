@@ -1,6 +1,13 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2023-05-09: Matthias P. Braendli <matthias@mpb.li>
+	(v4.4.0):
+		Ensure CIF count continuity on startup, and make CIF
+		count consistent with timestamp across restarts.
+		Ensure EDI output inserts ESTn tags in the order given
+		in the config file.
+
 2022-10-18: Matthias P. Braendli <matthias@mpb.li>
 	(v4.3.0):
 		Add "load_entire_file" configuration setting for file inputs.

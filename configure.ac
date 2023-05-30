@@ -93,6 +93,7 @@ AS_IF([test "x$have_curl" = "xno"],
              [AC_MSG_WARN([cURL not found, timestamps will not work])])
 
 AC_LANG_PUSH([C++])
+AX_CHECK_COMPILE_FLAG([-Wno-maybe-uninitialized], [CXXFLAGS="$CXXFLAGS -Wno-maybe-uninitialized"], [], ["-Werror"])
 AX_CHECK_COMPILE_FLAG([-Wduplicated-cond], [CXXFLAGS="$CXXFLAGS -Wduplicated-cond"], [], ["-Werror"])
 AX_CHECK_COMPILE_FLAG([-Wduplicated-branches], [CXXFLAGS="$CXXFLAGS -Wduplicated-branches"], [], ["-Werror"])
 AX_CHECK_COMPILE_FLAG([-Wlogical-op], [CXXFLAGS="$CXXFLAGS -Wlogical-op"], [], ["-Werror"])

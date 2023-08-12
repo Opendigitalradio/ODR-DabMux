@@ -1,6 +1,10 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2023-08-12: Matthias P. Braendli <matthias@mpb.li>
+	(v4.4.1):
+		Fix some compilation issues.
+
 2023-05-09: Matthias P. Braendli <matthias@mpb.li>
 	(v4.4.0):
 		Ensure CIF count continuity on startup, and make CIF

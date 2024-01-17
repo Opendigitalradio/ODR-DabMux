@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -33,6 +33,7 @@
  *  ClockTAI.cpp Log.cpp RemoteControl.cpp -lboost_system -o taitest && ./taitest
  */
 
+#include <iterator>
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
@@ -61,28 +62,47 @@
 
 using namespace std;
 
-#ifdef DOWNLOADED_IN_THE_PAST_TEST
-static bool wait_longer = true;
-#endif
-
 constexpr int refresh_retry_interval_hours = 1;
 
 // Offset between NTP time and POSIX time:
 // timestamp_unix = timestamp_ntp - NTP_UNIX_OFFSET
 constexpr int64_t NTP_UNIX_OFFSET = 2208988800L;
 
-constexpr int64_t MONTH = 3600 * 24 * 30;
-
-// leap seconds insertion bulletin is available from the IETF and in the TZ
-// distribution
-static array<const char*, 2> default_tai_urls = {
-    "https://www.ietf.org/timezones/data/leap-seconds.list",
+// leap seconds insertion bulletin was previously available from the IETF and in the TZ
+// distribution, but in late 2023 IETF stopped serving the file.
+static array<const char*, 1> default_tai_urls = {
     "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list",
 };
 
 // According to the Filesystem Hierarchy Standard, the data in
 // /var/tmp "must not be deleted when the system is booted."
 static const char *tai_cache_location = "/var/tmp/odr-leap-seconds.cache";
+
+static string join_string_with_pipe(const vector<string>& vec)
+{
+    stringstream ss;
+    for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
+        ss << *it;
+        if (it + 1 != vec.cend()) {
+            ss << "|";
+        }
+    }
+    return ss.str();
+}
+
+static vector<string> split_pipe_separated_string(const string& s)
+{
+    stringstream ss;
+    ss << s;
+
+    string elem;
+    vector<string> components;
+    while (getline(ss, elem, '|')) {
+        components.push_back(elem);
+    }
+    return components;
+}
+
 
 // read TAI offset from a valid bulletin in IETF format
 static int parse_ietf_bulletin(const std::string& bulletin)
@@ -146,20 +166,31 @@ static int parse_ietf_bulletin(const std::string& bulletin)
         throw runtime_error("No data in TAI bulletin");
     }
 
+    // With the current evolution of the offset, we're probably going
+    // to reach 500 long after DAB gets replaced by another standard.
+    // Or maybe leap seconds get abolished first...
+    if (tai_utc_offset < 0 or tai_utc_offset > 500) {
+        throw runtime_error("Unreasonable TAI-UTC offset calculated");
+    }
+
     return tai_utc_offset;
 }
 
+int64_t BulletinState::expires_in() const {
+    time_t now = time(nullptr);
+    return expires_at - now;
+}
 
-struct bulletin_state {
-    bool valid = false;
-    int64_t expiry = 0;
-    int offset = 0;
+bool BulletinState::usable() const {
+    return valid and expires_in() > 0;
+}
 
-    bool usable() const { return valid and expiry > 0; }
-    bool expires_soon() const { return usable() and expiry < 1 * MONTH; }
-};
+bool BulletinState::expires_soon() const {
+    constexpr int64_t MONTH = 3600 * 24 * 30;
+    return usable() and expires_in() < 1 * MONTH;
+}
 
-static bulletin_state parse_bulletin(const string& bulletin)
+BulletinState Bulletin::state() const
 {
     // The bulletin contains one line that specifies an expiration date
     // in NTP time. If that point in time is in the future, we consider
@@ -168,11 +199,22 @@ static bulletin_state parse_bulletin(const string& bulletin)
     // The entry looks like this:
     //#@	3707596800
 
-    bulletin_state ret;
+    BulletinState ret;
+
+    if (std::holds_alternative<Bulletin::OverrideData>(bulletin_or_override)) {
+        const auto& od = std::get<Bulletin::OverrideData>(bulletin_or_override);
+        ret.offset = od.offset;
+        ret.expires_at = od.expires_at;
+        ret.valid = true;
+#ifdef TAI_TEST
+        etiLog.level(debug) << "state() from Override!";
+#endif
+        return ret;
+    }
+
+    const auto& bulletin = std::get<string>(bulletin_or_override);
 
     std::regex regex_expiration(R"(#@\s+([0-9]+))");
-
-    time_t now = time(nullptr);
 
     stringstream ss(bulletin);
 
@@ -190,20 +232,29 @@ static bulletin_state parse_bulletin(const string& bulletin)
                 const int64_t expiry_unix = std::stoll(expiry_data_str) - NTP_UNIX_OFFSET;
 
 #ifdef TAI_TEST
-                etiLog.level(info) << "Bulletin expires in " << expiry_unix - now;
+                {
+                    // Do not use `now` for anything else but debugging, otherwise it
+                    // breaks the cache.
+                    time_t now = time(nullptr);
+                    etiLog.level(debug) << "Bulletin " <<
+                        get_source() << " expires in " << expiry_unix - now;
+                }
 #endif
-                ret.expiry = expiry_unix - now;
+                ret.expires_at = expiry_unix;
                 ret.offset = parse_ietf_bulletin(bulletin);
                 ret.valid = true;
             }
             catch (const invalid_argument& e) {
-                etiLog.level(warn) << "Could not parse bulletin: " << e.what();
+                etiLog.level(warn) << "Could not parse bulletin from " <<
+                    get_source() << ": " << e.what();
             }
             catch (const out_of_range&) {
-                etiLog.level(warn) << "Parse bulletin: conversion is out of range";
+                etiLog.level(warn) << "Parse bulletin from " <<
+                    get_source() << ": conversion is out of range";
             }
             catch (const runtime_error& e) {
-                etiLog.level(warn) << "Parse bulletin: " << e.what();
+                etiLog.level(warn) << "Parse bulletin from " <<
+                    get_source() << ": " << e.what();
             }
             break;
         }
@@ -224,9 +275,9 @@ static size_t fill_bulletin(char *ptr, size_t size, size_t nmemb, void *ctx)
     return len;
 }
 
-static string download_tai_utc_bulletin(const char* url)
+Bulletin Bulletin::download_from_url(const char* url)
 {
-    stringstream bulletin;
+    stringstream bulletin_data;
 
 #ifdef HAVE_CURL
     CURL *curl;
@@ -238,7 +289,7 @@ static string download_tai_utc_bulletin(const char* url)
         /* Tell libcurl to follow redirection */
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fill_bulletin);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &bulletin);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &bulletin_data);
 
         res = curl_easy_perform(curl);
         /* always cleanup ! */
@@ -249,19 +300,39 @@ static string download_tai_utc_bulletin(const char* url)
                     string(curl_easy_strerror(res)));
         }
     }
-    return bulletin.str();
+    Bulletin bulletin;
+    bulletin.source = url;
+    bulletin.bulletin_or_override = bulletin_data.str();
+    return bulletin;
 #else
     throw runtime_error("Cannot download TAI Clock information without cURL");
 #endif // HAVE_CURL
 }
 
-static string load_bulletin_from_file(const char* cache_filename)
+Bulletin Bulletin::create_with_fixed_offset(int offset)
 {
+    Bulletin bulletin;
+    bulletin.source = "manual override";
+
+    OverrideData od;
+    od.offset = offset;
+    time_t now = time(nullptr);
+    // 10 years is probably equivalent to infinity in this case...
+    od.expires_at = now + 10L * 365 * 24 * 3600;
+    bulletin.bulletin_or_override = od;
+    return bulletin;
+}
+
+Bulletin Bulletin::load_from_file(const char* cache_filename)
+{
+    Bulletin bulletin;
+    bulletin.source = cache_filename;
+
     int fd = open(cache_filename, O_RDWR); // lockf requires O_RDWR
     if (fd == -1) {
         etiLog.level(error) << "TAI-UTC bulletin open cache for reading: " <<
             strerror(errno);
-        return "";
+        return bulletin;
     }
 
     lseek(fd, 0, SEEK_SET);
@@ -280,7 +351,7 @@ static string load_bulletin_from_file(const char* cache_filename)
                 close(fd);
                 etiLog.level(error) << "TAI-UTC bulletin read cache: " <<
                         strerror(errno);
-                return "";
+                return bulletin;
             }
 
             copy(buf.data(), buf.data() + ret, back_inserter(new_bulletin_data));
@@ -288,7 +359,7 @@ static string load_bulletin_from_file(const char* cache_filename)
 
         close(fd);
 
-        return string{new_bulletin_data.data(), new_bulletin_data.size()};
+        bulletin.bulletin_or_override = string{new_bulletin_data.data(), new_bulletin_data.size()};
     }
     else {
         etiLog.level(error) <<
@@ -296,13 +367,25 @@ static string load_bulletin_from_file(const char* cache_filename)
             strerror(errno);
         close(fd);
     }
-    return "";
+    return bulletin;
+}
+
+void Bulletin::clear_expiry_if_overridden()
+{
+    if (std::holds_alternative<Bulletin::OverrideData>(bulletin_or_override)) {
+        auto& od = std::get<Bulletin::OverrideData>(bulletin_or_override);
+        time_t now = time(nullptr);
+        od.expires_at = now;
+    }
 }
 
 ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) :
     RemoteControllable("clocktai")
 {
+    RC_ADD_PARAMETER(tai_utc_offset, "TAI-UTC offset");
     RC_ADD_PARAMETER(expiry, "Number of seconds until TAI Bulletin expires");
+    RC_ADD_PARAMETER(expires_at, "UNIX timestamp when TAI Bulletin expires");
+    RC_ADD_PARAMETER(url, "URLs used to fetch the bulletin, separated by pipes");
 
     if (bulletin_urls.empty()) {
         etiLog.level(debug) << "Initialising default TAI Bulletin URLs";
@@ -315,138 +398,119 @@ ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) :
         m_bulletin_urls = bulletin_urls;
     }
 
-    for (const auto& url : m_bulletin_urls) {
-        etiLog.level(info) << "TAI Bulletin URL: '" << url << "'";
-    }
+    etiLog.level(debug) << "ClockTAI uses bulletin URL: '" << join_string_with_pipe(m_bulletin_urls) << "'";
 }
 
-int ClockTAI::get_valid_offset()
+BulletinState ClockTAI::get_valid_offset()
 {
-    int offset = 0;
-    bool offset_valid = false;
-    bool refresh_m_bulletin = false;
-
     std::unique_lock<std::mutex> lock(m_data_mutex);
 
-    const auto state = parse_bulletin(m_bulletin);
+    const auto state = m_bulletin.state();
+#if TAI_TEST
+    etiLog.level(info) << "TAI get_valid_offset STEP 1 ";
+    etiLog.level(info) << " " << m_bulletin.get_source() << " " <<
+        state.valid << " " << state.usable() << " " << state.expires_in();
+#endif
     if (state.usable()) {
-#if TAI_TEST
-        etiLog.level(info) << "Bulletin already valid";
-#endif
-        offset = state.offset;
-        offset_valid = true;
-
-        refresh_m_bulletin = state.expires_soon();
-    }
-    else {
-        refresh_m_bulletin = true;
+        return state;
     }
 
-    if (refresh_m_bulletin) {
-        const auto cache_bulletin = load_bulletin_from_file(tai_cache_location);
 #if TAI_TEST
-        etiLog.level(info) << "Loaded cache bulletin with " <<
-            std::count_if(cache_bulletin.cbegin(), cache_bulletin.cend(),
-                    [](const char c){ return c == '\n'; }) << " lines";
+    etiLog.level(info) << "TAI get_valid_offset STEP 2";
 #endif
-        const auto cache_state = parse_bulletin(cache_bulletin);
-
-        if (cache_state.usable() and not cache_state.expires_soon()) {
-            m_bulletin = cache_bulletin;
-            offset = cache_state.offset;
-            offset_valid = true;
+    const auto cache_bulletin = Bulletin::load_from_file(tai_cache_location);
+    const auto cache_state = cache_bulletin.state();
+    if (cache_state.usable()) {
+        m_bulletin = cache_bulletin;
 #if TAI_TEST
-            etiLog.level(info) << "Bulletin from cache valid with offset=" << offset;
+        etiLog.level(info) << "TAI get_valid_offset STEP 2 take cache";
 #endif
-        }
-        else {
-            for (const auto& url : m_bulletin_urls) {
-                try {
+        return cache_state;
+    }
+
 #if TAI_TEST
-                    etiLog.level(info) << "Load bulletin from " << url;
+    etiLog.level(info) << "TAI get_valid_offset STEP 3";
 #endif
-                    const auto new_bulletin = download_tai_utc_bulletin(url.c_str());
-                    const auto new_state = parse_bulletin(new_bulletin);
-                    if (new_state.usable()) {
-                        m_bulletin = new_bulletin;
-                        offset = new_state.offset;
-                        offset_valid = true;
 
-                        etiLog.level(debug) << "Loaded valid TAI Bulletin from " <<
-                            url << " giving offset=" << offset;
-                    }
-                    else {
-                        etiLog.level(debug) << "Skipping invalid TAI bulletin from "
-                            << url;
-                    }
-                }
-                catch (const runtime_error& e) {
-                    etiLog.level(warn) <<
-                        "TAI-UTC offset could not be retrieved from " <<
-                        url << " : " << e.what();
-                }
+    vector<Bulletin> bulletins({m_bulletin, cache_bulletin});
 
-                if (offset_valid) {
-                    update_cache(tai_cache_location);
-                    break;
-                }
+    for (const auto& url : m_bulletin_urls) {
+        try {
+#if TAI_TEST
+            etiLog.level(info) << "Load bulletin from " << url;
+#endif
+            const auto new_bulletin = Bulletin::download_from_url(url.c_str());
+            bulletins.push_back(new_bulletin);
+
+            const auto new_state = new_bulletin.state();
+            if (new_state.usable()) {
+                m_bulletin = new_bulletin;
+                new_bulletin.store_to_cache(tai_cache_location);
+
+                etiLog.level(debug) << "Loaded valid TAI Bulletin from " <<
+                    url << " giving offset=" << new_state.offset;
+                return new_state;
+            }
+            else {
+                etiLog.level(debug) << "Skipping invalid TAI bulletin from "
+                    << url;
             }
         }
-    }
-
-    if (offset_valid) {
-        // With the current evolution of the offset, we're probably going
-        // to reach 500 long after DAB gets replaced by another standard.
-        if (offset < 0 or offset > 500) {
-            stringstream ss;
-            ss << "TAI offset " << offset << " out of range";
-            throw range_error(ss.str());
+        catch (const runtime_error& e) {
+            etiLog.level(warn) <<
+                "TAI-UTC offset could not be retrieved from " <<
+                url << " : " << e.what();
         }
+    }
 
-        return offset;
+#if TAI_TEST
+    etiLog.level(info) << "TAI get_valid_offset STEP 4";
+#endif
+
+    // Maybe we have a valid but expired bulletin available.
+    // Place bulletins with largest expiry first
+    std::sort(bulletins.begin(), bulletins.end(),
+            [](const Bulletin& a, const Bulletin& b) {
+            return a.state().expires_at > b.state().expires_at; });
+
+    for (const auto& bulletin : bulletins) {
+        const auto& state = bulletin.state();
+        if (state.valid) {
+            etiLog.level(warn) << "Taking TAI-UTC offset from expired bulletin from " <<
+                bulletin.get_source() << " : " << state.offset << "s expired " <<
+                state.expires_in() << "s ago";
+            m_bulletin = bulletin;
+            return state;
+        }
     }
-    else {
-        // Try again later
-        throw download_failed();
-    }
+
+    throw download_failed();
 }
 
 
 int ClockTAI::get_offset()
 {
     using namespace std::chrono;
-    const auto time_now = system_clock::now();
+    const auto time_now = steady_clock::now();
 
     std::unique_lock<std::mutex> lock(m_data_mutex);
 
-    if (not m_offset_valid) {
-#ifdef DOWNLOADED_IN_THE_PAST_TEST
-        // Assume we've downloaded it in the past:
-
-        m_offset = 37; // Valid in early 2017
-        m_offset_valid = true;
-
-        // Simulate requiring a new download
-        m_bulletin_refresh_time = time_now - hours(24 * 40);
-#else
+    if (not m_state.has_value()) {
         // First time we run we must block until we know
         // the offset
         lock.unlock();
         try {
-            m_offset = get_valid_offset();
+            m_state = get_valid_offset();
         }
         catch (const download_failed&) {
             throw runtime_error("Unable to download TAI bulletin");
         }
         lock.lock();
-        m_offset_valid = true;
-        m_bulletin_refresh_time = time_now;
-#endif
-        etiLog.level(info) <<
-            "Initialised TAI-UTC offset to " << m_offset << "s.";
+        m_state_last_updated = time_now;
+        etiLog.level(info) << "Initialised TAI-UTC offset to " << m_state->offset << "s.";
     }
 
-    if (m_bulletin_refresh_time + hours(1) < time_now) {
+    if (m_state_last_updated + hours(1) < time_now) {
         // Once per hour, parse the bulletin again, and
         // if necessary trigger a download.
         // Leap seconds are announced several months in advance
@@ -457,23 +521,23 @@ int ClockTAI::get_offset()
             switch (state) {
                 case future_status::ready:
                     try {
-                        m_offset = m_offset_future.get();
-                        m_offset_valid = true;
-                        m_bulletin_refresh_time = time_now;
+                        m_state = m_offset_future.get();
+                        m_state_last_updated = time_now;
 
                         etiLog.level(info) <<
-                            "Updated TAI-UTC offset to " << m_offset << "s.";
+                            "Updated TAI-UTC offset to " << m_state->offset << "s.";
                     }
                     catch (const download_failed&) {
                         etiLog.level(warn) <<
                             "TAI-UTC download failed, will retry in " <<
                             refresh_retry_interval_hours << " hour(s)";
 
-                        m_bulletin_refresh_time += hours(refresh_retry_interval_hours);
-                    }
-#ifdef DOWNLOADED_IN_THE_PAST_TEST
-                    wait_longer = false;
+#if TAI_TEST
+                        m_state_last_updated += seconds(11);
+#else
+                        m_state_last_updated += hours(refresh_retry_interval_hours);
 #endif
+                    }
                     break;
 
                 case future_status::deferred:
@@ -493,7 +557,10 @@ int ClockTAI::get_offset()
         }
     }
 
-    return m_offset;
+    if (m_state) {
+        return m_state->offset;
+    }
+    throw std::logic_error("ClockTAI: No valid m_state at end of get_offset()");
 }
 
 #if SUPPORT_SETTING_CLOCK_TAI
@@ -514,8 +581,13 @@ int ClockTAI::update_local_tai_clock(int offset)
 }
 #endif
 
-void ClockTAI::update_cache(const char* cache_filename)
+void Bulletin::store_to_cache(const char* cache_filename) const
 {
+    if (not std::holds_alternative<string>(bulletin_or_override)) {
+        etiLog.level(error) << "ClockTAI: Cannot store an artificial bulletin to cache!";
+    }
+    const auto& bulletin = std::get<string>(bulletin_or_override);
+
     int fd = open(cache_filename, O_RDWR | O_CREAT, 00664);
     if (fd == -1) {
         etiLog.level(error) <<
@@ -529,8 +601,8 @@ void ClockTAI::update_cache(const char* cache_filename)
     ssize_t ret = lockf(fd, F_LOCK, 0);
     if (ret == 0) {
         // exclusive lock acquired
-        const char *data = m_bulletin.data();
-        size_t remaining = m_bulletin.size();
+        const char *data = bulletin.data();
+        size_t remaining = bulletin.size();
 
         while (remaining > 0) {
             ret = write(fd, data, remaining);
@@ -557,12 +629,34 @@ void ClockTAI::update_cache(const char* cache_filename)
     }
 }
 
-
 void ClockTAI::set_parameter(const string& parameter, const string& value)
 {
-    if (parameter == "expiry") {
+    if (parameter == "expiry" or parameter == "expires_at") {
         throw ParameterError("Parameter '" + parameter +
             "' is read-only in controllable " + get_rc_name());
+    }
+    else if (parameter == "tai_utc_offset") {
+        const auto offset = std::stoi(value);
+        auto b = Bulletin::create_with_fixed_offset(offset);
+
+        etiLog.level(warn) << "ClockTAI: manually overriding UTC-TAI offset to " << offset;
+
+        std::unique_lock<std::mutex> lock(m_data_mutex);
+        m_bulletin = b;
+        m_state = b.state();
+        m_state_last_updated = chrono::steady_clock::now();
+    }
+    else if (parameter == "url") {
+        {
+            std::unique_lock<std::mutex> lock(m_data_mutex);
+            m_bulletin_urls = split_pipe_separated_string(value);
+            m_state_last_updated = chrono::steady_clock::time_point::min();
+
+            // Setting URL expires the bulletin, if it was manually overridden,
+            // so that the selection logic doesn't prefer it
+            m_bulletin.clear_expiry_if_overridden();
+        }
+        etiLog.level(info) << "ClockTAI: triggering a reload from URLs...";
     }
     else {
         throw ParameterError("Parameter '" + parameter +
@@ -574,18 +668,56 @@ const string ClockTAI::get_parameter(const string& parameter) const
 {
     if (parameter == "expiry") {
         std::unique_lock<std::mutex> lock(m_data_mutex);
-        const int64_t expiry = parse_bulletin(m_bulletin).expiry;
-        if (expiry > 0) {
-            return to_string(expiry);
+        return to_string(m_bulletin.state().expires_in());
+    }
+    else if (parameter == "expires_at") {
+        std::unique_lock<std::mutex> lock(m_data_mutex);
+        return to_string(m_bulletin.state().expires_at);
+    }
+    else if (parameter == "tai_utc_offset") {
+        std::unique_lock<std::mutex> lock(m_data_mutex);
+        if (m_state) {
+            return to_string(m_state->offset);
         }
-        else {
-            return "Bulletin expired or invalid!";
-        }
+        throw ParameterError("Parameter '" + parameter +
+                "' has no current value" + get_rc_name());
+    }
+    else if (parameter == "url") {
+        return join_string_with_pipe(m_bulletin_urls);;
     }
     else {
         throw ParameterError("Parameter '" + parameter +
             "' is not exported by controllable " + get_rc_name());
     }
+}
+
+const json::map_t ClockTAI::get_all_values() const
+{
+    json::map_t stat;
+    std::unique_lock<std::mutex> lock(m_data_mutex);
+
+    const auto& state = m_bulletin.state();
+
+#if CLOCK_TAI
+    etiLog.level(debug) << "CALC FROM m_bulletin: " << state.valid << " " <<
+        state.offset << " " << state.expires_at << " -> " << state.expires_in();
+    etiLog.level(debug) << "CACHED IN m_state:    " << m_state->valid << " " <<
+        m_state->offset << " " << m_state->expires_at << " -> " << m_state->expires_in();
+#endif
+
+    stat["tai_utc_offset"].v = state.offset;
+
+    stat["expiry"].v = state.expires_in(); // Might be negative when expired or 0 when invalid
+    if (state.valid) {
+        stat["expires_at"].v = state.expires_at;
+    }
+    else {
+        stat["expires_at"].v = nullopt;
+    }
+
+    stat["url"].v = join_string_with_pipe(m_bulletin_urls);
+
+    return stat;
 }
 
 #if 0

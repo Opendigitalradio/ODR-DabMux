@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -178,6 +178,34 @@ const string AnnouncementCluster::get_parameter(const string& parameter) const
         throw ParameterError(ss.str());
     }
     return ss.str();
+}
+
+const json::map_t AnnouncementCluster::get_all_values() const
+{
+    json::map_t map;
+
+    lock_guard<mutex> lock(m_active_mutex);
+    map["active"].v = m_active;
+
+    using namespace std::chrono;
+
+    if (m_deferred_start_time) {
+        const auto diff = *m_deferred_start_time - steady_clock::now();
+        map["start_in"].v = duration_cast<milliseconds>(diff).count();
+    }
+    else {
+        map["start_in"].v = nullopt;
+    }
+
+    if (m_deferred_stop_time) {
+        const auto diff = *m_deferred_stop_time - steady_clock::now();
+        map["stop_in"].v = duration_cast<milliseconds>(diff).count();
+    }
+    else {
+        map["stop_in"].v = nullopt;
+    }
+
+    return map;
 }
 
 
@@ -512,6 +540,16 @@ const string DabComponent::get_parameter(const string& parameter) const
 
 }
 
+const json::map_t DabComponent::get_all_values() const
+{
+    json::map_t map;
+    // It's cleaner to have it separate in JSON, but we
+    // need the comma separated variant for setting
+    map["label"].v = label.long_label();
+    map["shortlabel"].v = label.short_label();
+    return map;
+}
+
 subchannel_type_t DabService::getType(
         const std::shared_ptr<dabEnsemble> ensemble) const
 {
@@ -638,6 +676,16 @@ const string DabService::get_parameter(const string& parameter) const
     return ss.str();
 }
 
+const json::map_t DabService::get_all_values() const
+{
+    json::map_t map;
+    map["label"].v = label.long_label();
+    map["shortlabel"].v = label.short_label();
+    map["pty"].v = (int)pty_settings.pty;
+    map["ptysd"].v = (pty_settings.dynamic_no_static ? "dynamic" : "static");
+    return map;
+}
+
 void dabEnsemble::set_parameter(const string& parameter, const string& value)
 {
     if (parameter == "localtimeoffset") {
@@ -685,6 +733,14 @@ const string dabEnsemble::get_parameter(const string& parameter) const
         throw ParameterError(ss.str());
     }
     return ss.str();
+}
+
+const json::map_t dabEnsemble::get_all_values() const
+{
+    json::map_t map;
+    map["localtimeoffset_auto"].v = lto_auto;
+    map["localtimeoffset"].v = lto;
+    return map;
 }
 
 bool dabEnsemble::validate_linkage_sets()

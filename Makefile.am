@@ -1,7 +1,7 @@
 # Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
 #
-# Copyright (C) 2018 Matthias P. Braendli
+# Copyright (C) 2024 Matthias P. Braendli
 # http://opendigitalradio.org
 
 # This file is part of ODR-DabMux.
@@ -49,6 +49,9 @@ lib_charset_sources = lib/charset/charset.cpp \
 					  lib/charset/utf8/checked.h \
 					  lib/charset/utf8/core.h \
 					  lib/charset/utf8/unchecked.h \
+					  lib/charset/utf8/cpp11.h \
+					  lib/charset/utf8/cpp17.h \
+					  lib/charset/utf8/cpp20.h \
 					  lib/charset/utf8.h
 
 odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS)
@@ -150,6 +153,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/Log.cpp \
 					 lib/RemoteControl.cpp \
 					 lib/RemoteControl.h \
+					 lib/Json.h \
+					 lib/Json.cpp \
 					 lib/edi/STIDecoder.cpp \
 					 lib/edi/STIDecoder.hpp \
 					 lib/edi/STIWriter.cpp \
@@ -191,13 +196,15 @@ odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 						   lib/Log.cpp \
 						   lib/RemoteControl.cpp \
 						   lib/RemoteControl.h \
+						   lib/Json.h \
+						   lib/Json.cpp \
 						   lib/Socket.h \
 						   lib/Socket.cpp \
 						   lib/zmq.hpp
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2farsync_CXXFLAGS = -Wall $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
 odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   src/zmq2edi/EDISender.h \
@@ -221,6 +228,8 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 					   lib/Log.cpp \
 					   lib/RemoteControl.cpp \
 					   lib/RemoteControl.h \
+					   lib/Json.h \
+					   lib/Json.cpp \
 					   lib/crc.h \
 					   lib/crc.c \
 					   lib/ReedSolomon.h \
@@ -233,7 +242,7 @@ odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
 
 odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
 odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2edi_CXXFLAGS = -Wall $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
 man_MANS = 	man/odr-dabmux.1 \
 		man/odr-zmq2edi.1

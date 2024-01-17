@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2022
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -163,6 +163,8 @@ class AnnouncementCluster : public RemoteControllable {
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 };
 
 struct dabOutput {
@@ -309,6 +311,8 @@ class dabEnsemble : public RemoteControllable {
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 
         /* Check if the Linkage Sets are valid */
         bool validate_linkage_sets(void);
@@ -483,6 +487,8 @@ class DabComponent : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 };
 
 class DabService : public RemoteControllable
@@ -536,6 +542,8 @@ class DabService : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 };
 
 /* Represent an entry for FIG0/24 */

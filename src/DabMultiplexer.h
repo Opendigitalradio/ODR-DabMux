@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -75,6 +75,8 @@ class DabMultiplexer : public RemoteControllable {
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 
     private:
         void prepare_subchannels(void);

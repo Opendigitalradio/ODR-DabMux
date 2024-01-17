@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -42,11 +42,48 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <optional>
+#include <variant>
 #include "RemoteControl.h"
 
 // EDI needs to know UTC-TAI, but doesn't need the CLOCK_TAI to be set.
 // We can keep this code, maybe for future use
 #define SUPPORT_SETTING_CLOCK_TAI 0
+
+struct BulletinState {
+    bool valid = false;
+    int64_t expires_at = 0;
+    int offset = 0;
+
+    int64_t expires_in() const;
+    bool usable() const;
+    bool expires_soon() const;
+};
+
+class Bulletin {
+    public:
+        static Bulletin download_from_url(const char *url);
+        static Bulletin create_with_fixed_offset(int offset);
+        static Bulletin load_from_file(const char *cache_filename);
+
+        void clear_expiry_if_overridden();
+
+        void store_to_cache(const char* cache_filename) const;
+
+        std::string get_source() const { return source; }
+        BulletinState state() const;
+    private:
+        // URL or file path from which the bulletin has been/will be loaded
+        std::string source;
+
+        struct OverrideData {
+            int offset = 0;
+            int expires_at = 0;
+        };
+        // string: A cache of the bulletin, or empty string if not loaded
+        // int: A manually overridden offset
+        std::variant<std::string, OverrideData> bulletin_or_override;
+};
 
 /* Loads, parses and represents TAI-UTC offset information from the IETF bulletin */
 class ClockTAI : public RemoteControllable {
@@ -71,33 +108,31 @@ class ClockTAI : public RemoteControllable {
         // download it, and calculate the TAI-UTC offset.
         // Returns the offset or throws download_failed or a range_error
         // if the offset is out of bounds.
-        int get_valid_offset(void);
+        BulletinState get_valid_offset(void);
 
         // Download of new bulletin is done asynchronously
-        std::future<int> m_offset_future;
+        std::future<BulletinState> m_offset_future;
 
         // Protect all data members, as RC functions are in another thread
         mutable std::mutex m_data_mutex;
 
-        // The currently used TAI-UTC offset, extracted from m_bulletin and cached here
-        // to avoid having to parse the bulletin all the time
-        int m_offset = 0;
-        int m_offset_valid = false;
-
         std::vector<std::string> m_bulletin_urls;
 
-        std::string m_bulletin;
-        std::chrono::system_clock::time_point m_bulletin_refresh_time;
+        Bulletin m_bulletin;
 
-        // Update the cache file with the current m_bulletin
-        void update_cache(const char* cache_filename);
+        // The currently used TAI-UTC offset, extracted the bulletin and cached
+        // here to avoid having to parse the bulletin all the time
+        std::optional<BulletinState> m_state;
+        std::chrono::steady_clock::time_point m_state_last_updated;
 
-
+    public:
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
                const std::string& value);
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 };
 

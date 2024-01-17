@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -470,7 +470,7 @@ const std::string Edi::get_parameter(const std::string& parameter) const
                 ss << "prebuffering";
                 break;
             case Inputs::BufferManagement::Timestamped:
-                ss << "Timestamped";
+                ss << "timestamped";
                 break;
         }
     }
@@ -481,6 +481,23 @@ const std::string Edi::get_parameter(const std::string& parameter) const
         throw ParameterError("Parameter '" + parameter + "' is not exported by controllable " + get_rc_name());
     }
     return ss.str();
+}
+
+const json::map_t Edi::get_all_values() const
+{
+    json::map_t map;
+    map["buffer"].v = m_max_frames_overrun;
+    map["prebuffering"].v = m_num_frames_prebuffering;
+    switch (getBufferManagement()) {
+        case Inputs::BufferManagement::Prebuffering:
+            map["buffermanagement"].v = "prebuffering";
+            break;
+        case Inputs::BufferManagement::Timestamped:
+            map["buffermanagement"].v = "timestamped";
+            break;
+    }
+    map["tistdelay"].v = m_tist_delay.count();
+    return map;
 }
 
 }

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -818,5 +818,13 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
     }
     return ss.str();
 
+}
+
+const json::map_t DabMultiplexer::get_all_values() const
+{
+    json::map_t map;
+    map["frames"].v = m_currentFrame;
+    map["tist_offset"].v = m_tist_offset;
+    return map;
 }
 

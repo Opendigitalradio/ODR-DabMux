@@ -1,2 +1,2 @@
 This UTF-8 to EBU charset (defined in ETSI TS 101 756v1.8.1) was copied from
-ODR-PadEnc.
+ODR-PadEnc, with utf8 library v4.0.5 from https://github.com/nemtrif/utfcpp/tree/master/source/utf8

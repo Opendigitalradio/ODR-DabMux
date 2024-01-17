@@ -86,7 +86,7 @@ bool AnnouncementCluster::is_active()
         if (*m_deferred_start_time <= now) {
             m_active = true;
 
-            m_deferred_start_time = boost::none;
+            m_deferred_start_time.reset();
         }
     }
 
@@ -96,7 +96,7 @@ bool AnnouncementCluster::is_active()
         if (*m_deferred_stop_time <= now) {
             m_active = false;
 
-            m_deferred_stop_time = boost::none;
+            m_deferred_stop_time.reset();
         }
     }
 

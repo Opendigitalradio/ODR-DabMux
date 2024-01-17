@@ -37,7 +37,7 @@
 #include <exception>
 #include <algorithm>
 #include <chrono>
-#include <boost/optional.hpp>
+#include <optional>
 #include <stdint.h>
 #include "dabOutput/dabOutput.h"
 #include "input/inputs.h"
@@ -150,10 +150,10 @@ class AnnouncementCluster : public RemoteControllable {
     private:
         mutable std::mutex m_active_mutex;
         bool m_active = false;
-        boost::optional<
+        std::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_start_time;
-        boost::optional<
+        std::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_stop_time;
 

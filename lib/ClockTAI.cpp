@@ -698,7 +698,7 @@ const json::map_t ClockTAI::get_all_values() const
 
     const auto& state = m_bulletin.state();
 
-#if CLOCK_TAI
+#if TAI_TEST
     etiLog.level(debug) << "CALC FROM m_bulletin: " << state.valid << " " <<
         state.offset << " " << state.expires_at << " -> " << state.expires_in();
     etiLog.level(debug) << "CACHED IN m_state:    " << m_state->valid << " " <<

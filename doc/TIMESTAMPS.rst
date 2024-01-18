@@ -13,7 +13,6 @@ The following table tries to summarise the differences.
 | Later than v2.3.1           | t_frame = t_tx = t_mux + tist_offset         | negative, meaning delay before t_tx | Something larger than mod processing time     |
 +-----------------------------+----------------------------------------------+-------------------------------------+-----------------------------------------------+
 
-For historical reasons, ODR-DabMod decodes absolute timestamp from MNSC, not from “EDI seconds”.
 The edilib tool decodes both EDI timestamp and MNSC, and can be used to verify both are identical.
 
 Issues in ODR-DabMux v2.3.1

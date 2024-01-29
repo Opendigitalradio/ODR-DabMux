@@ -207,8 +207,8 @@ odr_zmq2farsync_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_
 odr_zmq2farsync_CXXFLAGS = -Wall $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
 odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
-					   src/zmq2edi/EDISender.h \
-					   src/zmq2edi/EDISender.cpp \
+					   src/zmq2edi/Sender.h \
+					   src/zmq2edi/Sender.cpp \
 					   src/dabOutput/dabOutput.h \
 					   src/dabOutput/metadata.h \
 					   src/dabOutput/metadata.cpp \

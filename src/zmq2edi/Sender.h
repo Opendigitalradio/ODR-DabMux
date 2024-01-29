@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -46,18 +46,27 @@ struct metadata_t {
 };
 
 struct frame_t {
+    // Since a zmq message actually contains 4 frames, the
+    // original_zmq_msg is only non-empty for the first of the
+    // four calls to Sender::send_edi_frame().
+    zmq::message_t original_zmq_message;
     std::vector<uint8_t> data;
     metadata_t metadata;
     std::chrono::steady_clock::time_point received_at;
 };
 
-class EDISender {
+struct zmq_send_config_t {
+    std::vector<std::string> urls;
+};
+
+class Sender {
     public:
-        EDISender() = default;
-        EDISender(const EDISender& other) = delete;
-        EDISender& operator=(const EDISender& other) = delete;
-        ~EDISender();
+        Sender();
+        Sender(const Sender& other) = delete;
+        Sender& operator=(const Sender& other) = delete;
+        ~Sender();
         void start(const edi::configuration_t& conf,
+                const zmq_send_config_t& zmq_conf,
                 int delay_ms, bool drop_late_packets);
         void push_frame(frame_t&& frame);
         void print_configuration(void);
@@ -75,11 +84,15 @@ class EDISender {
 
         std::shared_ptr<edi::Sender> edi_sender;
 
+        zmq::context_t zmq_ctx;
+        std::vector<zmq::socket_t> zmq_sockets;
+
         struct buffering_stat_t {
             // Time between when we received the packets and when we transmit packets, in microseconds
             double buffering_time_us = 0.0;
             bool late = false;
         };
         std::vector<buffering_stat_t> buffering_stats;
+        size_t num_zmq_send_errors = 0;
 
 };

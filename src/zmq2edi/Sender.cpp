@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -25,7 +25,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "EDISender.h"
+#include "Sender.h"
 #include "Log.h"
 #include <cmath>
 #include <numeric>
@@ -35,20 +35,27 @@
 
 using namespace std;
 
-EDISender::~EDISender()
+Sender::Sender() :
+    zmq_ctx(2)
+{
+}
+
+Sender::~Sender()
 {
     if (running.load()) {
         running.store(false);
 
         // Unblock thread
         frame_t emptyframe;
-        frames.push(emptyframe);
+        frames.push(std::move(emptyframe));
 
         process_thread.join();
     }
 }
 
-void EDISender::start(const edi::configuration_t& conf, int delay_ms, bool drop_late_packets)
+void Sender::start(const edi::configuration_t& conf,
+        const zmq_send_config_t& zmq_conf,
+        int delay_ms, bool drop_late_packets)
 {
     edi_conf = conf;
     tist_delay_ms = delay_ms;
@@ -56,16 +63,22 @@ void EDISender::start(const edi::configuration_t& conf, int delay_ms, bool drop_
 
     edi_sender = make_shared<edi::Sender>(edi_conf);
 
+    for (const auto& url : zmq_conf.urls) {
+        zmq::socket_t zmq_sock(zmq_ctx, ZMQ_PUB);
+        zmq_sock.bind(url.c_str());
+        zmq_sockets.emplace_back(std::move(zmq_sock));
+    }
+
     running.store(true);
-    process_thread = thread(&EDISender::process, this);
+    process_thread = thread(&Sender::process, this);
 }
 
-void EDISender::push_frame(frame_t&& frame)
+void Sender::push_frame(frame_t&& frame)
 {
-    frames.push(move(frame));
+    frames.push(std::move(frame));
 }
 
-void EDISender::print_configuration()
+void Sender::print_configuration()
 {
     if (edi_conf.enabled()) {
         edi_conf.print();
@@ -75,7 +88,7 @@ void EDISender::print_configuration()
     }
 }
 
-void EDISender::send_eti_frame(frame_t& frame)
+void Sender::send_eti_frame(frame_t& frame)
 {
     uint8_t *p = frame.data.data();
 
@@ -221,9 +234,18 @@ void EDISender::send_eti_frame(frame_t& frame)
 
         edi_sender->write(edi_tagpacket);
     }
+
+    if (not frame.original_zmq_message.empty()) {
+        for (auto& sock : zmq_sockets) {
+            const auto send_result = sock.send(frame.original_zmq_message, zmq::send_flags::dontwait);
+            if (not send_result.has_value()) {
+                num_zmq_send_errors++;
+            }
+        }
+    }
 }
 
-void EDISender::process()
+void Sender::process()
 {
     while (running.load()) {
         frame_t frame;
@@ -289,7 +311,8 @@ void EDISender::process()
                 " stdev: " << stdev <<
                 " late: " <<
                 num_late << " of " << buffering_stats.size() << " (" <<
-                num_late * 100.0 / n << "%)";
+                num_late * 100.0 / n << "%) " <<
+                "Num ZMQ send errors: " << num_zmq_send_errors;
 
             buffering_stats.clear();
         }

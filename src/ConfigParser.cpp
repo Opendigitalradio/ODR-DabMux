@@ -833,6 +833,10 @@ void parse_ptree(
                     ua.uaType = FIG0_13_APPTYPE_WEBSITE;
                     ua.xpadAppType = 12;
                 }
+                else if (ua_value == "journaline") {
+                    ua.uaType = FIG0_13_APPTYPE_JOURNALINE;
+                    ua.xpadAppType = 12;
+                }
 
                 if (component->isPacketComponent(ensemble->subchannels)) {
                     component->packet.uaTypes.push_back(ua);

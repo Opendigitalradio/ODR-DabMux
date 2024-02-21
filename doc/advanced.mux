@@ -332,6 +332,9 @@ components {
             ; 0xFF "unrestricted profile"
             ; Only for packet-mode, not X-PAD.
             userapp "website"
+
+            ; Journaline, adds uaType 0x44a and user application data 0x00 0x00 (TS 102 979 Clause 8.1.2)
+            userapp "journaline"
         }
 
         ; Deprecated figtype setting:

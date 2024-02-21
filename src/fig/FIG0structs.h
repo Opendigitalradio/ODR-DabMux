@@ -38,7 +38,7 @@
 #define FIG0_13_APPTYPE_TMC        0x6
 #define FIG0_13_APPTYPE_SPI        0x7
 #define FIG0_13_APPTYPE_DABJAVA    0x8
-#define FIG0_13_APPTYPE_JOURNALINE 0x441
+#define FIG0_13_APPTYPE_JOURNALINE 0x44a
 
 
 struct FIGtype0 {

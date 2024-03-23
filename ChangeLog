@@ -1,6 +1,10 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2024-03-23: Matthias P. Braendli <matthias@mpb.li>
+	(v2.3.2):
+		Fix compilation issues with recent boost and compiler versions
+
 2019-01-07: Matthias P. Braendli <matthias@mpb.li>
 	(v2.3.1):
 		Happy new year!

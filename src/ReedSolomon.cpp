@@ -31,6 +31,7 @@
 #include <sstream>
 #include <stdio.h>          // For galois.h ...
 #include <string.h>         // For memcpy
+#include <cstdint>
 
 extern "C" {
 #include "fec/fec.h"

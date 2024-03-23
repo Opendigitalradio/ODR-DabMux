@@ -198,7 +198,7 @@ void RemoteControllerTelnet::process(long)
 
         // Add a job to start accepting connections.
         boost::shared_ptr<tcp::socket> socket(
-                new tcp::socket(acceptor.get_io_service()));
+                new tcp::socket(acceptor.get_executor()));
 
         // Add an accept call to the service.  This will prevent io_service::run()
         // from returning.

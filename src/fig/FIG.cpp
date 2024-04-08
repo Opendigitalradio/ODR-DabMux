@@ -34,11 +34,16 @@ int rate_increment_ms(FIG_rate rate)
     switch (rate) {
         /* All these values are multiples of 24, so that it is easier to reason
          * about the behaviour when considering ETI frames of 24ms duration
-         */
+         *
+         * In large ensembles it's not always possible to respect the reptition rates, so
+         * the values are a bit larger than what the spec says.
+         * However, we observed that some receivers wouldn't always show labels (rate B),
+         * and that's why we reduced B rate to slightly below 1s.
+         * */
         case FIG_rate::FIG0_0:    return 96;        // Is a special case
         case FIG_rate::A:         return 240;
         case FIG_rate::A_B:       return 480;
-        case FIG_rate::B:         return 2400;
+        case FIG_rate::B:         return 960;
         case FIG_rate::C:         return 24000;
         case FIG_rate::D:         return 30000;
         case FIG_rate::E:         return 120000;

@@ -61,7 +61,7 @@ class DabMultiplexer : public RemoteControllable {
 
         void prepare(bool require_tai_clock);
 
-        unsigned long getCurrentFrame() { return m_currentFrame; }
+        uint64_t getCurrentFrame() const { return m_currentFrame; }
 
         void mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs);
 
@@ -93,7 +93,7 @@ class DabMultiplexer : public RemoteControllable {
         edi::configuration_t edi_conf;
         std::shared_ptr<edi::Sender> edi_sender;
 
-        unsigned long m_currentFrame = 0;
+        uint64_t m_currentFrame = 0;
 
         std::shared_ptr<dabEnsemble> ensemble;
 

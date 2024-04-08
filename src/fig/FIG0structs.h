@@ -26,8 +26,6 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
-#include <set>
 
 #include "fig/FIG.h"
 

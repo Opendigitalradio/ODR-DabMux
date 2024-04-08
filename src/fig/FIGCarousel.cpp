@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -148,11 +148,14 @@ void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
     m_fibs[fib].push_back(el);
 }
 
-void FIGCarousel::update(unsigned long currentFrame)
+size_t FIGCarousel::write_fibs(
+        uint8_t *buf,
+        uint64_t current_frame,
+        bool fib3_present)
 {
-    m_rti.currentFrame = currentFrame;
+    m_rti.currentFrame = current_frame;
 
-    if ((currentFrame % 250) == 0 and m_missed_deadlines.size() > 0) {
+    if ((current_frame % 250) == 0 and m_missed_deadlines.size() > 0) {
         std::stringstream ss;
         for (const auto& fig_missed_count : m_missed_deadlines) {
             ss << " " << fig_missed_count;
@@ -161,21 +164,7 @@ void FIGCarousel::update(unsigned long currentFrame)
 
         etiLog.level(info) << "Could not respect repetition rates for FIGs:" << ss.str();
     }
-}
 
-void dumpfib(const uint8_t *buf, size_t bufsize) {
-    std::cerr << "FIB ";
-    for (size_t i = 0; i < bufsize; i++) {
-        std::cerr << boost::format("%02x ") % (unsigned int)buf[i];
-    }
-    std::cerr << std::endl;
-}
-
-size_t FIGCarousel::write_fibs(
-        uint8_t *buf,
-        int framephase,
-        bool fib3_present)
-{
     /* Decrement all deadlines of all figs */
     for (auto& fib_fig : m_fibs) {
         auto& fig = fib_fig.second;
@@ -183,6 +172,9 @@ size_t FIGCarousel::write_fibs(
             fig_el.reduce_deadline();
 
             if (fig_el.deadline < 0) {
+#if CAROUSELDEBUG
+                etiLog.level(warn) << " FIG" << fig_el.fig->name() << " LATE";
+#endif
                 m_missed_deadlines.insert(fig_el.fig->name());
             }
         }
@@ -192,7 +184,7 @@ size_t FIGCarousel::write_fibs(
 
     for (int fib = 0; fib < fibCount; fib++) {
         memset(buf, 0x00, 30);
-        size_t figSize = carousel(fib, buf, 30, framephase);
+        size_t figSize = carousel(fib, buf, 30, current_frame);
 
         if (figSize < 30) {
             buf[figSize] = 0xff; // end marker
@@ -219,8 +211,10 @@ size_t FIGCarousel::carousel(
         int fib,
         uint8_t *buf,
         const size_t bufsize,
-        int framephase)
+        uint64_t current_frame)
 {
+    const int framephase = current_frame % 4;
+
     uint8_t *pbuf = buf;
 
     FIBAllocation fibix;
@@ -253,9 +247,10 @@ size_t FIGCarousel::carousel(
     for (auto& fig : sorted_figs) {
         if (fig->check_deadline()) {
 #if CAROUSELDEBUG
-            std::cerr << " FIG" << fig->fig->figtype() << "/" <<
-                fig->fig->figextension() << " deadline changed" <<
-                std::endl;
+            etiLog.level(debug) <<
+                "FRAME " << current_frame <<
+                " FIG" << fig->fig->figtype() << "/" <<
+                fig->fig->figextension() << " deadline changed";
 #endif
         }
     }
@@ -267,12 +262,18 @@ size_t FIGCarousel::carousel(
             return left->deadline < right->deadline;
             });
 
-#if CAROUSELDEBUG
-    std::cerr << " ************** FIGs" << std::endl;
-    for (auto& f : sorted_figs) {
-        std::cerr << " FIG" << f->fig->figtype() << "/" <<
-            f->fig->figextension() << " deadline " <<
-            f->deadline << std::endl;
+#if 0
+    {
+        std::stringstream ss;
+        ss << "FRAME " << current_frame
+            << " sorted FIGs ";
+
+        for (auto& f : sorted_figs) {
+            ss << f->fig->figtype() << "/" <<
+                f->fig->figextension() << "(" <<
+                f->deadline << ") ";
+        }
+        etiLog.level(debug) << ss.str();
     }
 #endif
 
@@ -301,8 +302,9 @@ size_t FIGCarousel::carousel(
                 pbuf += written;
 
 #if CAROUSELDEBUG
-                std::cerr << " ****** FIG0/0(special) wrote\t" << written << " bytes"
-                    << std::endl;
+                etiLog.level(debug) <<
+                    "FRAME " << current_frame <<
+                    " *** FIG0/0(special) wrote\t" << written << " bytes";
 #endif
             }
             else {
@@ -325,8 +327,9 @@ size_t FIGCarousel::carousel(
                     pbuf += written;
 
 #if CAROUSELDEBUG
-                    std::cerr << " ****** FIG0/7(special) wrote\t" << written << " bytes"
-                        << std::endl;
+                    etiLog.level(debug) <<
+                        "FRAME " << current_frame <<
+                        " ****** FIG0/7(special) wrote\t" << written << " bytes";
 #endif
                 }
 
@@ -376,13 +379,14 @@ size_t FIGCarousel::carousel(
         }
 #if CAROUSELDEBUG
         if (written) {
-            std::cerr <<
+            etiLog.level(debug) <<
+                " FRAME " << current_frame <<
                 " ** FIB" << fib <<
                 " FIG" << fig_el->fig->figtype() << "/" <<
                 fig_el->fig->figextension() <<
                 " wrote\t" << written << " bytes" <<
                 (status.complete_fig_transmitted ? ", complete" : ", incomplete") <<
-                std::endl;
+                ", margin " << fig_el->deadline;
         }
 #endif
 
@@ -393,7 +397,13 @@ size_t FIGCarousel::carousel(
         sorted_figs.pop_front();
     }
 
-    //dumpfib(buf, bufsize);
+#if 0
+    std::cerr << "FIB ";
+    for (size_t i = 0; i < bufsize; i++) {
+        std::cerr << boost::format("%02x ") % (unsigned int)buf[i];
+    }
+    std::cerr << std::endl;
+#endif
 
     return bufsize - available_size;
 }

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    */
@@ -24,8 +24,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __FIG_H_
-#define __FIG_H_
+#pragma once
 
 #include <memory>
 #include "MuxElements.h"
@@ -105,6 +104,4 @@ class IFIG
 };
 
 } // namespace FIC
-
-#endif // __FIG_H_
 

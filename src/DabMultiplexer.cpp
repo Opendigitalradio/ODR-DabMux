@@ -103,7 +103,8 @@ void DabMultiplexer::prepare(bool require_tai_clock)
      * a consistency across mux restarts. Ensure edi_time and TIST represent
      * current time.
      *
-     * Every 6s, FCT overflows. m_currentFrame overflows at 5000 every 120s.
+     * FCT and DLFC are directly derived from m_currentFrame.
+     * Every 6s, FCT overflows. DLFC overflows at 5000 every 120s.
      *
      * Keep a granularity of 24ms, which corresponds to the duration of an ETI
      * frame, to get nicer timestamps.
@@ -611,9 +612,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.fic_length = FICL * 4;
 
     // Insert all FIBs
-    fig_carousel.update(m_currentFrame);
     const bool fib3_present = (ensemble->transmission_mode == TransmissionMode_e::TM_III);
-    index += fig_carousel.write_fibs(&etiFrame[index], m_currentFrame % 4, fib3_present);
+    index += fig_carousel.write_fibs(&etiFrame[index], m_currentFrame, fib3_present);
 
     /**********************************************************************
      ******  Input Data Reading *******************************************

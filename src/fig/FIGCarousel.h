@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -69,8 +69,6 @@ class FIGCarousel {
     public:
         FIGCarousel(std::shared_ptr<dabEnsemble> ensemble);
 
-        void update(unsigned long currentFrame);
-
         /* Write all FIBs to the buffer, including correct padding and crc.
          * Returns number of bytes written.
          *
@@ -79,11 +77,11 @@ class FIGCarousel {
          */
         size_t write_fibs(
                 uint8_t *buf,
-                int framephase,
+                uint64_t current_frame,
                 bool fib3_present);
 
     private:
-        size_t carousel(int fib, uint8_t *buf, size_t bufsize, int framephase);
+        size_t carousel(int fib, uint8_t *buf, size_t bufsize, uint64_t current_frame);
 
         void load_and_allocate(IFIG& fig, FIBAllocation fib);
 

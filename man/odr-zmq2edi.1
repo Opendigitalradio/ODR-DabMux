@@ -1,4 +1,4 @@
-.TH ODR-ZMQ2EDI "1" "May 2023" "odr-zmq2edi" "User Commands"
+.TH ODR-ZMQ2EDI "1" "May 2024" "odr-zmq2edi" "User Commands"
 .SH NAME
 \fBodr-zmq2edi\fR \- Convert an ZeroMQ stream to EDI
 .SH SYNOPSIS
@@ -6,7 +6,8 @@ odr\-zmq2edi [options] <source>
 .PP
 <source> is a ZMQ URL that points to a ODR\-DabMux ZMQ output.
 .SH DESCRIPTION
-zmq2edi can receive a ZMQ ETI stream from ODR-DabMux and generate an EDI stream.
+zmq2edi can receive a ZMQ ETI stream from ODR-DabMux and generate an EDI or ZMQ stream.
+It buffers and releases frames according to their timestamp.
 This is quite useful if your modulator wants EDI input, and your network is not 
 good enough making you want to use something based on TCP.
 .PP
@@ -64,6 +65,9 @@ Select the source IP in case we want to use multicast.
 .TP
 \fB\-t\fR <ttl>
 Set the packet's TTL.
+.TP
+\fB\-Z\fR <url>
+Add a zmq output to URL, e.g. tcp:*:9876 to listen for connections on port 9876
 
 .SH SEE ALSO
 odr\-dabmux(1), odr\-audioenc(1), odr\-dabmod(1)

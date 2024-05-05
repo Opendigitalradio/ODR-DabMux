@@ -379,6 +379,7 @@ void Bulletin::clear_expiry_if_overridden()
     }
 }
 
+#if ENABLE_REMOTECONTROL
 ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) :
     RemoteControllable("clocktai")
 {
@@ -386,6 +387,9 @@ ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) :
     RC_ADD_PARAMETER(expiry, "Number of seconds until TAI Bulletin expires");
     RC_ADD_PARAMETER(expires_at, "UNIX timestamp when TAI Bulletin expires");
     RC_ADD_PARAMETER(url, "URLs used to fetch the bulletin, separated by pipes");
+#else
+ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) {
+#endif // ENABLE_REMOTECONTROL
 
     if (bulletin_urls.empty()) {
         etiLog.level(debug) << "Initialising default TAI Bulletin URLs";
@@ -629,6 +633,7 @@ void Bulletin::store_to_cache(const char* cache_filename) const
     }
 }
 
+#if ENABLE_REMOTECONTROL
 void ClockTAI::set_parameter(const string& parameter, const string& value)
 {
     if (parameter == "expiry" or parameter == "expires_at") {
@@ -719,6 +724,7 @@ const json::map_t ClockTAI::get_all_values() const
 
     return stat;
 }
+#endif // ENABLE_REMOTECONTROL
 
 #if 0
 // Example testing code

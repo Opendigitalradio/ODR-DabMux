@@ -35,8 +35,6 @@
 #pragma once
 
 #include <cstdint>
-#include <cstdlib>
-#include <sstream>
 #include <chrono>
 #include <future>
 #include <mutex>
@@ -44,6 +42,7 @@
 #include <vector>
 #include <optional>
 #include <variant>
+
 #include "RemoteControl.h"
 
 // EDI needs to know UTC-TAI, but doesn't need the CLOCK_TAI to be set.
@@ -86,7 +85,11 @@ class Bulletin {
 };
 
 /* Loads, parses and represents TAI-UTC offset information from the IETF bulletin */
-class ClockTAI : public RemoteControllable {
+class ClockTAI
+#if ENABLE_REMOTECONTROL
+: public RemoteControllable
+#endif // ENABLE_REMOTECONTROL
+{
     public:
         ClockTAI(const std::vector<std::string>& bulletin_urls);
 
@@ -125,6 +128,7 @@ class ClockTAI : public RemoteControllable {
         std::optional<BulletinState> m_state;
         std::chrono::steady_clock::time_point m_state_last_updated;
 
+#if ENABLE_REMOTECONTROL
     public:
         /* Remote control */
         virtual void set_parameter(const std::string& parameter,
@@ -134,5 +138,6 @@ class ClockTAI : public RemoteControllable {
         virtual const std::string get_parameter(const std::string& parameter) const;
 
         virtual const json::map_t get_all_values() const;
+#endif // ENABLE_REMOTECONTROL
 };
 

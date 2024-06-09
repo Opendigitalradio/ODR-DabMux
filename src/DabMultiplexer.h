@@ -88,7 +88,19 @@ class DabMultiplexer : public RemoteControllable {
 
         uint32_t m_timestamp = 0;
         std::time_t m_edi_time = 0;
-        std::time_t m_edi_time_latched_for_mnsc = 0;
+
+        /* Pre v3 odr-dabmux did the MNSC calculation differently,
+         * which works with the easydabv2. The rework in odr-dabmux,
+         * deriving MNSC time from EDI time broke this.
+         *
+         * That's why we're now tracking MNSC time in separate variables,
+         * to get the same behaviour back.
+         *
+         * I'm not aware of any devices using MNSC time besides the
+         * easydab. ODR-DabMod now considers EDI seconds or ZMQ metadata.
+         */
+        bool mnsc_increment_time = false;
+        std::time_t mnsc_time = 0;
 
         edi::configuration_t edi_conf;
         std::shared_ptr<edi::Sender> edi_sender;

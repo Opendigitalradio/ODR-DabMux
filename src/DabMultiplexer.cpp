@@ -142,6 +142,9 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         offset_ms -= 24;
     }
 
+    mnsc_increment_time = false;
+    mnsc_time = m_edi_time;
+
     etiLog.log(info, "Startup CIF Count %i with timestamp: %d + %f",
             m_currentFrame, m_edi_time,
             (m_timestamp & 0xFFFFFF) / 16384000.0);
@@ -393,6 +396,9 @@ void DabMultiplexer::increment_timestamp()
     if (m_timestamp > 0xf9FFff) {
         m_timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second
         m_edi_time += 1;
+
+        // Also update MNSC time for next time FP==0
+        mnsc_increment_time = true;
     }
 }
 
@@ -554,14 +560,9 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
     eoh->MNSC = 0;
 
-    if (fc->FP == 0) {
-        // update the latched time only when FP==0 to ensure MNSC encodes
-        // a consistent time
-        m_edi_time_latched_for_mnsc = edi_time;
-    }
-
     struct tm time_tm;
-    gmtime_r(&m_edi_time_latched_for_mnsc, &time_tm);
+    gmtime_r(&mnsc_time, &time_tm);
+
     switch (fc->FP & 0x3) {
         case 0:
             {
@@ -570,6 +571,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
                 mnsc->type = 0;
                 mnsc->identifier = 0;
                 mnsc->rfa = 0;
+            }
+
+            if (mnsc_increment_time)
+            {
+                mnsc_increment_time = false;
+                mnsc_time += 1;
             }
             break;
         case 1:

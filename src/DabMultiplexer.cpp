@@ -143,16 +143,17 @@ void DabMultiplexer::prepare(bool require_tai_clock)
     }
 
     mnsc_increment_time = false;
-    mnsc_time = m_edi_time;
+
+    bool tist_enabled = m_pt.get("general.tist", false);
+    m_tist_offset = m_pt.get<int>("general.tist_offset", 0);
+
+    mnsc_time = m_edi_time + m_tist_offset;
 
     etiLog.log(info, "Startup CIF Count %i with timestamp: %d + %f",
             m_currentFrame, m_edi_time,
             (m_timestamp & 0xFFFFFF) / 16384000.0);
 
     // Try to load offset once
-
-    bool tist_enabled = m_pt.get("general.tist", false);
-    m_tist_offset = m_pt.get<int>("general.tist_offset", 0);
 
     m_tai_clock_required = (tist_enabled and edi_conf.enabled()) or require_tai_clock;
 

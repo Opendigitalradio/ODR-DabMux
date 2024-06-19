@@ -99,7 +99,7 @@ void header_message()
     fprintf(stderr, "Her Majesty the Queen in Right of Canada\n");
     fprintf(stderr, "(Communications Research Centre Canada)\n\n");
 
-    fprintf(stderr, "Copyright (C) 2021 Matthias P. Braendli\n");
+    fprintf(stderr, "Copyright (C) 2024 Matthias P. Braendli\n");
     fprintf(stderr, "LICENCE: GPLv3+\n\n");
 
     fprintf(stderr, "http://opendigitalradio.org\n\n");
@@ -107,7 +107,7 @@ void header_message()
     fprintf(stderr, "Input URLs supported: prbs udp file zmq\n");
     fprintf(stderr, "Inputs format supported: raw mpeg packet epm\n");
 
-    std::cerr << "Output URLs supported:\n" <<
+    std::cerr << "Outputs supported: " <<
 #if defined(HAVE_OUTPUT_FILE)
     " file" <<
 #endif
@@ -126,7 +126,7 @@ void header_message()
 #if defined(HAVE_OUTPUT_SIMUL)
     " simul" <<
 #endif
-    "\n\n";
+    " edi zmq\n\n";
 
 }
 

@@ -514,8 +514,8 @@ outputs {
         ;allowmetadata true
     ;}
 
-    ; Legacy format for ZeroMQ output example. See example.mux
-    ; for newer format.
+    ; Legacy format for ZeroMQ output example, equivalent to `allowmetadata false`.
+    ; See above for newer format.
     ;zmq  "zmq+tcp://*:9100"
 
     ; Output ETI-over-TCP. This is like piping a RAW ETI NI data stream

@@ -70,6 +70,12 @@ void STIDecoder::setMaxDelay(int num_af_packets)
     m_dispatcher.setMaxDelay(num_af_packets);
 }
 
+void STIDecoder::filter_stream_index(bool enable, uint16_t index)
+{
+    m_filter_stream = enable;
+    m_filtered_stream_index = index;
+}
+
 #define AFPACKET_HEADER_LEN 10 // includes SYNC
 
 bool STIDecoder::decode_starptr(const std::vector<uint8_t>& value, const tag_name_t& /*n*/)
@@ -172,6 +178,14 @@ bool STIDecoder::decode_ssn(const std::vector<uint8_t>& value, const tag_name_t&
     uint16_t n = 0;
     n = (uint16_t)(name[2]) << 8;
     n |= (uint16_t)(name[3]);
+
+    if (n == 0) {
+        etiLog.level(warn) << "EDI: Stream index SSnn tag is zero";
+    }
+
+    if (m_filter_stream and m_filtered_stream_index != n) {
+        return true;
+    }
 
     sti.stream_index = n - 1; // n is 1-indexed
     sti.rfa = value[0] >> 3;

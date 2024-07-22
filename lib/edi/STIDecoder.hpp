@@ -119,6 +119,10 @@ class STIDecoder {
          */
         void setMaxDelay(int num_af_packets);
 
+        /* Enable/disable stream-index filtering.
+         * index==0 is out of spec, but some encoders do it anyway. */
+        void filter_stream_index(bool enable, uint16_t index);
+
     private:
         bool decode_starptr(const std::vector<uint8_t>& value, const tag_name_t& n);
         bool decode_dsti(const std::vector<uint8_t>& value, const tag_name_t& n);
@@ -132,6 +136,9 @@ class STIDecoder {
 
         STIDataCollector& m_data_collector;
         TagDispatcher m_dispatcher;
+
+        bool m_filter_stream = false;
+        uint16_t m_filtered_stream_index = 1;
 };
 
 }

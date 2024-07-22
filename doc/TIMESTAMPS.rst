@@ -28,3 +28,5 @@ Running ODR-DabMux against the absolute timestamp firmware has uncovered a few i
 
 **Important** Do not combine odr-zmq2edi with odr-dabmux of a different version!
 
+Do not combine digris-zmq-converter with odr-dabmux older than v4!
+

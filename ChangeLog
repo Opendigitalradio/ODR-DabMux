@@ -1,6 +1,10 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+upcoming:
+	Make compatible with easydab again
+	Remove odr-zmq2edi
+
 2024-05-05: Matthias P. Braendli <matthias@mpb.li>
 	(v4.5.0):
 		Switch project to C++17.

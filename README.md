@@ -30,11 +30,7 @@ Features of ODR-DabMux:
 
 Additional tools:
 
-`odr-zmq2edi`, a tool that can convert a ZeroMQ ETI stream
-to an EDI stream.
-
-`odr-zmq2farsync`, a tool that can drive a FarSync card from
-a ZeroMQ ETI stream.
+`odr-zmq2farsync`, a tool that can drive a FarSync card from a ZeroMQ ETI stream.
 
 The `src/` directory contains the source code of ODR-DabMux and the additional
 tools.
@@ -44,6 +40,11 @@ configuration files, and the munin and xymon scripts for the statistics server.
 
 The `lib/` directory contains source code of libraries needed to build
 ODR-DabMux.
+
+Up to v4.5, this repository also contained
+`odr-zmq2edi`, a tool that can convert a ZeroMQ ETI stream to an EDI or ZMQ stream.
+This was superseded by `digris-zmq-converter` in the
+[digris-edi-zmq-bridge](https://github.com/digris/digris-edi-zmq-bridge) repository.
 
 Install
 =======

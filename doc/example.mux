@@ -215,6 +215,8 @@ subchannels {
         ;inputuri "udp://:9001"
         ; Multicast UDP input:
         ;inputuri "udp://@239.10.0.1:9001"
+        ; Multicast UDP input with local interface (192.168.0.10) specification
+        ;inputuri "udp://192.168.0.10@239.10.0.1:9001"
 
         ; Two buffer-management types are available: prebuffering and timestamped.
         ; prebuffering will accumulate a few frames before it starts streaming, and each

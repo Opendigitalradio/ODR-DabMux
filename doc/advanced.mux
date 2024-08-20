@@ -201,6 +201,22 @@ subchannels {
         inputproto sti
         inputuri "rtp://127.0.0.1:32010"
     }
+    sub-udp {
+        type dabplus
+        bitrate 96
+        id 1
+        protection 3
+        inputproto edi
+
+        ; Receive EDI/UDP unicast on port 32010
+        inputuri "udp://:32010"
+
+        ; Receive EDI/UDP multicast stream on group 239.10.11.12 port 32010
+        ;inputuri "udp://@239.10.11.12:32010"
+
+        ; Same, but specify local interface address 192.168.0.1, to select which local interface to use
+        ;inputuri "udp://192.168.0.10@239.10.11.12:32010"
+    }
     sub-ri {
         type dabplus
         bitrate 96

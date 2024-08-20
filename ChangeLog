@@ -4,6 +4,9 @@ ODR-DabMux in this repository
 upcoming:
 	Make compatible with easydab again
 	Remove odr-zmq2edi
+	Fix timestamp issue with EDI streams that have seconds=0
+	Fix receiving multicast streams, when several multicast groups are
+	on the same port.
 
 2024-05-05: Matthias P. Braendli <matthias@mpb.li>
 	(v4.5.0):

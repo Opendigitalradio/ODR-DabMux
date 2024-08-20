@@ -254,7 +254,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
 
         while (not m_pending_sti_frame.frame.empty()) {
             if (m_pending_sti_frame.frame.size() == size) {
-                if (m_pending_sti_frame.timestamp.valid()) {
+                if (m_pending_sti_frame.timestamp.is_valid()) {
                     auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
                     ts_req += m_tist_delay;
                     const double offset = ts_req.diff_s(m_pending_sti_frame.timestamp);
@@ -324,7 +324,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             m_is_prebuffering = true;
             return 0;
         }
-        else if (not m_pending_sti_frame.timestamp.valid()) {
+        else if (not m_pending_sti_frame.timestamp.is_valid()) {
             etiLog.level(warn) << "EDI input " << m_name <<
                 " invalid timestamp, ignoring";
             memset(buffer, 0, size);

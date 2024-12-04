@@ -31,11 +31,9 @@
 #include "AFPacket.h"
 #include "PFT.h"
 #include "Socket.h"
-#include <vector>
 #include <chrono>
 #include <map>
 #include <unordered_map>
-#include <stdexcept>
 #include <fstream>
 #include <cstdint>
 #include <thread>

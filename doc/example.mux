@@ -57,9 +57,9 @@ general {
     tist false
 
     ; On startup, the timestamp is initialised to system time. If you want
-    ; to add an offset, uncomment the following line and give a number
-    ; in seconds.
-    ; tist_offset 0
+    ; to add an offset, uncomment the following line and give a positive
+    ; number in seconds. Granularity: 24ms
+    ; tist_offset 0.480
 
     ; The URLs used to fetch the TAI bulletin can be overridden if needed.
     ; URLs are given as a pipe-separated list, and the default value is:

@@ -30,27 +30,46 @@
 #endif
 
 #include "dabOutput/dabOutput.h"
-#include "edioutput/TagItems.h"
-#include "edioutput/TagPacket.h"
-#include "edioutput/AFPacket.h"
 #include "edioutput/Transport.h"
 #include "fig/FIGCarousel.h"
-#include "crc.h"
-#include "utils.h"
-#include "Socket.h"
-#include "PcDebug.h"
 #include "MuxElements.h"
 #include "RemoteControl.h"
-#include "Eti.h"
 #include "ClockTAI.h"
 #include <vector>
-#include <chrono>
 #include <memory>
 #include <string>
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
 
 constexpr uint32_t ETI_FSYNC1 = 0x49C5F8;
+
+class MuxTime {
+    private:
+    uint32_t m_timestamp = 0;
+    std::time_t m_edi_time = 0;
+
+    public:
+    std::pair<uint32_t, std::time_t> get_time();
+
+    double tist_offset = 0;
+
+    /* Pre v3 odr-dabmux did the MNSC calculation differently,
+     * which works with the easydabv2. The rework in odr-dabmux,
+     * deriving MNSC time from EDI time broke this.
+     *
+     * That's why we're now tracking MNSC time in separate variables,
+     * to get the same behaviour back.
+     *
+     * I'm not aware of any devices using MNSC time besides the
+     * easydab. ODR-DabMod now considers EDI seconds or ZMQ metadata.
+     */
+    bool mnsc_increment_time = false;
+    std::time_t mnsc_time = 0;
+
+    /* Setup the time and return the initial currentFrame counter value */
+    uint64_t init();
+    void increment_timestamp();
+};
 
 class DabMultiplexer : public RemoteControllable {
     public:
@@ -61,7 +80,7 @@ class DabMultiplexer : public RemoteControllable {
 
         void prepare(bool require_tai_clock);
 
-        uint64_t getCurrentFrame() const { return m_currentFrame; }
+        uint64_t getCurrentFrame() const { return currentFrame; }
 
         void mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs);
 
@@ -82,46 +101,23 @@ class DabMultiplexer : public RemoteControllable {
         void prepare_subchannels(void);
         void prepare_services_components(void);
         void prepare_data_inputs(void);
-        void increment_timestamp(void);
 
         boost::property_tree::ptree m_pt;
 
-        uint32_t m_timestamp = 0;
-        std::time_t m_edi_time = 0;
-
-        /* Pre v3 odr-dabmux did the MNSC calculation differently,
-         * which works with the easydabv2. The rework in odr-dabmux,
-         * deriving MNSC time from EDI time broke this.
-         *
-         * That's why we're now tracking MNSC time in separate variables,
-         * to get the same behaviour back.
-         *
-         * I'm not aware of any devices using MNSC time besides the
-         * easydab. ODR-DabMod now considers EDI seconds or ZMQ metadata.
-         */
-        bool mnsc_increment_time = false;
-        std::time_t mnsc_time = 0;
+        MuxTime m_time;
+        uint64_t currentFrame = 0;
 
         edi::configuration_t edi_conf;
         std::shared_ptr<edi::Sender> edi_sender;
 
-        uint64_t m_currentFrame = 0;
-
         std::shared_ptr<dabEnsemble> ensemble;
 
-        int m_tist_offset = 0;
         bool m_tai_clock_required = false;
         ClockTAI m_clock_tai;
 
         /* New FIG Carousel */
         FIC::FIGCarousel fig_carousel;
 };
-
-// DAB Mode
-#define DEFAULT_DAB_MODE    1
-
-// Taille de la trame de donnee, sous-canal 3, nb de paquets de 64bits,
-// STL3 * 8 = x kbytes par trame ETI
 
 // Data bitrate in kbits/s. Must be 64 kb/s multiple.
 #define DEFAULT_DATA_BITRATE    384

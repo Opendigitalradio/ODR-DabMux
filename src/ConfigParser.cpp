@@ -36,16 +36,13 @@
 #   include "config.h"
 #endif
 
-#include "dabOutput/dabOutput.h"
 #include "utils.h"
-#include "DabMux.h"
-#include "ManagementServer.h"
 #include "input/Edi.h"
 #include "input/Prbs.h"
 #include "input/Zmq.h"
 #include "input/File.h"
 #include "input/Udp.h"
-#include "Eti.h"
+#include "fig/FIG0structs.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -62,6 +59,12 @@
 using namespace std;
 using boost::property_tree::ptree;
 using boost::property_tree::ptree_error;
+
+constexpr uint16_t DEFAULT_DATA_BITRATE = 384;
+constexpr uint16_t DEFAULT_PACKET_BITRATE = 32;
+
+constexpr uint32_t DEFAULT_SERVICE_ID = 50;
+
 
 static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         const ptree &pt,

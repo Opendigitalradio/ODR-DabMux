@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2024
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -118,20 +118,3 @@ class DabMultiplexer : public RemoteControllable {
         /* New FIG Carousel */
         FIC::FIGCarousel fig_carousel;
 };
-
-// Data bitrate in kbits/s. Must be 64 kb/s multiple.
-#define DEFAULT_DATA_BITRATE    384
-#define DEFAULT_PACKET_BITRATE  32
-
-/* default ensemble parameters. Label must be max 16 chars, short label
- * a subset of the label, max 8 chars
- */
-#define DEFAULT_ENSEMBLE_LABEL          "ODR Dab Mux"
-#define DEFAULT_ENSEMBLE_SHORT_LABEL    "ODRMux"
-#define DEFAULT_ENSEMBLE_ID             0xc000
-#define DEFAULT_ENSEMBLE_ECC            0xa1
-
-// start value for default service IDs (if not overridden by configuration)
-#define DEFAULT_SERVICE_ID      50
-#define DEFAULT_PACKET_ADDRESS  0
-

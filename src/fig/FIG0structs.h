@@ -24,19 +24,17 @@
 */
 
 #pragma once
-
 #include <cstdint>
-
 #include "fig/FIG.h"
 
-#define FIG0_13_APPTYPE_SLIDESHOW  0x2
-#define FIG0_13_APPTYPE_WEBSITE    0x3
-#define FIG0_13_APPTYPE_TPEG       0x4
-#define FIG0_13_APPTYPE_DGPS       0x5
-#define FIG0_13_APPTYPE_TMC        0x6
-#define FIG0_13_APPTYPE_SPI        0x7
-#define FIG0_13_APPTYPE_DABJAVA    0x8
-#define FIG0_13_APPTYPE_JOURNALINE 0x44a
+constexpr uint16_t FIG0_13_APPTYPE_SLIDESHOW  = 0x2;
+constexpr uint16_t FIG0_13_APPTYPE_WEBSITE    = 0x3;
+constexpr uint16_t FIG0_13_APPTYPE_TPEG       = 0x4;
+constexpr uint16_t FIG0_13_APPTYPE_DGPS       = 0x5;
+constexpr uint16_t FIG0_13_APPTYPE_TMC        = 0x6;
+constexpr uint16_t FIG0_13_APPTYPE_SPI        = 0x7;
+constexpr uint16_t FIG0_13_APPTYPE_DABJAVA    = 0x8;
+constexpr uint16_t FIG0_13_APPTYPE_JOURNALINE = 0x44a;
 
 
 struct FIGtype0 {

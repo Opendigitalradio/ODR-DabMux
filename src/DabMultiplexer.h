@@ -67,7 +67,7 @@ class MuxTime {
     std::time_t mnsc_time = 0;
 
     /* Setup the time and return the initial currentFrame counter value */
-    uint64_t init();
+    uint64_t init(uint32_t tist_at_fct0_us);
     void increment_timestamp();
 };
 

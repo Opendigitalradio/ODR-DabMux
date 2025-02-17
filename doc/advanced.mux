@@ -36,6 +36,9 @@ general {
     ; in seconds.
     ; tist_offset 0
 
+    ; Specify the TIST value for the frame with FCT==0, in microseconds
+    ; tist_at_fct0 768000
+
     ; The management server is a simple TCP server that can present
     ; statistics data (buffers, overruns, underruns, etc)
     ; which can then be graphed a tool like Munin

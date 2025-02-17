@@ -46,7 +46,7 @@ static vector<string> split_pipe_separated_string(const std::string& s)
     return components;
 }
 
-uint64_t MuxTime::init()
+uint64_t MuxTime::init(uint32_t tist_at_fct0_us)
 {
     /* At startup, derive edi_time, TIST and CIF count such that there is
      * a consistency across mux restarts. Ensure edi_time and TIST represent
@@ -83,7 +83,12 @@ uint64_t MuxTime::init()
     int64_t offset_ms = chrono::duration_cast<chrono::milliseconds>(offset).count();
     offset_ms += 1000 * (t_now - m_edi_time);
 
-    m_timestamp = 0;
+    if (tist_at_fct0_us >= 1000000) {
+        etiLog.level(error) << "tist_at_fct0 may not be larger than 1s";
+        throw MuxInitException();
+    }
+
+    m_timestamp = (uint64_t)tist_at_fct0_us * 16384 / 1000;
     while (offset_ms >= 24) {
         increment_timestamp();
         currentFrame++;
@@ -177,7 +182,8 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         throw MuxInitException();
     }
 
-    currentFrame = m_time.init();
+    const uint32_t tist_at_fct0_us = m_pt.get<double>("general.tist_at_fct0", 0);
+    currentFrame = m_time.init(tist_at_fct0_us);
     m_time.mnsc_increment_time = false;
 
     bool tist_enabled = m_pt.get("general.tist", false);

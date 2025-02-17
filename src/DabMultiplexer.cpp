@@ -177,7 +177,7 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         throw MuxInitException();
     }
 
-    m_time.init();
+    currentFrame = m_time.init();
     m_time.mnsc_increment_time = false;
 
     bool tist_enabled = m_pt.get("general.tist", false);

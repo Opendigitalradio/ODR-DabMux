@@ -32,9 +32,9 @@ general {
     tist false
 
     ; On startup, the timestamp is initialised to system time. If you want
-    ; to add an offset, uncomment the following line and give a number
-    ; in seconds.
-    ; tist_offset 0
+    ; to add an offset, uncomment the following line and give a positive
+    ; number in seconds. Granularity: 24ms
+    ; tist_offset 0.480
 
     ; Specify the TIST value for the frame with FCT==0, in microseconds
     ; tist_at_fct0 768000

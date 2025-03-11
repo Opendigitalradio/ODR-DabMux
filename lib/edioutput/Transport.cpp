@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2022
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -218,6 +218,20 @@ void Sender::override_af_sequence(uint16_t seq)
 void Sender::override_pft_sequence(uint16_t pseq)
 {
     edi_pft.OverridePSeq(pseq);
+}
+
+std::vector<Sender::stats_t> Sender::get_tcp_server_stats() const
+{
+    std::vector<Sender::stats_t> stats;
+
+    for (auto& el : tcp_dispatchers) {
+        Sender::stats_t s;
+        s.listen_port = el.first->listen_port;
+        s.stats = el.second->get_stats();
+        stats.push_back(s);
+    }
+
+    return stats;
 }
 
 void Sender::run()

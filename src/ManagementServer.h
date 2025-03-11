@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -50,6 +50,7 @@
 #   include "config.h"
 #endif
 
+#include "Socket.h"
 #include "zmq.hpp"
 #include <string>
 #include <map>
@@ -167,8 +168,10 @@ class ManagementServer
         void open(int listenport);
 
         /* Un-/Register a statistics data source */
-        void registerInput(InputStat* is);
-        void unregisterInput(std::string id);
+        void register_input(InputStat* is);
+        void unregister_input(std::string id);
+
+        void update_edi_tcp_output_stat(uint16_t listen_port, size_t num_connections);
 
         /* Load a ptree given by the management server.
          *
@@ -205,20 +208,25 @@ class ManagementServer
         std::thread m_restarter_thread;
 
         /******* Statistics Data ********/
-        std::map<std::string, InputStat*> m_inputStats;
+        std::map<std::string, InputStat*> m_input_stats;
+
+        // Holds information about EDI/TCP outputs
+        std::map<uint16_t /* port */, size_t /* num_connections */> m_output_stats;
 
         /* Return a description of the configuration that will
          * allow to define what graphs to be created
          *
          * returns: a JSON encoded configuration
          */
-        std::string getStatConfigJSON();
+        std::string get_input_config_json();
 
         /* Return the values for the statistics as defined in the configuration
          *
          * returns: JSON encoded statistics
          */
-        std::string getValuesJSON();
+        std::string get_input_values_json();
+
+        std::string get_output_values_json();
 
         // mutex for accessing the map
         std::mutex m_statsmutex;

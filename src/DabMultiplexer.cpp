@@ -28,6 +28,7 @@
 #include <memory>
 #include "DabMultiplexer.h"
 #include "ConfigParser.h"
+#include "ManagementServer.h"
 #include "crc.h"
 #include "utils.h"
 
@@ -795,6 +796,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
         }
 
         edi_sender->write(edi_tagpacket);
+
+        for (const auto& stat : edi_sender->get_tcp_server_stats()) {
+            get_mgmt_server().update_edi_tcp_output_stat(
+                    stat.listen_port,
+                    stat.stats.size());
+        }
     }
 
 #if _DEBUG

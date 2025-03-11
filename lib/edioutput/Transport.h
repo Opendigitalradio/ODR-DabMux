@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2022
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -38,10 +38,11 @@
 #include <cstdint>
 #include <thread>
 #include <mutex>
+#include <vector>
 
 namespace edi {
 
-/** STI sender for EDI output */
+/** ETI/STI sender for EDI output */
 
 class Sender {
     public:
@@ -63,6 +64,12 @@ class Sender {
         // pseq is for the PFT layer
         void override_af_sequence(uint16_t seq);
         void override_pft_sequence(uint16_t pseq);
+
+        struct stats_t {
+            uint16_t listen_port;
+            std::vector<Socket::TCPConnection::stats_t> stats;
+        };
+        std::vector<stats_t> get_tcp_server_stats() const;
 
     private:
         void run();

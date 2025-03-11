@@ -4,12 +4,13 @@ Stats available through Management Server
 Interface
 ---------
 
-The management server makes statistics about the inputs available through a ZMQ request/reply socket.
+The management server makes statistics about the inputs and EDI/TCP outputs
+available through a ZMQ request/reply socket.
 
 The `show_dabmux_stats.py` illustrates how to access this information.
 
-Meaning of values
------------------
+Meaning of values for inputs
+----------------------------
 
 `max` and `min` indicate input buffer fullness in bytes.
 

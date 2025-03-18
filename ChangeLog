@@ -1,6 +1,11 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2025-03-18: Matthias P. Braendli <matthias@mpb.li>
+	(v5.1.0):
+		Fix startup value of DLFC and FCT.
+		Add statistics for EDI/TCP outputs.
+
 2024-10-03: Matthias P. Braendli <matthias@mpb.li>
 	(v5.0.0):
 		Remove odr-zmq2edi.

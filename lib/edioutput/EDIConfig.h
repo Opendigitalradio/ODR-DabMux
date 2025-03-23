@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -36,17 +36,31 @@ namespace edi {
 
 /** Configuration for EDI output */
 
+struct pft_settings_t {
+    // protection and fragmentation settings
+    bool verbose       = false;
+    bool enable_pft    = false;
+    unsigned chunk_len = 207;        // RSk, data length of each chunk
+    unsigned fec       = 0;          // number of fragments that can be recovered
+    double fragment_spreading_factor = 0.95;
+    // Spread transmission of fragments in time. 1.0 = 100% means spreading over the whole duration of a frame (24ms)
+    // Above 100% means that the fragments are spread over several 24ms periods, interleaving the AF packets.
+};
+
 struct destination_t {
     virtual ~destination_t() {};
+
+    pft_settings_t pft_settings = {};
 };
+
 
 // Can represent both unicast and multicast destinations
 struct udp_destination_t : public destination_t {
     std::string dest_addr;
-    unsigned int dest_port = 0;
+    uint16_t dest_port = 0;
     std::string source_addr;
-    unsigned int source_port = 0;
-    unsigned int ttl = 10;
+    uint16_t source_port = 0;
+    uint8_t ttl = 10;
 };
 
 // TCP server that can accept multiple connections
@@ -66,16 +80,9 @@ struct tcp_client_t : public destination_t {
 };
 
 struct configuration_t {
-    unsigned chunk_len = 207;        // RSk, data length of each chunk
-    unsigned fec       = 0;          // number of fragments that can be recovered
-    bool dump          = false;      // dump a file with the EDI packets
-    bool verbose       = false;
-    bool enable_pft    = false;      // Enable protection and fragmentation
+    bool verbose = false;
     unsigned int tagpacket_alignment = 0;
     std::vector<std::shared_ptr<destination_t> > destinations;
-    double fragment_spreading_factor = 0.95;
-    // Spread transmission of fragments in time. 1.0 = 100% means spreading over the whole duration of a frame (24ms)
-    // Above 100% means that the fragments are spread over several 24ms periods, interleaving the AF packets.
 
     bool enabled() const { return destinations.size() > 0; }
 

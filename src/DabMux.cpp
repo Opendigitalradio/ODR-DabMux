@@ -327,6 +327,38 @@ int main(int argc, char *argv[])
             if (outputuid == "edi") {
                 ptree pt_edi = pt_outputs.get_child("edi");
 
+                bool default_enable_pft = pt_edi.get<bool>("enable_pft", false);
+                edi_conf.verbose = pt_edi.get<bool>("verbose", false);
+
+                unsigned int default_fec = pt_edi.get<unsigned int>("fec", 3);
+                unsigned int default_chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
+
+                auto check_spreading_factor = [](int percent) {
+                    if (percent < 0) {
+                        throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
+                    }
+                    double factor = (double)percent / 100.0;
+                    if (factor > 30000) {
+                        throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
+                    }
+                    return factor;
+                };
+
+                double default_spreading_factor = check_spreading_factor(pt_edi.get<int>("packet_spread", 95));
+
+                using pt_t = boost::property_tree::basic_ptree<std::basic_string<char>, std::basic_string<char>>;
+                auto handle_overrides = [&](edi::pft_settings_t& pft_settings, pt_t pt) {
+                    pft_settings.chunk_len = pt.get<unsigned int>("chunk_len", default_chunk_len);
+                    pft_settings.enable_pft = pt.get<bool>("enable_pft", default_enable_pft);
+                    pft_settings.fec = pt.get<unsigned int>("fec", default_fec);
+                    pft_settings.fragment_spreading_factor = default_spreading_factor;
+                    auto override_spread_percent = pt.get_optional<int>("packet_spread");
+                    if (override_spread_percent) {
+                        pft_settings.fragment_spreading_factor = check_spreading_factor(*override_spread_percent);
+                    }
+                    pft_settings.verbose = pt.get<bool>("verbose", edi_conf.verbose);
+                };
+
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
                     const auto proto = pt_edi_dest.second.get<string>("protocol", "udp");
                     if (proto == "udp") {
@@ -346,6 +378,8 @@ int main(int argc, char *argv[])
                             dest->dest_port       = pt_edi.get<unsigned int>("port");
                         }
 
+                        handle_overrides(dest->pft_settings, pt_edi_dest.second);
+
                         edi_conf.destinations.push_back(dest);
                     }
                     else if (proto == "tcp") {
@@ -355,27 +389,13 @@ int main(int argc, char *argv[])
                         double preroll = pt_edi_dest.second.get<double>("preroll-burst", 0.0);
                         dest->tcp_server_preroll_buffers = ceil(preroll / 24e-3);
 
+                        handle_overrides(dest->pft_settings, pt_edi_dest.second);
+
                         edi_conf.destinations.push_back(dest);
                     }
                     else {
                         throw runtime_error("Unknown EDI protocol " + proto);
                     }
-                }
-
-                edi_conf.dump = pt_edi.get<bool>("dump", false);
-                edi_conf.enable_pft = pt_edi.get<bool>("enable_pft", false);
-                edi_conf.verbose = pt_edi.get<bool>("verbose", false);
-
-                edi_conf.fec = pt_edi.get<unsigned int>("fec", 3);
-                edi_conf.chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
-
-                int spread_percent = pt_edi.get<int>("packet_spread", 95);
-                if (spread_percent < 0) {
-                    throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
-                }
-                edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
-                if (edi_conf.fragment_spreading_factor > 30000) {
-                    throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
                 }
 
                 edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);

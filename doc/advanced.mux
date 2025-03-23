@@ -438,6 +438,10 @@ outputs {
                 destination "192.168.23.23"
                 port        12000
 
+                enable_pft  true
+                fec         1
+                verbose     true
+
                 ; For compatibility: if port is not specified in the destination itself,
                 ; it is taken from the parent 'destinations' block.
             }
@@ -452,6 +456,8 @@ outputs {
                 ; The multicast TTL has to be adapted according to your network
                 ttl 1
 
+                enable_pft  true
+                fec         1
             }
             example_tcp {
                 ; example for EDI TCP server. TCP is reliable, so it is counterproductive to
@@ -469,7 +475,8 @@ outputs {
             }
         }
 
-        ; The settings below apply to all destinations
+        ; The settings below apply to all destinations, unless they are overridden
+        ; inside a destination
 
         ; Enable the PFT subsystem. If false, AFPackets are sent.
         ; PFT is not necessary when using TCP.

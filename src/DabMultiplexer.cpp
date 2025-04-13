@@ -49,6 +49,8 @@ static vector<string> split_pipe_separated_string(const std::string& s)
 
 uint64_t MuxTime::init(uint32_t tist_at_fct0_us)
 {
+    m_tist_at_fct0_us = tist_at_fct0_us;
+
     /* At startup, derive edi_time, TIST and CIF count such that there is
      * a consistency across mux restarts. Ensure edi_time and TIST represent
      * current time.
@@ -112,14 +114,19 @@ void MuxTime::increment_timestamp()
 
 std::pair<uint32_t, std::time_t> MuxTime::get_time()
 {
-    // negative tist_offset not supported, because the calculation is annoying
-    if (tist_offset < 0) return {m_timestamp, m_edi_time};
+    // The user-visible configuration tist_offset is the effective
+    // offset, but since we implicityle add the tist_at_fct0 to it,
+    // we must compensate.
+    double corrected_tist_offset = tist_offset - (m_tist_at_fct0_us / 1e6);
 
-    double fractional_part = tist_offset - std::floor(tist_offset);
+    // negative tist_offset not supported, because the calculation is annoying
+    if (corrected_tist_offset < 0) return {m_timestamp, m_edi_time};
+
+    double fractional_part = corrected_tist_offset - std::floor(corrected_tist_offset);
     const size_t steps = std::lround(std::floor(fractional_part / 24e-3));
     uint32_t timestamp = m_timestamp + (24 << 14) * steps;
 
-    std::time_t edi_time = m_edi_time + std::lround(std::floor(tist_offset));
+    std::time_t edi_time = m_edi_time + std::lround(std::floor(corrected_tist_offset));
 
     if (timestamp > 0xf9FFff) {
         edi_time += 1;

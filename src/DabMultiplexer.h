@@ -47,6 +47,7 @@ class MuxTime {
     private:
     uint32_t m_timestamp = 0;
     std::time_t m_edi_time = 0;
+    uint32_t m_tist_at_fct0_us = 0;
 
     public:
     std::pair<uint32_t, std::time_t> get_time();

@@ -68,8 +68,11 @@ bool FIGCarouselElement::check_deadline()
 
 /**************** FIGCarousel *****************/
 
-FIGCarousel::FIGCarousel(std::shared_ptr<dabEnsemble> ensemble) :
-    m_rti(ensemble),
+FIGCarousel::FIGCarousel(
+        std::shared_ptr<dabEnsemble> ensemble,
+        FIGRuntimeInformation::get_time_func_t getTimeFunc
+        ) :
+    m_rti(ensemble, getTimeFunc),
     m_fig0_0(&m_rti),
     m_fig0_1(&m_rti),
     m_fig0_2(&m_rti),

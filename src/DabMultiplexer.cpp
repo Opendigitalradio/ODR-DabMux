@@ -100,9 +100,11 @@ uint64_t MuxTime::init(uint32_t tist_at_fct0_us)
     return currentFrame;
 }
 
+constexpr int TIMESTAMP_LEVEL_2_SHIFT = 14;
+
 void MuxTime::increment_timestamp()
 {
-    m_timestamp += 24 << 14; // Shift 24ms by 14 to Timestamp level 2
+    m_timestamp += 24 << TIMESTAMP_LEVEL_2_SHIFT; // Shift 24ms by 14 to Timestamp level 2
     if (m_timestamp > 0xf9FFff) {
         m_timestamp -= 0xfa0000; // Subtract 16384000, corresponding to one second
         m_edi_time += 1;
@@ -112,10 +114,10 @@ void MuxTime::increment_timestamp()
     }
 }
 
-std::pair<uint32_t, std::time_t> MuxTime::get_time()
+std::pair<uint32_t, std::time_t> MuxTime::get_tist_seconds()
 {
     // The user-visible configuration tist_offset is the effective
-    // offset, but since we implicityle add the tist_at_fct0 to it,
+    // offset, but since we implicitly add the tist_at_fct0 to it,
     // we must compensate.
     double corrected_tist_offset = tist_offset - (m_tist_at_fct0_us / 1e6);
 
@@ -124,7 +126,7 @@ std::pair<uint32_t, std::time_t> MuxTime::get_time()
 
     double fractional_part = corrected_tist_offset - std::floor(corrected_tist_offset);
     const size_t steps = std::lround(std::floor(fractional_part / 24e-3));
-    uint32_t timestamp = m_timestamp + (24 << 14) * steps;
+    uint32_t timestamp = m_timestamp + (24 << TIMESTAMP_LEVEL_2_SHIFT) * steps;
 
     std::time_t edi_time = m_edi_time + std::lround(std::floor(corrected_tist_offset));
 
@@ -135,13 +137,20 @@ std::pair<uint32_t, std::time_t> MuxTime::get_time()
     return {timestamp % 0xfa0000, edi_time};
 }
 
+std::pair<uint32_t, std::time_t> MuxTime::get_milliseconds_seconds()
+{
+    auto tist_seconds = get_tist_seconds();
+    return {tist_seconds.first >> TIMESTAMP_LEVEL_2_SHIFT, tist_seconds.second};
+}
+
 
 DabMultiplexer::DabMultiplexer(boost::property_tree::ptree pt) :
     RemoteControllable("mux"),
     m_pt(pt),
+    m_time(),
     ensemble(std::make_shared<dabEnsemble>()),
     m_clock_tai(split_pipe_separated_string(pt.get("general.tai_clock_bulletins", ""))),
-    fig_carousel(ensemble)
+    fig_carousel(ensemble, [&]() { return m_time.get_milliseconds_seconds(); })
 {
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
     RC_ADD_PARAMETER(tist_offset, "Timestamp offset in fractional number of seconds");
@@ -197,7 +206,7 @@ void DabMultiplexer::prepare(bool require_tai_clock)
     bool tist_enabled = m_pt.get("general.tist", false);
     m_time.tist_offset = m_pt.get<double>("general.tist_offset", 0.0);
 
-    auto tist_edi_time = m_time.get_time();
+    auto tist_edi_time = m_time.get_tist_seconds();
     const auto timestamp = tist_edi_time.first;
     const auto edi_time = tist_edi_time.second;
     m_time.mnsc_time = edi_time;
@@ -474,9 +483,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
             etiLog.level(error) << "Could not get UTC-TAI offset for EDI timestamp";
         }
     }
-    update_dab_time();
 
-    auto tist_edi_time = m_time.get_time();
+    auto tist_edi_time = m_time.get_tist_seconds();
     const auto timestamp = tist_edi_time.first;
     const auto edi_time = tist_edi_time.second;
 

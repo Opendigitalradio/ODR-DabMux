@@ -35,11 +35,19 @@ namespace FIC {
 
 class FIGRuntimeInformation {
     public:
-        FIGRuntimeInformation(std::shared_ptr<dabEnsemble>& e) :
+
+        using dab_time_t = std::pair<uint32_t /* milliseconds */, time_t>;
+        using get_time_func_t = std::function<dab_time_t()>;
+
+        FIGRuntimeInformation(
+                std::shared_ptr<dabEnsemble>& e,
+                get_time_func_t getTimeFunc) :
+            getTimeFunc(getTimeFunc),
             currentFrame(0),
             ensemble(e),
             factumAnalyzer(false) {}
 
+        get_time_func_t getTimeFunc;
         unsigned long currentFrame;
         std::shared_ptr<dabEnsemble> ensemble;
         bool factumAnalyzer;

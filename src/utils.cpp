@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2021
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -34,29 +34,7 @@
 
 using namespace std;
 
-static time_t dab_time_seconds = 0;
-static int dab_time_millis = 0;
-
 static void printServices(const vector<shared_ptr<DabService> >& services);
-
-void update_dab_time()
-{
-    if (dab_time_seconds == 0) {
-        dab_time_seconds = time(nullptr);
-    } else {
-        dab_time_millis+= 24;
-        if (dab_time_millis >= 1000) {
-            dab_time_millis -= 1000;
-            ++dab_time_seconds;
-        }
-    }
-}
-
-void get_dab_time(time_t *time, uint32_t *millis)
-{
-    *time = dab_time_seconds;
-    *millis = dab_time_millis;
-}
 
 
 uint32_t gregorian2mjd(int year, int month, int day)

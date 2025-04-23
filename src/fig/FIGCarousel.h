@@ -67,7 +67,9 @@ enum class FIBAllocation {
 
 class FIGCarousel {
     public:
-        FIGCarousel(std::shared_ptr<dabEnsemble> ensemble);
+        FIGCarousel(
+                std::shared_ptr<dabEnsemble> ensemble,
+                FIGRuntimeInformation::get_time_func_t getTimeFunc);
 
         /* Write all FIBs to the buffer, including correct padding and crc.
          * Returns number of bytes written.

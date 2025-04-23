@@ -50,7 +50,8 @@ class MuxTime {
     uint32_t m_tist_at_fct0_us = 0;
 
     public:
-    std::pair<uint32_t, std::time_t> get_time();
+    std::pair<uint32_t, std::time_t> get_tist_seconds();
+    std::pair<uint32_t, std::time_t> get_milliseconds_seconds();
 
     double tist_offset = 0;
 
@@ -80,8 +81,6 @@ class DabMultiplexer : public RemoteControllable {
         ~DabMultiplexer();
 
         void prepare(bool require_tai_clock);
-
-        uint64_t getCurrentFrame() const { return currentFrame; }
 
         void mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs);
 
@@ -116,6 +115,5 @@ class DabMultiplexer : public RemoteControllable {
         bool m_tai_clock_required = false;
         ClockTAI m_clock_tai;
 
-        /* New FIG Carousel */
         FIC::FIGCarousel fig_carousel;
 };

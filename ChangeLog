@@ -1,6 +1,11 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2025-05-19: Matthias P. Braendli <matthias@mpb.li>
+	(v5.2.0):
+		Rework FIG0/10 DAB time indication to match EDI time.
+		Make PFT per-output configurable.
+
 2025-03-18: Matthias P. Braendli <matthias@mpb.li>
 	(v5.1.0):
 		Fix startup value of DLFC and FCT.

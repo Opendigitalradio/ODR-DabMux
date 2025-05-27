@@ -20,8 +20,6 @@ Features of ODR-DabMux:
 - Includes a Telnet and ZMQ Remote Control for setting/getting parameters
 - EDI input and output, both over UDP and TCP
 - Support for FarSync TE1 and TE1e cards (G.703)
-- Something that will (with your help?) one day become a nice GUI for
-  configuration, see `gui/README.md`
 - Experimental STI-D(PI, X)/RTP input intended to be compatible
   with compliant encoders.
 - ZeroMQ and TCP ETI outputs that can be used with ODR-DabMod
@@ -50,6 +48,8 @@ Install
 =======
 
 See `INSTALL.md` file for installation instructions.
+
+You may find [ODR-DabMux-GUI](https://github.com/Opendigitalradio/ODR-DabMux-GUI/) for configuring a DAB Ensemble.
 
 Licence
 =======

@@ -2,13 +2,9 @@
 
 You have 3 ways to install odr-dabmux on your host:
 
-## Using your linux distribution packaging system
+## Installing binary packages on some linux distributions
 
-`odr-dabmux` is available on the official repositories of several debian-based distributions, such as Debian
-(from Debian 12), Ubuntu (from 24.10), Opensuse and Arch.
-
-If you are using Debian 12 (Bookworm), you will need to
-[add the backports repository](https://backports.debian.org/Instructions/)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/odr-dabmux.svg)](https://repology.org/project/odr-dabmux/versions)
 
 **Notice**: this debian package does not include the Mux Web Management GUI
 

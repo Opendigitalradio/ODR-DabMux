@@ -1,5 +1,4 @@
-Overview
-========
+# Overview
 
 ODR-DabMux is a *DAB (Digital Audio Broadcasting) multiplexer* compliant to
 ETSI EN 300 401. It is the continuation of the work started by the
@@ -44,20 +43,17 @@ Up to v4.5, this repository also contained
 This was superseded by `digris-zmq-converter` in the
 [digris-edi-zmq-bridge](https://github.com/digris/digris-edi-zmq-bridge) repository.
 
-Install
-=======
+## Install
 
-See `INSTALL.md` file for installation instructions.
+[Check the installation instructions.](INSTALL.md)
 
 You may find [ODR-DabMux-GUI](https://github.com/Opendigitalradio/ODR-DabMux-GUI/) for configuring a DAB Ensemble.
 
-Licence
-=======
+## Licence
 
 See the files `LICENCE` and `COPYING`
 
-Contributions and Contact
-=========================
+## Contributions and Contact
 
 Contributions to this tool are welcome, you can reach users and developers
 through the
@@ -73,12 +69,10 @@ Matthias P. Braendli *matthias [at] mpb [dot] li*
 
 Pascal Charest *pascal [dot] charest [at] crc [dot] ca*
 
-Acknowledgements
-================
+## Acknowledgements
 
 David Lutton, Yoann Queret, Stefan Pöschel and Maik for bug-fix patches,
 Wim Nelis for the Xymon monitoring scripts,
 and many more for feedback and bug reports.
 
 - [http://opendigitalradio.org/](http://opendigitalradio.org/)
-

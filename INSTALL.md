@@ -6,8 +6,6 @@ You have 3 ways to install odr-dabmux on your host:
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/odr-dabmux.svg)](https://repology.org/project/odr-dabmux/versions)
 
-**Notice**: this debian package does not include the Mux Web Management GUI
-
 ## Using installation scripts
 
 If your linux distribution is debian-based, you can install odr-dabmux

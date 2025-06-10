@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2020
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    http://opendigitalradio.org
@@ -139,6 +139,9 @@ class STIDecoder {
 
         bool m_filter_stream = false;
         uint16_t m_filtered_stream_index = 1;
+
+        bool m_ssnn_zero_warning_printed = false;
+        bool m_rfa_nonnull_warning_printed = false;
 };
 
 }

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2020
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    http://opendigitalradio.org
@@ -20,7 +20,6 @@
  */
 #include "STIDecoder.hpp"
 #include "buffer_unpack.hpp"
-#include "crc.h"
 #include "Log.h"
 #include <cstdio>
 #include <cassert>
@@ -180,7 +179,13 @@ bool STIDecoder::decode_ssn(const std::vector<uint8_t>& value, const tag_name_t&
     n |= (uint16_t)(name[3]);
 
     if (n == 0) {
-        etiLog.level(warn) << "EDI: Stream index SSnn tag is zero";
+        if (not m_ssnn_zero_warning_printed) {
+            etiLog.level(warn) << "EDI: Stream index SSnn tag is zero";
+        }
+        m_ssnn_zero_warning_printed = true;
+    }
+    else {
+        m_ssnn_zero_warning_printed = false;
     }
 
     if (m_filter_stream and m_filtered_stream_index != n) {
@@ -197,14 +202,20 @@ bool STIDecoder::decode_ssn(const std::vector<uint8_t>& value, const tag_name_t&
     sti.stid = istc & 0xFFF;
 
     if (sti.rfa != 0) {
-        etiLog.level(warn) << "EDI: rfa field in SSnn tag non-null";
+        if (not m_rfa_nonnull_warning_printed) {
+            etiLog.level(warn) << "EDI: rfa field in SSnn tag non-null";
+        }
+        m_rfa_nonnull_warning_printed = true;
+    }
+    else {
+        m_rfa_nonnull_warning_printed = false;
     }
 
     copy(   value.cbegin() + 3,
             value.cend(),
             back_inserter(sti.istd));
 
-    m_data_collector.add_payload(move(sti));
+    m_data_collector.add_payload(std::move(sti));
 
     return true;
 }

@@ -98,24 +98,26 @@ void MuxTime::increment_timestamp()
 
 void MuxTime::set_tist_offset(double new_tist_offset)
 {
-    int32_t new_tist_offset_ms = std::lround(new_tist_offset * 1000.0);
-    if (new_tist_offset_ms > 0) {
-        while (new_tist_offset_ms > 0) {
+    const int32_t new_tist_offset_ms = std::lround(new_tist_offset * 1000.0);
+    int32_t delta = m_tist_offset_ms - new_tist_offset_ms;
+    if (delta > 0) {
+        while (delta > 0) {
             increment_timestamp();
-            new_tist_offset_ms -= 24;
+            delta -= 24;
         }
     }
-    else if (new_tist_offset_ms < 0) {
-        while (new_tist_offset_ms < 0) {
+    else if (delta < 0) {
+        while (delta < 0) {
             m_edi_time -= 1;
-            new_tist_offset_ms += 1000;
+            delta += 1000;
         }
         // compensate the we subtracted too much
-        while (new_tist_offset_ms > 0) {
+        while (delta > 0) {
             increment_timestamp();
-            new_tist_offset_ms -= 24;
+            delta -= 24;
         }
     }
+    m_tist_offset_ms = new_tist_offset_ms;
 }
 
 std::pair<uint32_t, std::time_t> MuxTime::get_tist_seconds()
@@ -472,8 +474,10 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     auto tist_edi_time = m_time.get_tist_seconds();
     const auto timestamp = tist_edi_time.first;
     const auto edi_time = tist_edi_time.second;
+    /*
     etiLog.level(debug) << "Frame " << currentFrame << " " << edi_time <<
         " + " << (timestamp >> TIMESTAMP_LEVEL_2_SHIFT);
+        */
 
     // Initialise the ETI frame
     memset(etiFrame, 0, 6144);

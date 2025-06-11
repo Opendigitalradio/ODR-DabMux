@@ -47,22 +47,21 @@ static vector<string> split_pipe_separated_string(const std::string& s)
     return components;
 }
 
-uint64_t MuxTime::init(uint32_t tist_at_fct0_us)
+uint64_t MuxTime::init(uint32_t tist_at_fct0_us, double tist_offset)
 {
-    m_tist_at_fct0_us = tist_at_fct0_us;
+    // Things we must guarantee, up to granularity of 24ms:
+    // Difference between current time and EDI time = tist_offset
+    // TIST of frame 0 = tist_at_fct0_us
+    // In order to achieve the second, we calculate the initial
+    // counter value so that FCT0 corresponds to the desired TIST.
+    //
+    // Changing the tist_offset at runtime will throw off the TIST@FCT0 value
+    m_tist_offset_ms = std::lround(tist_offset * 1000);
 
-    /* At startup, derive edi_time, TIST and CIF count such that there is
-     * a consistency across mux restarts. Ensure edi_time and TIST represent
-     * current time.
-     *
-     * FCT and DLFC are directly derived from m_currentFrame.
-     * Every 6s, FCT overflows. DLFC overflows at 5000 every 120s.
-     *
-     * Keep a granularity of 24ms, which corresponds to the duration of an ETI
-     * frame, to get nicer timestamps.
-     */
     using Sec = chrono::seconds;
-    const auto now = chrono::system_clock::now();
+    const auto now = chrono::system_clock::now() +
+        chrono::milliseconds(std::lround(tist_offset * 1000.0));
+
     const auto offset = now - chrono::time_point_cast<Sec>(now);
     if (offset >= chrono::seconds(1)) {
         throw std::logic_error("Invalid startup offset calculation for TIST! " +
@@ -70,43 +69,26 @@ uint64_t MuxTime::init(uint32_t tist_at_fct0_us)
                 " ms");
     }
     const time_t t_now = chrono::system_clock::to_time_t(chrono::time_point_cast<Sec>(now));
+    const auto offset_ms = chrono::duration_cast<chrono::milliseconds>(offset).count();
 
-    m_edi_time = t_now - (t_now % 6);
-    uint64_t currentFrame = 0;
-    time_t edi_time_at_cif0 = t_now - (t_now % 120);
-    while (edi_time_at_cif0 < m_edi_time) {
-        edi_time_at_cif0 += 6;
-        currentFrame += 250;
-    }
+    m_edi_time = t_now;
+    m_pps_offset_ms = std::lround(offset_ms / 24.0) * 24;
 
-    if (edi_time_at_cif0 != m_edi_time) {
-        throw std::logic_error("Invalid startup offset calculation for CIF!");
-    }
+    const auto counter_offset = tist_at_fct0_us / 24;
+    const auto offset_as_count = m_pps_offset_ms / 24;
 
-    int64_t offset_ms = chrono::duration_cast<chrono::milliseconds>(offset).count();
-    offset_ms += 1000 * (t_now - m_edi_time);
+    etiLog.level(debug) << "Init " << counter_offset << " " << offset_as_count;
 
-    if (tist_at_fct0_us >= 1000000) {
-        etiLog.level(error) << "tist_at_fct0 may not be larger than 1s";
-        throw MuxInitException();
-    }
-
-    m_timestamp = (uint64_t)tist_at_fct0_us * 16384 / 1000;
-    while (offset_ms >= 24) {
-        increment_timestamp();
-        currentFrame++;
-        offset_ms -= 24;
-    }
-    return currentFrame;
+    return (250 - counter_offset + offset_as_count) % 250;
 }
 
 constexpr int TIMESTAMP_LEVEL_2_SHIFT = 14;
 
 void MuxTime::increment_timestamp()
 {
-    m_timestamp += 24 << TIMESTAMP_LEVEL_2_SHIFT; // Shift 24ms by 14 to Timestamp level 2
-    if (m_timestamp > 0xf9FFff) {
-        m_timestamp -= 0xfa0000; // Subtract 16384000, corresponding to one second
+    m_pps_offset_ms += 24;
+    if (m_pps_offset_ms >= 1000) {
+        m_pps_offset_ms -= 1000;
         m_edi_time += 1;
 
         // Also update MNSC time for next time FP==0
@@ -114,27 +96,32 @@ void MuxTime::increment_timestamp()
     }
 }
 
+void MuxTime::set_tist_offset(double new_tist_offset)
+{
+    int32_t new_tist_offset_ms = std::lround(new_tist_offset * 1000.0);
+    if (new_tist_offset_ms > 0) {
+        while (new_tist_offset_ms > 0) {
+            increment_timestamp();
+            new_tist_offset_ms -= 24;
+        }
+    }
+    else if (new_tist_offset_ms < 0) {
+        while (new_tist_offset_ms < 0) {
+            m_edi_time -= 1;
+            new_tist_offset_ms += 1000;
+        }
+        // compensate the we subtracted too much
+        while (new_tist_offset_ms > 0) {
+            increment_timestamp();
+            new_tist_offset_ms -= 24;
+        }
+    }
+}
+
 std::pair<uint32_t, std::time_t> MuxTime::get_tist_seconds()
 {
-    // The user-visible configuration tist_offset is the effective
-    // offset, but since we implicitly add the tist_at_fct0 to it,
-    // we must compensate.
-    double corrected_tist_offset = tist_offset - (m_tist_at_fct0_us / 1e6);
-
-    // negative tist_offset not supported, because the calculation is annoying
-    if (corrected_tist_offset < 0) return {m_timestamp, m_edi_time};
-
-    double fractional_part = corrected_tist_offset - std::floor(corrected_tist_offset);
-    const size_t steps = std::lround(std::floor(fractional_part / 24e-3));
-    uint32_t timestamp = m_timestamp + (24 << TIMESTAMP_LEVEL_2_SHIFT) * steps;
-
-    std::time_t edi_time = m_edi_time + std::lround(std::floor(corrected_tist_offset));
-
-    if (timestamp > 0xf9FFff) {
-        edi_time += 1;
-    }
-
-    return {timestamp % 0xfa0000, edi_time};
+    auto timestamp = m_pps_offset_ms * 16384;
+    return {timestamp % 0xfa0000, m_edi_time};
 }
 
 std::pair<uint32_t, std::time_t> MuxTime::get_milliseconds_seconds()
@@ -153,7 +140,6 @@ DabMultiplexer::DabMultiplexer(boost::property_tree::ptree pt) :
     fig_carousel(ensemble, [&]() { return m_time.get_milliseconds_seconds(); })
 {
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
-    RC_ADD_PARAMETER(tist_offset, "Timestamp offset in fractional number of seconds");
 
     rcs.enrol(&m_clock_tai);
 }
@@ -200,11 +186,10 @@ void DabMultiplexer::prepare(bool require_tai_clock)
     }
 
     const uint32_t tist_at_fct0_us = m_pt.get<double>("general.tist_at_fct0", 0);
-    currentFrame = m_time.init(tist_at_fct0_us);
+    currentFrame = m_time.init(tist_at_fct0_us, m_pt.get<double>("general.tist_offset", 0.0));
     m_time.mnsc_increment_time = false;
 
     bool tist_enabled = m_pt.get("general.tist", false);
-    m_time.tist_offset = m_pt.get<double>("general.tist_offset", 0.0);
 
     auto tist_edi_time = m_time.get_tist_seconds();
     const auto timestamp = tist_edi_time.first;
@@ -487,6 +472,8 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     auto tist_edi_time = m_time.get_tist_seconds();
     const auto timestamp = tist_edi_time.first;
     const auto edi_time = tist_edi_time.second;
+    etiLog.level(debug) << "Frame " << currentFrame << " " << edi_time <<
+        " + " << (timestamp >> TIMESTAMP_LEVEL_2_SHIFT);
 
     // Initialise the ETI frame
     memset(etiFrame, 0, 6144);
@@ -520,7 +507,6 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     eti_FC *fc = (eti_FC *) &etiFrame[4];
 
     //****** FCT ******//
-    // Incremente for each frame, overflows at 249
     fc->FCT = currentFrame % 250;
     edi_tagDETI.dlfc = currentFrame % 5000;
 
@@ -857,7 +843,7 @@ void DabMultiplexer::set_parameter(const std::string& parameter,
         throw ParameterError(ss.str());
     }
     else if (parameter == "tist_offset") {
-        m_time.tist_offset = std::stod(value);
+        m_time.set_tist_offset(std::stod(value));
     }
     else {
         stringstream ss;
@@ -875,7 +861,7 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
         ss << currentFrame;
     }
     else if (parameter == "tist_offset") {
-        ss << m_time.tist_offset;
+        ss << m_time.tist_offset();
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -890,7 +876,7 @@ const json::map_t DabMultiplexer::get_all_values() const
 {
     json::map_t map;
     map["frames"].v = currentFrame;
-    map["tist_offset"].v = m_time.tist_offset;
+    map["tist_offset"].v = m_time.tist_offset();
     return map;
 }
 

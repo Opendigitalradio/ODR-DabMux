@@ -47,11 +47,11 @@ static vector<string> split_pipe_separated_string(const std::string& s)
     return components;
 }
 
-uint64_t MuxTime::init(uint32_t tist_at_fct0_us, double tist_offset)
+uint64_t MuxTime::init(uint32_t tist_at_fct0_ms, double tist_offset)
 {
     // Things we must guarantee, up to granularity of 24ms:
     // Difference between current time and EDI time = tist_offset
-    // TIST of frame 0 = tist_at_fct0_us
+    // TIST of frame 0 = tist_at_fct0_ms
     // In order to achieve the second, we calculate the initial
     // counter value so that FCT0 corresponds to the desired TIST.
     //
@@ -74,7 +74,7 @@ uint64_t MuxTime::init(uint32_t tist_at_fct0_us, double tist_offset)
     m_edi_time = t_now;
     m_pps_offset_ms = std::lround(offset_ms / 24.0) * 24;
 
-    const auto counter_offset = tist_at_fct0_us / 24;
+    const auto counter_offset = tist_at_fct0_ms / 24;
     const auto offset_as_count = m_pps_offset_ms / 24;
 
     etiLog.level(debug) << "Init " << counter_offset << " " << offset_as_count;
@@ -187,8 +187,8 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         throw MuxInitException();
     }
 
-    const uint32_t tist_at_fct0_us = m_pt.get<double>("general.tist_at_fct0", 0);
-    currentFrame = m_time.init(tist_at_fct0_us, m_pt.get<double>("general.tist_offset", 0.0));
+    const uint32_t tist_at_fct0_ms = m_pt.get<double>("general.tist_at_fct0", 0);
+    currentFrame = m_time.init(tist_at_fct0_ms, m_pt.get<double>("general.tist_offset", 0.0));
     m_time.mnsc_increment_time = false;
 
     bool tist_enabled = m_pt.get("general.tist", false);

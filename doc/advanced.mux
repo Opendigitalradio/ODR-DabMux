@@ -36,8 +36,8 @@ general {
     ; number in seconds. Granularity: 24ms
     ; tist_offset 0.480
 
-    ; Specify the TIST value for the frame with FCT==0, in microseconds
-    ; tist_at_fct0 768000
+    ; Specify the TIST value for the frame with FCT==0, in milliseconds
+    ; tist_at_fct0 768
 
     ; The management server is a simple TCP server that can present
     ; statistics data (buffers, overruns, underruns, etc)

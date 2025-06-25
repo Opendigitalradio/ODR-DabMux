@@ -1,6 +1,12 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2025-06-25: Matthias P. Braendli <matthias@mpb.li>
+	(v5.3.0):
+		Remove broken gui/ and point towards ODR-DabMux-GUI in README instead.
+		Improve logging about SSnn zero.
+		Rework FCT and TIST startup initialisation to guarantee TIST@FCT0 setting
+
 2025-05-19: Matthias P. Braendli <matthias@mpb.li>
 	(v5.2.0):
 		Rework FIG0/10 DAB time indication to match EDI time.

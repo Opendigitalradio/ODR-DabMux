@@ -77,8 +77,6 @@ uint64_t MuxTime::init(uint32_t tist_at_fct0_ms, double tist_offset)
     const auto counter_offset = tist_at_fct0_ms / 24;
     const auto offset_as_count = m_pps_offset_ms / 24;
 
-    etiLog.level(debug) << "Init " << counter_offset << " " << offset_as_count;
-
     return (250 - counter_offset + offset_as_count) % 250;
 }
 

@@ -41,10 +41,15 @@ void configuration_t::print() const
         if (auto udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(edi_dest)) {
             etiLog.level(info) << " UDP to " << udp_dest->dest_addr << ":" << udp_dest->dest_port;
             if (not udp_dest->source_addr.empty()) {
-                etiLog.level(info) << "  source      " << udp_dest->source_addr;
-                etiLog.level(info) << "  ttl         " << udp_dest->ttl;
+                etiLog.level(info) << "  source address=" << udp_dest->source_addr;
             }
-            etiLog.level(info) << "  source port " << udp_dest->source_port;
+            if (udp_dest->ttl) {
+                etiLog.level(info) << "  ttl=" << (int)(*udp_dest->ttl);
+            }
+            else {
+                etiLog.level(info) << "  ttl=(default)";
+            }
+            etiLog.level(info) << "  source port=" << udp_dest->source_port;
         }
         else if (auto tcp_dest = dynamic_pointer_cast<edi::tcp_server_t>(edi_dest)) {
             etiLog.level(info) << " TCP listening on port " << tcp_dest->listen_port;
@@ -80,7 +85,10 @@ Sender::Sender(const configuration_t& conf) :
 
             if (not udp_dest->source_addr.empty()) {
                 udp_socket.setMulticastSource(udp_dest->source_addr.c_str());
-                udp_socket.setMulticastTTL(udp_dest->ttl);
+            }
+
+            if (udp_dest->ttl) {
+                udp_socket.setMulticastTTL(*udp_dest->ttl);
             }
 
             auto sender = make_shared<udp_sender_t>(

@@ -352,10 +352,9 @@ int main(int argc, char *argv[])
                     pft_settings.enable_pft = pt.get<bool>("enable_pft", default_enable_pft);
                     pft_settings.fec = pt.get<unsigned int>("fec", default_fec);
                     pft_settings.fragment_spreading_factor = default_spreading_factor;
-                    auto override_spread_percent = pt.get_optional<int>("packet_spread");
-                    if (override_spread_percent) {
+                    if (auto override_spread_percent = pt.get_optional<int>("packet_spread"))
                         pft_settings.fragment_spreading_factor = check_spreading_factor(*override_spread_percent);
-                    }
+
                     pft_settings.verbose = pt.get<bool>("verbose", edi_conf.verbose);
                 };
 
@@ -364,7 +363,8 @@ int main(int argc, char *argv[])
                     if (proto == "udp") {
                         auto dest = make_shared<edi::udp_destination_t>();
                         dest->dest_addr   = pt_edi_dest.second.get<string>("destination");
-                        dest->ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
+                        if (auto ttl = pt_edi_dest.second.get_optional<unsigned int>("ttl"))
+                            dest->ttl = *ttl;
 
                         dest->source_addr = pt_edi_dest.second.get<string>("source", "");
                         dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");

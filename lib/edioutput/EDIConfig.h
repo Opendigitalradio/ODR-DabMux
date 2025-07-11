@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <optional>
 #include <vector>
 #include <string>
 #include <memory>
@@ -60,7 +61,7 @@ struct udp_destination_t : public destination_t {
     uint16_t dest_port = 0;
     std::string source_addr;
     uint16_t source_port = 0;
-    uint8_t ttl = 10;
+    std::optional<uint8_t> ttl = std::nullopt;
 };
 
 // TCP server that can accept multiple connections

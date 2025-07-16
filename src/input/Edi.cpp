@@ -80,6 +80,7 @@ Edi::~Edi() {
 void Edi::open(const std::string& name)
 {
     const std::regex re_udp("udp://:([0-9]+)");
+    const std::regex re_udp_bindto("udp://([^:]+):([0-9]+)");
     const std::regex re_udp_multicast("udp://@([0-9.]+):([0-9]+)");
     const std::regex re_udp_multicast_bindto("udp://([0-9.])+@([0-9.]+):([0-9]+)");
     const std::regex re_tcp("tcp://(.*):([0-9]+)");
@@ -96,6 +97,12 @@ void Edi::open(const std::string& name)
         const int udp_port = std::stoi(m[1].str());
         m_input_used = InputUsed::UDP;
         m_udp_sock.reinit(udp_port);
+        m_udp_sock.setBlocking(false);
+    }
+    else if (std::regex_match(name, m, re_udp_bindto)) {
+        const int udp_port = std::stoi(m[2].str());
+        m_input_used = InputUsed::UDP;
+        m_udp_sock.reinit(udp_port, m[1].str());
         m_udp_sock.setBlocking(false);
     }
     else if (std::regex_match(name, m, re_udp_multicast_bindto)) {

@@ -211,11 +211,13 @@ subchannels {
         inputuri "tcp://0.0.0.0:9001"
 
         ; For UDP, PFT should be enabled at the sender.
-        ; Unicast UDP input:
+        ; Unicast UDP input, bound to all interfaces:
         ;inputuri "udp://:9001"
+        ; Unicast UDP input, bound to interface with IP 192.168.0.10:
+        ;inputuri "udp://192.168.0.10:9001"
         ; Multicast UDP input:
         ;inputuri "udp://@239.10.0.1:9001"
-        ; Multicast UDP input with local interface (192.168.0.10) specification
+        ; Multicast UDP input with local interface 192.168.0.10 specification
         ;inputuri "udp://192.168.0.10@239.10.0.1:9001"
 
         ; Two buffer-management types are available: prebuffering and timestamped.

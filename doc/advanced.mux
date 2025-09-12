@@ -47,6 +47,9 @@ general {
     ; If the port is zero, or the line commented, the server
     ; is not started.
     managementport 12720
+
+    ; Allow non-compliant Itel encoder streams to be understood by the mux.
+    allow-non-compliant-itel true
 }
 
 remotecontrol {

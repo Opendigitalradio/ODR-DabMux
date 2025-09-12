@@ -54,6 +54,11 @@ struct dab_input_edi_config_t
      * Same units as buffer_size
      */
     size_t prebuffering = 30;
+
+    /*
+     * Allows non-compliant Itel encoder streams to be decoded.
+     */
+    bool allow_non_compliant_itel = false;
 };
 
 /*
@@ -70,6 +75,7 @@ class Edi : public InputBase, public RemoteControllable {
         ~Edi();
 
         virtual void open(const std::string& name);
+        virtual void applyItelTransformation(std::vector<uint8_t>* frame);
         virtual size_t readFrame(uint8_t *buffer, size_t size);
         virtual size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
         virtual int setBitrate(int bitrate);
@@ -122,6 +128,8 @@ class Edi : public InputBase, public RemoteControllable {
          * Parameter 'prebuffering' inside RC. */
         std::atomic<size_t> m_num_frames_prebuffering = ATOMIC_VAR_INIT(10);
 
+        bool m_allow_non_compliant_itel = false;
+        std::string m_encoder_version;
         std::string m_name;
         InputStat m_stats;
 };

@@ -68,6 +68,7 @@ constexpr uint32_t DEFAULT_SERVICE_ID = 50;
 
 static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         const ptree &pt,
+        const ptree &global_pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid);
 
@@ -689,7 +690,7 @@ void parse_ptree(
         ensemble->subchannels.push_back(subchan);
 
         try {
-            setup_subchannel_from_ptree(subchan, it->second, ensemble,
+            setup_subchannel_from_ptree(subchan, it->second, pt, ensemble,
                     subchanuid);
         }
         catch (const runtime_error &e) {
@@ -950,6 +951,7 @@ static Inputs::dab_input_zmq_config_t setup_zmq_input(
 
 static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         const ptree &pt,
+        const ptree &global_pt,
         std::shared_ptr<dabEnsemble> ensemble,
         const string& subchanuid)
 {
@@ -1041,6 +1043,7 @@ static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
             Inputs::dab_input_edi_config_t config;
             config.buffer_size = pt.get("buffer", config.buffer_size);
             config.prebuffering = pt.get("prebuffering", config.prebuffering);
+            config.allow_non_compliant_itel = global_pt.get<bool>("general.allow-non-compliant-itel", false);
             auto inedi = make_shared<Inputs::Edi>(subchanuid, config);
             rcs.enrol(inedi.get());
             subchan->input = inedi;

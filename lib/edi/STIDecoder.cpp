@@ -47,6 +47,11 @@ STIDecoder::STIDecoder(STIDataCollector& data_collector) :
             std::bind(&STIDecoder::decode_odraudiolevel, this, _1, _2));
     m_dispatcher.register_tag("ODRv",
             std::bind(&STIDecoder::decode_odrversion, this, _1, _2));
+    // Itel proprietary tags, same format as ODR ones
+    m_dispatcher.register_tag("ENCa",
+            std::bind(&STIDecoder::decode_odraudiolevel, this, _1, _2));
+    m_dispatcher.register_tag("ENCv",
+            std::bind(&STIDecoder::decode_odrversion, this, _1, _2));
 }
 
 void STIDecoder::set_verbose(bool verbose)

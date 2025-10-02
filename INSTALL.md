@@ -28,8 +28,8 @@ sudo apt-get install --yes build-essential automake libtool
 ## ZeroMQ
 sudo apt-get install --yes libzmq3-dev libzmq5
 
-## Boost 1.48 or later
-sudo apt-get install --yes libboost-system-dev
+## Boost 1.71 or later
+sudo apt-get install --yes libboost-dev
 
 # optional packages
 ## cURL to download the TAI-UTC bulletin, needed for timestamps in EDI output

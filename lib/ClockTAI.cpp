@@ -30,7 +30,7 @@
  *
  * This file contains self-test code that can be executed by running
  *  g++ -g -Wall -DTAI_TEST -DHAVE_CURL -std=c++11 -lcurl -pthread \
- *  ClockTAI.cpp Log.cpp RemoteControl.cpp -lboost_system -o taitest && ./taitest
+ *  ClockTAI.cpp Log.cpp RemoteControl.cpp -o taitest && ./taitest
  */
 
 #include <iterator>

@@ -38,8 +38,7 @@ AX_CXX_COMPILE_STDCXX(17,noext,mandatory)
 
 # Checks for libraries.
 AX_PTHREAD([], AC_MSG_ERROR([requires pthread]))
-AX_BOOST_BASE([1.48.0], [], AC_MSG_ERROR([BOOST 1.48 or later is required]))
-AX_BOOST_SYSTEM
+AX_BOOST_BASE([1.71.0], [], AC_MSG_ERROR([BOOST 1.71 or later is required]))
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])

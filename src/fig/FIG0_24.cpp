@@ -73,21 +73,22 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
         " ********************************";
 
     if (not m_initialised) {
-        serviceFIG0_24 = ensemble->service_other_ensemble.begin();
+        m_services = ensemble->get_service_other_ensemble();
+        m_services_it = m_services.begin();
         m_initialised = true;
     }
 
-    const auto last_service = ensemble->service_other_ensemble.end();
+    const auto last_service = m_services.end();
 
     bool last_oe = false;
 
     // Rotate through the subchannels until there is no more
     // space
-    for (; serviceFIG0_24 != last_service; ++serviceFIG0_24) {
+    for (; m_services_it != last_service; ++m_services_it) {
 
         shared_ptr<DabService> service;
         for (const auto& local_service : ensemble->services) {
-            if (local_service->id == serviceFIG0_24->service_id) {
+            if (local_service->id == m_services_it->service_id) {
                 service = local_service;
                 break;
             }
@@ -105,7 +106,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
 
         etiLog.log(FIG0_24_TRACE, "FIG0_24::fill  loop OE=%d SId=%04x %s/%s",
                 oe,
-                serviceFIG0_24->service_id,
+                m_services_it->service_id,
                 m_inserting_audio_not_data ? "AUDIO" : "DATA",
                 type == subchannel_type_t::DABAudio ? "Audio" :
                 type == subchannel_type_t::Packet ? "Packet" :
@@ -117,7 +118,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
 
         const ssize_t required_size =
             (isProgramme ? 2 : 4) + 1 +
-            serviceFIG0_24->other_ensembles.size() * 2;
+            m_services_it->other_ensembles.size() * 2;
 
 
         if (fig0 == nullptr) {
@@ -132,7 +133,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
             fig0->FIGtypeNumber = 0;
             fig0->Length = 1;
             // CN according to ETSI TS 103 176, Clause 5.3.4.1
-            bool isFirst = serviceFIG0_24 == ensemble->service_other_ensemble.begin();
+            bool isFirst = m_services_it == m_services.begin();
             fig0->CN = (isFirst ? 0 : 1);
             fig0->OE = oe;
             fig0->PD = isProgramme ? 0 : 1;
@@ -149,33 +150,33 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
         if (isProgramme) {
             auto fig0_24_audioservice = (FIGtype0_24_audioservice*)buf;
 
-            fig0_24_audioservice->SId = htons(serviceFIG0_24->service_id);
+            fig0_24_audioservice->SId = htons(m_services_it->service_id);
             fig0_24_audioservice->rfa = 0;
             fig0_24_audioservice->CAId = 0;
-            fig0_24_audioservice->Length = serviceFIG0_24->other_ensembles.size();
+            fig0_24_audioservice->Length = m_services_it->other_ensembles.size();
             buf += 3;
             fig0->Length += 3;
             remaining -= 3;
 
             etiLog.log(FIG0_24_TRACE, "FIG0_24::fill  audio SId=%04x",
-               serviceFIG0_24->service_id);
+               m_services_it->service_id);
         }
         else {
             auto fig0_24_dataservice = (FIGtype0_24_dataservice*)buf;
 
-            fig0_24_dataservice->SId = htonl(serviceFIG0_24->service_id);
+            fig0_24_dataservice->SId = htonl(m_services_it->service_id);
             fig0_24_dataservice->rfa = 0;
             fig0_24_dataservice->CAId = 0;
-            fig0_24_dataservice->Length = serviceFIG0_24->other_ensembles.size();
+            fig0_24_dataservice->Length = m_services_it->other_ensembles.size();
             buf += 4;
             fig0->Length += 4;
             remaining -= 4;
 
             etiLog.log(FIG0_24_TRACE, "FIG0_24::fill  data SId=%04x",
-               serviceFIG0_24->service_id);
+               m_services_it->service_id);
         }
 
-        for (const uint16_t oe : serviceFIG0_24->other_ensembles) {
+        for (const uint16_t oe : m_services_it->other_ensembles) {
             buf[0] = oe >> 8;
             buf[1] = oe & 0xFF;
 
@@ -185,7 +186,7 @@ FillStatus FIG0_24::fill(uint8_t *buf, size_t max_size)
         }
     }
 
-    if (serviceFIG0_24 == last_service) {
+    if (m_services_it == last_service) {
         etiLog.log(FIG0_24_TRACE, "FIG0_24::loop reached last");
         fs.complete_fig_transmitted = true;
         m_initialised = false;

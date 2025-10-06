@@ -793,7 +793,7 @@ bool dabEnsemble::validate_linkage_sets(
 std::vector<FrequencyInformation> dabEnsemble::get_frequency_information() const
 {
     unique_lock<mutex> lock(m_mutex);
-    auto fi = m_frequency_information;
+    const auto fi = m_frequency_information;
     lock.unlock();
     return fi;
 }
@@ -801,18 +801,28 @@ std::vector<FrequencyInformation> dabEnsemble::get_frequency_information() const
 std::vector<std::shared_ptr<LinkageSet> > dabEnsemble::get_linkagesets() const
 {
     unique_lock<mutex> lock(m_mutex);
-    auto ls = m_linkagesets;
+    const auto ls = m_linkagesets;
     lock.unlock();
     return ls;
 }
 
+std::vector<ServiceOtherEnsembleInfo> dabEnsemble::get_service_other_ensemble() const
+{
+    unique_lock<mutex> lock(m_mutex);
+    const auto oe = m_service_other_ensemble;
+    lock.unlock();
+    return oe;
+}
+
 void dabEnsemble::set_linking_config(
         std::vector<std::shared_ptr<LinkageSet> >& new_linkage_sets,
-        std::vector<FrequencyInformation>& new_frequency_information)
+        std::vector<FrequencyInformation>& new_frequency_information,
+        std::vector<ServiceOtherEnsembleInfo>& new_services_other_ensemble)
 {
     unique_lock<mutex> lock(m_mutex);
     m_frequency_information = new_frequency_information;
     m_linkagesets = new_linkage_sets;
+    m_service_other_ensemble = new_services_other_ensemble;
 }
 
 unsigned short DabSubchannel::getSizeCu() const

@@ -504,8 +504,21 @@ void DabMultiplexer::reload_linking()
                 etiLog.level(warn) << "Failed to validate new frequency info: " << e.what();
             }
 
-            if (linkage_sets_valid and freq_info_valid) {
-                ensemble->set_linking_config(linkagesets, frequency_information);
+            bool services_oe_valid = false;
+            std::vector<ServiceOtherEnsembleInfo> services_other_ensemble;
+
+            try {
+                const auto pt_other_services = new_conf.pt.get_child_optional("other-services");
+                parse_other_service_linking(pt_other_services, services_other_ensemble);
+                services_oe_valid = true;
+            }
+            catch (const std::runtime_error& e)
+            {
+                etiLog.level(warn) << "Failed to validate new services in other onsembles: " << e.what();
+            }
+
+            if (linkage_sets_valid and freq_info_valid and services_oe_valid) {
+                ensemble->set_linking_config(linkagesets, frequency_information, services_other_ensemble);
                 etiLog.level(info) << "Loaded new linkage sets and frequency info.";
             }
         }

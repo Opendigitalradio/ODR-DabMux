@@ -329,10 +329,10 @@ void parse_freq_info(
     } // if FI present
 }
 
-static void parse_other_service_linking(ptree& pt,
-        std::shared_ptr<dabEnsemble> ensemble)
+void parse_other_service_linking(
+        const boost::optional<boost::property_tree::ptree&> pt_other_services,
+        std::vector<ServiceOtherEnsembleInfo>& service_other_ensemble)
 {
-    const auto pt_other_services = pt.get_child_optional("other-services");
     if (pt_other_services) {
         for (const auto& it_service : *pt_other_services) {
             const string srv_uid = it_service.first;
@@ -362,7 +362,7 @@ static void parse_other_service_linking(ptree& pt,
                         }
                     }
 
-                    ensemble->service_other_ensemble.push_back(std::move(info));
+                    service_other_ensemble.push_back(std::move(info));
                 }
             }
             catch (const std::exception &e) {
@@ -917,9 +917,12 @@ void parse_ptree(
     std::vector<FrequencyInformation> frequency_information;
     parse_freq_info(pt_frequency_information, frequency_information);
 
-    ensemble->set_linking_config(linkagesets, frequency_information);
+    const auto pt_other_services = pt.get_child_optional("other-services");
+    std::vector<ServiceOtherEnsembleInfo> services_other_ensemble;
+    parse_other_service_linking(pt_other_services, services_other_ensemble);
 
-    parse_other_service_linking(pt, ensemble);
+    ensemble->set_linking_config(linkagesets, frequency_information, services_other_ensemble);
+
 }
 
 static Inputs::dab_input_zmq_config_t setup_zmq_input(

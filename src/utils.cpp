@@ -369,11 +369,12 @@ static void printLinking(const shared_ptr<dabEnsemble>& ensemble)
     }
 
     etiLog.log(info, " Services in other ensembles");
-    if (ensemble->service_other_ensemble.empty()) {
+    const auto service_other_ensemble = ensemble->get_service_other_ensemble();
+    if (service_other_ensemble.empty()) {
         etiLog.level(info) << "  None ";
     }
 
-    for (const auto& s_oe : ensemble->service_other_ensemble) {
+    for (const auto& s_oe : service_other_ensemble) {
         int oe = 1;
 
         for (const auto& local_service : ensemble->services) {

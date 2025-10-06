@@ -45,3 +45,7 @@ void parse_linkage(
 void parse_freq_info(
         const boost::optional<boost::property_tree::ptree&> pt_frequency_information,
         std::vector<FrequencyInformation>& frequency_information);
+
+void parse_other_service_linking(
+        const boost::optional<boost::property_tree::ptree&> pt_other_services,
+        std::vector<ServiceOtherEnsembleInfo>& service_other_ensemble);

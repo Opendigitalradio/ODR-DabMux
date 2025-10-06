@@ -256,7 +256,7 @@ void FIG0_6::update()
 
     // TODO check if AMSS and DRM have to be put into a single subset
 
-    for (const auto& linkageset : m_rti->ensemble->linkagesets) {
+    for (const auto& linkageset : m_rti->ensemble->get_linkagesets()) {
         const auto lsn = linkageset->lsn;
 
         if (linkageset->keyservice.empty()) {

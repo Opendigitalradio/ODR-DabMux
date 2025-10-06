@@ -171,8 +171,6 @@ void printOutputs(const vector<shared_ptr<DabOutput> >& outputs)
 
 void printServices(const vector<shared_ptr<DabService> >& services)
 {
-    int index = 0;
-
     etiLog.log(info, "--- Services list ---");
     for (auto service : services) {
 
@@ -200,7 +198,6 @@ void printServices(const vector<shared_ptr<DabService> >& services)
             clusters_s.push_back(std::to_string(cluster));
         }
         etiLog.level(info) << " clusters: " << boost::join(clusters_s, ",");
-        ++index;
     }
 }
 
@@ -279,8 +276,6 @@ void printComponent(const shared_ptr<DabComponent>& component, const std::shared
 
 void printSubchannels(const vec_sp_subchannel& subchannels)
 {
-    int index = 0;
-
     int total_num_cu = 0;
 
     etiLog.log(info, "--- Subchannels list ---");
@@ -330,7 +325,6 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
         etiLog.log(info, " size (CU):  %i",
                 subchannel->getSizeCu());
         total_num_cu += subchannel->getSizeCu();
-        ++index;
     }
 
     etiLog.log(info, "Total ensemble size (CU):  %i", total_num_cu);
@@ -338,12 +332,12 @@ void printSubchannels(const vec_sp_subchannel& subchannels)
 
 static void printLinking(const shared_ptr<dabEnsemble>& ensemble)
 {
+    const auto linkagesets = ensemble->get_linkagesets();
     etiLog.log(info, " Linkage Sets");
-    if (ensemble->linkagesets.empty()) {
+    if (linkagesets.empty()) {
         etiLog.level(info) << "  None ";
     }
-    for (const auto& ls : ensemble->linkagesets) {
-
+    for (const auto& ls : linkagesets) {
         etiLog.level(info) << "  set " << ls->get_name();
         etiLog.log(info,      "   LSN 0x%04x", ls->lsn);
         etiLog.level(info) << "   active " << (ls->active ? "true" : "false");
@@ -399,11 +393,12 @@ static void printLinking(const shared_ptr<dabEnsemble>& ensemble)
 
 static void printFrequencyInformation(const shared_ptr<dabEnsemble>& ensemble)
 {
+    const auto frequency_information = ensemble->get_frequency_information();
     etiLog.log(info, " Frequency Information");
-    if (ensemble->frequency_information.empty()) {
+    if (frequency_information.empty()) {
         etiLog.level(info) << "  None ";
     }
-    for (const auto& fi : ensemble->frequency_information) {
+    for (const auto& fi : frequency_information) {
         etiLog.level(info) << "  FI " << fi.uid;
         etiLog.level(info) << "   OE=" << (fi.other_ensemble ? 1 : 0);
         switch (fi.rm) {

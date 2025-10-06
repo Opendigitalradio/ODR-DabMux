@@ -40,4 +40,8 @@ void parse_ptree(
 
 void parse_linkage(
         const boost::optional<boost::property_tree::ptree&> pt_linking,
-        std::vector<std::shared_ptr<LinkageSet> >& linkageSets);
+        std::vector<std::shared_ptr<LinkageSet> >& linkage_sets);
+
+void parse_freq_info(
+        const boost::optional<boost::property_tree::ptree&> pt_frequency_information,
+        std::vector<FrequencyInformation>& frequency_information);

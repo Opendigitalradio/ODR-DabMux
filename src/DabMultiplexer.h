@@ -115,7 +115,7 @@ class DabMultiplexer : public RemoteControllable {
         void prepare_services_components();
         void prepare_data_inputs();
 
-        void reload_linkagesets();
+        void reload_linking();
 
         DabMultiplexerConfig& m_config;
 

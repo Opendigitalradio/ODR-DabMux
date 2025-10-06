@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -27,7 +27,6 @@
 
 #include <cstdint>
 #include <vector>
-#include <memory>
 
 namespace FIC {
 
@@ -49,7 +48,8 @@ class FIG0_21 : public IFIG
         bool m_initialised = false;
         bool m_last_oe = false;
 
-        std::vector<FrequencyInformation>::iterator freqInfoFIG0_21;
+        std::vector<FrequencyInformation> m_freq_info;
+        std::vector<FrequencyInformation>::iterator m_freq_info_it;
         size_t fi_frequency_index = 0;
 };
 

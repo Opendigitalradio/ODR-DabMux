@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -119,11 +119,12 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
     auto ensemble = m_rti->ensemble;
 
     if (not m_initialised) {
-        freqInfoFIG0_21 = ensemble->frequency_information.begin();
+        m_freq_info = ensemble->get_frequency_information();
+        m_freq_info_it = m_freq_info.begin();
         fi_frequency_index = 0;
 
-        if (freqInfoFIG0_21 != ensemble->frequency_information.end()) {
-            m_last_oe = freqInfoFIG0_21->other_ensemble;
+        if (m_freq_info_it != m_freq_info.end()) {
+            m_last_oe = m_freq_info_it->other_ensemble;
         }
         m_initialised = true;
     }
@@ -131,13 +132,13 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
     FIGtype0* fig0 = nullptr;
 
     auto advance_loop = [&](void){
-            if (fi_frequency_index == get_num_frequencies(freqInfoFIG0_21)) {
-                ++freqInfoFIG0_21;
+            if (fi_frequency_index == get_num_frequencies(m_freq_info_it)) {
+                ++m_freq_info_it;
                 fi_frequency_index = 0;
             }
         };
 
-    for (; freqInfoFIG0_21 != ensemble->frequency_information.end();
+    for (; m_freq_info_it != m_freq_info.end();
             advance_loop()) {
         /* For better usage of FIC capacity, we want to transmit
          * frequency lists with
@@ -149,7 +150,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
         // Check we have space for one frequency
         size_t required_fi_size = 2; // RegionId + length of FI list
         size_t list_entry_size = sizeof(struct FIGtype0_21_fi_list_header);
-        switch (freqInfoFIG0_21->rm) {
+        switch (m_freq_info_it->rm) {
             case RangeModulation::dab_ensemble:
                 list_entry_size += 3;
                 break;
@@ -170,12 +171,12 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
         const size_t required_size =
             sizeof(struct FIGtype0_21_header) + required_fi_size;
 
-        if (m_last_oe != freqInfoFIG0_21->other_ensemble) {
+        if (m_last_oe != m_freq_info_it->other_ensemble) {
             // Trigger resend of FIG0 when OE changes
             fig0 = nullptr;
-            m_last_oe = freqInfoFIG0_21->other_ensemble;
+            m_last_oe = m_freq_info_it->other_ensemble;
             etiLog.level(FIG0_21_TRACE) << "FIG0_21::switch OE to " <<
-                freqInfoFIG0_21->other_ensemble;
+                m_freq_info_it->other_ensemble;
         }
 
         if (fig0 == nullptr) {
@@ -188,7 +189,7 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
             // Database start or continuation flag, EN 300 401 Clause 5.2.2.1 part b)
             fig0->CN = (fi_frequency_index == 0 ? 0 : 1);
-            fig0->OE = freqInfoFIG0_21->other_ensemble ? 1 : 0;
+            fig0->OE = m_freq_info_it->other_ensemble ? 1 : 0;
             fig0->PD = false;
             fig0->Extension = 21;
 
@@ -199,8 +200,8 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
             break;
         }
 
-        etiLog.level(FIG0_21_TRACE) << "FIG0_21::loop " << freqInfoFIG0_21->uid << " " <<
-            std::distance(ensemble->frequency_information.begin(), freqInfoFIG0_21) <<
+        etiLog.level(FIG0_21_TRACE) << "FIG0_21::loop " << m_freq_info_it->uid << " " <<
+            std::distance(m_freq_info.begin(), m_freq_info_it) <<
             " freq entry " << fi_frequency_index;
 
         auto *fig0_21_header = (FIGtype0_21_header*)buf;
@@ -217,26 +218,26 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
         buf          += sizeof(FIGtype0_21_fi_list_header);
         remaining    -= sizeof(FIGtype0_21_fi_list_header);
 
-        fi_list_header->continuity = freqInfoFIG0_21->continuity;
+        fi_list_header->continuity = m_freq_info_it->continuity;
         fi_list_header->length_freq_list = 0;
-        fi_list_header->range_modulation = static_cast<uint8_t>(freqInfoFIG0_21->rm);
+        fi_list_header->range_modulation = static_cast<uint8_t>(m_freq_info_it->rm);
 
         bool continue_loop = true;
 
-        switch (freqInfoFIG0_21->rm) {
+        switch (m_freq_info_it->rm) {
             case RangeModulation::dab_ensemble:
-                fi_list_header->setId(freqInfoFIG0_21->fi_dab.eid);
+                fi_list_header->setId(m_freq_info_it->fi_dab.eid);
 
                 for (size_t num_inserted = 0, i = fi_frequency_index;
                         num_inserted < 2 and
-                        i < freqInfoFIG0_21->fi_dab.frequencies.size();
+                        i < m_freq_info_it->fi_dab.frequencies.size();
                         num_inserted++, i++) {
                     if (remaining < 3) {
                         continue_loop = false;
                         break;
                     }
 
-                    const auto& freq = freqInfoFIG0_21->fi_dab.frequencies.at(i);
+                    const auto& freq = m_freq_info_it->fi_dab.frequencies.at(i);
 
                     auto *field = (FIGtype0_21_fi_dab_entry*)buf;
                     field->control_field = static_cast<uint8_t>(freq.control_field);
@@ -254,18 +255,18 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                 }
                 break;
             case RangeModulation::fm_with_rds:
-                fi_list_header->setId(freqInfoFIG0_21->fi_fm.pi_code);
+                fi_list_header->setId(m_freq_info_it->fi_fm.pi_code);
 
                 for (size_t num_inserted = 0, i = fi_frequency_index;
                         num_inserted < 7 and
-                        i < freqInfoFIG0_21->fi_fm.frequencies.size();
+                        i < m_freq_info_it->fi_fm.frequencies.size();
                         num_inserted++, i++) {
                     if (remaining < 1) {
                         continue_loop = false;
                         break;
                     }
 
-                    const auto& freq = freqInfoFIG0_21->fi_fm.frequencies.at(i);
+                    const auto& freq = m_freq_info_it->fi_fm.frequencies.at(i);
                     // RealFreq = 87.5 MHz + (F * 100kHz)
                     // => F = (RealFreq - 87.5 MHz) / 100kHz
                     // Do the whole calculation in kHz:
@@ -280,14 +281,14 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                 }
                 break;
             case RangeModulation::drm:
-                fi_list_header->setId((freqInfoFIG0_21->fi_drm.drm_service_id) & 0xFFFF);
+                fi_list_header->setId((m_freq_info_it->fi_drm.drm_service_id) & 0xFFFF);
 
                 if (remaining < 3) {
                     throw logic_error("Incorrect DRM FI size calculation");
                 }
 
                 // Id field 2
-                *buf = (freqInfoFIG0_21->fi_drm.drm_service_id >> 16) & 0xFF;
+                *buf = (m_freq_info_it->fi_drm.drm_service_id >> 16) & 0xFF;
                 fig0_21_header->length_fi += 1;
 
                 fi_list_header->addToLength(1);
@@ -297,14 +298,14 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
                 for (size_t num_inserted = 0, i = fi_frequency_index;
                         num_inserted < 3 and
-                        i < freqInfoFIG0_21->fi_drm.frequencies.size();
+                        i < m_freq_info_it->fi_drm.frequencies.size();
                         num_inserted++, i++) {
                     if (remaining < 2) {
                         continue_loop = false;
                         break;
                     }
 
-                    const auto& freq = freqInfoFIG0_21->fi_drm.frequencies.at(i);
+                    const auto& freq = m_freq_info_it->fi_drm.frequencies.at(i);
                     uint16_t freq_field = static_cast<uint16_t>(freq * 1000.0f);
                     buf[0] = freq_field >> 8;
                     buf[1] = freq_field & 0xFF;
@@ -318,14 +319,14 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
                 }
                 break;
             case RangeModulation::amss:
-                fi_list_header->setId((freqInfoFIG0_21->fi_amss.amss_service_id) & 0xFFFF);
+                fi_list_header->setId((m_freq_info_it->fi_amss.amss_service_id) & 0xFFFF);
 
                 if (remaining < 3) {
                     throw logic_error("Incorrect AMSS FI size calculation");
                 }
 
                 // Id field 2
-                *buf = (freqInfoFIG0_21->fi_amss.amss_service_id >> 16) & 0xFF;
+                *buf = (m_freq_info_it->fi_amss.amss_service_id >> 16) & 0xFF;
                 fig0_21_header->length_fi += 1;
 
                 fi_list_header->addToLength(1);
@@ -335,14 +336,14 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
 
                 for (size_t num_inserted = 0, i = fi_frequency_index;
                         num_inserted < 3 and
-                        i < freqInfoFIG0_21->fi_amss.frequencies.size();
+                        i < m_freq_info_it->fi_amss.frequencies.size();
                         num_inserted++, i++) {
                     if (remaining < 2) {
                         continue_loop = false;
                         break;
                     }
 
-                    const auto& freq = freqInfoFIG0_21->fi_amss.frequencies.at(i);
+                    const auto& freq = m_freq_info_it->fi_amss.frequencies.at(i);
                     uint16_t freq_field = static_cast<uint16_t>(freq * 1000.0f);
                     buf[0] = freq_field >> 8;
                     buf[1] = freq_field & 0xFF;
@@ -370,10 +371,10 @@ FillStatus FIG0_21::fill(uint8_t *buf, size_t max_size)
         }
     } // for over FI
 
-    if (freqInfoFIG0_21 == ensemble->frequency_information.end()) {
+    if (m_freq_info_it == m_freq_info.end()) {
         fs.complete_fig_transmitted = true;
 
-        freqInfoFIG0_21 = ensemble->frequency_information.begin();
+        m_freq_info_it = m_freq_info.begin();
         fi_frequency_index = 0;
     }
 

@@ -350,9 +350,23 @@ class dabEnsemble : public RemoteControllable {
         vec_sp_subchannel subchannels;
 
         std::vector<std::shared_ptr<AnnouncementCluster> > clusters;
-        std::vector<std::shared_ptr<LinkageSet> > linkagesets;
-        std::vector<FrequencyInformation> frequency_information;
+
         std::vector<ServiceOtherEnsembleInfo> service_other_ensemble;
+
+        std::vector<FrequencyInformation> get_frequency_information() const;
+        std::vector<std::shared_ptr<LinkageSet> > get_linkagesets() const;
+
+        void set_linking_config(
+                std::vector<std::shared_ptr<LinkageSet> >& new_linkage_sets,
+                std::vector<FrequencyInformation>& new_frequency_information);
+
+    private:
+        // The following can be updated by the RC while being read by the main
+        // thread, and need to be protected
+        std::vector<std::shared_ptr<LinkageSet> > m_linkagesets;
+        std::vector<FrequencyInformation> m_frequency_information;
+
+        mutable std::mutex m_mutex;
 };
 
 

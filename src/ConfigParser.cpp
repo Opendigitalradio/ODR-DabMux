@@ -112,7 +112,7 @@ static void parse_fig2_label(ptree& pt, DabLabel& label) {
 // Parse the linkage section
 void parse_linkage(
         const boost::optional<boost::property_tree::ptree&> pt_linking,
-        std::vector<std::shared_ptr<LinkageSet> >& linkageSets)
+        std::vector<std::shared_ptr<LinkageSet> >& linkage_sets)
 {
     if (pt_linking) {
         for (const auto& it : *pt_linking) {
@@ -189,17 +189,17 @@ void parse_linkage(
                     linkageset->id_list.push_back(link);
                 }
             }
-            linkageSets.push_back(linkageset);
+            linkage_sets.push_back(linkageset);
         }
     }
 }
 
 // Parse the FI section
-static void parse_freq_info(ptree& pt, std::shared_ptr<dabEnsemble> ensemble)
+void parse_freq_info(
+        const boost::optional<boost::property_tree::ptree&> pt_frequency_information,
+        std::vector<FrequencyInformation>& frequency_information)
 {
-    auto pt_frequency_information = pt.get_child_optional("frequency_information");
-    if (pt_frequency_information)
-    {
+    if (pt_frequency_information) {
         for (const auto& it_fi : *pt_frequency_information) {
             const string fi_uid = it_fi.first;
             const ptree pt_fi = it_fi.second;
@@ -312,14 +312,14 @@ static void parse_freq_info(ptree& pt, std::shared_ptr<dabEnsemble> ensemble)
                 throw runtime_error("invalid configuration for FI " + fi_uid);
             }
 
-            ensemble->frequency_information.emplace_back(move(fi));
+            frequency_information.emplace_back(std::move(fi));
         } // for over fi
 
         /* We sort all FI to have the OE=0 first and the OE=1 afterwards, to
          * avoid having to send FIG0 headers every time it switches.  */
         std::sort(
-                ensemble->frequency_information.begin(),
-                ensemble->frequency_information.end(),
+                frequency_information.begin(),
+                frequency_information.end(),
                 [](const FrequencyInformation& first,
                    const FrequencyInformation& second) {
                     const int oe_first = first.other_ensemble ? 1 : 0;
@@ -332,9 +332,8 @@ static void parse_freq_info(ptree& pt, std::shared_ptr<dabEnsemble> ensemble)
 static void parse_other_service_linking(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
-    auto pt_other_services = pt.get_child_optional("other-services");
-    if (pt_other_services)
-    {
+    const auto pt_other_services = pt.get_child_optional("other-services");
+    if (pt_other_services) {
         for (const auto& it_service : *pt_other_services) {
             const string srv_uid = it_service.first;
             const ptree pt_srv = it_service.second;
@@ -363,7 +362,7 @@ static void parse_other_service_linking(ptree& pt,
                         }
                     }
 
-                    ensemble->service_other_ensemble.push_back(move(info));
+                    ensemble->service_other_ensemble.push_back(std::move(info));
                 }
             }
             catch (const std::exception &e) {
@@ -911,8 +910,15 @@ void parse_ptree(
     }
 
     const auto pt_linking = pt.get_child_optional("linking");
-    parse_linkage(pt_linking, ensemble->linkagesets);
-    parse_freq_info(pt, ensemble);
+    std::vector<std::shared_ptr<LinkageSet> > linkagesets;
+    parse_linkage(pt_linking, linkagesets);
+
+    const auto pt_frequency_information = pt.get_child_optional("frequency_information");
+    std::vector<FrequencyInformation> frequency_information;
+    parse_freq_info(pt_frequency_information, frequency_information);
+
+    ensemble->set_linking_config(linkagesets, frequency_information);
+
     parse_other_service_linking(pt, ensemble);
 }
 

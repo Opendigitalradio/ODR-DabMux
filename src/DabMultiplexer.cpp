@@ -163,7 +163,7 @@ DabMultiplexer::DabMultiplexer(DabMultiplexerConfig& config) :
 {
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
     RC_ADD_PARAMETER(tist_offset, "Configured tist-offset");
-    RC_ADD_PARAMETER(reload_linkagesets, "Write 1 to this parameter to trigger a reload of the linkage sets from the config [write-only]");
+    RC_ADD_PARAMETER(reload_linking, "Write 1 to this parameter to trigger a reload of the linkage sets, frequency info and other-services from the config [write-only]");
 
     rcs.enrol(&m_clock_tai);
 }
@@ -462,24 +462,51 @@ void DabMultiplexer::prepare_data_inputs()
     }
 }
 
-void DabMultiplexer::reload_linkagesets()
+void DabMultiplexer::reload_linking()
 {
     try {
         DabMultiplexerConfig new_conf;
         new_conf.read(m_config.config_file());
         if (new_conf.valid()) {
-            const auto pt_linking = new_conf.pt.get_child_optional("linking");
+
+            bool linkage_sets_valid = false;
             std::vector<std::shared_ptr<LinkageSet> > linkagesets;
-            parse_linkage(pt_linking, linkagesets);
 
-            etiLog.level(info) << "Validating " << linkagesets.size() << " new linkage sets.";
+            try {
+                const auto pt_linking = new_conf.pt.get_child_optional("linking");
+                parse_linkage(pt_linking, linkagesets);
 
-            if (ensemble->validate_linkage_sets(ensemble->services, linkagesets)) {
-                ensemble->linkagesets = linkagesets;
-                etiLog.level(info) << "Loaded new linkage sets.";
+                etiLog.level(info) << "Validating " << linkagesets.size() << " new linkage sets.";
+
+                linkage_sets_valid = ensemble->validate_linkage_sets(
+                        ensemble->services, linkagesets);
+                if (not linkage_sets_valid) {
+                    etiLog.level(warn) << "New linkage set validation failed";
+                }
             }
-            else {
-                etiLog.level(warn) << "New linkage set validation failed";
+            catch (const std::runtime_error& e)
+            {
+                etiLog.level(warn) << "Failed to validate new linkage sets: " << e.what();
+            }
+
+
+            bool freq_info_valid = false;
+            std::vector<FrequencyInformation> frequency_information;
+
+            try {
+                const auto pt_frequency_information = new_conf.pt.get_child_optional(
+                        "frequency_information");
+                parse_freq_info(pt_frequency_information, frequency_information);
+                freq_info_valid = true;
+            }
+            catch (const std::runtime_error& e)
+            {
+                etiLog.level(warn) << "Failed to validate new frequency info: " << e.what();
+            }
+
+            if (linkage_sets_valid and freq_info_valid) {
+                ensemble->set_linking_config(linkagesets, frequency_information);
+                etiLog.level(info) << "Loaded new linkage sets and frequency info.";
             }
         }
     }
@@ -897,8 +924,8 @@ void DabMultiplexer::set_parameter(const std::string& parameter,
     else if (parameter == "tist_offset") {
         m_time.set_tist_offset(std::stod(value));
     }
-    else if (parameter == "reload_linkagesets") {
-        reload_linkagesets();
+    else if (parameter == "reload_linking") {
+        reload_linking();
     }
     else {
         stringstream ss;
@@ -918,7 +945,7 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
     else if (parameter == "tist_offset") {
         ss << m_time.tist_offset();
     }
-    else if (parameter == "reload_linkagesets") {
+    else if (parameter == "reload_linking") {
         ss << "Parameter '" << parameter <<
             "' is not write-only in controllable " << get_rc_name();
         throw ParameterError(ss.str());

@@ -745,7 +745,8 @@ const json::map_t dabEnsemble::get_all_values() const
 
 bool dabEnsemble::validate_linkage_sets() const
 {
-    return validate_linkage_sets(services, linkagesets);
+    unique_lock<mutex> lock(m_mutex);
+    return validate_linkage_sets(services, m_linkagesets);
 }
 
 bool dabEnsemble::validate_linkage_sets(
@@ -787,6 +788,31 @@ bool dabEnsemble::validate_linkage_sets(
     }
 
     return true;
+}
+
+std::vector<FrequencyInformation> dabEnsemble::get_frequency_information() const
+{
+    unique_lock<mutex> lock(m_mutex);
+    auto fi = m_frequency_information;
+    lock.unlock();
+    return fi;
+}
+
+std::vector<std::shared_ptr<LinkageSet> > dabEnsemble::get_linkagesets() const
+{
+    unique_lock<mutex> lock(m_mutex);
+    auto ls = m_linkagesets;
+    lock.unlock();
+    return ls;
+}
+
+void dabEnsemble::set_linking_config(
+        std::vector<std::shared_ptr<LinkageSet> >& new_linkage_sets,
+        std::vector<FrequencyInformation>& new_frequency_information)
+{
+    unique_lock<mutex> lock(m_mutex);
+    m_frequency_information = new_frequency_information;
+    m_linkagesets = new_linkage_sets;
 }
 
 unsigned short DabSubchannel::getSizeCu() const

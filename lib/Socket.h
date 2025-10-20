@@ -320,7 +320,7 @@ class TCPReceiveServer {
         TCPReceiveServer(const TCPReceiveServer&) = delete;
         TCPReceiveServer& operator=(const TCPReceiveServer&) = delete;
 
-        void start(int listen_port, const std::string& address);
+        void start(int listen_port, const std::string& address, const std::string& auth_key = "");
 
         // Return an instance of a subclass of TCPReceiveMessage that contains up to blocksize
         // bytes of data, or TCPReceiveMessageEmpty if no data is available.
@@ -330,6 +330,7 @@ class TCPReceiveServer {
         void process();
 
         size_t m_blocksize = 0;
+        std::string m_auth_key = "";
         ThreadsafeQueue<std::shared_ptr<TCPReceiveMessage> > m_queue;
         std::atomic<bool> m_running = ATOMIC_VAR_INIT(false);
         std::string m_exception_data;

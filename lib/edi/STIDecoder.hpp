@@ -128,7 +128,8 @@ class STIDecoder {
         bool decode_dsti(const std::vector<uint8_t>& value, const tag_name_t& n);
         bool decode_ssn(const std::vector<uint8_t>& value, const tag_name_t& n);
         bool decode_stardmy(const std::vector<uint8_t>& value, const tag_name_t& n);
-
+        bool decode_auth(const std::vector<uint8_t>& value, const tag_name_t& n);
+        
         bool decode_odraudiolevel(const std::vector<uint8_t>& value, const tag_name_t& n);
         bool decode_odrversion(const std::vector<uint8_t>& value, const tag_name_t& n);
 
@@ -136,6 +137,8 @@ class STIDecoder {
 
         STIDataCollector& m_data_collector;
         TagDispatcher m_dispatcher;
+        
+        bool m_current_packet_has_auth = false;
 
         bool m_filter_stream = false;
         uint16_t m_filtered_stream_index = 1;

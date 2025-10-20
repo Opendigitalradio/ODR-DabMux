@@ -1164,8 +1164,9 @@ TCPReceiveServer::TCPReceiveServer(size_t blocksize) :
 {
 }
 
-void TCPReceiveServer::start(int listen_port, const std::string& address)
+void TCPReceiveServer::start(int listen_port, const std::string& address, const std::string& auth_key)
 {
+    m_auth_key = auth_key;
     m_listener_socket.listen(listen_port, address);
 
     m_running = true;
@@ -1195,11 +1196,16 @@ void TCPReceiveServer::process()
     constexpr int timeout_ms = 1000;
     constexpr int disconnect_timeout_ms = 10000;
     constexpr int max_num_timeouts = disconnect_timeout_ms / timeout_ms;
-
+    constexpr int auth_timeout_ms = 3000;
+    constexpr size_t auth_max_bytes = 1024 * 1024;  // 1MB to handle client buffering
+    
     while (m_running) {
         auto sock = m_listener_socket.accept(timeout_ms);
 
         int num_timeouts = 0;
+        bool authenticated = m_auth_key.empty(); // If no auth key, consider already authenticated
+        std::vector<uint8_t> auth_buffer;
+        auto auth_start_time = std::chrono::steady_clock::now();
 
         while (m_running and sock.valid()) {
             try {
@@ -1215,7 +1221,82 @@ void TCPReceiveServer::process()
                 }
                 else {
                     buf.resize(r);
-                    m_queue.push(make_shared<TCPReceiveMessageData>(std::move(buf)));
+                    
+                    if (!authenticated) {
+                        // We're in authentication phase
+                        auth_buffer.insert(auth_buffer.end(), buf.begin(), buf.end());
+                        
+                        // Search for AUTH packet anywhere in the buffer
+                        for (size_t i = 0; i + 8 <= auth_buffer.size(); i++) {
+                            // Check for "AUTH" tag at position i
+                            if (auth_buffer[i] == 'A' && auth_buffer[i+1] == 'U' && 
+                                auth_buffer[i+2] == 'T' && auth_buffer[i+3] == 'H') {
+                                
+                                // Read length (big-endian)
+                                uint32_t key_length_bits = (static_cast<uint32_t>(auth_buffer[i+4]) << 24) |
+                                                           (static_cast<uint32_t>(auth_buffer[i+5]) << 16) |
+                                                           (static_cast<uint32_t>(auth_buffer[i+6]) << 8) |
+                                                           static_cast<uint32_t>(auth_buffer[i+7]);
+
+                                uint32_t key_length = key_length_bits / 8;  // Convert bits to bytes
+
+                                // Validate key length
+                                if (key_length > 32 || key_length == 0 || key_length_bits % 8 != 0) {
+                                    fprintf(stderr, "EDI TCP connection rejected: invalid AUTH key length %u\n", key_length);
+                                    sock.close();
+                                    m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
+                                    break;
+                                }
+                                
+                                // Check if we have the complete AUTH packet
+                                if (auth_buffer.size() >= i + 8 + key_length) {
+                                    std::string received_key(auth_buffer.begin() + i + 8, auth_buffer.begin() + i + 8 + key_length);
+                                    
+                                    if (received_key == m_auth_key) {
+                                        fprintf(stderr, "EDI TCP connection authenticated successfully (AUTH found at offset %zu in %zu bytes)\n", 
+                                                i, auth_buffer.size());
+                                        authenticated = true;
+                                        
+                                        // Pass through ALL data unmodified - EDI decoder will handle AUTH tags
+                                        m_queue.push(make_shared<TCPReceiveMessageData>(std::move(auth_buffer)));
+                                        auth_buffer.clear();
+                                    } else {
+                                        fprintf(stderr, "EDI TCP connection rejected: AUTH key mismatch\n");
+                                        sock.close();
+                                        m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
+                                    }
+                                    break;
+                                }
+                                // else: we have AUTH tag but incomplete packet, wait for more data
+                                break;
+                            }
+                        }
+                        
+                        // Only check byte limit if we haven't authenticated yet
+                        if (!authenticated && auth_buffer.size() > auth_max_bytes) {
+                            fprintf(stderr, "EDI TCP connection rejected: exceeded %zu bytes without valid AUTH packet\n", auth_max_bytes);
+                            sock.close();
+                            m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
+                            break;
+                        }
+                        
+                        // Check if we've exceeded time limit
+                        if (!authenticated) {
+                            auto now = std::chrono::steady_clock::now();
+                            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - auth_start_time).count();
+                            if (elapsed > auth_timeout_ms) {
+                                fprintf(stderr, "EDI TCP connection rejected: AUTH timeout after %ldms (received %zu bytes)\n", elapsed, auth_buffer.size());
+                                sock.close();
+                                m_queue.push(make_shared<TCPReceiveMessageDisconnected>());
+                                break;
+                            }
+                        }
+                    } else {
+                        // Already authenticated, pass all data through unmodified
+                        m_queue.push(make_shared<TCPReceiveMessageData>(std::move(buf)));
+                    }
+                    
+                    
                 }
             }
             catch (const TCPSocket::Interrupted&) {

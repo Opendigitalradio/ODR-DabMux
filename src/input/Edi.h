@@ -54,6 +54,11 @@ struct dab_input_edi_config_t
      * Same units as buffer_size
      */
     size_t prebuffering = 30;
+    
+    /* Optional authentication key for TCP connections.
+     * If empty, no authentication is required.
+     */
+    std::string ediauthkey = "";
 };
 
 /*
@@ -121,7 +126,9 @@ class Edi : public InputBase, public RemoteControllable {
         /* When not using timestamping, how many frames to prebuffer.
          * Parameter 'prebuffering' inside RC. */
         std::atomic<size_t> m_num_frames_prebuffering = ATOMIC_VAR_INIT(10);
-
+        
+        std::string m_ediauthkey;
+        
         std::string m_name;
         InputStat m_stats;
 };

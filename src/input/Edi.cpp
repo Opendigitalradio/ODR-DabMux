@@ -52,6 +52,7 @@ Edi::Edi(const std::string& name, const dab_input_edi_config_t& config) :
     m_sti_decoder(m_sti_writer),
     m_max_frames_overrun(config.buffer_size),
     m_num_frames_prebuffering(config.prebuffering),
+    m_ediauthkey(config.ediauthkey),
     m_name(name),
     m_stats(name)
 {
@@ -135,7 +136,7 @@ void Edi::open(const std::string& name)
         m_input_used = InputUsed::TCP;
         const string addr = m[1].str();
         const int tcp_port = std::stoi(m[2].str());
-        m_tcp_receive_server.start(tcp_port, addr);
+        m_tcp_receive_server.start(tcp_port, addr, m_ediauthkey);
     }
     else {
         throw runtime_error(string("Cannot parse EDI input URI '") + name + "'");

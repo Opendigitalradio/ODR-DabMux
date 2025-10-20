@@ -31,7 +31,8 @@ using namespace std;
 
 STIDecoder::STIDecoder(STIDataCollector& data_collector) :
     m_data_collector(data_collector),
-    m_dispatcher(std::bind(&STIDecoder::packet_completed, this))
+    m_dispatcher(std::bind(&STIDecoder::packet_completed, this)),
+    m_current_packet_has_auth(false)
 {
     using std::placeholders::_1;
     using std::placeholders::_2;
@@ -43,6 +44,8 @@ STIDecoder::STIDecoder(STIDataCollector& data_collector) :
             std::bind(&STIDecoder::decode_ssn, this, _1, _2));
     m_dispatcher.register_tag("*dmy",
             std::bind(&STIDecoder::decode_stardmy, this, _1, _2));
+    m_dispatcher.register_tag("AUTH",
+            std::bind(&STIDecoder::decode_auth, this, _1, _2));
     m_dispatcher.register_tag("ODRa",
             std::bind(&STIDecoder::decode_odraudiolevel, this, _1, _2));
     m_dispatcher.register_tag("ODRv",
@@ -225,6 +228,14 @@ bool STIDecoder::decode_stardmy(const std::vector<uint8_t>&, const tag_name_t&)
     return true;
 }
 
+bool STIDecoder::decode_auth(const std::vector<uint8_t>&, const tag_name_t&)
+{
+    // Silently consume AUTH tags - they are used for TCP connection authentication
+    // and have no relevance to the EDI/STI stream decoding
+    m_current_packet_has_auth = true;
+    return true;
+}
+
 bool STIDecoder::decode_odraudiolevel(const std::vector<uint8_t>& value, const tag_name_t& /*n*/)
 {
     constexpr size_t expected_length = 2 * sizeof(int16_t);
@@ -258,6 +269,12 @@ bool STIDecoder::decode_odrversion(const std::vector<uint8_t>& value, const tag_
 
 void STIDecoder::packet_completed()
 {
+    if (m_current_packet_has_auth) {
+        // Skip assembly for AUTH-only packets
+        m_current_packet_has_auth = false;  // Reset for next packet
+        return;
+    }
+    
     auto seq = m_dispatcher.get_seq_info();
     m_data_collector.assemble(seq);
 }

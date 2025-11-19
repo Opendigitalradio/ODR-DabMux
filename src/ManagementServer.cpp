@@ -149,6 +149,8 @@ void ManagementServer::unregister_input(std::string id)
 // outputs will never disappear, no need to have a "remove" logic
 void ManagementServer::update_edi_tcp_output_stat(uint16_t listen_port, size_t num_connections)
 {
+    unique_lock<mutex> lock(m_statsmutex);
+
     m_output_stats[listen_port] = num_connections;
 }
 

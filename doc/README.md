@@ -49,8 +49,8 @@ An explanation on how to use the remote control is in *remote_control.txt*, and
 *zmq_remote.py* illustrates how to control ODR-DabMux using the ZMQ remote
 control interface.
 
-Two scripts are used for monitoring systems: *stats_dabmux_munin.py* for Munin,
-and *retodrs.pl* for Xymon. You can use *show_dabmux_stats.py* to print the
+The *stats_dabmux_munin.py* script is used for the munin monitoring systems.
+You can use *show_dabmux_stats.py* to print the
 statistics to console. The values are described in *STATS.md*
 
 *DabMux.1* is an old manpage that describes the command line options that

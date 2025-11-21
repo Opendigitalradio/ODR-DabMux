@@ -33,7 +33,7 @@ The `src/` directory contains the source code of ODR-DabMux and the additional
 tools.
 
 The `doc/` directory contains the ODR-DabMux documentation, a few example
-configuration files, and the munin and xymon scripts for the statistics server.
+configuration files, and the munin script for the statistics server.
 
 The `lib/` directory contains source code of libraries needed to build
 ODR-DabMux.

@@ -143,26 +143,31 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/PrbsGenerator.h \
 					 src/utils.cpp \
 					 src/utils.h \
-					 lib/crc.h \
-					 lib/crc.c \
-					 lib/ClockTAI.h \
 					 lib/ClockTAI.cpp \
+					 lib/ClockTAI.h \
 					 lib/Globals.cpp \
-					 lib/Log.h \
+					 lib/Json.cpp \
+					 lib/Json.h \
 					 lib/Log.cpp \
+					 lib/Log.h \
+					 lib/ReedSolomon.cpp \
+					 lib/ReedSolomon.h \
 					 lib/RemoteControl.cpp \
 					 lib/RemoteControl.h \
-					 lib/Json.h \
-					 lib/Json.cpp \
+					 lib/Socket.cpp \
+					 lib/Socket.h \
+					 lib/ThreadsafeQueue.h \
+					 lib/crc.c \
+					 lib/crc.h \
+					 lib/edi/PFT.cpp \
+					 lib/edi/PFT.hpp \
 					 lib/edi/STIDecoder.cpp \
 					 lib/edi/STIDecoder.hpp \
 					 lib/edi/STIWriter.cpp \
 					 lib/edi/STIWriter.hpp \
-					 lib/edi/PFT.cpp \
-					 lib/edi/PFT.hpp \
+					 lib/edi/buffer_unpack.hpp \
 					 lib/edi/common.cpp \
 					 lib/edi/common.hpp \
-					 lib/edi/buffer_unpack.hpp \
 					 lib/edioutput/AFPacket.cpp \
 					 lib/edioutput/AFPacket.h \
 					 lib/edioutput/EDIConfig.h \
@@ -174,11 +179,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/edioutput/TagPacket.h \
 					 lib/edioutput/Transport.cpp \
 					 lib/edioutput/Transport.h \
-					 lib/ReedSolomon.h \
-					 lib/ReedSolomon.cpp \
-					 lib/Socket.h \
-					 lib/Socket.cpp \
-					 lib/ThreadsafeQueue.h \
+					 lib/webserver.cpp \
+					 lib/webserver.h \
 					 lib/zmq.hpp \
 					 $(lib_fec_sources) \
 					 $(lib_charset_sources)

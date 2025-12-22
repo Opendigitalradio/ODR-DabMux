@@ -88,7 +88,7 @@ class DabMultiplexerConfig {
 
 class DabMultiplexer : public RemoteControllable {
     public:
-        DabMultiplexer(DabMultiplexerConfig& config);
+        DabMultiplexer(DabMultiplexerConfig& config, ClockTAI& clock_tai);
         DabMultiplexer(const DabMultiplexer& other) = delete;
         DabMultiplexer& operator=(const DabMultiplexer& other) = delete;
         virtual ~DabMultiplexer();
@@ -128,7 +128,7 @@ class DabMultiplexer : public RemoteControllable {
         std::shared_ptr<dabEnsemble> ensemble;
 
         bool m_tai_clock_required = false;
-        ClockTAI m_clock_tai;
+        ClockTAI& m_clock_tai;
 
         FIC::FIGCarousel fig_carousel;
 };

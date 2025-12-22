@@ -51,6 +51,7 @@
 #include "ManagementServer.h"
 #include "Log.h"
 #include "RemoteControl.h"
+#include "webserver.h"
 
 using namespace std;
 using boost::property_tree::ptree;
@@ -203,6 +204,30 @@ int main(int argc, char *argv[])
         /* Management: stats and config server */
         get_mgmt_server().open(mgmtserverport);
 
+        std::optional<WebServer> webserver;
+        auto http_listen_on = mux_conf.pt.get<string>("general.http-stats-listen-on", "127.0.0.1");
+        auto http_port = mux_conf.pt.get<int>("general.http-stats-port", 0);
+        if (http_port < 0 or http_port > 65535) {
+            etiLog.level(error) << "http-stats-port must be between o and 65535!";
+            return 1;
+        }
+
+        if (http_port) {
+            string index_text = "This is ODR-DabMux " VERSION;
+
+            char hostname[255];
+            if (gethostname(hostname, 255) == 0) {
+                index_text += " running on ";
+                index_text += hostname;
+            }
+            else {
+                etiLog.level(warn) << "Failed to get hostname " << strerror(errno);
+            }
+
+            etiLog.level(info) << "Starting webserver at " << http_listen_on << ":" << http_port;
+            webserver.emplace(http_listen_on, http_port, index_text);
+        }
+
         /************** READ REMOTE CONTROL PARAMETERS *************/
         int telnetport = mux_conf.pt.get<int>("remotecontrol.telnetport", 0);
         if (telnetport != 0) {
@@ -216,7 +241,8 @@ int main(int argc, char *argv[])
             rcs.add_controller(rc);
         }
 
-        DabMultiplexer mux(mux_conf);
+        ClockTAI clock_tai(mux_conf.pt.get("general.tai_clock_bulletins", ""));
+        DabMultiplexer mux(mux_conf, clock_tai);
 
         etiLog.level(info) <<
                 PACKAGE_NAME << " " <<
@@ -485,6 +511,10 @@ int main(int argc, char *argv[])
                 }
 
                 mgmt_server.update_ptree(mux_conf.pt);
+
+                if (webserver) {
+                    webserver->update_stats_json(mgmt_server.get_json_stats_for_http(clock_tai.expires_at()));
+                }
             }
         }
     }

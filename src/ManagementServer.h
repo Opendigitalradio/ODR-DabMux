@@ -185,6 +185,8 @@ class ManagementServer
         bool fault_detected() const { return m_fault; }
         void restart();
 
+        std::string get_json_stats_for_http(std::optional<int64_t> clocktai_expires_at) const;
+
     private:
         void restart_thread(long);
 
@@ -222,12 +224,12 @@ class ManagementServer
          *
          * returns: JSON encoded statistics
          */
-        std::string get_input_values_json();
+        std::string get_input_values_json() const;
 
-        std::string get_output_values_json();
+        std::string get_output_values_json() const;
 
         // mutex for accessing the map
-        std::mutex m_statsmutex;
+        mutable std::mutex m_statsmutex;
 
         /******** Configuration Data *******/
         std::mutex m_configmutex;

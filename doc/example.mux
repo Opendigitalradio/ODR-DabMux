@@ -81,6 +81,11 @@ general {
     ; is not started.
     managementport 12720
 
+    ; Stats can also be retrieved over HTTP /stats.json
+    ; Uncomment the following lines to enable the HTTP server
+    ;http-stats-port 12721
+    ;http-stats-listen-on 127.0.0.1
+
     ; At startup, run the command and abort if is it not returning 0.
     ; This may be a script. Useful for checking if the NTP client on your
     ; system has had time to setup the clock.

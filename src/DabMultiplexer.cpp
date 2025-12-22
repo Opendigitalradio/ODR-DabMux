@@ -38,19 +38,6 @@
 
 using namespace std;
 
-static vector<string> split_pipe_separated_string(const std::string& s)
-{
-    stringstream ss;
-    ss << s;
-
-    string elem;
-    vector<string> components;
-    while (getline(ss, elem, '|')) {
-        components.push_back(elem);
-    }
-    return components;
-}
-
 uint64_t MuxTime::init(uint32_t tist_at_fct0_ms, double tist_offset)
 {
     // Things we must guarantee, up to granularity of 24ms:
@@ -153,12 +140,12 @@ void DabMultiplexerConfig::read(const std::string& filename)
     }
 }
 
-DabMultiplexer::DabMultiplexer(DabMultiplexerConfig& config) :
+DabMultiplexer::DabMultiplexer(DabMultiplexerConfig& config, ClockTAI& clock_tai) :
     RemoteControllable("mux"),
     m_config(config),
     m_time(),
     ensemble(std::make_shared<dabEnsemble>()),
-    m_clock_tai(split_pipe_separated_string(m_config.pt.get("general.tai_clock_bulletins", ""))),
+    m_clock_tai(clock_tai),
     fig_carousel(ensemble, [&]() { return m_time.get_milliseconds_seconds(); })
 {
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");

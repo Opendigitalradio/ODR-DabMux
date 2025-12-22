@@ -167,6 +167,31 @@ bool ManagementServer::isInputRegistered(std::string& id)
     return true;
 }
 
+std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clocktai_expires_at) const
+{
+    std::ostringstream ss;
+
+    ss << "{ \"version\" : \"" << VERSION << "\"\n";
+    ss << ", \"global_input_state\" : null\n"; // TODO
+    ss << ", \"clock_tai_expiry\" : ";
+
+    if (clocktai_expires_at) {
+        ss << *clocktai_expires_at;
+    }
+    else {
+        ss << "null";
+    }
+    ss << "\n";
+
+    ss << ", \"inputs\" : \n";
+    ss << get_input_values_json();
+    ss << ",\n \"outputs\" : \n";
+    ss << get_output_values_json();
+    ss << "\n}";
+
+    return ss.str();
+}
+
 std::string ManagementServer::get_input_config_json()
 {
     unique_lock<mutex> lock(m_statsmutex);
@@ -193,12 +218,12 @@ std::string ManagementServer::get_input_config_json()
     return ss.str();
 }
 
-std::string ManagementServer::get_input_values_json()
+std::string ManagementServer::get_input_values_json() const
 {
     unique_lock<mutex> lock(m_statsmutex);
 
     std::ostringstream ss;
-    ss << "{ \"values\" : {\n";
+    ss << "{\n";
 
     int i = 0;
     for (auto iter = m_input_stats.begin(); iter != m_input_stats.end();
@@ -215,17 +240,17 @@ std::string ManagementServer::get_input_values_json()
         ss << stats->encodeValuesJSON();
     }
 
-    ss << "}\n}\n";
+    ss << "}\n";
 
     return ss.str();
 }
 
-std::string ManagementServer::get_output_values_json()
+std::string ManagementServer::get_output_values_json() const
 {
     unique_lock<mutex> lock(m_statsmutex);
 
     std::ostringstream ss;
-    ss << "{ \"output_values\" : {\n";
+    ss << "{\n";
 
     int i = 0;
     for (auto iter = m_output_stats.begin(); iter != m_output_stats.end();
@@ -240,7 +265,7 @@ std::string ManagementServer::get_output_values_json()
             num_connections << "} ";
     }
 
-    ss << "}\n}\n";
+    ss << "}\n";
 
     return ss.str();
 }
@@ -351,10 +376,18 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
             answer << get_input_config_json();
         }
         else if (data == "values") {
-            answer << get_input_values_json();
+            std::ostringstream ss;
+            ss << "{ \"values\" : \n";
+            ss << get_input_values_json();
+            ss << "}";
+            answer << ss.str();
         }
         else if (data == "output_values") {
-            answer << get_output_values_json();
+            std::ostringstream ss;
+            ss << "{ \"output_values\" : \n";
+            ss << get_output_values_json();
+            ss << "}";
+            answer << ss.str();
         }
         else if (data == "getptree") {
             unique_lock<mutex> lock(m_configmutex);

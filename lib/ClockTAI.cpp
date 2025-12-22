@@ -30,7 +30,7 @@
  *
  * This file contains self-test code that can be executed by running
  *  g++ -g -Wall -DTAI_TEST -DHAVE_CURL -std=c++11 -lcurl -pthread \
- *  ClockTAI.cpp Log.cpp RemoteControl.cpp -o taitest && ./taitest
+ *  ClockTAI.cpp Log.cpp RemoteControl.cpp -lboost_system -o taitest && ./taitest
  */
 
 #include <iterator>
@@ -379,16 +379,16 @@ void Bulletin::clear_expiry_if_overridden()
     }
 }
 
+ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls)
 #if ENABLE_REMOTECONTROL
-ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) :
-    RemoteControllable("clocktai")
+    : RemoteControllable("clocktai")
 {
     RC_ADD_PARAMETER(tai_utc_offset, "TAI-UTC offset");
     RC_ADD_PARAMETER(expiry, "Number of seconds until TAI Bulletin expires");
     RC_ADD_PARAMETER(expires_at, "UNIX timestamp when TAI Bulletin expires");
     RC_ADD_PARAMETER(url, "URLs used to fetch the bulletin, separated by pipes");
 #else
-ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) {
+{
 #endif // ENABLE_REMOTECONTROL
 
     if (bulletin_urls.empty()) {
@@ -404,6 +404,10 @@ ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls) {
 
     etiLog.level(debug) << "ClockTAI uses bulletin URL: '" << join_string_with_pipe(m_bulletin_urls) << "'";
 }
+
+ClockTAI::ClockTAI(const std::string& bulletin_urls_pipe_separated)
+    : ClockTAI(split_pipe_separated_string(bulletin_urls_pipe_separated)) { }
+
 
 BulletinState ClockTAI::get_valid_offset()
 {
@@ -565,6 +569,18 @@ int ClockTAI::get_offset()
         return m_state->offset;
     }
     throw std::logic_error("ClockTAI: No valid m_state at end of get_offset()");
+}
+
+std::optional<time_t> ClockTAI::expires_at() const
+{
+    std::unique_lock<std::mutex> lock(m_data_mutex);
+    const auto& state = m_bulletin.state();
+    if (state.valid) {
+        return state.expires_at;
+    }
+    else {
+        return nullopt;
+    }
 }
 
 #if SUPPORT_SETTING_CLOCK_TAI

@@ -185,24 +185,24 @@ const json::map_t AnnouncementCluster::get_all_values() const
     json::map_t map;
 
     lock_guard<mutex> lock(m_active_mutex);
-    map["active"].v = m_active;
+    map["active"] = m_active;
 
     using namespace std::chrono;
 
     if (m_deferred_start_time) {
         const auto diff = *m_deferred_start_time - steady_clock::now();
-        map["start_in"].v = duration_cast<milliseconds>(diff).count();
+        map["start_in"] = duration_cast<milliseconds>(diff).count();
     }
     else {
-        map["start_in"].v = nullopt;
+        map["start_in"] = nullopt;
     }
 
     if (m_deferred_stop_time) {
         const auto diff = *m_deferred_stop_time - steady_clock::now();
-        map["stop_in"].v = duration_cast<milliseconds>(diff).count();
+        map["stop_in"] = duration_cast<milliseconds>(diff).count();
     }
     else {
-        map["stop_in"].v = nullopt;
+        map["stop_in"] = nullopt;
     }
 
     return map;
@@ -545,8 +545,8 @@ const json::map_t DabComponent::get_all_values() const
     json::map_t map;
     // It's cleaner to have it separate in JSON, but we
     // need the comma separated variant for setting
-    map["label"].v = label.long_label();
-    map["shortlabel"].v = label.short_label();
+    map["label"] = label.long_label();
+    map["shortlabel"] = label.short_label();
     return map;
 }
 
@@ -679,10 +679,10 @@ const string DabService::get_parameter(const string& parameter) const
 const json::map_t DabService::get_all_values() const
 {
     json::map_t map;
-    map["label"].v = label.long_label();
-    map["shortlabel"].v = label.short_label();
-    map["pty"].v = (int)pty_settings.pty;
-    map["ptysd"].v = (pty_settings.dynamic_no_static ? "dynamic" : "static");
+    map["label"] = label.long_label();
+    map["shortlabel"] = label.short_label();
+    map["pty"] = (int)pty_settings.pty;
+    map["ptysd"] = (pty_settings.dynamic_no_static ? "dynamic" : "static");
     return map;
 }
 
@@ -738,8 +738,8 @@ const string dabEnsemble::get_parameter(const string& parameter) const
 const json::map_t dabEnsemble::get_all_values() const
 {
     json::map_t map;
-    map["localtimeoffset_auto"].v = lto_auto;
-    map["localtimeoffset"].v = lto;
+    map["localtimeoffset_auto"] = lto_auto;
+    map["localtimeoffset"] = lto;
     return map;
 }
 

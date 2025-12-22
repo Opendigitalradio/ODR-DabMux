@@ -512,17 +512,17 @@ const std::string Edi::get_parameter(const std::string& parameter) const
 const json::map_t Edi::get_all_values() const
 {
     json::map_t map;
-    map["buffer"].v = m_max_frames_overrun;
-    map["prebuffering"].v = m_num_frames_prebuffering;
+    map["buffer"] = m_max_frames_overrun.load();
+    map["prebuffering"] = m_num_frames_prebuffering.load();
     switch (getBufferManagement()) {
         case Inputs::BufferManagement::Prebuffering:
-            map["buffermanagement"].v = "prebuffering";
+            map["buffermanagement"] = "prebuffering";
             break;
         case Inputs::BufferManagement::Timestamped:
-            map["buffermanagement"].v = "timestamped";
+            map["buffermanagement"] = "timestamped";
             break;
     }
-    map["tistdelay"].v = m_tist_delay.count();
+    map["tistdelay"] = m_tist_delay.count();
     return map;
 }
 

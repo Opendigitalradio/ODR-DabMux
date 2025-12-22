@@ -962,8 +962,8 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
 const json::map_t DabMultiplexer::get_all_values() const
 {
     json::map_t map;
-    map["frames"].v = currentFrame;
-    map["tist_offset"].v = m_time.tist_offset();
+    map["frames"] = currentFrame;
+    map["tist_offset"] = m_time.tist_offset();
     return map;
 }
 

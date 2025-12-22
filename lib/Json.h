@@ -56,6 +56,37 @@ namespace json {
             uint32_t,
             bool,
             std::nullopt_t> v;
+
+        void operator=(const std::unordered_map<std::string, value_t>& object) {
+            v = std::make_shared<std::unordered_map<std::string, value_t> >(
+                    object);
+        }
+
+        void operator=(std::unordered_map<std::string, value_t>&& object) {
+            v = std::make_shared<std::unordered_map<std::string, value_t> >(
+                    std::move(object));
+        }
+
+        void operator=(const std::vector<value_t>& array) {
+            v = array;
+        }
+
+        void operator=(std::vector<value_t>&& array) {
+            v = std::move(array);
+        }
+
+        void operator=(const std::string& str) {
+            v = str;
+        }
+
+        void operator=(std::string&& str) {
+            v = std::move(str);
+        }
+
+        template<typename T>
+        void operator=(T number) {
+            v = number;
+        }
     };
 
     using map_t = std::unordered_map<std::string, value_t>;

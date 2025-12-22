@@ -726,17 +726,17 @@ const json::map_t ClockTAI::get_all_values() const
         m_state->offset << " " << m_state->expires_at << " -> " << m_state->expires_in();
 #endif
 
-    stat["tai_utc_offset"].v = state.offset;
+    stat["tai_utc_offset"] = state.offset;
 
-    stat["expiry"].v = state.expires_in(); // Might be negative when expired or 0 when invalid
+    stat["expiry"] = state.expires_in(); // Might be negative when expired or 0 when invalid
     if (state.valid) {
-        stat["expires_at"].v = state.expires_at;
+        stat["expires_at"] = state.expires_at;
     }
     else {
-        stat["expires_at"].v = nullopt;
+        stat["expires_at"] = nullopt;
     }
 
-    stat["url"].v = join_string_with_pipe(m_bulletin_urls);
+    stat["url"] = join_string_with_pipe(m_bulletin_urls);
 
     return stat;
 }

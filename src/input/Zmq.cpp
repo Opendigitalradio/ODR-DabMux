@@ -619,13 +619,13 @@ const string ZmqBase::get_parameter(const string& parameter) const
 const json::map_t ZmqBase::get_all_values() const
 {
     json::map_t map;
-    map["buffer"].v = m_config.buffer_size;
-    map["prebuffering"].v = m_config.prebuffering;
-    map["enable"].v = m_enable_input;
-    map["encryption"].v = m_config.enable_encryption;
-    map["secretkey"].v = m_config.curve_secret_keyfile;
-    map["publickey"].v = m_config.curve_public_keyfile;
-    map["encoderkey"].v = m_config.curve_encoder_keyfile;
+    map["buffer"] = m_config.buffer_size;
+    map["prebuffering"] = m_config.prebuffering;
+    map["enable"] = m_enable_input;
+    map["encryption"] = m_config.enable_encryption;
+    map["secretkey"] = m_config.curve_secret_keyfile;
+    map["publickey"] = m_config.curve_public_keyfile;
+    map["encoderkey"] = m_config.curve_encoder_keyfile;
     return map;
 }
 

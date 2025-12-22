@@ -46,6 +46,7 @@
 
 #pragma once
 
+#include "Json.h"
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
@@ -105,7 +106,7 @@ class InputStat
         void notifyUnderrun();
         void notifyOverrun();
         void notifyVersion(const std::string& version, uint32_t uptime_s);
-        std::string encodeValuesJSON();
+        json::map_t encodeValues();
         input_state_t determineState();
 
     private:
@@ -218,15 +219,15 @@ class ManagementServer
          *
          * returns: a JSON encoded configuration
          */
-        std::string get_input_config_json();
+        json::map_t get_input_config_json();
 
         /* Return the values for the statistics as defined in the configuration
          *
          * returns: JSON encoded statistics
          */
-        std::string get_input_values_json() const;
+        json::map_t get_input_values() const;
 
-        std::string get_output_values_json() const;
+        json::map_t get_output_values() const;
 
         // mutex for accessing the map
         mutable std::mutex m_statsmutex;

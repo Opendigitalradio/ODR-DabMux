@@ -169,105 +169,70 @@ bool ManagementServer::isInputRegistered(std::string& id)
 
 std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clocktai_expires_at) const
 {
-    std::ostringstream ss;
+    json::map_t j;
 
-    ss << "{ \"version\" : \"" << VERSION << "\"\n";
-    ss << ", \"global_input_state\" : null\n"; // TODO
-    ss << ", \"clock_tai_expiry\" : ";
+    j["version"] = VERSION;
+    j["global_input_state"] = std::nullopt; // TODO
 
     if (clocktai_expires_at) {
-        ss << *clocktai_expires_at;
+        j["clock_tai_expiry"] = *clocktai_expires_at;
     }
     else {
-        ss << "null";
+        j["clock_tai_expiry"] = std::nullopt;
     }
-    ss << "\n";
 
-    ss << ", \"inputs\" : \n";
-    ss << get_input_values_json();
-    ss << ",\n \"outputs\" : \n";
-    ss << get_output_values_json();
-    ss << "\n}";
+    j["inputs"] = get_input_values();
+    j["outputs"] = get_output_values();
 
-    return ss.str();
+    return json::map_to_json(j);
 }
 
-std::string ManagementServer::get_input_config_json()
+json::map_t ManagementServer::get_input_config_json()
 {
     unique_lock<mutex> lock(m_statsmutex);
 
-    std::ostringstream ss;
-    ss << "{ \"config\" : [\n";
-
-    std::map<std::string,InputStat*>::iterator iter;
-    int i = 0;
-    for (iter = m_input_stats.begin(); iter != m_input_stats.end();
-            ++iter, i++)
-    {
-        std::string id = iter->first;
-
-        if (i > 0) {
-            ss << ", ";
-        }
-
-        ss << " \"" << id << "\" ";
+    std::vector<json::value_t> v;
+    for (const auto& stat : m_input_stats) {
+        json::value_t id;
+        id = stat.first;
+        v.emplace_back(id);
     }
 
-    ss << "] }\n";
-
-    return ss.str();
+    json::map_t j;
+    j["config"] = v;
+    return j;
 }
 
-std::string ManagementServer::get_input_values_json() const
+json::map_t ManagementServer::get_input_values() const
 {
     unique_lock<mutex> lock(m_statsmutex);
 
-    std::ostringstream ss;
-    ss << "{\n";
+    json::map_t j;
+    for (const auto& stat : m_input_stats) {
+        const std::string& id = stat.first;
+        InputStat* stats = stat.second;
 
-    int i = 0;
-    for (auto iter = m_input_stats.begin(); iter != m_input_stats.end();
-            ++iter, i++)
-    {
-        const std::string& id = iter->first;
-        InputStat* stats = iter->second;
-
-        if (i > 0) {
-            ss << " ,\n";
-        }
-
-        ss << " \"" << id << "\" : ";
-        ss << stats->encodeValuesJSON();
+        j[id] = stats->encodeValues();
     }
-
-    ss << "}\n";
-
-    return ss.str();
+    return j;
 }
 
-std::string ManagementServer::get_output_values_json() const
+json::map_t ManagementServer::get_output_values() const
 {
     unique_lock<mutex> lock(m_statsmutex);
 
-    std::ostringstream ss;
-    ss << "{\n";
+    json::map_t j;
+    for (const auto& stat : m_output_stats) {
+        auto listen_port = stat.first;
+        auto num_connections = stat.second;
 
-    int i = 0;
-    for (auto iter = m_output_stats.begin(); iter != m_output_stats.end();
-            ++iter, i++)
-    {
-        auto listen_port = iter->first;
-        auto num_connections = iter->second;
-        if (i > 0) {
-            ss << " ,\n";
-        }
-        ss << " \"edi_tcp_" << listen_port << "\" : { \"num_connections\": " <<
-            num_connections << "} ";
+        string key = "edi_tcp_" + to_string(listen_port);
+        json::map_t o;
+        o["num_connections"] = num_connections;
+        j[key] = std::move(o);
     }
 
-    ss << "}\n";
-
-    return ss.str();
+    return j;
 }
 
 ManagementServer::ManagementServer() :
@@ -373,21 +338,17 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
                 << "}\n";
         }
         else if (data == "config") {
-            answer << get_input_config_json();
+            answer << json::map_to_json(get_input_config_json());
         }
         else if (data == "values") {
-            std::ostringstream ss;
-            ss << "{ \"values\" : \n";
-            ss << get_input_values_json();
-            ss << "}";
-            answer << ss.str();
+            json::map_t root;
+            root["values"] = get_input_values();
+            answer << json::map_to_json(root);
         }
         else if (data == "output_values") {
-            std::ostringstream ss;
-            ss << "{ \"output_values\" : \n";
-            ss << get_output_values_json();
-            ss << "}";
-            answer << ss.str();
+            json::map_t root;
+            root["output_values"] = get_output_values();
+            answer << json::map_to_json(root);
         }
         else if (data == "getptree") {
             unique_lock<mutex> lock(m_configmutex);
@@ -549,10 +510,8 @@ void InputStat::notifyVersion(const std::string& version, uint32_t uptime_s)
     m_uptime_s = uptime_s;
 }
 
-std::string InputStat::encodeValuesJSON()
+json::map_t InputStat::encodeValues()
 {
-    std::ostringstream ss;
-
     const int16_t int16_max = std::numeric_limits<int16_t>::max();
 
     unique_lock<mutex> lock(m_mutex);
@@ -619,41 +578,39 @@ std::string InputStat::encodeValuesJSON()
          pos++;
     }
 
-    ss <<
-    "{ \"inputstat\" : {"
-        "\"min_fill\": " << min_fill_buffer << ", "
-        "\"max_fill\": " << max_fill_buffer << ", "
-        "\"peak_left\": " << to_dB(peak_left_short) << ", "
-        "\"peak_right\": " << to_dB(peak_right_short) << ", "
-        "\"peak_left_slow\": " << to_dB(peak_left) << ", "
-        "\"peak_right_slow\": " << to_dB(peak_right) << ", "
-        "\"num_underruns\": " << m_num_underruns << ", "
-        "\"num_overruns\": " << m_num_overruns << ", "
-        "\"last_tist_offset\": " << m_last_tist_offset << ", "
-        "\"version\": \"" << version << "\", "
-        "\"uptime\": " << m_uptime_s << ", "
-        ;
+    json::map_t inputstat;
+    inputstat["min_fill"] = min_fill_buffer;
+    inputstat["max_fill"] = max_fill_buffer;
+    inputstat["peak_left"] = to_dB(peak_left_short);
+    inputstat["peak_right"] = to_dB(peak_right_short);
+    inputstat["peak_left_slow"] = to_dB(peak_left);
+    inputstat["peak_right_slow"] = to_dB(peak_right);
+    inputstat["num_underruns"] = m_num_underruns;
+    inputstat["num_overruns"] = m_num_overruns;
+    inputstat["last_tist_offset"] = m_last_tist_offset;
+    inputstat["version"] = version;
+    inputstat["uptime"] = m_uptime_s;
+    inputstat["state"] = "";
 
-    ss << "\"state\": ";
-
+    string state;
     switch (determineState()) {
         case input_state_t::NoData:
-            ss << "\"NoData (1)\"";
+            inputstat["state"] = "NoData (1)";
             break;
         case input_state_t::Unstable:
-            ss << "\"Unstable (2)\"";
+            inputstat["state"] = "Unstable (2)";
             break;
         case input_state_t::Silence:
-            ss << "\"Silent (3)\"";
+            inputstat["state"] = "Silent (3)";
             break;
         case input_state_t::Streaming:
-            ss << "\"Streaming (4)\"";
+            inputstat["state"] = "Streaming (4)";
             break;
     }
 
-    ss << " } }";
-
-    return ss.str();
+    json::map_t ret;
+    ret["inputstat"] = inputstat;
+    return ret;
 }
 
 input_state_t InputStat::determineState()

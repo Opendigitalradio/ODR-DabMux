@@ -57,6 +57,24 @@ namespace json {
             bool,
             std::nullopt_t> v;
 
+        explicit value_t() {
+            v = std::nullopt;
+        }
+
+        explicit value_t(const std::unordered_map<std::string, value_t>& object) {
+            v = std::make_shared<std::unordered_map<std::string, value_t> >(
+                    object);
+        }
+
+        explicit value_t(const std::vector<value_t>& array) {
+            v = array;
+        }
+
+        value_t(const std::string& str) {
+            v = str;
+        }
+
+
         void operator=(const std::unordered_map<std::string, value_t>& object) {
             v = std::make_shared<std::unordered_map<std::string, value_t> >(
                     object);

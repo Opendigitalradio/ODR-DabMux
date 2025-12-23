@@ -52,6 +52,7 @@
 #endif
 
 #include "zmq.hpp"
+#include "Socket.h"
 #include <string>
 #include <map>
 #include <atomic>
@@ -170,7 +171,9 @@ class ManagementServer
         void register_input(InputStat* is);
         void unregister_input(std::string id);
 
-        void update_edi_tcp_output_stat(uint16_t listen_port, size_t num_connections);
+        void update_edi_tcp_output_stat(
+                uint16_t listen_port,
+                const std::vector<Socket::TCPConnection::stats_t>& stats);
 
         /* Load a ptree given by the management server.
          *
@@ -212,7 +215,8 @@ class ManagementServer
         std::map<std::string, InputStat*> m_input_stats;
 
         // Holds information about EDI/TCP outputs
-        std::map<uint16_t /* port */, size_t /* num_connections */> m_output_stats;
+        std::map<uint16_t /* port */,
+            std::vector<Socket::TCPConnection::stats_t>> m_output_stats;
 
         /* Return a description of the configuration that will
          * allow to define what graphs to be created
@@ -227,7 +231,11 @@ class ManagementServer
          */
         json::map_t get_input_values() const;
 
-        json::map_t get_output_values() const;
+        struct output_stats {
+            json::map_t values;
+            size_t total_num_connections = 0;
+        };
+        output_stats get_output_values() const;
 
         // mutex for accessing the map
         mutable std::mutex m_statsmutex;

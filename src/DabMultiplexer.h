@@ -89,9 +89,6 @@ class DabMultiplexerConfig {
 class DabMultiplexer : public RemoteControllable {
     public:
         DabMultiplexer(DabMultiplexerConfig& config, ClockTAI& clock_tai);
-        DabMultiplexer(const DabMultiplexer& other) = delete;
-        DabMultiplexer& operator=(const DabMultiplexer& other) = delete;
-        virtual ~DabMultiplexer();
 
         void prepare(bool require_tai_clock);
 

@@ -147,11 +147,13 @@ void ManagementServer::unregister_input(std::string id)
 }
 
 // outputs will never disappear, no need to have a "remove" logic
-void ManagementServer::update_edi_tcp_output_stat(uint16_t listen_port, size_t num_connections)
+void ManagementServer::update_edi_tcp_output_stat(
+        uint16_t listen_port,
+        const std::vector<Socket::TCPConnection::stats_t>& stats)
 {
     unique_lock<mutex> lock(m_statsmutex);
 
-    m_output_stats[listen_port] = num_connections;
+    m_output_stats[listen_port] = stats;
 }
 
 bool ManagementServer::isInputRegistered(std::string& id)
@@ -182,7 +184,9 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
     }
 
     j["inputs"] = get_input_values();
-    j["outputs"] = get_output_values();
+    auto ov = get_output_values();
+    j["outputs"] = ov.values;
+    j["num_output_connections"] = ov.total_num_connections;
 
     return json::map_to_json(j);
 }
@@ -193,8 +197,7 @@ json::map_t ManagementServer::get_input_config_json()
 
     std::vector<json::value_t> v;
     for (const auto& stat : m_input_stats) {
-        json::value_t id;
-        id = stat.first;
+        json::value_t id = stat.first;
         v.emplace_back(id);
     }
 
@@ -217,22 +220,33 @@ json::map_t ManagementServer::get_input_values() const
     return j;
 }
 
-json::map_t ManagementServer::get_output_values() const
+ManagementServer::output_stats ManagementServer::get_output_values() const
 {
     unique_lock<mutex> lock(m_statsmutex);
 
-    json::map_t j;
+    output_stats ret;
+
     for (const auto& stat : m_output_stats) {
         auto listen_port = stat.first;
-        auto num_connections = stat.second;
+        auto output_stats = stat.second;
+
+        ret.total_num_connections += output_stats.size();
 
         string key = "edi_tcp_" + to_string(listen_port);
         json::map_t o;
-        o["num_connections"] = num_connections;
-        j[key] = std::move(o);
+        o["num_connections"] = output_stats.size();
+
+        vector<json::value_t> remote_addresses;
+        for (const auto& s : output_stats) {
+            remote_addresses.emplace_back(s.remote_address.to_string());
+        }
+        o["remote_addresses"] = remote_addresses;
+
+        ret.values[key] = std::move(o);
     }
 
-    return j;
+
+    return ret;
 }
 
 ManagementServer::ManagementServer() :
@@ -347,7 +361,8 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         }
         else if (data == "output_values") {
             json::map_t root;
-            root["output_values"] = get_output_values();
+            auto ov = get_output_values();
+            root["output_values"] = ov.values;
             answer << json::map_to_json(root);
         }
         else if (data == "getptree") {

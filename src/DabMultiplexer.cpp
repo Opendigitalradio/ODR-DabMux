@@ -152,12 +152,6 @@ DabMultiplexer::DabMultiplexer(DabMultiplexerConfig& config, ClockTAI& clock_tai
     RC_ADD_PARAMETER(tist_offset, "Configured tist-offset");
     RC_ADD_PARAMETER(reload_linking, "Write 1 to this parameter to trigger a reload of the linkage sets, frequency info and other-services from the config [write-only]");
 
-    rcs.enrol(&m_clock_tai);
-}
-
-DabMultiplexer::~DabMultiplexer()
-{
-    rcs.remove_controllable(&m_clock_tai);
 }
 
 void DabMultiplexer::set_edi_config(const edi::configuration_t& new_edi_conf)
@@ -879,8 +873,7 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
 
         for (const auto& stat : edi_sender->get_tcp_server_stats()) {
             get_mgmt_server().update_edi_tcp_output_stat(
-                    stat.listen_port,
-                    stat.stats.size());
+                    stat.listen_port, stat.stats);
         }
     }
 

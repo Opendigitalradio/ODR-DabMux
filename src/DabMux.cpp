@@ -242,6 +242,8 @@ int main(int argc, char *argv[])
         }
 
         ClockTAI clock_tai(mux_conf.pt.get("general.tai_clock_bulletins", ""));
+        rcs.enrol(&clock_tai);
+
         DabMultiplexer mux(mux_conf, clock_tai);
 
         etiLog.level(info) <<

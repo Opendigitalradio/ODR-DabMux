@@ -126,6 +126,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG0_18.h \
 					 src/fig/FIG0_19.cpp \
 					 src/fig/FIG0_19.h \
+					 src/fig/FIG0_20.cpp \
+					 src/fig/FIG0_20.h \
 					 src/fig/FIG0_21.cpp \
 					 src/fig/FIG0_21.h \
 					 src/fig/FIG0_24.cpp \
@@ -213,6 +215,5 @@ EXTRA_DIST	= COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO.md
 			  lib/fec/README.md lib/fec/LICENSE \
 			  lib/farsync/linux lib/farsync/windows \
 			  lib/charset/README
-
 
 

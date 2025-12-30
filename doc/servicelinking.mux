@@ -210,6 +210,64 @@ other-services {
     }
 }
 
+; FIG 0/20 - Adding, changing, removing and modifying services
+; Allowable changes are "identity", "addition", "removal", "global_removal"
+service-component-information {
+    ; Signal a service being added
+    new_radio {
+        id          0x1234
+        change      addition
+        programme   true
+        active      true
+    }
+
+    ; Signal a service being removed globally
+    old_radio {
+        id          0x5678
+        change      global_removal
+        active      true
+    }
+
+    ; Signal a service changing identity
+    rebranded {
+        id          0xABCD
+        change      identity
+        transfer_sid 0xEF01
+        active      true
+    }
+
+    ; Signal a service moving to another ensemble
+    moving_service {
+        id          0x1111
+        change      identity
+        transfer_sid 0x2222
+        transfer_eid 0x3333
+        active      true
+    }
+    
+    ; Service has ended - send all listeners to the old service (0x1234) to the new service (0xC012)
+    service_old_redirect {
+        id          0x1234
+        change      identity
+        transfer_sid 0xC012
+        active      true
+    }
+    
+    ; Part-time service with SC description
+    part_time_radio {
+        id          0x4444
+        change      addition
+        part_time   true
+        scids       0
+        sc_description {
+            ca      false
+            data    false
+            scty    0
+        }
+        active      true
+    }
+}
+
 ; For information about the ensemble, service, subchannels, components and outputs,
 ; please see doc/example.mux and doc/advanced.mux
 ensemble {

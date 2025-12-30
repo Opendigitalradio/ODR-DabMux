@@ -98,6 +98,7 @@ FIGCarousel::FIGCarousel(
     m_fig1_5(&m_rti),
     m_fig0_18(&m_rti),
     m_fig0_19(&m_rti),
+    m_fig0_20(&m_rti),
     m_fig0_21(&m_rti),
     m_fig0_24(&m_rti),
     m_fig2_0(&m_rti),
@@ -139,6 +140,7 @@ FIGCarousel::FIGCarousel(
     load_and_allocate(m_fig1_5, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_18, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_19, FIBAllocation::FIB_ANY);
+    load_and_allocate(m_fig0_20, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_21, FIBAllocation::FIB_ANY);
     load_and_allocate(m_fig0_24, FIBAllocation::FIB_ANY);
 

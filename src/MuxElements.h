@@ -286,6 +286,63 @@ using vec_sp_service = std::vector<std::shared_ptr<DabService> >;
 using vec_sp_subchannel = std::vector<std::shared_ptr<DabSubchannel> >;
 
 
+/* FIG 0/20 Service Component Information (SCI)
+ * Change flags values - see ETSI TS 103 176 clause 6
+ */
+enum class SCIChangeFlags : uint8_t {
+    IdentityChange = 0,  // 00: Service changing identity or moving ensemble
+    Addition = 1,        // 01: Service being added
+    LocalRemoval = 2,    // 10: Service removed from this ensemble only
+    GlobalRemoval = 3    // 11: Service removed from all ensembles
+};
+
+/* Service Component Information entry for FIG 0/20
+ * See ETSI TS 103 176 clause 6
+ */
+struct ServiceComponentInformation {
+    uint32_t SId = 0;           // Service Identifier (16-bit for audio, 32-bit for data)
+    uint8_t SCIdS = 0;          // Service Component Identifier within Service (4-bit)
+    SCIChangeFlags change_flags = SCIChangeFlags::Addition;
+    bool part_time = false;     // P-T flag: true if part-time service
+    bool sc_flag = false;       // SC flag: true if SC description present
+
+    // SC description (only present if sc_flag is true)
+    bool ca_flag = false;       // CA flag: Access control applied
+    bool ad_flag = false;       // A/D flag: 0=ASCTy follows, 1=DSCTy follows
+    uint8_t SCTy = 0;           // Service Component Type (6-bit)
+
+    // Date-time of change (special value 0x1FFFFFF means "already occurred" or "unknown")
+    uint8_t date = 0x1F;        // 5-bit, 0x1F = special value
+    uint8_t hour = 0x1F;        // 5-bit, 0x1F = special value
+    uint8_t minute = 0x3F;      // 6-bit, 0x3F = special value
+    uint8_t second = 0x3F;      // 6-bit, 0x3F = special value
+
+    // Transfer information (for service moves/identity changes)
+    bool sid_flag = false;      // SId flag: Transfer SId present
+    bool eid_flag = false;      // EId flag: Transfer EId present
+    uint32_t transfer_sid = 0;  // Transfer Service Identifier
+    uint16_t transfer_eid = 0;  // Transfer Ensemble Identifier
+
+    bool isDateTimeSpecial() const {
+        return (date == 0x1F && hour == 0x1F && minute == 0x3F && second == 0x3F);
+    }
+
+    void setDateTimeSpecial() {
+        date = 0x1F; hour = 0x1F; minute = 0x3F; second = 0x3F;
+    }
+
+    bool isProgramme = true;
+
+    bool is_active() const { return m_active; }
+    void set_active(bool a) { m_active = a; }
+
+private:
+    bool m_active = false;
+};
+
+using vec_sp_sci = std::vector<std::shared_ptr<ServiceComponentInformation> >;
+
+
 enum class TransmissionMode_e {
     TM_I,
     TM_II,
@@ -354,6 +411,7 @@ class dabEnsemble : public RemoteControllable {
         std::vector<FrequencyInformation> get_frequency_information() const;
         std::vector<std::shared_ptr<LinkageSet> > get_linkagesets() const;
         std::vector<ServiceOtherEnsembleInfo> get_service_other_ensemble() const;
+        vec_sp_sci sci_entries;
 
         void set_linking_config(
                 std::vector<std::shared_ptr<LinkageSet> >& new_linkage_sets,
@@ -690,4 +748,3 @@ vec_sp_component::iterator getComponent(
 vec_sp_service::iterator getService(
         std::shared_ptr<DabComponent> component,
         vec_sp_service& services);
-

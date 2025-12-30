@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -25,23 +25,28 @@
 
 #pragma once
 
-#include "fig/FIG0structs.h"
-#include "fig/FIG0_0.h"
-#include "fig/FIG0_1.h"
-#include "fig/FIG0_2.h"
-#include "fig/FIG0_3.h"
-#include "fig/FIG0_5.h"
-#include "fig/FIG0_6.h"
-#include "fig/FIG0_7.h"
-#include "fig/FIG0_8.h"
-#include "fig/FIG0_9.h"
-#include "fig/FIG0_10.h"
-#include "fig/FIG0_13.h"
-#include "fig/FIG0_14.h"
-#include "fig/FIG0_17.h"
-#include "fig/FIG0_18.h"
-#include "fig/FIG0_19.h"
-#include "fig/FIG0_20.h"
-#include "fig/FIG0_21.h"
-#include "fig/FIG0_24.h"
+#include <cstdint>
+#include <vector>
 
+namespace FIC {
+
+// FIG type 0/20
+// Service Component Information (SCI)
+// See ETSI TS 103 176 clause 6
+class FIG0_20 : public IFIG
+{
+    public:
+        FIG0_20(FIGRuntimeInformation* rti);
+        virtual FillStatus fill(uint8_t *buf, size_t max_size);
+        virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
+
+        virtual int figtype() const { return 0; }
+        virtual int figextension() const { return 20; }
+
+    private:
+        FIGRuntimeInformation *m_rti;
+        bool m_initialised;
+        vec_sp_sci::iterator sci_it;
+};
+
+}

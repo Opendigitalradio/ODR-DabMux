@@ -373,6 +373,105 @@ static void parse_other_service_linking(ptree& pt,
     } // if other-services present
 }
 
+// Parse the service-component-information section (FIG 0/20)
+static void parse_service_component_information(ptree& pt,
+        std::shared_ptr<dabEnsemble> ensemble)
+{
+    auto pt_sci = pt.get_child_optional("service-component-information");
+    if (pt_sci)
+    {
+        for (const auto& it_sci : *pt_sci) {
+            const string sci_uid = it_sci.first;
+            const ptree pt_entry = it_sci.second;
+
+            auto sci = make_shared<ServiceComponentInformation>();
+
+            try {
+                // Required: Service ID
+                sci->SId = hexparse(pt_entry.get<string>("id"));
+
+                // Required: change type
+                string change_str = pt_entry.get<string>("change");
+                if (change_str == "identity") {
+                    sci->change_flags = SCIChangeFlags::IdentityChange;
+                }
+                else if (change_str == "addition") {
+                    sci->change_flags = SCIChangeFlags::Addition;
+                }
+                else if (change_str == "local_removal") {
+                    sci->change_flags = SCIChangeFlags::LocalRemoval;
+                }
+                else if (change_str == "global_removal") {
+                    sci->change_flags = SCIChangeFlags::GlobalRemoval;
+                }
+                else {
+                    throw runtime_error("Invalid change type '" + change_str +
+                            "' for SCI entry " + sci_uid +
+                            " (valid: identity, addition, local_removal, global_removal)");
+                }
+
+                // Optional: SCIdS (default 0 = primary component)
+                sci->SCIdS = pt_entry.get<uint8_t>("scids", 0) & 0x0F;
+
+                // Optional: programme flag (default true for audio services)
+                sci->isProgramme = pt_entry.get<bool>("programme", true);
+
+                // Optional: part-time flag
+                sci->part_time = pt_entry.get<bool>("part_time", false);
+
+                // Optional: SC description
+                auto pt_sc = pt_entry.get_child_optional("sc_description");
+                if (pt_sc) {
+                    sci->sc_flag = true;
+                    sci->ca_flag = pt_sc->get<bool>("ca", false);
+                    sci->ad_flag = pt_sc->get<bool>("data", false);  // A/D flag: 0=audio, 1=data
+                    sci->SCTy = pt_sc->get<uint8_t>("scty", 0) & 0x3F;
+                }
+
+                // Optional: date-time of change (default: special value = already occurred)
+                auto pt_datetime = pt_entry.get_child_optional("datetime");
+                if (pt_datetime) {
+                    sci->date = pt_datetime->get<uint8_t>("date", 0x1F) & 0x1F;
+                    sci->hour = pt_datetime->get<uint8_t>("hour", 0x1F) & 0x1F;
+                    sci->minute = pt_datetime->get<uint8_t>("minute", 0x3F) & 0x3F;
+                    sci->second = pt_datetime->get<uint8_t>("second", 0x3F) & 0x3F;
+                }
+                // else: default values already set to special value (0x1FFFFFF)
+
+                // Optional: transfer SId (for identity changes or service moves)
+                string transfer_sid_str = pt_entry.get<string>("transfer_sid", "");
+                if (not transfer_sid_str.empty()) {
+                    sci->sid_flag = true;
+                    sci->transfer_sid = hexparse(transfer_sid_str);
+                }
+
+                // Optional: transfer EId (for service moves to another ensemble)
+                string transfer_eid_str = pt_entry.get<string>("transfer_eid", "");
+                if (not transfer_eid_str.empty()) {
+                    sci->eid_flag = true;
+                    sci->transfer_eid = hexparse(transfer_eid_str);
+                }
+
+                // Optional: active flag (default false - must be enabled via RC or config)
+                sci->set_active(pt_entry.get<bool>("active", false));
+
+                ensemble->sci_entries.push_back(sci);
+
+                etiLog.level(info) << "SCI entry " << sci_uid <<
+                    " configured for SId 0x" << hex << sci->SId << dec;
+            }
+            catch (const ptree_error &e) {
+                throw runtime_error("Invalid configuration for SCI entry " +
+                        sci_uid + ": " + e.what());
+            }
+            catch (const std::exception &e) {
+                throw runtime_error("Error parsing SCI entry " +
+                        sci_uid + ": " + e.what());
+            }
+        } // for over sci entries
+    } // if service-component-information present
+}
+
 static void parse_general(ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble)
 {
@@ -906,6 +1005,7 @@ void parse_ptree(
     parse_linkage(pt, ensemble);
     parse_freq_info(pt, ensemble);
     parse_other_service_linking(pt, ensemble);
+    parse_service_component_information(pt, ensemble);
 }
 
 static Inputs::dab_input_zmq_config_t setup_zmq_input(

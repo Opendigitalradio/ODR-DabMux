@@ -1107,11 +1107,11 @@ TCPDataDispatcher::TCPDataDispatcher(size_t max_queue_size, size_t buffers_to_pr
 TCPDataDispatcher::~TCPDataDispatcher()
 {
     m_running = false;
-    m_connections.clear();
-    m_listener_socket.close();
     if (m_listener_thread.joinable()) {
         m_listener_thread.join();
     }
+    m_listener_socket.close();
+    m_connections.clear();
 }
 
 void TCPDataDispatcher::start(int port, const string& address)

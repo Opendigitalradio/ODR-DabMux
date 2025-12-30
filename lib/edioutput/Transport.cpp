@@ -116,10 +116,8 @@ Sender::Sender(const configuration_t& conf) :
         }
     }
 
-    {
-        m_running = true;
-        m_thread = thread(&Sender::run, this);
-    }
+    m_running.store(true);
+    m_thread = thread(&Sender::run, this);
 
     if (m_conf.verbose) {
         etiLog.log(info, "EDI output set up");
@@ -171,9 +169,7 @@ std::vector<Sender::stats_t> Sender::get_tcp_server_stats() const
 
 Sender::~Sender()
 {
-    {
-        m_running = false;
-    }
+    m_running.store(false);
 
     if (m_thread.joinable()) {
         m_thread.join();
@@ -182,7 +178,7 @@ Sender::~Sender()
 
 void Sender::run()
 {
-    while (m_running) {
+    while (m_running.load()) {
         const auto now = chrono::steady_clock::now();
         for (auto& spreader : m_pft_spreaders) {
             spreader->tick(now);

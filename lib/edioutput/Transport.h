@@ -31,6 +31,7 @@
 #include "AFPacket.h"
 #include "PFT.h"
 #include "Socket.h"
+#include <atomic>
 #include <chrono>
 #include <map>
 #include <cstdint>
@@ -78,12 +79,9 @@ class Sender {
 
         // PFT spreading requires sending UDP packets at specific time,
         // independently of time when write() gets called
-        bool m_running = false;
+        std::atomic<bool> m_running = false;
         std::thread m_thread;
         virtual void run();
-
-
-
 
 
         struct i_sender {

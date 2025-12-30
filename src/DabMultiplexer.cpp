@@ -151,7 +151,7 @@ DabMultiplexer::DabMultiplexer(DabMultiplexerConfig& config, ClockTAI& clock_tai
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
     RC_ADD_PARAMETER(tist_offset, "Configured tist-offset");
     RC_ADD_PARAMETER(reload_linking, "Write 1 to this parameter to trigger a reload of the linkage sets, frequency info and other-services from the config [write-only]");
-
+    RC_ADD_PARAMETER(fic_repetition_correction, "In highly loaded ensembles, nominal repetition rates cannot be respected. Increase this correction factor to allow longer deadlines.");
 }
 
 void DabMultiplexer::set_edi_config(const edi::configuration_t& new_edi_conf)
@@ -265,6 +265,8 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         ensemble->reconfig_counter = crc_tmp % 1024;
         etiLog.level(info) << "Calculated FIG 0/7 Count = " << ensemble->reconfig_counter;
     }
+
+    fig_carousel.set_rate_correction(m_config.pt.get<double>("general.fic_repetition_correction", 1.0));
 }
 
 
@@ -920,6 +922,16 @@ void DabMultiplexer::set_parameter(const std::string& parameter,
     else if (parameter == "reload_linking") {
         reload_linking();
     }
+    else if (parameter == "fic_repetition_correction") {
+        try {
+            fig_carousel.set_rate_correction(std::stod(value));
+        }
+        catch (const runtime_error& e) {
+            stringstream ss;
+            ss << "Error: " << e.what();
+            throw ParameterError(ss.str());
+        }
+    }
     else {
         stringstream ss;
         ss << "Parameter '" << parameter <<
@@ -942,6 +954,9 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
         ss << "Parameter '" << parameter <<
             "' is not write-only in controllable " << get_rc_name();
         throw ParameterError(ss.str());
+    }
+    else if (parameter == "fic_repetition_correction") {
+        ss << fig_carousel.get_rate_correction();
     }
     else {
         ss << "Parameter '" << parameter <<

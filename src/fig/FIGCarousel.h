@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2024
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -43,15 +43,17 @@ namespace FIC {
 
 class FIGCarouselElement {
     public:
+        FIGCarouselElement(IFIG *fig, double correction_factor);
+
         IFIG* fig;
-        int   deadline; // unit: ms
+        int   deadline = 0; // unit: ms
 
         void reduce_deadline();
-        void increase_deadline();
+        void increase_deadline(double correction_factor);
 
         /* Returns true if the repetition rate changed and the
          * deadline was recalculated */
-        bool check_deadline();
+        bool check_deadline(double correction_factor);
 
     private:
         FIG_rate m_last_rate = FIG_rate::A;
@@ -82,10 +84,18 @@ class FIGCarousel {
                 uint64_t current_frame,
                 bool fib3_present);
 
+        double get_rate_correction() const;
+        void set_rate_correction(double factor);
+
     private:
         size_t carousel(int fib, uint8_t *buf, size_t bufsize, uint64_t current_frame);
 
         void load_and_allocate(IFIG& fig, FIBAllocation fib);
+
+        // In highly loaded ensembles, nominal repetition rates
+        // cannot be respected. Increase this correction factor
+        // to allow longer deadlines.
+        double correction_factor = 1;
 
         std::unordered_set<std::string> m_missed_deadlines;
 

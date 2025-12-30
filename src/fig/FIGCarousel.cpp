@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2024
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of the FIG carousel to schedule the FIGs into the
@@ -39,23 +39,29 @@
 namespace FIC {
 
 /**************** FIGCarouselElement ****************/
+FIGCarouselElement::FIGCarouselElement(IFIG *fig, double correction_factor) :
+    fig(fig)
+{
+    increase_deadline(correction_factor);
+}
+
 void FIGCarouselElement::reduce_deadline()
 {
     deadline -= 24; //ms
 }
 
-void FIGCarouselElement::increase_deadline()
+void FIGCarouselElement::increase_deadline(double correction_factor)
 {
-    deadline = rate_increment_ms(fig->repetition_rate());
+    deadline = correction_factor * rate_increment_ms(fig->repetition_rate());
 }
 
-bool FIGCarouselElement::check_deadline()
+bool FIGCarouselElement::check_deadline(double correction_factor)
 {
     const auto new_rate = fig->repetition_rate();
     const bool rate_changed = (m_last_rate != new_rate);
 
     if (rate_changed) {
-        const auto new_deadline = rate_increment_ms(new_rate);
+        const auto new_deadline = correction_factor * rate_increment_ms(new_rate);
         if (deadline > new_deadline) {
             deadline = new_deadline;
         }
@@ -144,11 +150,7 @@ FIGCarousel::FIGCarousel(
 
 void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
 {
-    FIGCarouselElement el;
-    el.fig = &fig;
-    el.deadline = 0;
-    el.increase_deadline();
-    m_fibs[fib].push_back(el);
+    m_fibs[fib].emplace_back(&fig, correction_factor);
 }
 
 size_t FIGCarousel::write_fibs(
@@ -210,6 +212,23 @@ size_t FIGCarousel::write_fibs(
     return 32 * fibCount;
 }
 
+double FIGCarousel::get_rate_correction() const
+{
+    return correction_factor;
+}
+
+void FIGCarousel::set_rate_correction(double factor)
+{
+    // Lower bound: 0.5 is quite arbitrary, as most applications need a positive factor.
+    // Upper bound: 4 times lower repetition than the standard is already quite a lot,
+    // I suspect values between 1 and 2 will be most common.
+    if (factor < 0.5 or factor > 4) {
+        throw std::runtime_error(std::string{"rate correction factor "}
+                + std::to_string(factor) + "must be between 0.5 and 4.0");
+    }
+    correction_factor = factor;
+}
+
 size_t FIGCarousel::carousel(
         int fib,
         uint8_t *buf,
@@ -248,7 +267,7 @@ size_t FIGCarousel::carousel(
     /* Some FIGs might have changed rate since we last
      * set the deadline */
     for (auto& fig : sorted_figs) {
-        if (fig->check_deadline()) {
+        if (fig->check_deadline(correction_factor)) {
 #if CAROUSELDEBUG
             etiLog.level(debug) <<
                 "FRAME " << current_frame <<
@@ -315,7 +334,7 @@ size_t FIGCarousel::carousel(
             }
 
             if (status.complete_fig_transmitted) {
-                (*fig0_0)->increase_deadline();
+                (*fig0_0)->increase_deadline(correction_factor);
             }
             else {
                 throw std::logic_error("FIG0/0 did not complete!");
@@ -337,7 +356,7 @@ size_t FIGCarousel::carousel(
                 }
 
                 if (status0_7.complete_fig_transmitted) {
-                    (*fig0_7)->increase_deadline();
+                    (*fig0_7)->increase_deadline(correction_factor);
                 }
             }
         }
@@ -394,7 +413,7 @@ size_t FIGCarousel::carousel(
 #endif
 
         if (status.complete_fig_transmitted) {
-            fig_el->increase_deadline();
+            fig_el->increase_deadline(correction_factor);
         }
 
         sorted_figs.pop_front();

@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -23,7 +23,6 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "fig/FIG0structs.h"
 #include "fig/FIG0_10.h"
 #include "utils.h"
 
@@ -89,7 +88,7 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
         return fs;
     }
 
-    //Time and country identifier
+    // Time and country identifier
     auto fig0_10 = (FIGtype0_10_LongForm*)buf;
 
     fig0_10->FIGtypeNumber = 0;
@@ -102,9 +101,9 @@ FillStatus FIG0_10::fill(uint8_t *buf, size_t max_size)
     remaining -= 2;
 
     struct tm timeData;
-    time_t dab_time_seconds = 0;
-    uint32_t dab_time_millis = 0;
-    get_dab_time(&dab_time_seconds, &dab_time_millis);
+    const auto dab_time = m_rti->getTimeFunc();
+    time_t dab_time_seconds = dab_time.second;
+    uint32_t dab_time_millis = dab_time.first;
     gmtime_r(&dab_time_seconds, &timeData);
 
     fig0_10->RFU = 0;

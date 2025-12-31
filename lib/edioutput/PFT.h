@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2021
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -33,12 +33,8 @@
 #pragma once
 
 #include <vector>
-#include <list>
-#include <stdexcept>
 #include <cstdint>
 #include "AFPacket.h"
-#include "Log.h"
-#include "ReedSolomon.h"
 #include "EDIConfig.h"
 
 namespace edi {
@@ -52,21 +48,24 @@ class PFT
         static constexpr int PARITYBYTES = 48;
 
         PFT();
-        PFT(const configuration_t& conf);
+        PFT(const pft_settings_t& conf);
+
+        bool is_enabled() const { return m_enabled and m_k > 0; }
 
         // return a list of PFT fragments with the correct
         // PFT headers
-        std::vector< PFTFragment > Assemble(AFPacket af_packet);
+        std::vector<PFTFragment> Assemble(AFPacket af_packet);
 
         // Apply Reed-Solomon FEC to the AF Packet
         RSBlock Protect(AFPacket af_packet);
 
         // Cut a RSBlock into several fragments that can be transmitted
-        std::vector< std::vector<uint8_t> > ProtectAndFragment(AFPacket af_packet);
+        std::vector<std::vector<uint8_t>> ProtectAndFragment(AFPacket af_packet);
 
         void OverridePSeq(uint16_t pseq);
 
     private:
+        bool m_enabled = false;
         unsigned int m_k = 207; // length of RS data word
         unsigned int m_m = 3; // number of fragments that can be recovered if lost
         uint16_t m_pseq = 0;

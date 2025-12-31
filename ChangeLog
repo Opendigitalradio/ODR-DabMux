@@ -1,6 +1,66 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2025-10-01: Matthias P. Braendli <matthias@mpb.li>
+	(v5.4.1):
+		Fix race condition in TCP output stats that can lock up
+		odr-dabmux on some systems.
+		Add linkage-set hot-reload.
+
+2025-09-10: Matthias P. Braendli <matthias@mpb.li>
+	(v5.4.0):
+		Add support for UDP EDI input to specify local interface IP.
+		Make sourceport optional in EDI output config.
+
+2025-06-25: Matthias P. Braendli <matthias@mpb.li>
+	(v5.3.0):
+		Remove broken gui/ and point towards ODR-DabMux-GUI in README instead.
+		Improve logging about SSnn zero.
+		Rework FCT and TIST startup initialisation to guarantee TIST@FCT0 setting
+
+2025-05-19: Matthias P. Braendli <matthias@mpb.li>
+	(v5.2.0):
+		Rework FIG0/10 DAB time indication to match EDI time.
+		Make PFT per-output configurable.
+
+2025-03-18: Matthias P. Braendli <matthias@mpb.li>
+	(v5.1.0):
+		Fix startup value of DLFC and FCT.
+		Add statistics for EDI/TCP outputs.
+
+2024-10-03: Matthias P. Braendli <matthias@mpb.li>
+	(v5.0.0):
+		Remove odr-zmq2edi.
+		Make compatible with easydab again.
+		Fix timestamp issue with EDI streams that have seconds=0.
+		Fix receiving multicast streams, when several multicast groups are
+		on the same port.
+
+2024-05-05: Matthias P. Braendli <matthias@mpb.li>
+	(v4.5.0):
+		Switch project to C++17.
+		Update common code, with ClockTAI improvements among others.
+		Add uatype journaline to config.
+		Add ZMQ output to odr-zmq2edi.
+		Increase repetition rate for labels.
+		Add showjson to remote control.
+
+2024-03-23: Matthias P. Braendli <matthias@mpb.li>
+	(v2.3.2):
+		This is a patch version for v2.3.1
+		Fix compilation issues with recent boost and compiler versions
+
+2023-08-12: Matthias P. Braendli <matthias@mpb.li>
+	(v4.4.1):
+		Fix some compilation issues.
+
+2023-05-09: Matthias P. Braendli <matthias@mpb.li>
+	(v4.4.0):
+		Ensure CIF count continuity on startup, and make CIF
+		count consistent with timestamp across restarts.
+		Ensure EDI output inserts ESTn tags in the order given
+		in the config file.
+
 2022-10-18: Matthias P. Braendli <matthias@mpb.li>
 	(v4.3.0):
 		Add "load_entire_file" configuration setting for file inputs.

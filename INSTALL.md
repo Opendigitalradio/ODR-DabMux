@@ -1,37 +1,26 @@
+# Installation
+
 You have 3 ways to install odr-dabmux on your host:
 
-# Using binary debian packages
-If your host is running a debian-based OS and its cpu is one of amd64, arm64 or arm/v7, then you can install odr-dabmux using the standard debian packaging system:
-1. Update the debian apt repository list:
-   ```
-   curl -fsSL http://debian.opendigitalradio.org/odr.asc | sudo tee /etc/apt/trusted.gpg.d/odr.asc 1>/dev/null
-   curl -fsSL http://debian.opendigitalradio.org/odr.list | sudo tee /etc/apt/sources.list.d/odr.list 1>/dev/null
-   ```
-1. Refresh the debian packages list:
-   ```
-   apt update
-   ```
-1. Install odr-audioenc:
-   ```
-   sudo apt install --yes odr-dabmux
-   ```
+## Installing binary packages on some linux distributions
 
-**Attention**: odr-dabmux (4.2.1-1) does not include the Mux Web Management GUI
+[![Packaging status](https://repology.org/badge/vertical-allrepos/odr-dabmux.svg)](https://repology.org/project/odr-dabmux/versions)
 
-# Using the dab-scripts
-You can compile odr-dabmux as well as the other main components of the mmbTools set with an installation script:
-1. Clone the dab-scripts repository:
-   ```
-   git clone https://github.com/opendigitalradio/dab-scripts.git
-   ```
-1. Follow the [instructions](https://github.com/Opendigitalradio/dab-scripts/tree/master/install)
+## Using installation scripts
 
-# Compiling manually
+If your linux distribution is debian-based, you can install odr-dabmux
+as well as the other main components of the mmbTools set with the
+[Opendigitalradio dab-scripts](https://github.com/opendigitalradio/dab-scripts.git)
+
+## Compiling manually
+
 Unlike the 2 previous options, this one allows you to compile odr-dabmux with the features you really need.
 
-## Dependencies
-### Debian Bullseye-based OS:
-```
+### Dependencies
+
+#### Debian Bullseye-based OS
+
+```sh
 # Required packages
 ## C++11 compiler
 sudo apt-get install --yes build-essential automake libtool
@@ -47,7 +36,8 @@ sudo apt-get install --yes libboost-system-dev
 sudo apt-get install --yes libcurl4-openssl-dev
 ```
 
-### Dependencies on other linux distributions
+#### Other linux distributions
+
 For CentOS, in addition to the packages needed to install a compiler, install the packages:
 boost-devel libcurl-devel zeromq-devel
 
@@ -59,49 +49,59 @@ the [radio RaBe repository](https://github.com/radiorabe/).
 For openSUSE, mnhauke is maintaining packages, also built using
 [OBS](https://build.opensuse.org/project/show/home:mnhauke:ODR-mmbTools).
 
-## Compilation
+### Compilation
+
 The *master* branch in the repository always points to the
 latest release. If you are looking for a new feature or bug-fix
 that did not yet make its way into a release, you can clone the
 *next* branch from the repository.
 
 1. Clone this repository:
-   ```
+
+   ```sh
    # stable version:
    git clone https://github.com/Opendigitalradio/ODR-DabMux.git
 
    # or development version (at your own risk):
    git clone https://github.com/Opendigitalradio/ODR-DabMux.git -b next
    ```
+
 1. Configure the project
-   ```
+
+   ```sh
    cd ODR-DabMux
    ./bootstrap
    ./configure
    ```
+
 1. Compile and install:
-   ```
+
+   ```sh
    make
    sudo make install
    ```
 
 Notes:
+
 - It is advised to run the bootstrap and configure steps again every time you pull updates from the repository.
 - The configure script can be launched with a variety of options. Run `./configure --help` to display a complete list
 
-# Develop on OSX and FreeBSD
-If you want to develop on OSX platform install the necessary build tools
-and dependencies with brew
+## Develop on OSX and FreeBSD
 
-    brew install boost zeromq automake curl
+If you want to develop on OSX platform install the necessary build tools and dependencies with brew
+
+```sh
+brew install boost zeromq automake curl
+```
 
 On FreeBSD, pkg installs all dependencies to /usr/local, but the build
 tools will not search there by default. Set the following environment variables
 before calling ./configure
 
-    LDFLAGS="-L/usr/local/lib"
-    CFLAGS="-I/usr/local/include"
-    CXXFLAGS="-I/usr/local/include"
+```sh
+LDFLAGS="-L/usr/local/lib"
+CFLAGS="-I/usr/local/include"
+CXXFLAGS="-I/usr/local/include"
+```
 
-On both systems, RAW output is not available. Note that these systems
-are not tested regularly.
+On both systems, RAW output is not available. Note that these systems are not tested regularly.

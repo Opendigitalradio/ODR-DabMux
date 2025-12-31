@@ -23,8 +23,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __FIG1_H_
-#define __FIG1_H_
+#pragma once
 
 #include <cstdint>
 
@@ -103,10 +102,6 @@ class FIG1_5 : public IFIG
         vec_sp_service::iterator service;
 };
 
-#ifdef _WIN32
-#   pragma pack(push)
-#endif
-
 struct FIGtype1_0 {
     uint8_t Length:5;
     uint8_t FIGtypeNumber:3;
@@ -165,11 +160,5 @@ struct FIGtype1_4_data {
 } PACKED;
 
 
-#ifdef _WIN32
-#   pragma pack(pop)
-#endif
-
 } // namespace FIC
-
-#endif // __FIG1_H_
 

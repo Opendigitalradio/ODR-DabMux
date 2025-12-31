@@ -18,23 +18,13 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
    */
-
-#ifndef _MPEG
-#define _MPEG
+#pragma once
 
 #ifdef HAVE_CONFIG_H
 #   include "config.h"
 #endif
 
-#ifdef _WIN32
-#   include <stddef.h>
-#   include <basetsd.h>
-#   include <io.h>
-
-#   define ssize_t SSIZE_T
-#else
-#   include <unistd.h>
-#endif
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,4 +76,3 @@ int checkDabMpegFrame(void* data);
 }
 #endif
 
-#endif // _MPEG

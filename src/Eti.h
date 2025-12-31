@@ -29,23 +29,11 @@
 # include <config.h>
 #endif
 
-#ifdef _WIN32
-#	include <winsock2.h>	// For types...
-typedef WORD uint16_t;
-typedef DWORD32 uint32_t;
-
-#   define PACKED
-#   pragma pack(push, 1)
-#else
-#   include <stdint.h>
-#   include <time.h>
-
-#   define PACKED __attribute__ ((packed))
-#endif
-
+#include <cstdint>
+#include <ctime>
+#define PACKED __attribute__ ((packed))
 
 //definitions des structures des champs du ETI(NI, G703)
-
 
 struct eti_SYNC {
     uint32_t ERR:8;

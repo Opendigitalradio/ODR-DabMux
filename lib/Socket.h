@@ -2,7 +2,7 @@
    Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009 Her Majesty the
    Queen in Right of Canada (Communications Research Center Canada)
 
-   Copyright (C) 2022
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -31,9 +31,11 @@
 #include "ThreadsafeQueue.h"
 #include <cstdlib>
 #include <atomic>
-#include <iostream>
+#include <chrono>
 #include <list>
 #include <memory>
+#include <optional>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -111,13 +113,13 @@ class UDPSocket
         /** Close the already open socket, and create a new one. Throws a runtime_error on error.  */
         void reinit(int port);
         void reinit(int port, const std::string& name);
+        void init_receive_multicast(int port, const std::string& local_if_addr, const std::string& mcastaddr);
 
         void close(void);
         void send(UDPPacket& packet);
         void send(const std::vector<uint8_t>& data, InetAddress destination);
         void send(const std::string& data, InetAddress destination);
         UDPPacket receive(size_t max_size);
-        void joinGroup(const char* groupname, const char* if_addr = nullptr);
         void setMulticastSource(const char* source_addr);
         void setMulticastTTL(int ttl);
 
@@ -129,9 +131,14 @@ class UDPSocket
         SOCKET getNativeSocket() const;
         int getPort() const;
 
+    private:
+        void join_group(const char* groupname, const char* if_addr = nullptr);
+        void post_init();
+
     protected:
         SOCKET m_sock = INVALID_SOCKET;
         int m_port = 0;
+        std::string m_multicast_source = "";
 };
 
 /* UDP packet receiver supporting receiving from several ports at once */
@@ -206,6 +213,8 @@ class TCPSocket {
 
         SOCKET get_sockfd() const { return m_sock; }
 
+        InetAddress get_remote_address() const { return m_remote_address; }
+
     private:
         explicit TCPSocket(int sockfd);
         explicit TCPSocket(int sockfd, InetAddress remote_address);
@@ -231,6 +240,8 @@ class TCPClient {
         TCPSocket m_sock;
         std::string m_hostname;
         int m_port;
+
+        std::optional<std::chrono::steady_clock::time_point> m_last_received_packet_ts;
 };
 
 /* Helper class for TCPDataDispatcher, contains a queue of pending data and
@@ -244,6 +255,12 @@ class TCPConnection
         ~TCPConnection();
 
         ThreadsafeQueue<std::vector<uint8_t> > queue;
+
+        struct stats_t {
+            size_t buffer_fullness = 0;
+            InetAddress remote_address;
+        };
+        stats_t get_stats() const;
 
     private:
         std::atomic<bool> m_running;
@@ -267,6 +284,8 @@ class TCPDataDispatcher
         void start(int port, const std::string& address);
         void write(const std::vector<uint8_t>& data);
 
+        std::vector<TCPConnection::stats_t> get_stats() const;
+
     private:
         void process();
 
@@ -279,7 +298,7 @@ class TCPDataDispatcher
         std::thread m_listener_thread;
         TCPSocket m_listener_socket;
 
-        std::mutex m_mutex;
+        mutable std::mutex m_mutex;
         std::deque<std::vector<uint8_t> > m_preroll_queue;
         std::list<TCPConnection> m_connections;
 };
@@ -324,10 +343,18 @@ class TCPSendClient {
     public:
         TCPSendClient(const std::string& hostname, int port);
         ~TCPSendClient();
+        TCPSendClient(const TCPSendClient&) = delete;
+        TCPSendClient& operator=(const TCPSendClient&) = delete;
 
-        /* Throws a runtime_error on error
-         */
-        void sendall(const std::vector<uint8_t>& buffer);
+
+        struct ErrorStats {
+            std::string last_error = "";
+            size_t num_reconnects = 0;
+            bool has_seen_new_errors = false;
+        };
+
+        /* Throws a runtime_error when the process thread isn't running */
+        ErrorStats sendall(const std::vector<uint8_t>& buffer);
 
     private:
         void process();
@@ -344,6 +371,11 @@ class TCPSendClient {
         std::string m_exception_data;
         std::thread m_sender_thread;
         TCPSocket m_listener_socket;
+
+        std::atomic<size_t> m_num_reconnects = ATOMIC_VAR_INIT(0);
+        size_t m_num_reconnects_prev = 0;
+        std::mutex m_error_mutex;
+        std::string m_last_error = "";
 };
 
 }

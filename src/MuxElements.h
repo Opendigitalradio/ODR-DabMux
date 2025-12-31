@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2022
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -33,16 +33,13 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <functional>
 #include <exception>
-#include <algorithm>
 #include <chrono>
-#include <boost/optional.hpp>
+#include <optional>
 #include <stdint.h>
 #include "dabOutput/dabOutput.h"
 #include "input/inputs.h"
 #include "RemoteControl.h"
-#include "Eti.h"
 
 // Protection levels and bitrates for UEP.
 const unsigned char ProtectionLevelTable[64] = {
@@ -87,7 +84,7 @@ class MuxInitException : public std::exception
         MuxInitException(const std::string m = "ODR-DabMux initialisation error")
             throw()
             : msg(m) {}
-        ~MuxInitException(void) throw() {}
+        ~MuxInitException() throw() {}
         const char* what() const throw() { return msg.c_str(); }
     private:
         std::string msg;
@@ -140,20 +137,20 @@ class AnnouncementCluster : public RemoteControllable {
         uint16_t flags = 0;
         std::string subchanneluid;
 
-        std::string tostring(void) const;
+        std::string tostring() const;
 
         /* Check if the activation/deactivation timeout occurred,
          * and return of if the Announcement is active
          */
-        bool is_active(void);
+        bool is_active();
 
     private:
         mutable std::mutex m_active_mutex;
         bool m_active = false;
-        boost::optional<
+        std::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_start_time;
-        boost::optional<
+        std::optional<
             std::chrono::time_point<
                 std::chrono::steady_clock> > m_deferred_stop_time;
 
@@ -163,6 +160,8 @@ class AnnouncementCluster : public RemoteControllable {
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 };
 
 struct dabOutput {
@@ -367,8 +366,13 @@ class dabEnsemble : public RemoteControllable {
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
 
+        virtual const json::map_t get_all_values() const;
+
         /* Check if the Linkage Sets are valid */
-        bool validate_linkage_sets(void);
+        bool validate_linkage_sets() const;
+        static bool validate_linkage_sets(
+                const vec_sp_service& services,
+                std::vector<std::shared_ptr<LinkageSet> > linkagesets);
 
         /* all fields are public, since this was a struct before */
         uint16_t id = 0;
@@ -426,7 +430,7 @@ struct dabProtectionEEP {
     // select EEP profile A and B.
     // Other values are for future use, see
     // EN 300 401 Clause 6.2.1 "Basic sub-channel organisation"
-    uint8_t GetOption(void) const {
+    uint8_t GetOption() const {
         return (this->profile == EEP_A) ? 0 : 1;
     }
 };
@@ -456,16 +460,16 @@ public:
             protection() { }
 
     // Calculate subchannel size in number of CU
-    unsigned short getSizeCu(void) const;
+    unsigned short getSizeCu() const;
 
     // Calculate subchannel size in number of bytes
-    unsigned short getSizeByte(void) const;
+    unsigned short getSizeByte() const;
 
     // Calculate subchannel size in number of uint32_t
-    unsigned short getSizeWord(void) const;
+    unsigned short getSizeWord() const;
 
     // Calculate subchannel size in number of uint64_t
-    unsigned short getSizeDWord(void) const;
+    unsigned short getSizeDWord() const;
 
     // Read from the input, using the correct buffer management
     size_t readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utco, uint32_t tsta);
@@ -541,6 +545,8 @@ class DabComponent : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 };
 
 class DabService : public RemoteControllable
@@ -594,6 +600,8 @@ class DabService : public RemoteControllable
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+
+        virtual const json::map_t get_all_values() const;
 };
 
 /* Represent an entry for FIG0/24 */
@@ -624,7 +632,7 @@ class LinkageSet {
                 bool hard,
                 bool international);
 
-        std::string get_name(void) const { return m_name; }
+        std::string get_name() const { return m_name; }
 
         std::list<ServiceLink> id_list;
 

@@ -22,9 +22,7 @@
    You should have received a copy of the GNU General Public License
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-#ifndef __FIG2_H_
-#define __FIG2_H_
+#pragma once
 
 #include <cstdint>
 #include <map>
@@ -117,10 +115,6 @@ class FIG2_4 : public IFIG
         std::map<std::pair<uint32_t, uint8_t>, FIG2_Segments> segment_per_component;
 };
 
-#ifdef _WIN32
-#   pragma pack(push)
-#endif
-
 struct FIGtype2 {
     uint8_t Length:5;
     uint8_t FIGtypeNumber:3;
@@ -159,11 +153,5 @@ struct FIG2_Extended_Label_WithTextControl {
     uint8_t EncodingFlag:1;
 } PACKED;
 
-#ifdef _WIN32
-#   pragma pack(pop)
-#endif
-
 } // namespace FIC
-
-#endif // __FIG2_H_
 

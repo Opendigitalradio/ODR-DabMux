@@ -30,7 +30,8 @@
 # include <config.h>
 #endif
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstdint>
 
 class ReedSolomon
 {

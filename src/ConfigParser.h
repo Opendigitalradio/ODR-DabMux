@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     The Configuration parser sets up the ensemble according
@@ -34,6 +34,10 @@
 #include <boost/property_tree/ptree.hpp>
 #include <memory>
 
-void parse_ptree(boost::property_tree::ptree& pt,
+void parse_ptree(
+        boost::property_tree::ptree& pt,
         std::shared_ptr<dabEnsemble> ensemble);
 
+void parse_linkage(
+        const boost::optional<boost::property_tree::ptree&> pt_linking,
+        std::vector<std::shared_ptr<LinkageSet> >& linkageSets);

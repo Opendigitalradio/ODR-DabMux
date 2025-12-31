@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    */
@@ -24,8 +24,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __FIG_H_
-#define __FIG_H_
+#pragma once
 
 #include <memory>
 #include "MuxElements.h"
@@ -36,11 +35,19 @@ namespace FIC {
 
 class FIGRuntimeInformation {
     public:
-        FIGRuntimeInformation(std::shared_ptr<dabEnsemble>& e) :
+
+        using dab_time_t = std::pair<uint32_t /* milliseconds */, time_t>;
+        using get_time_func_t = std::function<dab_time_t()>;
+
+        FIGRuntimeInformation(
+                std::shared_ptr<dabEnsemble>& e,
+                get_time_func_t getTimeFunc) :
+            getTimeFunc(getTimeFunc),
             currentFrame(0),
             ensemble(e),
             factumAnalyzer(false) {}
 
+        get_time_func_t getTimeFunc;
         unsigned long currentFrame;
         std::shared_ptr<dabEnsemble> ensemble;
         bool factumAnalyzer;
@@ -105,6 +112,4 @@ class IFIG
 };
 
 } // namespace FIC
-
-#endif // __FIG_H_
 

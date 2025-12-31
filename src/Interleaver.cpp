@@ -23,11 +23,6 @@
 
 #include <string.h>
 
-#ifdef _WIN32
-#   define bzero(a, b) memset((a), 0, (b))
-#endif // _WIN32
-
-
 Interleaver::Interleaver(unsigned short I, unsigned short M, bool reverse) :
     I(I),
     M(M),

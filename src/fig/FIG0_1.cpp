@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -23,9 +23,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "fig/FIG0structs.h"
 #include "fig/FIG0_1.h"
-#include "utils.h"
 
 namespace FIC {
 
@@ -101,7 +99,7 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
     size_t remaining = max_size;
 
     etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill initialised=" <<
-        (m_initialised ? 1 : 0);
+        (m_initialised ? 1 : 0) << " max_size=" << max_size;
 
     const int watermark_bit = (m_watermarkData[m_watermarkPos >> 3] >>
             (7 - (m_watermarkPos & 0x07))) & 1;
@@ -130,7 +128,8 @@ FillStatus FIG0_1::fill(uint8_t *buf, size_t max_size)
     for (; subchannelFIG0_1 != subchannels.end(); ++subchannelFIG0_1 ) {
         size_t subch_iter_ix = std::distance(subchannels.begin(), subchannelFIG0_1);
 
-        etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill loop ix=" << subch_iter_ix;
+        etiLog.level(FIG0_1_TRACE) << "FIG0_1::fill loop ix=" << subch_iter_ix <<
+            " of " << subchannels.size();
 
         dabProtection* protection = &(*subchannelFIG0_1)->protection;
 

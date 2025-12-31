@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -78,6 +78,7 @@ class Edi : public InputBase, public RemoteControllable {
         /* Remote control */
         virtual void set_parameter(const std::string& parameter, const std::string& value);
         virtual const std::string get_parameter(const std::string& parameter) const;
+        virtual const json::map_t get_all_values() const;
 
     protected:
         void m_run();
@@ -104,6 +105,9 @@ class Edi : public InputBase, public RemoteControllable {
 
         // State variable used in prebuffering-based buffer management
         bool m_is_prebuffering = true;
+
+        // Display the 'size mismatch' warning only once
+        bool m_size_mismatch_printed = false;
 
         /* When using prebuffering, consider the buffer to be full on the
          * receive side if it's above the overrun threshold.

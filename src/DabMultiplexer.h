@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -30,40 +30,74 @@
 #endif
 
 #include "dabOutput/dabOutput.h"
-#include "edioutput/TagItems.h"
-#include "edioutput/TagPacket.h"
-#include "edioutput/AFPacket.h"
 #include "edioutput/Transport.h"
 #include "fig/FIGCarousel.h"
-#include "crc.h"
-#include "utils.h"
-#include "Socket.h"
-#include "PcDebug.h"
 #include "MuxElements.h"
 #include "RemoteControl.h"
-#include "Eti.h"
 #include "ClockTAI.h"
 #include <vector>
-#include <chrono>
 #include <memory>
 #include <string>
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
 
+constexpr uint32_t ETI_FSYNC1 = 0x49C5F8;
+
+class MuxTime {
+    private:
+        std::time_t m_edi_time = 0;
+        uint32_t m_pps_offset_ms = 0;
+        int64_t m_tist_offset_ms = 0;
+
+    public:
+        std::pair<uint32_t, std::time_t> get_tist_seconds();
+        std::pair<uint32_t, std::time_t> get_milliseconds_seconds();
+
+
+        /* Pre v3 odr-dabmux did the MNSC calculation differently,
+         * which works with the easydabv2. The rework in odr-dabmux,
+         * deriving MNSC time from EDI time broke this.
+         *
+         * That's why we're now tracking MNSC time in separate variables,
+         * to get the same behaviour back.
+         *
+         * I'm not aware of any devices using MNSC time besides the
+         * easydab. ODR-DabMod now considers EDI seconds or ZMQ metadata.
+         */
+        bool mnsc_increment_time = false;
+        std::time_t mnsc_time = 0;
+
+        /* Setup the time and return the initial currentFrame counter value */
+        uint64_t init(uint32_t tist_at_fct0_ms, double tist_offset);
+        void increment_timestamp();
+        double tist_offset() const { return m_tist_offset_ms / 1000.0; }
+        void set_tist_offset(double new_tist_offset);
+};
+
+class DabMultiplexerConfig {
+    public:
+        boost::property_tree::ptree pt;
+
+        void read(const std::string& filename);
+        bool valid() const { return m_config_file != ""; }
+        std::string config_file() const { return m_config_file; }
+
+    private:
+        std::string m_config_file;
+};
+
 class DabMultiplexer : public RemoteControllable {
     public:
-        DabMultiplexer(boost::property_tree::ptree pt);
+        DabMultiplexer(DabMultiplexerConfig& config);
         DabMultiplexer(const DabMultiplexer& other) = delete;
         DabMultiplexer& operator=(const DabMultiplexer& other) = delete;
-        ~DabMultiplexer();
+        virtual ~DabMultiplexer();
 
         void prepare(bool require_tai_clock);
 
-        unsigned long getCurrentFrame() { return currentFrame; }
-
         void mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs);
 
-        void print_info(void);
+        void print_info();
 
         void set_edi_config(const edi::configuration_t& new_edi_conf);
 
@@ -74,53 +108,27 @@ class DabMultiplexer : public RemoteControllable {
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
 
+        virtual const json::map_t get_all_values() const;
+
     private:
-        void prepare_subchannels(void);
-        void prepare_services_components(void);
-        void prepare_data_inputs(void);
-        void increment_timestamp(void);
+        void prepare_subchannels();
+        void prepare_services_components();
+        void prepare_data_inputs();
 
-        boost::property_tree::ptree m_pt;
+        void reload_linkagesets();
 
-        uint32_t m_timestamp = 0;
-        std::time_t m_edi_time = 0;
-        std::time_t m_edi_time_latched_for_mnsc = 0;
+        DabMultiplexerConfig& m_config;
+
+        MuxTime m_time;
+        uint64_t currentFrame = 0;
 
         edi::configuration_t edi_conf;
         std::shared_ptr<edi::Sender> edi_sender;
 
-        uint32_t sync = 0x49C5F8;
-        unsigned long currentFrame = 0;
-
         std::shared_ptr<dabEnsemble> ensemble;
 
-        int m_tist_offset = 0;
         bool m_tai_clock_required = false;
         ClockTAI m_clock_tai;
 
-        /* New FIG Carousel */
         FIC::FIGCarousel fig_carousel;
 };
-
-// DAB Mode
-#define DEFAULT_DAB_MODE    1
-
-// Taille de la trame de donnee, sous-canal 3, nb de paquets de 64bits,
-// STL3 * 8 = x kbytes par trame ETI
-
-// Data bitrate in kbits/s. Must be 64 kb/s multiple.
-#define DEFAULT_DATA_BITRATE    384
-#define DEFAULT_PACKET_BITRATE  32
-
-/* default ensemble parameters. Label must be max 16 chars, short label
- * a subset of the label, max 8 chars
- */
-#define DEFAULT_ENSEMBLE_LABEL          "ODR Dab Mux"
-#define DEFAULT_ENSEMBLE_SHORT_LABEL    "ODRMux"
-#define DEFAULT_ENSEMBLE_ID             0xc000
-#define DEFAULT_ENSEMBLE_ECC            0xa1
-
-// start value for default service IDs (if not overridden by configuration)
-#define DEFAULT_SERVICE_ID      50
-#define DEFAULT_PACKET_ADDRESS  0
-

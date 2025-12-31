@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2022
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -122,7 +122,8 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     required_size += 1;
                 }
-                else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE) {
+                else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE ||
+                         ua.uaType == FIG0_13_APPTYPE_JOURNALINE) {
                     required_size += 2;
                 }
             }
@@ -171,7 +172,8 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 if (ua.uaType == FIG0_13_APPTYPE_SPI) {
                     app->length += 1;
                 }
-                else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE) {
+                else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE ||
+                         ua.uaType == FIG0_13_APPTYPE_JOURNALINE) {
                     app->length += 2;
                 }
 
@@ -207,6 +209,14 @@ FillStatus FIG0_13::fill(uint8_t *buf, size_t max_size)
                 else if (ua.uaType == FIG0_13_APPTYPE_WEBSITE) {
                     buf[0] = 0x01; // = basic integrated receiver profile
                     buf[1] = 0xFF; // = unrestricted (PC) profile
+                    buf += 2;
+                    remaining -= 2;
+                    fig0->Length += 2;
+                }
+                else if (ua.uaType == FIG0_13_APPTYPE_JOURNALINE) {
+                    // According to ETSI TS 102 979 Clause 8.1.2
+                    buf[0] = 0x00;
+                    buf[1] = 0x00;
                     buf += 2;
                     remaining -= 2;
                     fig0->Length += 2;

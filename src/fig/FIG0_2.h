@@ -27,6 +27,7 @@
 
 #include <cstdint>
 #include <vector>
+#include "fig/FIG.h"
 
 namespace FIC {
 // FIG type 0/2, MCI, Service Organization, one instance of

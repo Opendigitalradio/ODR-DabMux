@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2022
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -36,16 +36,13 @@
 #   include "config.h"
 #endif
 
-#include "dabOutput/dabOutput.h"
 #include "utils.h"
-#include "DabMux.h"
-#include "ManagementServer.h"
 #include "input/Edi.h"
 #include "input/Prbs.h"
 #include "input/Zmq.h"
 #include "input/File.h"
 #include "input/Udp.h"
-#include "Eti.h"
+#include "fig/FIG0structs.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -62,6 +59,12 @@
 using namespace std;
 using boost::property_tree::ptree;
 using boost::property_tree::ptree_error;
+
+constexpr uint16_t DEFAULT_DATA_BITRATE = 384;
+constexpr uint16_t DEFAULT_PACKET_BITRATE = 32;
+
+constexpr uint32_t DEFAULT_SERVICE_ID = 50;
+
 
 static void setup_subchannel_from_ptree(shared_ptr<DabSubchannel>& subchan,
         const ptree &pt,
@@ -107,10 +110,10 @@ static void parse_fig2_label(ptree& pt, DabLabel& label) {
 }
 
 // Parse the linkage section
-static void parse_linkage(ptree& pt,
-        std::shared_ptr<dabEnsemble> ensemble)
+void parse_linkage(
+        const boost::optional<boost::property_tree::ptree&> pt_linking,
+        std::vector<std::shared_ptr<LinkageSet> >& linkageSets)
 {
-    auto pt_linking = pt.get_child_optional("linking");
     if (pt_linking) {
         for (const auto& it : *pt_linking) {
             const string setuid = it.first;
@@ -129,7 +132,7 @@ static void parse_linkage(ptree& pt,
             string service_uid = pt_set.get("keyservice", "");
 
             auto linkageset = make_shared<LinkageSet>(setuid, lsn, active, hard, international);
-            linkageset->keyservice = service_uid; // TODO check if it exists
+            linkageset->keyservice = service_uid; // existence check is done in validate_linkage_sets()
 
             auto pt_list = pt_set.get_child_optional("list");
 
@@ -186,7 +189,7 @@ static void parse_linkage(ptree& pt,
                     linkageset->id_list.push_back(link);
                 }
             }
-            ensemble->linkagesets.push_back(linkageset);
+            linkageSets.push_back(linkageset);
         }
     }
 }
@@ -932,6 +935,10 @@ void parse_ptree(
                     ua.uaType = FIG0_13_APPTYPE_WEBSITE;
                     ua.xpadAppType = 12;
                 }
+                else if (ua_value == "journaline") {
+                    ua.uaType = FIG0_13_APPTYPE_JOURNALINE;
+                    ua.xpadAppType = 12;
+                }
 
                 if (component->isPacketComponent(ensemble->subchannels)) {
                     component->packet.uaTypes.push_back(ua);
@@ -1002,7 +1009,8 @@ void parse_ptree(
 
     }
 
-    parse_linkage(pt, ensemble);
+    const auto pt_linking = pt.get_child_optional("linking");
+    parse_linkage(pt_linking, ensemble->linkagesets);
     parse_freq_info(pt, ensemble);
     parse_other_service_linking(pt, ensemble);
     parse_service_component_information(pt, ensemble);

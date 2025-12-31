@@ -1,7 +1,7 @@
 # Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
 #
-# Copyright (C) 2018 Matthias P. Braendli
+# Copyright (C) 2024 Matthias P. Braendli
 # http://opendigitalradio.org
 
 # This file is part of ODR-DabMux.
@@ -25,7 +25,7 @@ else
 GITVERSION_FLAGS =
 endif
 
-bin_PROGRAMS=odr-dabmux zmqinput-keygen odr-zmq2edi
+bin_PROGRAMS=odr-dabmux zmqinput-keygen
 
 if HAVE_OUTPUT_RAW_TEST
 bin_PROGRAMS+=odr-zmq2farsync
@@ -49,15 +49,17 @@ lib_charset_sources = lib/charset/charset.cpp \
 					  lib/charset/utf8/checked.h \
 					  lib/charset/utf8/core.h \
 					  lib/charset/utf8/unchecked.h \
+					  lib/charset/utf8/cpp11.h \
+					  lib/charset/utf8/cpp17.h \
+					  lib/charset/utf8/cpp20.h \
 					  lib/charset/utf8.h
 
 odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS)
-odr_dabmux_CXXFLAGS =-Wall -std=c++11 $(PTHREAD_CXXFLAGS) $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
+odr_dabmux_CXXFLAGS =-Wall $(PTHREAD_CXXFLAGS) $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
 odr_dabmux_LDADD    =$(ZMQ_LIBS) $(BOOST_LDFLAGS) \
 					 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
 
 odr_dabmux_SOURCES  =src/DabMux.cpp \
-					 src/DabMux.h \
 					 src/DabMultiplexer.cpp \
 					 src/DabMultiplexer.h \
 					 src/input/inputs.h \
@@ -152,6 +154,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 lib/Log.cpp \
 					 lib/RemoteControl.cpp \
 					 lib/RemoteControl.h \
+					 lib/Json.h \
+					 lib/Json.cpp \
 					 lib/edi/STIDecoder.cpp \
 					 lib/edi/STIDecoder.hpp \
 					 lib/edi/STIWriter.cpp \
@@ -193,52 +197,17 @@ odr_zmq2farsync_SOURCES  = src/zmq2farsync/zmq2farsync.cpp \
 						   lib/Log.cpp \
 						   lib/RemoteControl.cpp \
 						   lib/RemoteControl.h \
+						   lib/Json.h \
+						   lib/Json.cpp \
 						   lib/Socket.h \
 						   lib/Socket.cpp \
 						   lib/zmq.hpp
 
 odr_zmq2farsync_LDADD    = $(ZMQ_LIBS)
 odr_zmq2farsync_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2farsync_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
+odr_zmq2farsync_CXXFLAGS = -Wall $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
 
-odr_zmq2edi_SOURCES  = src/zmq2edi/zmq2edi.cpp \
-					   src/zmq2edi/EDISender.h \
-					   src/zmq2edi/EDISender.cpp \
-					   src/dabOutput/dabOutput.h \
-					   src/dabOutput/metadata.h \
-					   src/dabOutput/metadata.cpp \
-					   lib/edioutput/AFPacket.cpp \
-					   lib/edioutput/AFPacket.h \
-					   lib/edioutput/EDIConfig.h \
-					   lib/edioutput/PFT.cpp \
-					   lib/edioutput/PFT.h \
-					   lib/edioutput/TagItems.cpp \
-					   lib/edioutput/TagItems.h \
-					   lib/edioutput/TagPacket.cpp \
-					   lib/edioutput/TagPacket.h \
-					   lib/edioutput/Transport.cpp \
-					   lib/edioutput/Transport.h \
-					   lib/Globals.cpp \
-					   lib/Log.h \
-					   lib/Log.cpp \
-					   lib/RemoteControl.cpp \
-					   lib/RemoteControl.h \
-					   lib/crc.h \
-					   lib/crc.c \
-					   lib/ReedSolomon.h \
-					   lib/ReedSolomon.cpp \
-					   lib/Socket.h \
-					   lib/Socket.cpp \
-					   lib/ThreadsafeQueue.h \
-					   lib/zmq.hpp \
-					   $(lib_fec_sources)
-
-odr_zmq2edi_LDADD    = $(ZMQ_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
-odr_zmq2edi_CFLAGS   = -Wall $(ZMQ_CPPFLAGS) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-odr_zmq2edi_CXXFLAGS = -Wall -std=c++11 $(PTHREAD_LIBS) $(ZMQ_CPPFLAGS) $(GITVERSION_FLAGS) $(INCLUDE)
-
-man_MANS = 	man/odr-dabmux.1 \
-		man/odr-zmq2edi.1
+man_MANS = man/odr-dabmux.1
 
 EXTRA_DIST	= COPYING NEWS README.md INSTALL.md LICENCE AUTHORS ChangeLog TODO.md doc \
 			  lib/fec/README.md lib/fec/LICENSE \

@@ -26,7 +26,7 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
+#include "fig/FIG.h"
 
 namespace FIC {
 

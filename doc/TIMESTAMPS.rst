@@ -13,7 +13,6 @@ The following table tries to summarise the differences.
 | Later than v2.3.1           | t_frame = t_tx = t_mux + tist_offset         | negative, meaning delay before t_tx | Something larger than mod processing time     |
 +-----------------------------+----------------------------------------------+-------------------------------------+-----------------------------------------------+
 
-For historical reasons, ODR-DabMod decodes absolute timestamp from MNSC, not from “EDI seconds”.
 The edilib tool decodes both EDI timestamp and MNSC, and can be used to verify both are identical.
 
 Issues in ODR-DabMux v2.3.1
@@ -28,4 +27,6 @@ Running ODR-DabMux against the absolute timestamp firmware has uncovered a few i
  * (minor) odr-zmq2edi swapped endianness when regenerating EDI from ETI (minor because only ODR-DabMod considers MNSC, and usually isn't used with EDI);
 
 **Important** Do not combine odr-zmq2edi with odr-dabmux of a different version!
+
+Do not combine digris-zmq-converter with odr-dabmux older than v4!
 

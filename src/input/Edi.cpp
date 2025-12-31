@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2019
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -80,7 +80,9 @@ Edi::~Edi() {
 void Edi::open(const std::string& name)
 {
     const std::regex re_udp("udp://:([0-9]+)");
+    const std::regex re_udp_bindto("udp://([^:]+):([0-9]+)");
     const std::regex re_udp_multicast("udp://@([0-9.]+):([0-9]+)");
+    const std::regex re_udp_multicast_bindto("udp://([0-9.])+@([0-9.]+):([0-9]+)");
     const std::regex re_tcp("tcp://(.*):([0-9]+)");
 
     lock_guard<mutex> lock(m_mutex);
@@ -97,13 +99,37 @@ void Edi::open(const std::string& name)
         m_udp_sock.reinit(udp_port);
         m_udp_sock.setBlocking(false);
     }
+    else if (std::regex_match(name, m, re_udp_bindto)) {
+        const int udp_port = std::stoi(m[2].str());
+        m_input_used = InputUsed::UDP;
+        m_udp_sock.reinit(udp_port, m[1].str());
+        m_udp_sock.setBlocking(false);
+    }
+    else if (std::regex_match(name, m, re_udp_multicast_bindto)) {
+        const string bind_to = m[1].str();
+        const string multicast_address = m[2].str();
+        const int udp_port = std::stoi(m[3].str());
+
+        m_input_used = InputUsed::UDP;
+        if (IN_MULTICAST(ntohl(inet_addr(multicast_address.c_str())))) {
+            m_udp_sock.init_receive_multicast(udp_port, bind_to, multicast_address);
+        }
+        else {
+            throw runtime_error(string("Address ") + multicast_address + " is not a multicast address");
+        }
+        m_udp_sock.setBlocking(false);
+    }
     else if (std::regex_match(name, m, re_udp_multicast)) {
         const string multicast_address = m[1].str();
         const int udp_port = std::stoi(m[2].str());
         m_input_used = InputUsed::UDP;
-        m_udp_sock.reinit(udp_port);
+        if (IN_MULTICAST(ntohl(inet_addr(multicast_address.c_str())))) {
+            m_udp_sock.init_receive_multicast(udp_port, "0.0.0.0", multicast_address);
+        }
+        else {
+            throw runtime_error(string("Address ") + multicast_address + " is not a multicast address");
+        }
         m_udp_sock.setBlocking(false);
-        m_udp_sock.joinGroup(multicast_address.c_str());
     }
     else if (std::regex_match(name, m, re_tcp)) {
         m_input_used = InputUsed::TCP;
@@ -140,8 +166,11 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
     else if (not m_pending_sti_frame.frame.empty()) {
         // Can only happen when switching from timestamp-based buffer management!
         if (m_pending_sti_frame.frame.size() != size) {
-            etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
-                m_pending_sti_frame.frame.size() << " received, " << size << " requested";
+            if (not m_size_mismatch_printed) {
+                etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
+                    m_pending_sti_frame.frame.size() << " received, " << size << " requested";
+                m_size_mismatch_printed = true;
+            }
             memset(buffer, 0, size * sizeof(*buffer));
             m_stats.notifyUnderrun();
             return 0;
@@ -158,6 +187,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
                     m_pending_sti_frame.frame.end(),
                     buffer);
             m_pending_sti_frame.frame.clear();
+            m_size_mismatch_printed = false;
             return size;
         }
     }
@@ -192,11 +222,15 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
             m_stats.notifyPeakLevels(sti.audio_levels.left, sti.audio_levels.right);
 
             copy(sti.frame.cbegin(), sti.frame.cend(), buffer);
+            m_size_mismatch_printed = false;
             return size;
         }
         else {
-            etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
-                sti.frame.size() << " received, " << size << " requested";
+            if (not m_size_mismatch_printed) {
+                etiLog.level(debug) << "EDI input " << m_name << " size mismatch: " <<
+                    sti.frame.size() << " received, " << size << " requested";
+                m_size_mismatch_printed = true;
+            }
             memset(buffer, 0, size * sizeof(*buffer));
             m_stats.notifyUnderrun();
             return 0;
@@ -206,6 +240,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size)
         memset(buffer, 0, size * sizeof(*buffer));
         m_is_prebuffering = true;
         etiLog.level(info) << "EDI input " << m_name << " re-enabling pre-buffering";
+        m_size_mismatch_printed = false;
         m_stats.notifyUnderrun();
         return 0;
     }
@@ -226,7 +261,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
 
         while (not m_pending_sti_frame.frame.empty()) {
             if (m_pending_sti_frame.frame.size() == size) {
-                if (m_pending_sti_frame.timestamp.valid()) {
+                if (m_pending_sti_frame.timestamp.is_valid()) {
                     auto ts_req = EdiDecoder::frame_timestamp_t::from_unix_epoch(seconds, utco, tsta);
                     ts_req += m_tist_delay;
                     const double offset = ts_req.diff_s(m_pending_sti_frame.timestamp);
@@ -296,7 +331,7 @@ size_t Edi::readFrame(uint8_t *buffer, size_t size, std::time_t seconds, int utc
             m_is_prebuffering = true;
             return 0;
         }
-        else if (not m_pending_sti_frame.timestamp.valid()) {
+        else if (not m_pending_sti_frame.timestamp.is_valid()) {
             etiLog.level(warn) << "EDI input " << m_name <<
                 " invalid timestamp, ignoring";
             memset(buffer, 0, size);
@@ -461,7 +496,7 @@ const std::string Edi::get_parameter(const std::string& parameter) const
                 ss << "prebuffering";
                 break;
             case Inputs::BufferManagement::Timestamped:
-                ss << "Timestamped";
+                ss << "timestamped";
                 break;
         }
     }
@@ -472,6 +507,23 @@ const std::string Edi::get_parameter(const std::string& parameter) const
         throw ParameterError("Parameter '" + parameter + "' is not exported by controllable " + get_rc_name());
     }
     return ss.str();
+}
+
+const json::map_t Edi::get_all_values() const
+{
+    json::map_t map;
+    map["buffer"].v = m_max_frames_overrun;
+    map["prebuffering"].v = m_num_frames_prebuffering;
+    switch (getBufferManagement()) {
+        case Inputs::BufferManagement::Prebuffering:
+            map["buffermanagement"].v = "prebuffering";
+            break;
+        case Inputs::BufferManagement::Timestamped:
+            map["buffermanagement"].v = "timestamped";
+            break;
+    }
+    map["tistdelay"].v = m_tist_delay.count();
+    return map;
 }
 
 }

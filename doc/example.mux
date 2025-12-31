@@ -36,31 +36,38 @@ general {
     ; This also enables time encoding using the MNSC.
     ;
     ; When TIST is enabled, and either EDI or a ZMQ output with metadata is used,
-    ; ODR-DabMux will download leap-second information from the IETF website,
-    ; and cache it locally in /var/tmp. It will refresh the data by itself
-    ; before it expires.
+    ; ODR-DabMux will download the leap-second information bulletin,
+    ; and cache it locally in /var/tmp.
+    ; It will refresh the bulletin by itself before it expires. If that fails,
+    ; ODR-DabMux will continue running with the current TAI-UTC clock offset.
     ;
     ; If it cannot load this information, ODR-DabMux cannot start up!
     ;
     ; If your system doesn't have access to internet, you have to take care
     ; to create the file before ODR-DabMux startup. Get it from
-    ; http://www.ietf.org/timezones/data/leap-seconds.list
+    ; https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list
     ; and save it to
     ; /var/tmp/odr-dabmux-leap-seconds.cache
-    ; Refresh the file before expiry otherwise ODR-DabMux will abort!
+    ;
+    ; ODR-DabMux will start up even with an expired bulletin in cache, but will
+    ; output a warning.
     ;
     ; Use the RC interface 'get clocktai expiry' command to check how long
     ; your file is still valid.
     tist false
 
     ; On startup, the timestamp is initialised to system time. If you want
-    ; to add an offset, uncomment the following line and give a number
-    ; in seconds.
-    ; tist_offset 0
+    ; to add an offset, uncomment the following line and give a positive
+    ; number in seconds. Granularity: 24ms
+    ; tist_offset 0.480
 
     ; The URLs used to fetch the TAI bulletin can be overridden if needed.
     ; URLs are given as a pipe-separated list, and the default value is:
-    ;tai_clock_bulletins "https://www.ietf.org/timezones/data/leap-seconds.list|https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list"
+    ;tai_clock_bulletins "https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list"
+    ;
+    ; Through RC, use `set clocktai url <LIST_OF_URLS>` to change the URLs used to download the bulletin
+    ; during runtime.
+    ; You may also override the bulletin using `set clocktai tai_utc_offset 37` to set a TAI-UTC offset manually.
     ;
     ; You may also use a file:// URL if you take care of updating the file
     ; yourself and store it locally.
@@ -204,10 +211,14 @@ subchannels {
         inputuri "tcp://0.0.0.0:9001"
 
         ; For UDP, PFT should be enabled at the sender.
-        ; Unicast UDP input:
+        ; Unicast UDP input, bound to all interfaces:
         ;inputuri "udp://:9001"
+        ; Unicast UDP input, bound to interface with IP 192.168.0.10:
+        ;inputuri "udp://192.168.0.10:9001"
         ; Multicast UDP input:
         ;inputuri "udp://@239.10.0.1:9001"
+        ; Multicast UDP input with local interface 192.168.0.10 specification
+        ;inputuri "udp://192.168.0.10@239.10.0.1:9001"
 
         ; Two buffer-management types are available: prebuffering and timestamped.
         ; prebuffering will accumulate a few frames before it starts streaming, and each

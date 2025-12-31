@@ -1,7 +1,7 @@
 # Copyright (C) 2008, 2009 Her Majesty the Queen in Right of Canada
 # (Communications Research Center Canada)
 #
-# Copyright (C) 2022 Matthias P. Braendli, http://opendigitalradio.org
+# Copyright (C) 2025 Matthias P. Braendli, http://opendigitalradio.org
 
 # This file is part of ODR-DabMux.
 #
@@ -19,7 +19,7 @@
 # along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.69])
-AC_INIT([ODR-DabMux],[4.3.0],[matthias.braendli@mpb.li])
+AC_INIT([ODR-DabMux],[5.4.1],[matthias.braendli@mpb.li])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
@@ -34,7 +34,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
-AX_CXX_COMPILE_STDCXX(11,noext,mandatory)
+AX_CXX_COMPILE_STDCXX(17,noext,mandatory)
 
 # Checks for libraries.
 AX_PTHREAD([], AC_MSG_ERROR([requires pthread]))
@@ -93,6 +93,7 @@ AS_IF([test "x$have_curl" = "xno"],
              [AC_MSG_WARN([cURL not found, timestamps will not work])])
 
 AC_LANG_PUSH([C++])
+AX_CHECK_COMPILE_FLAG([-Wno-maybe-uninitialized], [CXXFLAGS="$CXXFLAGS -Wno-maybe-uninitialized"], [], ["-Werror"])
 AX_CHECK_COMPILE_FLAG([-Wduplicated-cond], [CXXFLAGS="$CXXFLAGS -Wduplicated-cond"], [], ["-Werror"])
 AX_CHECK_COMPILE_FLAG([-Wduplicated-branches], [CXXFLAGS="$CXXFLAGS -Wduplicated-branches"], [], ["-Werror"])
 AX_CHECK_COMPILE_FLAG([-Wlogical-op], [CXXFLAGS="$CXXFLAGS -Wlogical-op"], [], ["-Werror"])

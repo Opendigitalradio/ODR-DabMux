@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2018
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -64,7 +64,6 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <cmath>
 
 /*** State handing ***/
 /* An input can be in one of the following three states:
@@ -94,20 +93,20 @@ class InputStat
         InputStat(const InputStat& other) = delete;
         InputStat& operator=(const InputStat& other) = delete;
         ~InputStat();
-        void registerAtServer(void);
+        void registerAtServer();
 
-        std::string get_name(void) const { return m_name; }
+        std::string get_name() const { return m_name; }
 
         /* This function is called for every frame read by
          * the multiplexer */
         void notifyBuffer(long bufsize);
         void notifyTimestampOffset(double offset);
         void notifyPeakLevels(int peak_left, int peak_right);
-        void notifyUnderrun(void);
-        void notifyOverrun(void);
+        void notifyUnderrun();
+        void notifyOverrun();
         void notifyVersion(const std::string& version, uint32_t uptime_s);
-        std::string encodeValuesJSON(void);
-        input_state_t determineState(void);
+        std::string encodeValuesJSON();
+        input_state_t determineState();
 
     private:
         std::string m_name;
@@ -167,8 +166,10 @@ class ManagementServer
         void open(int listenport);
 
         /* Un-/Register a statistics data source */
-        void registerInput(InputStat* is);
-        void unregisterInput(std::string id);
+        void register_input(InputStat* is);
+        void unregister_input(std::string id);
+
+        void update_edi_tcp_output_stat(uint16_t listen_port, size_t num_connections);
 
         /* Load a ptree given by the management server.
          *
@@ -182,7 +183,7 @@ class ManagementServer
         void update_ptree(const boost::property_tree::ptree& pt);
 
         bool fault_detected() const { return m_fault; }
-        void restart(void);
+        void restart();
 
     private:
         void restart_thread(long);
@@ -191,7 +192,7 @@ class ManagementServer
         zmq::context_t m_zmq_context;
         zmq::socket_t  m_zmq_sock;
 
-        void serverThread(void);
+        void serverThread();
         void handle_message(zmq::message_t& zmq_message);
 
         bool isInputRegistered(std::string& id);
@@ -205,20 +206,25 @@ class ManagementServer
         std::thread m_restarter_thread;
 
         /******* Statistics Data ********/
-        std::map<std::string, InputStat*> m_inputStats;
+        std::map<std::string, InputStat*> m_input_stats;
+
+        // Holds information about EDI/TCP outputs
+        std::map<uint16_t /* port */, size_t /* num_connections */> m_output_stats;
 
         /* Return a description of the configuration that will
          * allow to define what graphs to be created
          *
          * returns: a JSON encoded configuration
          */
-        std::string getStatConfigJSON();
+        std::string get_input_config_json();
 
         /* Return the values for the statistics as defined in the configuration
          *
          * returns: JSON encoded statistics
          */
-        std::string getValuesJSON();
+        std::string get_input_values_json();
+
+        std::string get_output_values_json();
 
         // mutex for accessing the map
         std::mutex m_statsmutex;

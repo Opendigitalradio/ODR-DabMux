@@ -29,83 +29,25 @@
 #   include "config.h"
 #endif
 
-#include <stdlib.h>
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/info_parser.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <ctime>
+#include <cstdlib>
 #include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
 #include <cstring>
+#include <cmath>
 #include <string>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
 
-// for basename
-#include <libgen.h>
-
-#include <iterator>
 #include <vector>
-#include <list>
 #include <set>
-#include <map>
-#include <functional>
-#include <algorithm>
 
-#ifdef _WIN32
-#   include <time.h>
-#   include <process.h>
-#   include <io.h>
-#   include <conio.h>
-#   include <winsock2.h> // For types...
-typedef u_char uint8_t;
-typedef WORD uint16_t;
-typedef DWORD32 uint32_t;
-
-#   ifndef __MINGW32__
-#       include "xgetopt.h"
-#   endif
-#   define read _read
-#   define snprintf _snprintf 
-#   define sleep(a) Sleep((a) * 1000)
-#else
-#   include <netinet/in.h>
-#   include <unistd.h>
-#   include <sys/time.h>
-#   include <sys/wait.h>
-#   include <sys/socket.h>
-#   include <sys/ioctl.h>
-#   include <sys/times.h>
-#   include <sys/resource.h>
-
-#endif
-
-#include <time.h>
-
-#ifdef _WIN32
-#   pragma warning ( disable : 4103 )
-#   include "Eti.h"
-#   pragma warning ( default : 4103 )
-#else
-#   include "Eti.h"
-#endif
-
-#include "input/Prbs.h"
-#include "input/Zmq.h"
+#include "DabMultiplexer.h"
 
 #include "dabOutput/dabOutput.h"
-#include "crc.h"
-#include "Socket.h"
-#include "PcDebug.h"
-#include "DabMux.h"
 #include "MuxElements.h"
 #include "utils.h"
-#include "ConfigParser.h"
 #include "ManagementServer.h"
 #include "Log.h"
 #include "RemoteControl.h"
@@ -120,14 +62,10 @@ volatile sig_atomic_t running = 1;
  */
 void signalHandler(int signum)
 {
-#ifdef _WIN32
-    fprintf(stderr, "\npid: %i\n", _getpid());
-#else
     fprintf(stderr, "\npid: %i, ppid: %i\n", getpid(), getppid());
-#endif
+
 #define SIG_MSG "Signal received: "
     switch (signum) {
-#ifndef _WIN32
     case SIGHUP:
         fprintf(stderr, SIG_MSG "SIGHUP\n");
         break;
@@ -138,7 +76,6 @@ void signalHandler(int signum)
         fprintf(stderr, SIG_MSG "SIGPIPE\n");
         return;
         break;
-#endif
     case SIGINT:
         fprintf(stderr, SIG_MSG "SIGINT\n");
         break;
@@ -150,9 +87,7 @@ void signalHandler(int signum)
     default:
         fprintf(stderr, SIG_MSG "number %i\n", signum);
     }
-#ifndef _WIN32
     killpg(0, SIGPIPE);
-#endif
     running = 0;
 }
 
@@ -185,12 +120,6 @@ int main(int argc, char *argv[])
         }
     }
 
-#ifdef _WIN32
-    if (SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST) == 0) {
-        etiLog.log(warn, "Can't increase priority: %s\n",
-                strerror(errno));
-    }
-#else
     // Use the lowest real-time priority for this thread, and switch to real-time scheduling
     const int policy = SCHED_RR;
     sched_param sp;
@@ -199,14 +128,14 @@ int main(int argc, char *argv[])
     if (thread_prio_ret != 0) {
         etiLog.level(error) << "Could not set real-time priority for thread:" << thread_prio_ret;
     }
-#endif
 
     int returnCode = 0;
-    ptree pt;
     std::vector<std::shared_ptr<DabOutput> > outputs;
 
     try {
         string conf_file = "";
+
+        DabMultiplexerConfig mux_conf;
 
         if (argc == 2) { // Assume the only argument is a config file
             conf_file = argv[1];
@@ -224,8 +153,7 @@ int main(int argc, char *argv[])
                 }
 
                 conf_file = argv[2];
-
-                read_info(conf_file, pt);
+                mux_conf.read(conf_file);
             }
             catch (runtime_error &e) {
                 throw MuxInitException(e.what());
@@ -238,23 +166,18 @@ int main(int argc, char *argv[])
         }
 
         try {
-            if (stringEndsWith(conf_file, ".json")) {
-                read_json(conf_file, pt);
-            }
-            else {
-                read_info(conf_file, pt);
-            }
+            mux_conf.read(conf_file);
         }
         catch (runtime_error &e) {
             throw MuxInitException(e.what());
         }
 
         /* Enable Logging to syslog conditionally */
-        if (pt.get<bool>("general.syslog", false)) {
+        if (mux_conf.pt.get<bool>("general.syslog", false)) {
             etiLog.register_backend(std::make_shared<LogToSyslog>());
         }
 
-        const auto startupcheck = pt.get<string>("general.startupcheck", "");
+        const auto startupcheck = mux_conf.pt.get<string>("general.startupcheck", "");
         if (not startupcheck.empty()) {
             etiLog.level(info) << "Running startup check '" << startupcheck << "'";
             int wstatus = system(startupcheck.c_str());
@@ -274,26 +197,26 @@ int main(int argc, char *argv[])
             }
         }
 
-        int mgmtserverport = pt.get<int>("general.managementport",
-                             pt.get<int>("general.statsserverport", 0) );
+        int mgmtserverport = mux_conf.pt.get<int>("general.managementport",
+                             mux_conf.pt.get<int>("general.statsserverport", 0) );
 
         /* Management: stats and config server */
         get_mgmt_server().open(mgmtserverport);
 
         /************** READ REMOTE CONTROL PARAMETERS *************/
-        int telnetport = pt.get<int>("remotecontrol.telnetport", 0);
+        int telnetport = mux_conf.pt.get<int>("remotecontrol.telnetport", 0);
         if (telnetport != 0) {
             auto rc = std::make_shared<RemoteControllerTelnet>(telnetport);
             rcs.add_controller(rc);
         }
 
-        auto zmqendpoint = pt.get<string>("remotecontrol.zmqendpoint", "");
+        auto zmqendpoint = mux_conf.pt.get<string>("remotecontrol.zmqendpoint", "");
         if (not zmqendpoint.empty()) {
             auto rc = std::make_shared<RemoteControllerZmq>(zmqendpoint);
             rcs.add_controller(rc);
         }
 
-        DabMultiplexer mux(pt);
+        DabMultiplexer mux(mux_conf);
 
         etiLog.level(info) <<
                 PACKAGE_NAME << " " <<
@@ -310,7 +233,7 @@ int main(int argc, char *argv[])
         /******************** READ OUTPUT PARAMETERS ***************/
         set<string> all_output_names;
         bool output_require_tai_clock = false;
-        ptree pt_outputs = pt.get_child("outputs");
+        ptree pt_outputs = mux_conf.pt.get_child("outputs");
         for (auto ptree_pair : pt_outputs) {
             string outputuid = ptree_pair.first;
 
@@ -327,17 +250,48 @@ int main(int argc, char *argv[])
             if (outputuid == "edi") {
                 ptree pt_edi = pt_outputs.get_child("edi");
 
+                bool default_enable_pft = pt_edi.get<bool>("enable_pft", false);
+                edi_conf.verbose = pt_edi.get<bool>("verbose", false);
+
+                unsigned int default_fec = pt_edi.get<unsigned int>("fec", 3);
+                unsigned int default_chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
+
+                auto check_spreading_factor = [](int percent) {
+                    if (percent < 0) {
+                        throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
+                    }
+                    double factor = (double)percent / 100.0;
+                    if (factor > 30000) {
+                        throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
+                    }
+                    return factor;
+                };
+
+                double default_spreading_factor = check_spreading_factor(pt_edi.get<int>("packet_spread", 95));
+
+                using pt_t = boost::property_tree::basic_ptree<std::basic_string<char>, std::basic_string<char>>;
+                auto handle_overrides = [&](edi::pft_settings_t& pft_settings, pt_t pt) {
+                    pft_settings.chunk_len = pt.get<unsigned int>("chunk_len", default_chunk_len);
+                    pft_settings.enable_pft = pt.get<bool>("enable_pft", default_enable_pft);
+                    pft_settings.fec = pt.get<unsigned int>("fec", default_fec);
+                    pft_settings.fragment_spreading_factor = default_spreading_factor;
+                    if (auto override_spread_percent = pt.get_optional<int>("packet_spread"))
+                        pft_settings.fragment_spreading_factor = check_spreading_factor(*override_spread_percent);
+
+                    pft_settings.verbose = pt.get<bool>("verbose", edi_conf.verbose);
+                };
+
                 for (auto pt_edi_dest : pt_edi.get_child("destinations")) {
                     const auto proto = pt_edi_dest.second.get<string>("protocol", "udp");
                     if (proto == "udp") {
                         auto dest = make_shared<edi::udp_destination_t>();
                         dest->dest_addr   = pt_edi_dest.second.get<string>("destination");
-                        dest->ttl         = pt_edi_dest.second.get<unsigned int>("ttl", 1);
+                        if (auto ttl = pt_edi_dest.second.get_optional<unsigned int>("ttl"))
+                            dest->ttl = *ttl;
 
                         dest->source_addr = pt_edi_dest.second.get<string>("source", "");
-                        dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport");
-
-                        dest->dest_port       = pt_edi_dest.second.get<unsigned int>("port", 0);
+                        dest->source_port = pt_edi_dest.second.get<unsigned int>("sourceport", 0);
+                        dest->dest_port   = pt_edi_dest.second.get<unsigned int>("port", 0);
                         if (dest->dest_port == 0) {
                             // Compatiblity: we have removed the transport and addressing in the
                             // PFT layer, which removed the requirement that all outputs must share
@@ -345,6 +299,8 @@ int main(int argc, char *argv[])
                             // we read it from the parent block, where it was before.
                             dest->dest_port       = pt_edi.get<unsigned int>("port");
                         }
+
+                        handle_overrides(dest->pft_settings, pt_edi_dest.second);
 
                         edi_conf.destinations.push_back(dest);
                     }
@@ -355,27 +311,13 @@ int main(int argc, char *argv[])
                         double preroll = pt_edi_dest.second.get<double>("preroll-burst", 0.0);
                         dest->tcp_server_preroll_buffers = ceil(preroll / 24e-3);
 
+                        handle_overrides(dest->pft_settings, pt_edi_dest.second);
+
                         edi_conf.destinations.push_back(dest);
                     }
                     else {
                         throw runtime_error("Unknown EDI protocol " + proto);
                     }
-                }
-
-                edi_conf.dump = pt_edi.get<bool>("dump", false);
-                edi_conf.enable_pft = pt_edi.get<bool>("enable_pft", false);
-                edi_conf.verbose = pt_edi.get<bool>("verbose", false);
-
-                edi_conf.fec = pt_edi.get<unsigned int>("fec", 3);
-                edi_conf.chunk_len = pt_edi.get<unsigned int>("chunk_len", 207);
-
-                int spread_percent = pt_edi.get<int>("packet_spread", 95);
-                if (spread_percent < 0) {
-                    throw std::runtime_error("EDI output: negative packet_spread value is invalid.");
-                }
-                edi_conf.fragment_spreading_factor = (double)spread_percent / 100.0;
-                if (edi_conf.fragment_spreading_factor > 30000) {
-                    throw std::runtime_error("EDI output: interleaving set for more than 30 seconds!");
                 }
 
                 edi_conf.tagpacket_alignment = pt_edi.get<unsigned int>("tagpacket_alignment", 8);
@@ -495,7 +437,6 @@ int main(int argc, char *argv[])
                 }
 
                 outputs.push_back(output);
-
             }
         }
 
@@ -515,7 +456,7 @@ int main(int argc, char *argv[])
             edi_conf.print();
         }
 
-        size_t limit = pt.get("general.nbframes", 0);
+        const size_t limit = mux_conf.pt.get("general.nbframes", 0);
 
         etiLog.level(info) << "Start loop";
         /*   Each iteration of the main loop creates one ETI frame */
@@ -524,6 +465,7 @@ int main(int argc, char *argv[])
             mux.mux_frame(outputs);
 
             if (limit && currentFrame >= limit) {
+                etiLog.level(info) << "Max number of ETI frames reached: " << currentFrame;
                 break;
             }
 
@@ -542,17 +484,12 @@ int main(int argc, char *argv[])
                     mgmt_server.restart();
                 }
 
-                mgmt_server.update_ptree(pt);
+                mgmt_server.update_ptree(mux_conf.pt);
             }
-        }
-
-        if (limit) {
-            etiLog.level(info) << "Max number of ETI frames reached: " << currentFrame;
         }
     }
     catch (const MuxInitException& except) {
-        etiLog.level(error) << "Multiplex initialisation aborted: " <<
-            except.what();
+        etiLog.level(error) << "Multiplex initialisation aborted: " << except.what();
         returnCode = 1;
     }
     catch (const std::invalid_argument& except) {

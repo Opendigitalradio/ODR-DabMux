@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2020
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    This file contains a set of utility functions that are used to show
@@ -33,10 +33,6 @@
 #include <cstdio>
 #include <memory>
 #include "MuxElements.h"
-
-/* Must be called once per ETI frame to update the time */
-void update_dab_time(void);
-void get_dab_time(time_t *time, uint32_t *millis);
 
 /* Convert a date and time into the modified Julian date
  * used in FIG 0/10

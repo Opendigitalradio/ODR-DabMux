@@ -28,9 +28,6 @@
 #include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
-#ifndef _WIN32
-#   define O_BINARY 0
-#endif
 #include "input/File.h"
 #include "mpeg.h"
 #include "ReedSolomon.h"
@@ -39,9 +36,6 @@ using namespace std;
 
 namespace Inputs {
 
-#ifdef _WIN32
-#   pragma pack(push, 1)
-#endif
 struct packetHeader {
     unsigned char addressHigh:2;
     unsigned char last:1;
@@ -52,11 +46,7 @@ struct packetHeader {
     unsigned char dataLength:7;
     unsigned char command;
 }
-#ifdef _WIN32
-#   pragma pack(pop)
-#else
 __attribute((packed))
-#endif
 ;
 
 
@@ -68,7 +58,7 @@ void FileBase::open(const std::string& name)
         load_entire_file();
     }
     else {
-        int flags = O_RDONLY | O_BINARY;
+        int flags = O_RDONLY;
         if (m_nonblock) {
             flags |= O_NONBLOCK;
         }
@@ -140,13 +130,13 @@ ssize_t FileBase::load_entire_file()
 {
     // Clear the buffer if the file open fails, this allows user to stop transmission
     // of the current data.
-    vector<uint8_t> old_file_contents = move(m_file_contents);
+    vector<uint8_t> old_file_contents = std::move(m_file_contents);
     m_file_contents.clear();
     m_file_contents_offset = 0;
 
     // Read entire file in chunks of 4MiB
     constexpr size_t blocksize = 4 * 1024 * 1024;
-    constexpr int flags = O_RDONLY | O_BINARY;
+    constexpr int flags = O_RDONLY;
     m_fd = ::open(m_filename.c_str(), flags);
     if (m_fd == -1) {
         if (not m_file_open_alert_shown) {
@@ -225,7 +215,7 @@ ssize_t FileBase::readFromFile(uint8_t *buffer, size_t size)
 
             vector<uint8_t> remaining_buf;
             copy(m_nonblock_buffer.begin() + size, m_nonblock_buffer.end(), back_inserter(remaining_buf));
-            m_nonblock_buffer = move(remaining_buf);
+            m_nonblock_buffer = std::move(remaining_buf);
 
             return size;
         }

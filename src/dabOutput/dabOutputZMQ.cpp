@@ -59,7 +59,6 @@ int DabOutputZMQ::Open(const char* endpoint)
 {
     // bind to uri
     string proto_endpoint = zmq_proto_ + "://" + std::string(endpoint);
-    std::cerr << "ZMQ socket " << proto_endpoint << std::endl;
     zmq_pub_sock_.bind(proto_endpoint.c_str());
     endpoint_ = endpoint;
 

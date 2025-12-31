@@ -194,6 +194,7 @@ class ZmqBase : public InputBase, public RemoteControllable {
 
         /* Getting a parameter always returns a string. */
         virtual const std::string get_parameter(const std::string& parameter) const;
+        virtual const json::map_t get_all_values() const;
 
     protected:
         virtual int readFromSocket(size_t framesize) = 0;

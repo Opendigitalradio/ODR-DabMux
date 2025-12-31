@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2016
+   Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
@@ -26,11 +26,11 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
+#include "fig/FIG.h"
 
 namespace FIC {
 
-// FIG type 0/1, MIC, Sub-Channel Organization,
+// FIG type 0/1, MCI, Sub-Channel Organization,
 // one instance of the part for each subchannel
 class FIG0_1 : public IFIG
 {

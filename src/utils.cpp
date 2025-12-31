@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2021
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -29,35 +29,12 @@
 #include <iostream>
 #include <memory>
 #include <boost/algorithm/string/join.hpp>
-#include "DabMux.h"
 #include "utils.h"
 #include "fig/FIG0structs.h"
 
 using namespace std;
 
-static time_t dab_time_seconds = 0;
-static int dab_time_millis = 0;
-
 static void printServices(const vector<shared_ptr<DabService> >& services);
-
-void update_dab_time()
-{
-    if (dab_time_seconds == 0) {
-        dab_time_seconds = time(nullptr);
-    } else {
-        dab_time_millis+= 24;
-        if (dab_time_millis >= 1000) {
-            dab_time_millis -= 1000;
-            ++dab_time_seconds;
-        }
-    }
-}
-
-void get_dab_time(time_t *time, uint32_t *millis)
-{
-    *time = dab_time_seconds;
-    *millis = dab_time_millis;
-}
 
 
 uint32_t gregorian2mjd(int year, int month, int day)
@@ -99,7 +76,7 @@ void header_message()
     fprintf(stderr, "Her Majesty the Queen in Right of Canada\n");
     fprintf(stderr, "(Communications Research Centre Canada)\n\n");
 
-    fprintf(stderr, "Copyright (C) 2021 Matthias P. Braendli\n");
+    fprintf(stderr, "Copyright (C) 2024 Matthias P. Braendli\n");
     fprintf(stderr, "LICENCE: GPLv3+\n\n");
 
     fprintf(stderr, "http://opendigitalradio.org\n\n");
@@ -107,7 +84,7 @@ void header_message()
     fprintf(stderr, "Input URLs supported: prbs udp file zmq\n");
     fprintf(stderr, "Inputs format supported: raw mpeg packet epm\n");
 
-    std::cerr << "Output URLs supported:\n" <<
+    std::cerr << "Outputs supported: " <<
 #if defined(HAVE_OUTPUT_FILE)
     " file" <<
 #endif
@@ -126,7 +103,7 @@ void header_message()
 #if defined(HAVE_OUTPUT_SIMUL)
     " simul" <<
 #endif
-    "\n\n";
+    " edi zmq\n\n";
 
 }
 

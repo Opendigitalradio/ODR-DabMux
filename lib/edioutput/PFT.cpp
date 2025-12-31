@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2021
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -31,7 +31,6 @@
  */
 
 #include <vector>
-#include <list>
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
@@ -41,6 +40,7 @@
 #include "PFT.h"
 #include "crc.h"
 #include "ReedSolomon.h"
+#include "Log.h"
 
 namespace edi {
 
@@ -51,11 +51,10 @@ using namespace std;
 
 PFT::PFT() { }
 
-PFT::PFT(const configuration_t &conf) :
+PFT::PFT(const pft_settings_t& conf) :
+    m_enabled(conf.enable_pft),
     m_k(conf.chunk_len),
     m_m(conf.fec),
-    m_pseq(0),
-    m_num_chunks(0),
     m_verbose(conf.verbose)
     {
         if (m_k > 207) {
@@ -324,5 +323,4 @@ void PFT::OverridePSeq(uint16_t pseq)
     m_pseq = pseq;
 }
 
-}
-
+} // namespace edi

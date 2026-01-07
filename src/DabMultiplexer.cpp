@@ -624,14 +624,12 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
      * if NST=0, FL=1+FICL words, FICL=24 or 32 depending on the mode.
      * The FL is given in words (4 octets), see ETS 300 799 5.3.6 for details
      */
-    unsigned short FLtmp = 1 + FICL + (fc->NST);
 
-    for (auto subchannel = ensemble->subchannels.begin();
-            subchannel != ensemble->subchannels.end();
-            ++subchannel) {
-        // Add STLsbch
-        FLtmp += (*subchannel)->getSizeWord();
-    }
+    uint16_t subchannel_sizes = 0;
+    for (const auto& subchannel : ensemble->subchannels)
+        subchannel_sizes += subchannel->getSizeWord();
+
+    const uint16_t FLtmp = 1 + FICL + (fc->NST) + subchannel_sizes;
 
     fc->setFrameLength(FLtmp);
     index = 8;

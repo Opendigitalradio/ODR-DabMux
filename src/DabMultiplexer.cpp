@@ -158,8 +158,7 @@ DabMultiplexer::DabMultiplexer(DabMultiplexerConfig& config) :
     m_config(config),
     m_time(),
     ensemble(std::make_shared<dabEnsemble>()),
-    m_clock_tai(split_pipe_separated_string(m_config.pt.get("general.tai_clock_bulletins", ""))),
-    fig_carousel(ensemble, [&]() { return m_time.get_milliseconds_seconds(); })
+    m_clock_tai(split_pipe_separated_string(m_config.pt.get("general.tai_clock_bulletins", "")))
 {
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
     RC_ADD_PARAMETER(tist_offset, "Configured tist-offset");
@@ -184,6 +183,20 @@ void DabMultiplexer::set_edi_config(const edi::configuration_t& new_edi_conf)
 void DabMultiplexer::prepare(bool require_tai_clock)
 {
     parse_ptree(m_config.pt, ensemble);
+
+    /* Create the appropriate FIG carousel based on config.
+     * This must happen after parse_ptree() which sets ensemble->fic_scheduler
+     */
+    m_scheduler_type = ensemble->fic_scheduler;
+    auto time_func = [&]() { return m_time.get_milliseconds_seconds(); };
+    
+    if (m_scheduler_type == FIC::FIGSchedulerType::Priority) {
+        etiLog.level(info) << "Using priority-based FIG scheduler";
+        m_fig_carousel_priority.reset(new FIC::FIGCarouselPriority(ensemble, time_func));
+    } else {
+        etiLog.level(info) << "Using classic FIG scheduler";
+        m_fig_carousel_classic.reset(new FIC::FIGCarousel(ensemble, time_func));
+    }
 
     rcs.enrol(this);
     rcs.enrol(ensemble.get());
@@ -489,6 +502,17 @@ void DabMultiplexer::reload_linkagesets()
     }
 }
 
+/* Helper method for FIG carousel write_fibs - abstracts the scheduler type */
+size_t DabMultiplexer::fig_carousel_write_fibs(uint8_t* buf, uint64_t current_frame, bool fib3_present)
+{
+    if (m_fig_carousel_priority) {
+        return m_fig_carousel_priority->write_fibs(buf, current_frame, fib3_present);
+    } else if (m_fig_carousel_classic) {
+        return m_fig_carousel_classic->write_fibs(buf, current_frame, fib3_present);
+    }
+    return 0;
+}
+
 /*  Each call creates one ETI frame */
 void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs)
 {
@@ -709,9 +733,9 @@ void DabMultiplexer::mux_frame(std::vector<std::shared_ptr<DabOutput> >& outputs
     edi_tagDETI.fic_data = &etiFrame[index];
     edi_tagDETI.fic_length = FICL * 4;
 
-    // Insert all FIBs
+    // Insert all FIBs using the selected scheduler
     const bool fib3_present = (ensemble->transmission_mode == TransmissionMode_e::TM_III);
-    index += fig_carousel.write_fibs(&etiFrame[index], currentFrame, fib3_present);
+    index += fig_carousel_write_fibs(&etiFrame[index], currentFrame, fib3_present);
 
     /**********************************************************************
      ******  Input Data Reading *******************************************

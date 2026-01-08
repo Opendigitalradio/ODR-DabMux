@@ -31,6 +31,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include "utils.h"
 #include "fig/FIG0structs.h"
+#include "fig/FIGSchedulerType.h"
 
 using namespace std;
 
@@ -495,6 +496,8 @@ void printEnsemble(const shared_ptr<dabEnsemble>& ensemble)
             etiLog.log(info, " mode:        TM IV");
             break;
     }
+
+    etiLog.level(info) << " FIC sched:   " << FIC::scheduler_type_to_string(ensemble->fic_scheduler);
 
     if (ensemble->lto_auto) {
         time_t now = time(nullptr);

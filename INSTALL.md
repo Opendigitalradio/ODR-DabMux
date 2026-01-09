@@ -70,7 +70,7 @@ that did not yet make its way into a release, you can clone the
 
    ```sh
    cd ODR-DabMux
-   ./bootstrap
+   ./bootstrap.sh
    ./configure
    ```
 

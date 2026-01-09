@@ -91,6 +91,10 @@ general {
     ; system has had time to setup the clock.
     ;startupcheck "chronyc waitsync 10 0.01"
     ;startupcheck "ntp-wait -fv"
+    
+    ; Enable the Maxxwave priority tree round-robin FIC scheduler that seems to respect repetition rates >40 services
+    ; FIC-Scheduler default is the default scheduler that seems to fall apart after around 15 services
+    fic-scheduler priority
 }
 
 remotecontrol {

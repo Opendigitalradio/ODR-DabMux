@@ -40,6 +40,7 @@
 #include "dabOutput/dabOutput.h"
 #include "input/inputs.h"
 #include "RemoteControl.h"
+#include "fig/FIGSchedulerType.h"  // For FIGSchedulerType enum
 
 // Protection levels and bitrates for UEP.
 const unsigned char ProtectionLevelTable[64] = {
@@ -412,6 +413,8 @@ class dabEnsemble : public RemoteControllable {
         std::vector<std::shared_ptr<LinkageSet> > get_linkagesets() const;
         std::vector<ServiceOtherEnsembleInfo> get_service_other_ensemble() const;
         vec_sp_sci sci_entries;
+
+        FIC::FIGSchedulerType fic_scheduler = FIC::FIGSchedulerType::Classic;
 
         void set_linking_config(
                 std::vector<std::shared_ptr<LinkageSet> >& new_linkage_sets,

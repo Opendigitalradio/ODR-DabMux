@@ -32,6 +32,8 @@
 #include "dabOutput/dabOutput.h"
 #include "edioutput/Transport.h"
 #include "fig/FIGCarousel.h"
+#include "fig/FIGCarouselPriority.h"
+#include "fig/FIGSchedulerType.h"
 #include "MuxElements.h"
 #include "RemoteControl.h"
 #include "ClockTAI.h"
@@ -127,5 +129,16 @@ class DabMultiplexer : public RemoteControllable {
         bool m_tai_clock_required = false;
         ClockTAI& m_clock_tai;
 
-        FIC::FIGCarousel fig_carousel;
+        /* FIG Carousel - supports classic and priority schedulers
+         * 
+         * Only one of these will be instantiated based on config.
+         * The scheduler type is determined by ensemble->fic_scheduler
+         * which is set during config parsing in prepare().
+         */
+        FIC::FIGSchedulerType m_scheduler_type = FIC::FIGSchedulerType::Classic;
+        std::unique_ptr<FIC::FIGCarousel> m_fig_carousel_classic;
+        std::unique_ptr<FIC::FIGCarouselPriority> m_fig_carousel_priority;
+        
+        /* Helper method for FIG carousel write_fibs */
+        size_t fig_carousel_write_fibs(uint8_t* buf, uint64_t current_frame, bool fib3_present);
 };

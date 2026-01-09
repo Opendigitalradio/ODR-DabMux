@@ -55,6 +55,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "fig/FIGSchedulerType.h"
 
 using namespace std;
 using boost::property_tree::ptree;
@@ -530,6 +531,10 @@ static void parse_general(ptree& pt,
     else {
         ensemble->reconfig_counter = pt_ensemble.get("reconfig-counter", ensemble->reconfig_counter);
     }
+
+    // FIG scheduler type selection
+    std::string fic_scheduler_str = pt_general.get("fic-scheduler", "classic");
+    ensemble->fic_scheduler = FIC::parse_scheduler_type(fic_scheduler_str);
 
     string lto_auto = pt_ensemble.get("local-time-offset", "");
     if (lto_auto == "auto") {

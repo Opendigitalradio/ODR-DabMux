@@ -108,8 +108,8 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG0_5.h \
 					 src/fig/FIG0_6.cpp \
 					 src/fig/FIG0_6.h \
-                                         src/fig/FIG0_7.cpp \
-                                         src/fig/FIG0_7.h \
+					 src/fig/FIG0_7.cpp \
+					 src/fig/FIG0_7.h \
 					 src/fig/FIG0_8.cpp \
 					 src/fig/FIG0_8.h \
 					 src/fig/FIG0_9.cpp \
@@ -138,10 +138,10 @@ odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/fig/FIG2.h \
 					 src/fig/FIGCarousel.cpp \
 					 src/fig/FIGCarousel.h \
-           src/fig/FIGCarouselPriority.cpp \
-           src/fig/FIGCarouselPriority.h \
-           src/fig/FIGSchedulerType.cpp \
-           src/fig/FIGSchedulerType.h \
+					 src/fig/FIGCarouselPriority.cpp \
+					 src/fig/FIGCarouselPriority.h \
+					 src/fig/FIGSchedulerType.cpp \
+					 src/fig/FIGSchedulerType.h \
 					 src/fig/TransitionHandler.h \
 					 src/mpeg.h \
 					 src/mpeg.c \

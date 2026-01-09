@@ -145,8 +145,7 @@ DabMultiplexer::DabMultiplexer(DabMultiplexerConfig& config, ClockTAI& clock_tai
     m_config(config),
     m_time(),
     ensemble(std::make_shared<dabEnsemble>()),
-    m_clock_tai(clock_tai),
-    fig_carousel(ensemble, [&]() { return m_time.get_milliseconds_seconds(); })
+    m_clock_tai(clock_tai)
 {
     RC_ADD_PARAMETER(frames, "Show number of frames generated [read-only]");
     RC_ADD_PARAMETER(tist_offset, "Configured tist-offset");
@@ -171,7 +170,7 @@ void DabMultiplexer::prepare(bool require_tai_clock)
      */
     m_scheduler_type = ensemble->fic_scheduler;
     auto time_func = [&]() { return m_time.get_milliseconds_seconds(); };
-    
+
     if (m_scheduler_type == FIC::FIGSchedulerType::Priority) {
         etiLog.level(info) << "Using priority-based FIG scheduler";
         m_fig_carousel_priority.reset(new FIC::FIGCarouselPriority(ensemble, time_func));
@@ -280,7 +279,8 @@ void DabMultiplexer::prepare(bool require_tai_clock)
         etiLog.level(info) << "Calculated FIG 0/7 Count = " << ensemble->reconfig_counter;
     }
 
-    fig_carousel.set_rate_correction(m_config.pt.get<double>("general.fic_repetition_correction", 1.0));
+    if (m_fig_carousel_classic)
+        m_fig_carousel_classic->set_rate_correction(m_config.pt.get<double>("general.fic_repetition_correction", 1.0));
 }
 
 
@@ -947,7 +947,8 @@ void DabMultiplexer::set_parameter(const std::string& parameter,
     }
     else if (parameter == "fic_repetition_correction") {
         try {
-            fig_carousel.set_rate_correction(std::stod(value));
+            if (m_fig_carousel_classic)
+                m_fig_carousel_classic->set_rate_correction(std::stod(value));
         }
         catch (const runtime_error& e) {
             stringstream ss;
@@ -979,7 +980,14 @@ const std::string DabMultiplexer::get_parameter(const std::string& parameter) co
         throw ParameterError(ss.str());
     }
     else if (parameter == "fic_repetition_correction") {
-        ss << fig_carousel.get_rate_correction();
+        if (m_fig_carousel_classic) {
+            ss << m_fig_carousel_classic->get_rate_correction();
+        }
+        else {
+            ss << "Parameter '" << parameter <<
+                "' is not exported when the FIG classic carousel isn't used" << get_rc_name();
+            throw ParameterError(ss.str());
+        }
     }
     else {
         ss << "Parameter '" << parameter <<
@@ -995,6 +1003,12 @@ const json::map_t DabMultiplexer::get_all_values() const
     json::map_t map;
     map["frames"] = currentFrame;
     map["tist_offset"] = m_time.tist_offset();
+    if (m_fig_carousel_classic) {
+        map["fic_repetition_correction"] = m_fig_carousel_classic->get_rate_correction();
+    }
+    else {
+        map["fic_repetition_correction"] = std::nullopt;
+    }
     return map;
 }
 

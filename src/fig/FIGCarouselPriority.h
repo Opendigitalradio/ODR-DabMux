@@ -58,6 +58,23 @@ constexpr int PRIORITY_CRITICAL = 0;
 // Debug flag for repetition rate statistics - logs actual vs required rates
 #define PRIORITY_RATE_STATS_DEBUG 0
 
+/* Helper function to calculate the deadline for the next transmission, in milliseconds.
+ * All values are multiples of 24ms (ETI frame duration) for easier reasoning.
+ */
+inline int rate_increment_ms(FIG_rate rate)
+{
+    switch (rate) {
+        case FIG_rate::FIG0_0:    return 96;        // Special case for FIG 0/0
+        case FIG_rate::A:         return 240;       // At least 10 times per second
+        case FIG_rate::A_B:       return 480;       // Between 10 times and once per second
+        case FIG_rate::B:         return 960;       // Once per second
+        case FIG_rate::C:         return 24000;     // Once every 10 seconds
+        case FIG_rate::D:         return 30000;     // Less than once every 10 seconds
+        case FIG_rate::E:         return 120000;    // All in two minutes
+    }
+    return 960; // Default to rate B if unknown
+}
+
 /*
  * FIGEntryPriority - Holds a FIG and its scheduling state
  *

@@ -522,7 +522,7 @@ size_t FIGCarouselPriority::fill_fib(uint8_t* buf, size_t max_size, int fib_inde
     
     // Pass 2: Any remaining FIGs that can send (to fill unused space)
     // Reset tried set - we want to try everything again, but only those we skipped
-    std::set<FIGEntryPriority*> tried_pass1 = tried_this_fib;
+    std::unordered_set<FIGEntryPriority*> tried_pass1 = tried_this_fib;
     
     for (int prio = 1; prio < NUM_PRIORITIES && remaining > 2; prio++) {
         if (m_priorities[prio].carousel.empty()) {

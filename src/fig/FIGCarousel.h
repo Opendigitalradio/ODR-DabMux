@@ -43,19 +43,26 @@ namespace FIC {
 
 class FIGCarouselElement {
     public:
-        FIGCarouselElement(IFIG *fig, double correction_factor);
-
-        IFIG* fig;
-        int   deadline = 0; // unit: ms
+        FIGCarouselElement(IFIG *fig,
+                double correction_factor,
+                double with_fig_correction_factor);
 
         void reduce_deadline();
-        void increase_deadline(double correction_factor);
+        void increase_deadline();
 
         /* Returns true if the repetition rate changed and the
          * deadline was recalculated */
-        bool check_deadline(double correction_factor);
+        bool check_deadline();
+
+        int deadline() const { return m_deadline; }
+        IFIG* fig() const { return m_fig; }
 
     private:
+        IFIG*    m_fig;
+        double   m_correction_factor;
+        bool     m_with_fig_correction_factor;
+        int      m_deadline = 0; // unit: ms
+
         FIG_rate m_last_rate = FIG_rate::A;
 };
 
@@ -71,7 +78,8 @@ class FIGCarousel {
     public:
         FIGCarousel(
                 std::shared_ptr<dabEnsemble> ensemble,
-                FIGRuntimeInformation::get_time_func_t getTimeFunc);
+                FIGRuntimeInformation::get_time_func_t getTimeFunc,
+                bool with_fig_correction_factor);
 
         /* Write all FIBs to the buffer, including correct padding and crc.
          * Returns number of bytes written.
@@ -96,6 +104,8 @@ class FIGCarousel {
         // cannot be respected. Increase this correction factor
         // to allow longer deadlines.
         double correction_factor = 1;
+
+        bool with_fig_correction_factor = false;
 
         std::unordered_set<std::string> m_missed_deadlines;
 

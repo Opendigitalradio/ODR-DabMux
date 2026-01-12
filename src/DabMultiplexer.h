@@ -39,6 +39,7 @@
 #include "ClockTAI.h"
 #include <vector>
 #include <memory>
+#include <optional>
 #include <string>
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
@@ -136,8 +137,8 @@ class DabMultiplexer : public RemoteControllable {
          * which is set during config parsing in prepare().
          */
         FIC::FIGSchedulerType m_scheduler_type = FIC::FIGSchedulerType::Classic;
-        std::unique_ptr<FIC::FIGCarousel> m_fig_carousel_classic;
-        std::unique_ptr<FIC::FIGCarouselPriority> m_fig_carousel_priority;
+        std::optional<FIC::FIGCarousel> m_fig_carousel_classic;
+        std::optional<FIC::FIGCarouselPriority> m_fig_carousel_priority;
 
         /* Helper method for FIG carousel write_fibs */
         size_t fig_carousel_write_fibs(uint8_t* buf, uint64_t current_frame, bool fib3_present);

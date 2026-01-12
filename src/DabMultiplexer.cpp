@@ -171,12 +171,25 @@ void DabMultiplexer::prepare(bool require_tai_clock)
     m_scheduler_type = ensemble->fic_scheduler;
     auto time_func = [&]() { return m_time.get_milliseconds_seconds(); };
 
-    if (m_scheduler_type == FIC::FIGSchedulerType::Priority) {
-        etiLog.level(info) << "Using priority-based FIG scheduler";
-        m_fig_carousel_priority.reset(new FIC::FIGCarouselPriority(ensemble, time_func));
-    } else {
-        etiLog.level(info) << "Using classic FIG scheduler";
-        m_fig_carousel_classic.reset(new FIC::FIGCarousel(ensemble, time_func));
+    switch (m_scheduler_type) {
+        case FIC::FIGSchedulerType::Classic:
+            {
+                etiLog.level(info) << "Using classic FIG scheduler";
+                m_fig_carousel_classic.emplace(ensemble, time_func, false);
+                break;
+            }
+        case FIC::FIGSchedulerType::ClassicRateTuning:
+            {
+                etiLog.level(info) << "Using classic FIG scheduler with per-FIG rate tuning";
+                m_fig_carousel_classic.emplace(ensemble, time_func, true);
+                break;
+            }
+        case FIC::FIGSchedulerType::Priority:
+            {
+                etiLog.level(info) << "Using priority-based FIG scheduler";
+                m_fig_carousel_priority.emplace(ensemble, time_func);
+                break;
+            }
     }
 
     rcs.enrol(this);
@@ -280,7 +293,7 @@ void DabMultiplexer::prepare(bool require_tai_clock)
     }
 
     if (m_fig_carousel_classic)
-        m_fig_carousel_classic->set_rate_correction(m_config.pt.get<double>("general.fic_repetition_correction", 1.0));
+        m_fig_carousel_classic->set_rate_correction(m_config.pt.get<double>("general.fic-repetition-correction", 1.0));
 }
 
 

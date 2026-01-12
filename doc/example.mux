@@ -92,9 +92,19 @@ general {
     ;startupcheck "chronyc waitsync 10 0.01"
     ;startupcheck "ntp-wait -fv"
 
-    ; Enable the Maxxwave priority tree round-robin FIC scheduler that seems to respect repetition rates >40 services
-    ; FIC-Scheduler default is the default scheduler that seems to fall apart after around 15 services
-    fic-scheduler priority
+    ;fic-scheduler classic
+    ; Select the default Earliest Deadline First scheduler that is used since ODR-DabMux v1.0.0
+    ;
+    ;fic-scheduler classic-rate-tuning
+    ; Select the default Earliest Deadline First scheduler that is used since ODR-DabMux v1.0.0
+    ;
+    ; Both classic FIC schedulers support the fic-repetition-correction option to reduce overall repetition rates
+    ; for high service count ensembles. e.g. slow down by a factor x1.5
+    ;fic-repetition-correction 1.5
+    ;
+    ;
+    ;fic-scheduler priority
+    ; Select the Maxxwave priority tree round-robin FIC scheduler that seems to respect repetition rates >40 services
 }
 
 remotecontrol {

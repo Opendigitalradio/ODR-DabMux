@@ -38,32 +38,98 @@
 
 namespace FIC {
 
-/**************** FIGCarouselElement ****************/
-FIGCarouselElement::FIGCarouselElement(IFIG *fig, double correction_factor) :
-    fig(fig)
+static int rate_increment_ms(FIG_rate rate)
 {
-    increase_deadline(correction_factor);
+    switch (rate) {
+        /* All these values are multiples of 24, so that it is easier to reason
+         * about the behaviour when considering ETI frames of 24ms duration
+         *
+         * In large ensembles it's not always possible to respect the reptition rates, so
+         * the values are a bit larger than what the spec says.
+         * However, we observed that some receivers wouldn't always show labels (rate B),
+         * and that's why we reduced B rate to slightly below 1s.
+         * */
+        case FIG_rate::FIG0_0:    return 96;        // Is a special case
+        case FIG_rate::A:         return 240;
+        case FIG_rate::A_B:       return 480;
+        case FIG_rate::B:         return 960;
+        case FIG_rate::C:         return 24000;
+        case FIG_rate::D:         return 30000;
+        case FIG_rate::E:         return 120000;
+    }
+    throw std::logic_error("Invalid FIG_rate");
+}
+
+// Next to the rates given in the spec, apply a bit of correction.
+// Values lower than 1 increase the rate.
+static double fig_correction_factor(IFIG *fig)
+{
+    switch (fig->figtype()) {
+        case 0: switch (fig->figextension()) {
+                    case 1:
+                    case 2:
+                        return 0.8;
+                    case 8:
+                    case 13:
+                        return 1.1;
+                    case 5:
+                    case 9:
+                    case 10:
+                    case 17:
+                    case 18:
+                    case 20:
+                        return 1.2;
+                    case 14:
+                    case 19:
+                        return 1.8;
+                    default:
+                        return 1;
+                }
+        case 1: switch (fig->figextension()) {
+                    case 1:
+                        return 0.6;
+                    default:
+                        return 1;
+                }
+        case 2: return 1;
+        default: return 1;
+    }
+}
+
+/**************** FIGCarouselElement ****************/
+FIGCarouselElement::FIGCarouselElement(IFIG *fig,
+        double correction_factor,
+        double with_fig_correction_factor) :
+    m_fig(fig),
+    m_correction_factor(correction_factor),
+    m_with_fig_correction_factor(with_fig_correction_factor)
+{
+    increase_deadline();
 }
 
 void FIGCarouselElement::reduce_deadline()
 {
-    deadline -= 24; //ms
+    m_deadline -= 24; // ms
 }
 
-void FIGCarouselElement::increase_deadline(double correction_factor)
+void FIGCarouselElement::increase_deadline()
 {
-    deadline = correction_factor * rate_increment_ms(fig->repetition_rate());
+    m_deadline = m_correction_factor * rate_increment_ms(m_fig->repetition_rate());
+
+    if (m_with_fig_correction_factor) {
+        m_deadline *= fig_correction_factor(m_fig);
+    }
 }
 
-bool FIGCarouselElement::check_deadline(double correction_factor)
+bool FIGCarouselElement::check_deadline()
 {
-    const auto new_rate = fig->repetition_rate();
+    const auto new_rate = m_fig->repetition_rate();
     const bool rate_changed = (m_last_rate != new_rate);
 
     if (rate_changed) {
-        const auto new_deadline = correction_factor * rate_increment_ms(new_rate);
-        if (deadline > new_deadline) {
-            deadline = new_deadline;
+        const auto new_deadline = m_correction_factor * rate_increment_ms(new_rate);
+        if (m_deadline > new_deadline) {
+            m_deadline = new_deadline;
         }
         m_last_rate = new_rate;
     }
@@ -76,8 +142,9 @@ bool FIGCarouselElement::check_deadline(double correction_factor)
 
 FIGCarousel::FIGCarousel(
         std::shared_ptr<dabEnsemble> ensemble,
-        FIGRuntimeInformation::get_time_func_t getTimeFunc
-        ) :
+        FIGRuntimeInformation::get_time_func_t getTimeFunc,
+        bool with_fig_correction_factor) :
+    with_fig_correction_factor(with_fig_correction_factor),
     m_rti(ensemble, getTimeFunc),
     m_fig0_0(&m_rti),
     m_fig0_1(&m_rti),
@@ -152,7 +219,7 @@ FIGCarousel::FIGCarousel(
 
 void FIGCarousel::load_and_allocate(IFIG& fig, FIBAllocation fib)
 {
-    m_fibs[fib].emplace_back(&fig, correction_factor);
+    m_fibs[fib].emplace_back(&fig, correction_factor, with_fig_correction_factor);
 }
 
 size_t FIGCarousel::write_fibs(
@@ -178,11 +245,11 @@ size_t FIGCarousel::write_fibs(
         for (auto& fig_el : fig) {
             fig_el.reduce_deadline();
 
-            if (fig_el.deadline < 0) {
+            if (fig_el.deadline() < 0) {
 #if CAROUSELDEBUG
-                etiLog.level(warn) << " FIG" << fig_el.fig->name() << " LATE";
+                etiLog.level(warn) << " FIG" << fig_el.fig()->name() << " LATE";
 #endif
-                m_missed_deadlines.insert(fig_el.fig->name());
+                m_missed_deadlines.insert(fig_el.fig()->name());
             }
         }
     }
@@ -269,12 +336,12 @@ size_t FIGCarousel::carousel(
     /* Some FIGs might have changed rate since we last
      * set the deadline */
     for (auto& fig : sorted_figs) {
-        if (fig->check_deadline(correction_factor)) {
+        if (fig->check_deadline()) {
 #if CAROUSELDEBUG
             etiLog.level(debug) <<
                 "FRAME " << current_frame <<
-                " FIG" << fig->fig->figtype() << "/" <<
-                fig->fig->figextension() << " deadline changed";
+                " FIG" << fig->fig()->figtype() << "/" <<
+                fig->fig()->figextension() << " deadline changed";
 #endif
         }
     }
@@ -283,19 +350,19 @@ size_t FIGCarousel::carousel(
     std::sort(sorted_figs.begin(), sorted_figs.end(),
             []( const FIGCarouselElement* left,
                 const FIGCarouselElement* right) {
-            return left->deadline < right->deadline;
+            return left->deadline() < right->deadline();
             });
 
-#if 0
+#if CAROUSELDEBUG
     {
         std::stringstream ss;
         ss << "FRAME " << current_frame
             << " sorted FIGs ";
 
         for (auto& f : sorted_figs) {
-            ss << f->fig->figtype() << "/" <<
-                f->fig->figextension() << "(" <<
-                f->deadline << ") ";
+            ss << f->fig()->figtype() << "/" <<
+                f->fig()->figextension() << "(" <<
+                f->deadline() << ") ";
         }
         etiLog.level(debug) << ss.str();
     }
@@ -307,18 +374,12 @@ size_t FIGCarousel::carousel(
     /* Take special care for FIG0/0 which must be the first FIG of the FIB */
     auto fig0_0 = find_if(sorted_figs.begin(), sorted_figs.end(),
         [](const FIGCarouselElement *f) {
-            return (f->fig->figtype() == 0 && f->fig->figextension() == 0);
-        });
-
-    /* FIG0/7 must directly follow FIG 0/0 */
-    auto fig0_7 = find_if(sorted_figs.begin(), sorted_figs.end(),
-        [](const FIGCarouselElement *f) {
-            return (f->fig->figtype() == 0 && f->fig->figextension() == 7);
+            return (f->fig()->figtype() == 0 && f->fig()->figextension() == 0);
         });
 
     if (fig0_0 != sorted_figs.end()) {
         if (framephase == 0) { // TODO check for all TM
-            FillStatus status = (*fig0_0)->fig->fill(pbuf, available_size);
+            FillStatus status = (*fig0_0)->fig()->fill(pbuf, available_size);
             size_t written = status.num_bytes_written;
 
             if (written > 0) {
@@ -336,14 +397,20 @@ size_t FIGCarousel::carousel(
             }
 
             if (status.complete_fig_transmitted) {
-                (*fig0_0)->increase_deadline(correction_factor);
+                (*fig0_0)->increase_deadline();
             }
             else {
                 throw std::logic_error("FIG0/0 did not complete!");
             }
 
+            /* FIG0/7 must directly follow FIG 0/0 */
+            auto fig0_7 = find_if(sorted_figs.begin(), sorted_figs.end(),
+                [](const FIGCarouselElement *f) {
+                    return (f->fig()->figtype() == 0 && f->fig()->figextension() == 7);
+                });
+
             if (fig0_7 != sorted_figs.end()) {
-                FillStatus status0_7 = (*fig0_7)->fig->fill(pbuf, available_size);
+                FillStatus status0_7 = (*fig0_7)->fig()->fill(pbuf, available_size);
                 size_t written = status0_7.num_bytes_written;
 
                 if (written > 0) {
@@ -358,7 +425,7 @@ size_t FIGCarousel::carousel(
                 }
 
                 if (status0_7.complete_fig_transmitted) {
-                    (*fig0_7)->increase_deadline(correction_factor);
+                    (*fig0_7)->increase_deadline();
                 }
             }
         }
@@ -367,15 +434,21 @@ size_t FIGCarousel::carousel(
         sorted_figs.erase(fig0_0);
     }
 
-    // never transmit FIG 0/7 except right after FIG 0/0
-    if (fig0_7 != sorted_figs.end()) {
-        sorted_figs.erase(fig0_7);
+    // never transmit FIG 0/7 except right after FIG 0/0.
+    {
+        auto fig0_7 = find_if(sorted_figs.begin(), sorted_figs.end(),
+                [](const FIGCarouselElement *f) {
+                return (f->fig()->figtype() == 0 && f->fig()->figextension() == 7);
+                });
+        if (fig0_7 != sorted_figs.end()) {
+            sorted_figs.erase(fig0_7);
+        }
     }
 
     /* Fill the FIB with the FIGs, taking the earliest deadline first */
     while (available_size > 0 and not sorted_figs.empty()) {
         auto fig_el = sorted_figs[0];
-        FillStatus status = fig_el->fig->fill(pbuf, available_size);
+        FillStatus status = fig_el->fig()->fill(pbuf, available_size);
         size_t written = status.num_bytes_written;
 
         // If exactly two bytes were written, it's because the FIG did
@@ -383,15 +456,15 @@ size_t FIGCarousel::carousel(
         // Writing only one byte is not allowed
         if (written == 1 or written == 2) {
             std::stringstream ss;
-            ss << "Assertion error: FIG" << fig_el->fig->figtype() << "/" <<
-                fig_el->fig->figextension() <<
+            ss << "Assertion error: FIG" << fig_el->fig()->figtype() << "/" <<
+                fig_el->fig()->figextension() <<
                 " did not write enough data: (" << written << ")";
             throw std::logic_error(ss.str());
         }
         else if (written > available_size) {
             std::stringstream ss;
-            ss << "Assertion error: FIG" << fig_el->fig->figtype() << "/" <<
-                fig_el->fig->figextension() <<
+            ss << "Assertion error: FIG" << fig_el->fig()->figtype() << "/" <<
+                fig_el->fig()->figextension() <<
                 " wrote " << written << " bytes, but only " <<
                 available_size << " available!";
             throw std::logic_error(ss.str());
@@ -406,16 +479,16 @@ size_t FIGCarousel::carousel(
             etiLog.level(debug) <<
                 " FRAME " << current_frame <<
                 " ** FIB" << fib <<
-                " FIG" << fig_el->fig->figtype() << "/" <<
-                fig_el->fig->figextension() <<
+                " FIG" << fig_el->fig()->figtype() << "/" <<
+                fig_el->fig()->figextension() <<
                 " wrote\t" << written << " bytes" <<
                 (status.complete_fig_transmitted ? ", complete" : ", incomplete") <<
-                ", margin " << fig_el->deadline;
+                ", margin " << fig_el->deadline();
         }
 #endif
 
         if (status.complete_fig_transmitted) {
-            fig_el->increase_deadline(correction_factor);
+            fig_el->increase_deadline();
         }
 
         sorted_figs.pop_front();

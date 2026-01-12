@@ -1,7 +1,10 @@
 /*
    Copyright (C) 2026
    Samuel Hunt, Maxxwave Ltd. sam@maxxwave.co.uk
-   
+
+   Copyright (C) 2026
+   Matthias P. Braendli, matthias.braendli@mpb.li
+
    FIG Scheduler type definitions.
    Separated into own header to avoid circular dependencies with MuxElements.h
    */
@@ -30,12 +33,15 @@ namespace FIC {
 
 /*
  * Scheduler type selection.
- * 
- * Classic:  Original ODR-DabMux deadline-based scheduler
+ *
+ * Classic: Original ODR-DabMux deadline-based scheduler
+ * ClassicRateTuning: Original ODR-DabMux deadline-based scheduler, with
+ *                    per-fig correction factors.
  * Priority: New priority-based scheduler with weighted round-robin
  */
 enum class FIGSchedulerType {
     Classic,
+    ClassicRateTuning,
     Priority
 };
 

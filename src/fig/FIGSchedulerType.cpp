@@ -1,6 +1,9 @@
 /*
    Copyright (C) 2026
    Samuel Hunt, Maxxwave Ltd. sam@maxxwave.co.uk
+
+   Copyright (C) 2026
+   Matthias P. Braendli, matthias.braendli@mpb.li
    */
 /*
    This file is part of ODR-DabMux.
@@ -31,15 +34,18 @@ FIGSchedulerType parse_scheduler_type(const std::string& type_str)
     std::string lower = type_str;
     std::transform(lower.begin(), lower.end(), lower.begin(),
                    [](unsigned char c){ return std::tolower(c); });
-    
+
     if (lower == "priority") {
         return FIGSchedulerType::Priority;
+    }
+    else if (lower == "classic-rate-tuning") {
+        return FIGSchedulerType::ClassicRateTuning;
     }
     else if (lower == "classic" || lower == "default" || lower.empty()) {
         return FIGSchedulerType::Classic;
     }
     else {
-        etiLog.level(warn) << "Unknown FIC scheduler type '" << type_str 
+        etiLog.level(warn) << "Unknown FIC scheduler type '" << type_str
                            << "', defaulting to classic";
         return FIGSchedulerType::Classic;
     }
@@ -50,6 +56,8 @@ std::string scheduler_type_to_string(FIGSchedulerType type)
     switch (type) {
         case FIGSchedulerType::Classic:
             return "classic";
+        case FIGSchedulerType::ClassicRateTuning:
+            return "classic-rate-tuning";
         case FIGSchedulerType::Priority:
             return "priority";
         default:

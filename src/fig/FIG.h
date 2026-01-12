@@ -76,9 +76,6 @@ enum class FIG_rate {
     E,   // all in two minutes
 };
 
-/* Helper function to calculate the deadline for the next transmission, in milliseconds */
-int rate_increment_ms(FIG_rate rate);
-
 /* The fill function of each FIG shall return a status telling
  * the carousel how many bytes have been written, and if the complete
  * set of information from that FIG was transmitted.
@@ -102,13 +99,7 @@ class IFIG
         virtual int figtype() const = 0;
         virtual int figextension() const = 0;
 
-        virtual const std::string name() const
-        {
-            std::stringstream ss;
-            ss << figtype() << "/" << figextension();
-            return ss.str();
-        }
-
+        virtual const std::string name() const;
 };
 
 } // namespace FIC

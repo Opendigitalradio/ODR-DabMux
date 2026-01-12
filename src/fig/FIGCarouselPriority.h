@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2026
-   Samuel Hunt, Maxxwave Ltd. sam@maxxwave.co.uk
+   Copyright (C) 2024
+   Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of a priority-based FIG carousel scheduler.
    This scheduler uses weighted priority classes with round-robin
@@ -45,29 +45,6 @@
 
 namespace FIC {
 
-inline int rate_increment_ms(FIG_rate rate)
-{
-    switch (rate) {
-        /* All these values are multiples of 24, so that it is easier to reason
-         * about the behaviour when considering ETI frames of 24ms duration
-         *
-         * In large ensembles it's not always possible to respect the reptition rates, so
-         * the values are a bit larger than what the spec says.
-         * However, we observed that some receivers wouldn't always show labels (rate B),
-         * and that's why we reduced B rate to slightly below 1s.
-         * */
-        case FIG_rate::FIG0_0:    return 96;        // Is a special case
-        case FIG_rate::A:         return 240;
-        case FIG_rate::A_B:       return 480;
-        case FIG_rate::B:         return 960;
-        case FIG_rate::C:         return 24000;
-        case FIG_rate::D:         return 30000;
-        case FIG_rate::E:         return 120000;
-    }
-    throw std::logic_error("Invalid FIG_rate");
-}
-
-
 // Number of priority levels (0-9)
 constexpr int NUM_PRIORITIES = 10;
 
@@ -75,36 +52,85 @@ constexpr int NUM_PRIORITIES = 10;
 constexpr int PRIORITY_CRITICAL = 0;
 
 // Debug flag for carousel tracing - set to 1 to enable verbose logging
+// Note: Uses 'info' level so output is visible without -v flag
 #define PRIORITY_CAROUSEL_DEBUG 0
+
+// Debug flag for repetition rate statistics - logs actual vs required rates
+#define PRIORITY_RATE_STATS_DEBUG 0
 
 /*
  * FIGEntryPriority - Holds a FIG and its scheduling state
  *
- * Each FIG has:
- * - must_send: Set when a new cycle is due, cleared when cycle completes
- * - deadline_ms: Independent countdown for monitoring repetition rate compliance
+ * Deadline/Cycle Model:
+ * ---------------------
+ * - deadline_ms: Countdown timer, reset ONLY when cycle completes
+ * - must_send: Flag indicating a cycle is in progress and not yet complete
  * - rate_ms: The required repetition rate from the FIG's specification
+ *
+ * Lifecycle:
+ * 1. Counter starts at rate_ms, must_send = true (cycle in progress)
+ * 2. Counter ticks down every 24ms
+ * 3. When FIG completes its cycle (complete_fig_transmitted = true):
+ *    - must_send = false
+ *    - deadline_ms = rate_ms (reset for next cycle)
+ * 4. When deadline_ms reaches 0:
+ *    - If must_send == true: VIOLATION (cycle didn't complete in time)
+ *    - If must_send == false: Start new cycle (must_send = true)
+ *      Note: DON'T reset deadline_ms here - it continues counting to track lateness
+ *
+ * In a lightly loaded mux:
+ * - can_send completes cycles well before deadline
+ * - deadline_ms gets reset early, must_send is briefly true then false
+ * - When deadline_ms hits 0, must_send is false, so we just start new cycle
+ *
+ * In a heavily loaded mux:
+ * - must_send stays true longer as cycle takes time to complete
+ * - If deadline_ms hits 0 while must_send is true, violation is logged
+ *
+ * Repetition rate tracking (for debug/verification):
+ * - last_cycle_complete_ms: Timestamp when last cycle completed
+ * - cycle_count: Number of completed cycles
+ * - total_cycle_time_ms: Sum of all cycle times (for averaging)
+ * - min_cycle_time_ms / max_cycle_time_ms: Range tracking
  */
 struct FIGEntryPriority {
     IFIG* fig = nullptr;
     
     // Scheduling state
-    bool must_send = false;         // Cycle is due, not yet complete
+    bool must_send = false;         // Cycle is in progress, not yet complete
     
-    // Deadline monitoring (independent of scheduling)
-    int deadline_ms = 0;            // Countdown timer
-    int rate_ms = 0;                // Reset value (from FIG_rate)
+    // Deadline monitoring
+    int deadline_ms = 0;            // Countdown timer - ONLY reset on cycle complete
+    int rate_ms = 0;                // Required repetition rate (from FIG_rate)
     bool deadline_violated = false; // Set if deadline expires before cycle completes
     
     // For future dynamic priority adjustment
     int assigned_priority = 0;      // Current priority assignment
     int base_priority = 0;          // Original priority assignment
     
+    // Repetition rate statistics (for verification)
+    uint64_t last_cycle_complete_ms = 0;  // Timestamp of last completion
+    uint64_t cycle_count = 0;             // Number of completed cycles
+    uint64_t total_cycle_time_ms = 0;     // For calculating average
+    uint64_t min_cycle_time_ms = UINT64_MAX;
+    uint64_t max_cycle_time_ms = 0;
+    uint64_t current_time_ms = 0;         // Updated each frame
+    
     std::string name() const {
         if (fig) {
             return fig->name();
         }
         return "unknown";
+    }
+    
+    // Returns true if this FIG has used more than the given percentage of its deadline
+    // Used to prioritize FIGs that actually need bandwidth over those running ahead
+    bool past_deadline_percent(int percent) const {
+        // deadline_ms counts down from rate_ms
+        // If deadline_ms < rate_ms * (100 - percent) / 100, we're past that percent
+        // e.g., for 50%: if deadline_ms < rate_ms/2, we're past 50%
+        int threshold = rate_ms * (100 - percent) / 100;
+        return deadline_ms < threshold;
     }
     
     void init_deadline() {
@@ -119,15 +145,54 @@ struct FIGEntryPriority {
         must_send = true;  // Start with cycle due
     }
     
-    void tick_deadline(int elapsed_ms) {
+    // Called every frame (24ms). Returns true if a new cycle should start.
+    bool tick_deadline(int elapsed_ms) {
+        current_time_ms += elapsed_ms;
         deadline_ms -= elapsed_ms;
-        if (deadline_ms <= 0 && must_send && !deadline_violated) {
-            // Deadline expired but cycle not complete (only flag once)
-            deadline_violated = true;
+        
+        if (deadline_ms <= 0) {
+            if (must_send) {
+                // Deadline expired but cycle not complete - VIOLATION
+                if (!deadline_violated) {
+                    deadline_violated = true;
+                }
+                // Don't start new cycle - current one isn't done yet
+                // Let deadline go negative to track how late we are
+                return false;
+            } else {
+                // Deadline expired and cycle is complete - start new cycle
+                // Note: We do NOT reset deadline_ms here. It was already reset
+                // when the cycle completed. If we're here, it means the cycle
+                // completed exactly on time or the counter wrapped.
+                // Actually, if must_send is false and deadline <= 0, the cycle
+                // completed and deadline was reset, then counted down again.
+                // So we should start a new cycle.
+                return true;
+            }
         }
+        return false;
     }
     
-    void on_cycle_complete() {
+    void on_cycle_complete(bool data_was_sent = true) {
+        // Track repetition rate statistics only if data was actually sent
+        // FIGs that return 0 bytes (nothing to send) shouldn't count as "cycles"
+        // as they don't consume bandwidth and skew the statistics
+        if (data_was_sent && last_cycle_complete_ms > 0) {
+            uint64_t cycle_time = current_time_ms - last_cycle_complete_ms;
+            // Only count if meaningful time has passed (avoid artifacts from
+            // multiple completions in same frame due to timing granularity)
+            if (cycle_time > 0) {
+                cycle_count++;
+                total_cycle_time_ms += cycle_time;
+                if (cycle_time < min_cycle_time_ms) min_cycle_time_ms = cycle_time;
+                if (cycle_time > max_cycle_time_ms) max_cycle_time_ms = cycle_time;
+            }
+        }
+        if (data_was_sent) {
+            last_cycle_complete_ms = current_time_ms;
+        }
+        
+        // Reset deadline for next cycle
         // FIG 0/7 needs extra margin for framephase timing
         if (fig->figtype() == 0 && fig->figextension() == 7) {
             deadline_ms = rate_ms + 24;
@@ -141,6 +206,23 @@ struct FIGEntryPriority {
     
     void start_new_cycle() {
         must_send = true;
+        // Note: Do NOT reset deadline_ms here!
+        // The deadline was reset when the previous cycle completed.
+        // If we reset here, we lose track of timing.
+    }
+    
+    // Get average cycle time in ms (0 if no data)
+    uint64_t avg_cycle_time_ms() const {
+        return (cycle_count > 0) ? (total_cycle_time_ms / cycle_count) : 0;
+    }
+    
+    // Reset statistics (call periodically to get recent averages)
+    void reset_stats() {
+        cycle_count = 0;
+        total_cycle_time_ms = 0;
+        min_cycle_time_ms = UINT64_MAX;
+        max_cycle_time_ms = 0;
+        // Don't reset last_cycle_complete_ms - need it for next cycle measurement
     }
 };
 
@@ -158,19 +240,19 @@ struct PriorityLevel {
     int poll_reset_value = 1;
     std::list<FIGEntryPriority*> carousel;
     
-    // Find first FIG with must_send set that fits in available space
+    // Find first FIG with must_send set
     FIGEntryPriority* find_must_send();
     
-    // Find first FIG that can send (has data)
+    // Find first FIG in carousel (for can_send - any FIG can potentially send)
     FIGEntryPriority* find_can_send();
     
-    // Move entry to back of carousel (after sending)
+    // Move entry to back of carousel (only call after successful send!)
     void move_to_back(FIGEntryPriority* entry);
     
     // Check if any FIG in this priority has must_send
     bool has_must_send() const;
     
-    // Check if any FIG in this priority can send
+    // Check if carousel is non-empty
     bool has_can_send() const;
 };
 
@@ -178,20 +260,32 @@ struct PriorityLevel {
  * FIGCarouselPriority - Priority-based FIG scheduler
  *
  * Scheduling algorithm:
- * 1. Priority 0 (0/0, 0/7) always sends first every frame
- * 2. Other priorities are polled based on weighted counters
- * 3. Within each priority, FIGs rotate via round-robin carousel
- * 4. must_send FIGs are prioritised over can_send (opportunistic)
- * 5. Lower priorities can get early turns if higher has nothing due
+ * 
+ * 1. Priority 0 (FIG 0/0, 0/7) handled specially:
+ *    - Only sent in FIB 0 at framephase 0 (once per 96ms)
+ *    - FIG 0/0 must be first FIG in FIB per EN 300 401 clause 6.4.1
+ *
+ * 2. Must-send pass (clear urgent FIGs):
+ *    - Select priority via weighted counter system
+ *    - If selected priority has must_send FIG, try to send it
+ *    - If not, CASCADE: try lower priorities, then wrap to 1 and continue
+ *    - Only move FIG to back of carousel if it actually wrote bytes
+ *    - Continue until no must_send FIGs remain or FIB full
+ *
+ * 3. Can-send pass (fill remaining space opportunistically):
+ *    - Same cascading logic as must-send
+ *    - Any FIG can send even if not "due" - improves receiver acquisition
+ *    - Continue until FIB full or all FIGs tried
  *
  * Counter mechanism:
- * - All counters decrement when ANY FIG is sent
+ * - All counters decrement when ANY FIG successfully sends
  * - When a priority sends, its counter resets to poll_reset_value
  * - Priority with counter=0 (or lowest weighted score) is selected
  *
- * Priority stack:
- * - Tracks which priority sent most recently
- * - Used for tie-breaking when multiple priorities are due
+ * Carousel ordering:
+ * - Front of carousel = least recently sent
+ * - FIGs only move to back when they actually write bytes
+ * - FIGs that write 0 bytes stay at front (get another chance)
  */
 class FIGCarouselPriority {
 public:
@@ -204,18 +298,25 @@ public:
     
 private:
     // Fill a single FIB with FIG data
-    size_t fill_fib(uint8_t* buf, size_t max_size, int framephase);
+    // fib_index: 0-3, which FIB we're filling (needed for FIG 0/0 placement)
+    size_t fill_fib(uint8_t* buf, size_t max_size, int fib_index, int framephase);
     
-    // Send priority 0 FIGs (0/0, 0/7)
-    size_t send_priority_zero(uint8_t* buf, size_t max_size, int framephase);
+    // Send priority 0 FIGs (0/0, 0/7) - only in FIB 0 at framephase 0
+    size_t send_priority_zero(uint8_t* buf, size_t max_size, int fib_index, int framephase);
     
-    // Select which priority to poll next
+    // Select which priority to poll next based on weighted counters
     int select_priority();
     
-    // Called after a FIG is sent from a priority
+    // Cascade through priorities starting from 'start', wrapping around
+    // Returns priority that has a FIG matching the predicate, or -1 if none
+    // For must_send: predicate checks must_send flag
+    // For can_send: predicate checks carousel non-empty
+    int cascade_find_priority(int start, bool must_send_only);
+    
+    // Called after a FIG successfully sends from a priority
     void on_fig_sent(int priority);
     
-    // Decrement all poll counters (called on each FIG send)
+    // Decrement all poll counters (called on each successful FIG send)
     void decrement_all_counters();
     
     // Tick all deadline monitors (called each frame)
@@ -224,7 +325,11 @@ private:
     // Check and log any deadline violations
     void check_and_log_deadlines(uint64_t current_frame);
     
+    // Log repetition rate statistics (when PRIORITY_RATE_STATS_DEBUG enabled)
+    void log_rate_statistics(uint64_t current_frame);
+    
     // Try to send a FIG, returns bytes written
+    // Does NOT move FIG in carousel - caller must do that only if bytes > 0
     size_t try_send_fig(FIGEntryPriority* entry, uint8_t* buf, size_t max_size);
     
     // Assign FIGs to priority levels (hardcoded assignments)
@@ -247,6 +352,9 @@ private:
     
     // Track missed deadlines for periodic logging
     std::unordered_set<std::string> m_missed_deadlines;
+    
+    // Frame counter for rate statistics logging interval
+    uint64_t m_stats_log_counter = 0;
     
     // FIG instances
     FIG0_0 m_fig0_0;

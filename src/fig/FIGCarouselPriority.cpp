@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2024
-   Matthias P. Braendli, matthias.braendli@mpb.li
+   Copyright (C) 2026
+   Samuel Hunt, Maxxwave Ltd. sam@maxxwave.co.uk
 
    Implementation of a priority-based FIG carousel scheduler.
    */

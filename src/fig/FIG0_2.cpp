@@ -5,6 +5,10 @@
 
    Copyright (C) 2016
    Matthias P. Braendli, matthias.braendli@mpb.li
+
+   Phase-lock extensions:
+   Copyright (C) 2026
+   Samuel Hunt, Maxxwave Ltd. sam@maxxwave.co.uk
    */
 /*
    This file is part of ODR-DabMux.
@@ -146,6 +150,7 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
     // Rotate through the subchannels until there is no more
     // space
     for (; serviceFIG0_2 != last_service; ++serviceFIG0_2) {
+        
         const auto type = (*serviceFIG0_2)->getType(ensemble);
         const auto isProgramme = (*serviceFIG0_2)->isProgramme(ensemble);
 
@@ -207,6 +212,9 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 
             etiLog.log(FIG0_2_TRACE, "FIG0_2::fill  audio SId=%04x",
                (*serviceFIG0_2)->id);
+               
+            // Phase-lock: notify that we've announced a programme service
+            m_rti->on_fig0_2_service_sent();
         }
         else {
             auto fig0_2serviceData = (FIGtype0_2_Service_data*)buf;
@@ -222,6 +230,9 @@ FillStatus FIG0_2::fill(uint8_t *buf, size_t max_size)
 
             etiLog.log(FIG0_2_TRACE, "FIG0_2::fill  data SId=%04x",
                (*serviceFIG0_2)->id);
+            
+            // Note: Data services use FIG 1/5 for labels, not FIG 1/1
+            // So we don't increment the phase-lock counter for data services
         }
 
         int curCpnt = 0;

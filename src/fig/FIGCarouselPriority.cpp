@@ -601,7 +601,7 @@ size_t FIGCarouselPriority::send_priority_zero(uint8_t* buf, size_t max_size, in
             }
             // Mark cycle complete if the FIG says so
             if (status.complete_fig_transmitted) {
-                entry->on_cycle_complete(status.num_bytes_written > 0);
+                entry->on_cycle_complete();
             }
             if (status.num_bytes_written == 0) {
                 throw std::logic_error("Failed to write FIG 0/0");
@@ -626,9 +626,9 @@ size_t FIGCarouselPriority::send_priority_zero(uint8_t* buf, size_t max_size, in
             if (status.num_bytes_written > 0) {
                 written += status.num_bytes_written;
             }
-            // If complete, reset the cycle - pass whether data was sent
+            // Mark cycle complete if the FIG says so
             if (status.complete_fig_transmitted) {
-                entry->on_cycle_complete(status.num_bytes_written > 0);
+                entry->on_cycle_complete();
 #if PRIORITY_CAROUSEL_DEBUG
                 etiLog.level(info) << "  FIG 0/7: cycle complete, new deadline=" << entry->deadline_ms;
 #endif
@@ -752,9 +752,12 @@ size_t FIGCarouselPriority::try_send_fig(FIGEntryPriority* entry, uint8_t* buf, 
     }
     
     // Handle cycle completion
-    // Pass whether data was actually sent - only record stats if we transmitted something
+    // When complete_fig_transmitted is true, the FIG has completed its full cycle.
+    // For multi-phase FIGs like 0/2 (audio then data), the final phase may write
+    // 0 bytes if there's no data, but the cycle is still complete.
+    // We always record the cycle completion to track end-to-end timing.
     if (status.complete_fig_transmitted) {
-        entry->on_cycle_complete(written > 0);
+        entry->on_cycle_complete();
     }
     
     return written;

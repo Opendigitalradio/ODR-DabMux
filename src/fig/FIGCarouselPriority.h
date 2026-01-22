@@ -56,7 +56,7 @@ constexpr int PRIORITY_CRITICAL = 0;
 #define PRIORITY_CAROUSEL_DEBUG 0
 
 // Debug flag for repetition rate statistics - logs actual vs required rates
-#define PRIORITY_RATE_STATS_DEBUG 0
+#define PRIORITY_RATE_STATS_DEBUG 1
 
 /* Helper function to calculate the deadline for the next transmission, in milliseconds.
  * All values are multiples of 24ms (ETI frame duration) for easier reasoning.
@@ -190,11 +190,10 @@ struct FIGEntryPriority {
         return false;
     }
     
-    void on_cycle_complete(bool data_was_sent = true) {
-        // Track repetition rate statistics only if data was actually sent
-        // FIGs that return 0 bytes (nothing to send) shouldn't count as "cycles"
-        // as they don't consume bandwidth and skew the statistics
-        if (data_was_sent && last_cycle_complete_ms > 0) {
+    void on_cycle_complete() {
+        // Track repetition rate statistics
+        // Measures end-to-end cycle time (from one completion to the next)
+        if (last_cycle_complete_ms > 0) {
             uint64_t cycle_time = current_time_ms - last_cycle_complete_ms;
             // Only count if meaningful time has passed (avoid artifacts from
             // multiple completions in same frame due to timing granularity)
@@ -205,9 +204,7 @@ struct FIGEntryPriority {
                 if (cycle_time > max_cycle_time_ms) max_cycle_time_ms = cycle_time;
             }
         }
-        if (data_was_sent) {
-            last_cycle_complete_ms = current_time_ms;
-        }
+        last_cycle_complete_ms = current_time_ms;
         
         // Reset deadline for next cycle
         // FIG 0/7 needs extra margin for framephase timing

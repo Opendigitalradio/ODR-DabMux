@@ -56,7 +56,7 @@ constexpr int PRIORITY_CRITICAL = 0;
 #define PRIORITY_CAROUSEL_DEBUG 0
 
 // Debug flag for repetition rate statistics - logs actual vs required rates
-#define PRIORITY_RATE_STATS_DEBUG 1
+#define PRIORITY_RATE_STATS_DEBUG 0
 
 /* Helper function to calculate the deadline for the next transmission, in milliseconds.
  * All values are multiples of 24ms (ETI frame duration) for easier reasoning.

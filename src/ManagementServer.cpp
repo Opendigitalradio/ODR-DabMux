@@ -176,6 +176,10 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
     j["version"] = VERSION;
     j["global_input_state"] = std::nullopt; // TODO
 
+    using namespace chrono;
+    j["process_uptime"] = duration_cast<milliseconds>(steady_clock::now() - m_startup_time).count();
+    j["num_frames"] = m_frames;
+
     if (clocktai_expires_at) {
         j["clock_tai_expiry"] = *clocktai_expires_at;
     }
@@ -189,6 +193,16 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
     j["num_output_connections"] = ov.total_num_connections;
 
     return json::map_to_json(j);
+}
+
+void ManagementServer::set_startup_time(std::chrono::steady_clock::time_point tp)
+{
+    m_startup_time = tp;
+}
+
+void ManagementServer::set_num_frames(size_t frames)
+{
+    m_frames = frames;
 }
 
 json::map_t ManagementServer::get_input_config_json()

@@ -191,6 +191,9 @@ class ManagementServer
 
         std::string get_json_stats_for_http(std::optional<int64_t> clocktai_expires_at) const;
 
+        void set_startup_time(std::chrono::steady_clock::time_point tp);
+        void set_num_frames(size_t frames);
+
     private:
         void restart_thread(long);
 
@@ -212,6 +215,9 @@ class ManagementServer
         std::thread m_restarter_thread;
 
         /******* Statistics Data ********/
+        std::chrono::steady_clock::time_point m_startup_time;
+        size_t m_frames = 0;
+
         std::map<std::string, InputStat*> m_input_stats;
 
         // Holds information about EDI/TCP outputs

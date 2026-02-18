@@ -3,7 +3,7 @@
    2011, 2012 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2022
+   Copyright (C) 2025
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -172,6 +172,8 @@ int main(int argc, char *argv[])
         catch (runtime_error &e) {
             throw MuxInitException(e.what());
         }
+
+        get_mgmt_server().set_startup_time(chrono::steady_clock::now());
 
         /* Enable Logging to syslog conditionally */
         if (mux_conf.pt.get<bool>("general.syslog", false)) {
@@ -513,6 +515,8 @@ int main(int argc, char *argv[])
             /* Same for statistics server */
             if (currentFrame % 10 == 0) {
                 ManagementServer& mgmt_server = get_mgmt_server();
+
+                mgmt_server.set_num_frames(currentFrame);
 
                 if (mgmt_server.fault_detected()) {
                     etiLog.level(warn) <<

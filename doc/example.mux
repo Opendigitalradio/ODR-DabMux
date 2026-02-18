@@ -43,11 +43,13 @@ general {
     ;
     ; If it cannot load this information, ODR-DabMux cannot start up!
     ;
-    ; If your system doesn't have access to internet, you have to take care
-    ; to create the file before ODR-DabMux startup. Get it from
+    ; If your system doesn't have access to internet, you can either:
+    ; 1. Create the file before ODR-DabMux startup. Get it from
     ; https://raw.githubusercontent.com/eggert/tz/master/leap-seconds.list
     ; and save it to
     ; /var/tmp/odr-dabmux-leap-seconds.cache
+    ;
+    ; 2. Do not set tai_clock_bulletins, set tai_clock_offset to the value you want to use
     ;
     ; ODR-DabMux will start up even with an expired bulletin in cache, but will
     ; output a warning.
@@ -67,7 +69,9 @@ general {
     ;
     ; Through RC, use `set clocktai url <LIST_OF_URLS>` to change the URLs used to download the bulletin
     ; during runtime.
-    ; You may also override the bulletin using `set clocktai tai_utc_offset 37` to set a TAI-UTC offset manually.
+    ; You may also override the bulletin using `set clocktai tai_utc_offset 37` in RC,
+    ; or setting tai_clock_offset in the config to set the TAI-UTC offset manually.
+    ;tai_clock_offset 37
     ;
     ; You may also use a file:// URL if you take care of updating the file
     ; yourself and store it locally.

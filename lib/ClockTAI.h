@@ -91,8 +91,11 @@ class ClockTAI
 #endif // ENABLE_REMOTECONTROL
 {
     public:
-        ClockTAI(const std::string& bulletin_urls_pipe_separated);
-        ClockTAI(const std::vector<std::string>& bulletin_urls);
+        ClockTAI();
+
+        void init(int fixed_tai_utc_offset);
+        void init(const std::string& bulletin_urls_pipe_separated);
+        void init(const std::vector<std::string>& bulletin_urls);
 
         // Fetch the bulletin from the IETF website and return the current
         // TAI-UTC offset.

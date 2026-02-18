@@ -379,7 +379,7 @@ void Bulletin::clear_expiry_if_overridden()
     }
 }
 
-ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls)
+ClockTAI::ClockTAI()
 #if ENABLE_REMOTECONTROL
     : RemoteControllable("clocktai")
 {
@@ -390,7 +390,20 @@ ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls)
 #else
 {
 #endif // ENABLE_REMOTECONTROL
+}
 
+void ClockTAI::init(int fixed_tai_utc_offset)
+{
+    std::unique_lock<std::mutex> lock(m_data_mutex);
+    m_bulletin = Bulletin::create_with_fixed_offset(fixed_tai_utc_offset);
+    m_state = m_bulletin.state();
+    m_state_last_updated = chrono::steady_clock::now();
+
+    etiLog.level(debug) << "ClockTAI with fixed offset: '" << fixed_tai_utc_offset << "'";
+}
+
+void ClockTAI::init(const std::vector<std::string>& bulletin_urls)
+{
     if (bulletin_urls.empty()) {
         etiLog.level(debug) << "Initialising default TAI Bulletin URLs";
         for (const auto url : default_tai_urls) {
@@ -405,8 +418,10 @@ ClockTAI::ClockTAI(const std::vector<std::string>& bulletin_urls)
     etiLog.level(debug) << "ClockTAI uses bulletin URL: '" << join_string_with_pipe(m_bulletin_urls) << "'";
 }
 
-ClockTAI::ClockTAI(const std::string& bulletin_urls_pipe_separated)
-    : ClockTAI(split_pipe_separated_string(bulletin_urls_pipe_separated)) { }
+void ClockTAI::init(const std::string& bulletin_urls_pipe_separated)
+{
+    init(split_pipe_separated_string(bulletin_urls_pipe_separated));
+}
 
 
 BulletinState ClockTAI::get_valid_offset()

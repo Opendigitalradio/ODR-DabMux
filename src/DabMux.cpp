@@ -241,7 +241,15 @@ int main(int argc, char *argv[])
             rcs.add_controller(rc);
         }
 
-        ClockTAI clock_tai(mux_conf.pt.get("general.tai_clock_bulletins", ""));
+        const int tai_clock_offset = mux_conf.pt.get<int>("general.tai_clock_offset", 0);
+        const string tai_bulletins = mux_conf.pt.get("general.tai_clock_bulletins", "");
+        ClockTAI clock_tai;
+        if (tai_clock_offset > 0) {
+            clock_tai.init(tai_clock_offset);
+        }
+        else {
+            clock_tai.init(tai_bulletins);
+        }
         rcs.enrol(&clock_tai);
 
         DabMultiplexer mux(mux_conf, clock_tai);

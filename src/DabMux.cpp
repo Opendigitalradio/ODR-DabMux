@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
             throw MuxInitException(e.what());
         }
 
-        get_mgmt_server().set_startup_time(chrono::steady_clock::now());
+        get_mgmt_server().set_startup_time();
 
         /* Enable Logging to syslog conditionally */
         if (mux_conf.pt.get<bool>("general.syslog", false)) {

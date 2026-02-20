@@ -2,7 +2,7 @@
    Copyright (C) 2009 Her Majesty the Queen in Right of Canada (Communications
    Research Center Canada)
 
-   Copyright (C) 2025
+   Copyright (C) 2026
    Matthias P. Braendli, matthias.braendli@mpb.li
 
     http://www.opendigitalradio.org
@@ -177,7 +177,8 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
     j["global_input_state"] = std::nullopt; // TODO
 
     using namespace chrono;
-    j["process_uptime"] = duration_cast<milliseconds>(steady_clock::now() - m_startup_time).count();
+    j["process_startup_time"] = duration_cast<seconds>(m_startup_time_sys.time_since_epoch()).count();
+    j["process_uptime"] = duration_cast<seconds>(steady_clock::now() - m_startup_time).count();
     j["num_frames"] = m_frames;
 
     if (clocktai_expires_at) {
@@ -195,9 +196,10 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
     return json::map_to_json(j);
 }
 
-void ManagementServer::set_startup_time(std::chrono::steady_clock::time_point tp)
+void ManagementServer::set_startup_time()
 {
-    m_startup_time = tp;
+    m_startup_time = std::chrono::steady_clock::now();
+    m_startup_time_sys = std::chrono::system_clock::now();
 }
 
 void ManagementServer::set_num_frames(size_t frames)

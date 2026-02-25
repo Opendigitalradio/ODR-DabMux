@@ -100,7 +100,8 @@ general {
     ; Select the default Earliest Deadline First scheduler that is used since ODR-DabMux v1.0.0
     ;
     ;fic-scheduler classic-rate-tuning
-    ; Select the default Earliest Deadline First scheduler that is used since ODR-DabMux v1.0.0
+    ; Select the default Earliest Deadline First scheduler that is used since ODR-DabMux v1.0.0, modified
+    ; with per-FIG correction factors.
     ;
     ; Both classic FIC schedulers support the fic-repetition-correction option to reduce overall repetition rates
     ; for high service count ensembles. e.g. slow down by a factor x1.5

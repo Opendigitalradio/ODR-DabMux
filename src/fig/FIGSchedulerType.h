@@ -31,12 +31,11 @@
 
 namespace FIC {
 
-/*
- * Scheduler type selection.
+/* Scheduler type selection.
  *
  * Classic: Original ODR-DabMux deadline-based scheduler
- * ClassicRateTuning: Original ODR-DabMux deadline-based scheduler, with
- *                    per-fig correction factors.
+ * ClassicRateTuning: Original ODR-DabMux deadline-based scheduler,
+ *                    plus per-fig correction factors.
  * Priority: New priority-based scheduler with weighted round-robin
  */
 enum class FIGSchedulerType {

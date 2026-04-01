@@ -59,9 +59,9 @@ void STIDecoder::push_bytes(const vector<uint8_t> &buf)
     m_dispatcher.push_bytes(buf);
 }
 
-void STIDecoder::push_packet(Packet &pack)
+void STIDecoder::push_packet(Packet&& pack)
 {
-    m_dispatcher.push_packet(pack);
+    m_dispatcher.push_packet(std::move(pack));
 }
 
 void STIDecoder::setMaxDelay(int num_af_packets)

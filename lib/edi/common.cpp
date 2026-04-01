@@ -183,7 +183,7 @@ void TagDispatcher::push_bytes(const vector<uint8_t> &buf)
         }
         else if (m_input_data[0] == 'P' and m_input_data[1] == 'F') {
             PFT::Fragment fragment;
-            const size_t fragment_bytes = fragment.loadData(m_input_data);
+            const size_t fragment_bytes = fragment.loadData(std::move(m_input_data));
 
             if (fragment_bytes == 0) {
                 // We need to refill our buffer
@@ -191,21 +191,22 @@ void TagDispatcher::push_bytes(const vector<uint8_t> &buf)
             }
 
             vector<uint8_t> remaining_data;
-            copy(m_input_data.begin() + fragment_bytes,
-                    m_input_data.end(),
+            copy(fragment.fragment_data().begin() + fragment_bytes,
+                    fragment.fragment_data().end(),
                     back_inserter(remaining_data));
             m_input_data = remaining_data;
 
             if (fragment.isValid()) {
-                m_pft.pushPFTFrag(fragment);
+                m_pft.pushPFTFrag(std::move(fragment));
             }
 
             auto af = m_pft.getNextAFPacket();
-            if (not af.af_packet.empty()) {
-                const auto r = decode_afpacket(af.af_packet);
+            if (af.af_packet.has_value()) {
+                const auto r = decode_afpacket(af.af_packet.value());
 
                 switch (r.st) {
                     case decode_state_e::Ok:
+                        etiLog.level(error) << "PSEQ " << (int)af.pseq << " complete";
                         m_last_sequences.pseq = af.pseq;
                         m_last_sequences.pseq_valid = true;
                         m_af_packet_completed();
@@ -215,10 +216,15 @@ void TagDispatcher::push_bytes(const vector<uint8_t> &buf)
                         m_last_sequences.pseq_valid = false;
                         break;
                     case decode_state_e::Error:
+                        etiLog.level(error) << "PSEQ " << (int)af.pseq << " error";
                         m_last_sequences.pseq_valid = false;
                         break;
                 }
             }
+            else {
+                etiLog.level(error) << "No next AF Packet ";
+            }
+
         }
         else {
             etiLog.log(warn, "Unknown 0x%02x!", *m_input_data.data());
@@ -227,7 +233,7 @@ void TagDispatcher::push_bytes(const vector<uint8_t> &buf)
     }
 }
 
-void TagDispatcher::push_packet(const Packet &packet)
+void TagDispatcher::push_packet(Packet&& packet)
 {
     auto& buf = packet.buf;
 
@@ -246,15 +252,15 @@ void TagDispatcher::push_packet(const Packet &packet)
     }
     else if (buf[0] == 'P' and buf[1] == 'F') {
         PFT::Fragment fragment;
-        fragment.loadData(buf, packet.received_on_port);
+        fragment.loadData(std::move(buf), packet.received_on_port);
 
         if (fragment.isValid()) {
-            m_pft.pushPFTFrag(fragment);
+            m_pft.pushPFTFrag(std::move(fragment));
         }
 
         auto af = m_pft.getNextAFPacket();
-        if (not af.af_packet.empty()) {
-            const auto r = decode_afpacket(af.af_packet);
+        if (af.af_packet.has_value()) {
+            const auto r = decode_afpacket(af.af_packet.value());
 
             if (r.st == decode_state_e::Ok) {
                 m_last_sequences.pseq = af.pseq;
@@ -345,10 +351,9 @@ TagDispatcher::decode_result_t TagDispatcher::decode_afpacket(
                 afpacket.begin());
         m_afpacket_handler(std::move(afpacket));
 
-        vector<uint8_t> payload(taglength);
-        copy(input_data.begin() + AFPACKET_HEADER_LEN,
-                input_data.begin() + AFPACKET_HEADER_LEN + taglength,
-                payload.begin());
+        std::span<const uint8_t> payload(
+                input_data.begin() + AFPACKET_HEADER_LEN,
+                input_data.begin() + AFPACKET_HEADER_LEN + taglength);
 
         auto result = decode_tagpacket(payload) ? decode_state_e::Ok : decode_state_e::Error;
         return {result, AFPACKET_HEADER_LEN + taglength + crclen};
@@ -366,7 +371,7 @@ void TagDispatcher::register_afpacket_handler(afpacket_handler&& h)
 }
 
 
-bool TagDispatcher::decode_tagpacket(const vector<uint8_t> &payload)
+bool TagDispatcher::decode_tagpacket(const span<const uint8_t> &payload)
 {
     size_t length = 0;
 

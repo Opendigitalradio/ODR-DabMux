@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2017 AVT GmbH - Fabien Vercasson
- * Copyright (C) 2021 Matthias P. Braendli
+ * Copyright (C) 2026 Matthias P. Braendli
  *                    matthias.braendli@mpb.li
  *
  * http://opendigitalradio.org
@@ -23,9 +23,12 @@
 #pragma once
 #include <cstdio>
 #include <cstdint>
+#include <optional>
+#include <stdexcept>
 #include <vector>
 #include <map>
 #include <string>
+#include <span>
 
 namespace EdiDecoder {
 namespace PFT {
@@ -43,8 +46,8 @@ class Fragment
         // \returns the number of bytes of useful data found in buf
         // A non-zero return value doesn't imply a valid fragment
         // the isValid() method must be used to verify this.
-        size_t loadData(const std::vector<uint8_t> &buf, int received_on_port);
-        size_t loadData(const std::vector<uint8_t> &buf);
+        size_t loadData(std::vector<uint8_t>&& buf, int received_on_port);
+        size_t loadData(std::vector<uint8_t>&& buf);
 
         bool isValid() const { return _valid; }
         bool isLast() const { return _Findex + 1 == _Fcount; }
@@ -70,14 +73,22 @@ class Fragment
         // Number of padding bytes in the last fragment
         uint8_t RSz() const { return _RSz; }
 
-        const std::vector<uint8_t>& payload() const {
-            return _payload;
+        const std::span<const uint8_t> payload() const {
+            if (_valid)
+                return _payload;
+            else
+                throw std::runtime_error("cannot get payload of invalid fragment");
+        }
+
+        const std::vector<uint8_t>& fragment_data() const {
+            return _fragment;
         }
 
         bool checkConsistency(const Fragment& other) const;
 
     private:
-        std::vector<uint8_t> _payload;
+        std::vector<uint8_t> _fragment;
+        std::span<const uint8_t> _payload;
 
         pseq_t _Pseq = 0;
         findex_t _Findex = 0;
@@ -115,16 +126,16 @@ class AFBuilder
 
         AFBuilder(pseq_t Pseq, findex_t Fcount, size_t lifetime);
 
-        void pushPFTFrag(const Fragment &frag);
+        void pushPFTFrag(Fragment&& fragment);
 
         /* Assess if it may be possible to decode this AF packet */
         decode_attempt_result_t canAttemptToDecode();
 
         /* Try to build the AF with received fragments.
          * Apply error correction if necessary (missing packets/CRC errors)
-         * \return an empty vector if building the AF is not possible
+         * \return nullopt if building the AF is not possible
          */
-        std::vector<uint8_t> extractAF();
+        std::optional<std::vector<uint8_t>> extractAF();
 
         std::pair<findex_t, findex_t>
             numberOfFragments(void) const {
@@ -154,15 +165,14 @@ class AFBuilder
 
 struct afpacket_pft_t
 {
-    // validity of the struct is given by af_packet begin empty or not.
-    std::vector<uint8_t> af_packet;
+    std::optional<std::vector<uint8_t>> af_packet = std::nullopt;
     pseq_t pseq = 0;
 };
 
 class PFT
 {
     public:
-        void pushPFTFrag(const Fragment &fragment);
+        void pushPFTFrag(Fragment&& fragment);
 
         /* Try to build the AF packet for the next pseq. This might
          * skip one or more pseq according to the maximum delay setting.

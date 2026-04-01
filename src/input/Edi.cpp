@@ -385,8 +385,8 @@ void Edi::m_run()
                         }
 
                         if (not packet.buffer.empty()) {
-                            EdiDecoder::Packet p(move(packet.buffer));
-                            m_sti_decoder.push_packet(p);
+                            EdiDecoder::Packet p(std::move(packet.buffer));
+                            m_sti_decoder.push_packet(std::move(p));
                         }
                         else {
                             this_thread::sleep_for(chrono::milliseconds(12));
@@ -433,7 +433,7 @@ void Edi::m_new_sti_frame_callback(EdiDecoder::sti_frame_t&& sti) {
         // We should not wait here, because we want the complete input buffering
         // happening inside m_frames. Using the blocking function is only a protection
         // against runaway memory usage if something goes wrong in the consumer.
-        m_frames.push_wait_if_full(move(sti), m_max_frames_overrun * 2);
+        m_frames.push_wait_if_full(std::move(sti), m_max_frames_overrun * 2);
     }
 }
 

@@ -1,6 +1,16 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2026-05-08: Matthias P. Braendli <matthias@mpb.li>
+	(v5.5.0):
+		Update project to C++20, libboost 1.71.
+		Add hot-reload for frequency_information and other ensembles information.
+		Add HTTP server for stats.
+		Add FIG0/20.
+		Improve FIG repetition for highly-loaded ensembles (Three fic-schedulers now exist)
+		Add manual TAI offset setting, bypassing bulletin parsing.
+		Improve UDP multicast EDI input.
+
 2025-10-01: Matthias P. Braendli <matthias@mpb.li>
 	(v5.4.1):
 		Fix race condition in TCP output stats that can lock up

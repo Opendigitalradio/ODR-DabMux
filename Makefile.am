@@ -57,7 +57,7 @@ lib_charset_sources = lib/charset/charset.cpp \
 odr_dabmux_CFLAGS   =-Wall $(INCLUDE) $(PTHREAD_CFLAGS) $(GITVERSION_FLAGS)
 odr_dabmux_CXXFLAGS =-Wall $(PTHREAD_CXXFLAGS) $(INCLUDE) $(GITVERSION_FLAGS) $(BOOST_CPPFLAGS) $(ZMQ_CPPFLAGS)
 odr_dabmux_LDADD    =$(ZMQ_LIBS) $(BOOST_LDFLAGS) \
-					 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(BOOST_SYSTEM_LIB)
+					 $(PTHREAD_CFLAGS) $(PTHREAD_LIBS)
 
 odr_dabmux_SOURCES  =src/DabMux.cpp \
 					 src/DabMultiplexer.cpp \

@@ -26,6 +26,7 @@
    along with ODR-DabMux.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "ManagementServer.h"
 #include "crc.h"
 #include "Log.h"
 #include "fig/FIGCarousel.h"
@@ -229,15 +230,7 @@ size_t FIGCarousel::write_fibs(
 {
     m_rti.currentFrame = current_frame;
 
-    if ((current_frame % 250) == 0 and m_missed_deadlines.size() > 0) {
-        std::stringstream ss;
-        for (const auto& fig_missed_count : m_missed_deadlines) {
-            ss << " " << fig_missed_count;
-        }
-        m_missed_deadlines.clear();
-
-        etiLog.level(info) << "Could not respect repetition rates for FIGs:" << ss.str();
-    }
+    ManagementServer& mgmt_server = get_mgmt_server();
 
     /* Decrement all deadlines of all figs */
     for (auto& fib_fig : m_fibs) {
@@ -249,7 +242,7 @@ size_t FIGCarousel::write_fibs(
 #if CAROUSELDEBUG
                 etiLog.level(warn) << " FIG" << fig_el.fig()->name() << " LATE";
 #endif
-                m_missed_deadlines.insert(fig_el.fig()->name());
+                mgmt_server.fig_deadline_missed(std::to_string(fig_el.fig()->figtype()) + "_" + std::to_string(fig_el.fig()->figextension()));
             }
         }
     }

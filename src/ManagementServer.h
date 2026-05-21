@@ -194,6 +194,9 @@ class ManagementServer
         void set_startup_time();
         void set_num_frames(size_t frames);
 
+        void fig_deadline_missed(const std::string& fig_type_ext);
+
+
     private:
         void restart_thread(long);
 
@@ -224,6 +227,9 @@ class ManagementServer
         // Holds information about EDI/TCP outputs
         std::map<uint16_t /* port */,
             std::vector<Socket::TCPConnection::stats_t>> m_output_stats;
+
+        // Counters for FIGs for which rate could not be respected
+        std::unordered_map<std::string, size_t> m_figs_missed_deadline_counters;
 
         /* Return a description of the configuration that will
          * allow to define what graphs to be created

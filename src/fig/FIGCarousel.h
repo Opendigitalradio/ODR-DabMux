@@ -107,8 +107,6 @@ class FIGCarousel {
 
         bool with_fig_correction_factor = false;
 
-        std::unordered_set<std::string> m_missed_deadlines;
-
         FIGRuntimeInformation m_rti;
 
         // Some FIGs can be mapped to a specific FIB or to FIB_ANY

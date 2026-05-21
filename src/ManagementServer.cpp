@@ -193,6 +193,14 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
     j["outputs"] = ov.values;
     j["num_output_connections"] = ov.total_num_connections;
 
+    json::map_t fic;
+    json::map_t counter_per_fig;
+    for (const auto& fig_counter : m_figs_missed_deadline_counters) {
+        counter_per_fig[fig_counter.first] = fig_counter.second;
+    }
+    fic["num_fig_deadlines_missed"] = counter_per_fig;
+    j["fic"] = fic;
+
     return json::map_to_json(j);
 }
 
@@ -205,6 +213,11 @@ void ManagementServer::set_startup_time()
 void ManagementServer::set_num_frames(size_t frames)
 {
     m_frames = frames;
+}
+
+void ManagementServer::fig_deadline_missed(const std::string& fig_type_ext)
+{
+    m_figs_missed_deadline_counters[fig_type_ext]++;
 }
 
 json::map_t ManagementServer::get_input_config_json()

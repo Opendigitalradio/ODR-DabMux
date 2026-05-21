@@ -22,6 +22,7 @@
 */
 
 #include "fig/FIGCarouselPriority.h"
+#include "ManagementServer.h"
 #include "fig/FIG0_20.h"
 #include "crc.h"
 
@@ -256,12 +257,18 @@ void FIGCarouselPriority::check_and_log_deadlines(uint64_t current_frame)
     bool any_slow = false;
     bool any_warning = false;
     bool any_critical = false;
+
+    ManagementServer& mgmt_server = get_mgmt_server();
     
     for (auto& entry : m_all_entries) {
         if (entry->deadline_violated && entry->cycle_count > 0) {
             // Check how severe the violation is based on average cycle time
             uint64_t avg = entry->avg_cycle_time_ms();
             uint64_t required = entry->rate_ms;
+
+            if (avg > required * 2) {
+                mgmt_server.fig_deadline_missed(std::to_string(entry->fig->figtype()) + "_" + std::to_string(entry->fig->figextension()));
+            }
             
             if (avg > required * 3) {
                 ss_critical << " " << entry->name();

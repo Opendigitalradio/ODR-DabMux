@@ -89,7 +89,8 @@ FIGCarouselPriority::FIGCarouselPriority(
     m_fig0_5(&m_rti),
     m_fig0_6(&m_rti),
     m_fig0_7(&m_rti),
-    m_fig0_8(&m_rti),
+    m_fig0_8_prog(&m_rti, FIG0_8_mode::Programme),
+    m_fig0_8_data(&m_rti, FIG0_8_mode::Data),
     m_fig0_9(&m_rti),
     m_fig0_10(&m_rti),
     m_fig0_13(&m_rti),
@@ -173,6 +174,10 @@ void FIGCarouselPriority::assign_figs_to_priorities()
     // Priority 1: Core MCI (fixed share - ~50% of FIC capacity)
     add_fig_to_priority(m_fig0_1, 1);
     add_fig_to_priority(m_fig0_2, 1);
+    // Programme service component global definitions are group A MCI (96ms
+    // nominal per EN 300 401 clause 6.1) and belong with core MCI. The data
+    // half is carried separately at priority 4 (rate B).
+    add_fig_to_priority(m_fig0_8_prog, 1);
     
     // Priority 2: Service labels (fixed share - critical for scan completion!)
     // WorldDAB: "labels should get 2 FIGs per 96ms frame"
@@ -185,7 +190,7 @@ void FIGCarouselPriority::assign_figs_to_priorities()
     
     // Priority 4: Component details
     add_fig_to_priority(m_fig0_3, 4);  // Packet mode
-    add_fig_to_priority(m_fig0_8, 4);  // Service component global def
+    add_fig_to_priority(m_fig0_8_data, 4);  // Data service component global def (rate B)
     add_fig_to_priority(m_fig0_13, 4); // User applications
     
     // Priority 5: Scaled insertion (should match label cycle time)

@@ -378,7 +378,8 @@ private:
     FIG0_5 m_fig0_5;
     FIG0_6 m_fig0_6;
     FIG0_7 m_fig0_7;
-    FIG0_8 m_fig0_8;
+    FIG0_8 m_fig0_8_prog;
+    FIG0_8 m_fig0_8_data;
     FIG0_9 m_fig0_9;
     FIG0_10 m_fig0_10;
     FIG0_13 m_fig0_13;

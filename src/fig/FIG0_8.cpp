@@ -57,10 +57,14 @@ struct FIGtype0_8_long {
     }
 } PACKED;
 
-FIG0_8::FIG0_8(FIGRuntimeInformation *rti) :
+FIG0_8::FIG0_8(FIGRuntimeInformation *rti, FIG0_8_mode mode) :
     m_rti(rti),
+    m_mode(mode),
     m_initialised(false),
-    m_transmit_programme(false)
+    // In Programme mode the first (and only) pass emits programme components;
+    // in Data mode it emits data components; in Both mode it alternates as the
+    // original implementation did, starting on the data pass.
+    m_transmit_programme(mode == FIG0_8_mode::Programme)
 {
 }
 
@@ -221,13 +225,21 @@ FillStatus FIG0_8::fill(uint8_t *buf, size_t max_size)
     if (componentFIG0_8 == ensemble->components.end()) {
         componentFIG0_8 = ensemble->components.begin();
 
-        // The full database is sent every second full loop
-        fs.complete_fig_transmitted = m_transmit_programme;
-
-        m_transmit_programme = not m_transmit_programme;
-        // Alternate between data and and programme FIG0/13,
-        // do not mix fig0 with PD=0 with extension 13 stuff
-        // that actually needs PD=1, and vice versa
+        if (m_mode == FIG0_8_mode::Both) {
+            // Legacy behaviour: the full database is sent every second full
+            // loop, alternating programme and data passes.
+            fs.complete_fig_transmitted = m_transmit_programme;
+            m_transmit_programme = not m_transmit_programme;
+            // Alternate between data and programme FIG0/8, do not mix fig0
+            // with PD=0 with extension 8 stuff that actually needs PD=1, and
+            // vice versa.
+        }
+        else {
+            // Split mode: this instance carries a single component class, so
+            // one full loop is one complete cycle. m_transmit_programme is
+            // fixed for the lifetime of the instance and is never toggled.
+            fs.complete_fig_transmitted = true;
+        }
     }
 
     fs.num_bytes_written = max_size - remaining;

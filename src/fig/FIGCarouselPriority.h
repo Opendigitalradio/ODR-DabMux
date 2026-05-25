@@ -344,7 +344,10 @@ private:
     
     // Try to send a FIG, returns bytes written
     // Does NOT move FIG in carousel - caller must do that only if bytes > 0
-    size_t try_send_fig(FIGEntryPriority* entry, uint8_t* buf, size_t max_size);
+    // If cycle_completed is non-null, it is set to whether this fill completed
+    // the FIG's full cycle (used by the multi-entry refill logic).
+    size_t try_send_fig(FIGEntryPriority* entry, uint8_t* buf, size_t max_size,
+            bool* cycle_completed = nullptr);
     
     // Assign FIGs to priority levels (hardcoded assignments)
     void assign_figs_to_priorities();

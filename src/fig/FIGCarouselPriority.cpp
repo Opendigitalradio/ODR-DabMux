@@ -449,14 +449,35 @@ size_t FIGCarouselPriority::fill_fib(uint8_t* buf, size_t max_size, int fib_inde
                 }
                 tried_this_fib.insert(entry);
                 
-                size_t bytes = try_send_fig(entry, pbuf, remaining);
-                if (bytes > 0) {
+                // A structured FIG (e.g. 0/8) traverses its component list
+                // across successive fills, reporting completion only when the
+                // list wraps. Normally each FIG gets one fill per FIB, which
+                // throttles large FIGs to a few entries per frame. To let such
+                // a FIG use the spare space in this FIB, keep refilling it while
+                // it writes bytes but has not yet completed its cycle. This is
+                // self-limiting: it stops on a completed cycle, a zero-byte
+                // write (no fit / nothing left), or exhausted FIB space, so it
+                // cannot spin. Single-block FIGs complete in one fill and never
+                // loop here.
+                size_t bytes = 0;
+                bool cycle_done = false;
+                bool wrote_any = false;
+                do {
+                    size_t this_bytes = try_send_fig(entry, pbuf, remaining, &cycle_done);
+                    if (this_bytes == 0) {
+                        break;
+                    }
+                    wrote_any = true;
+                    bytes += this_bytes;
+                    written += this_bytes;
+                    remaining -= this_bytes;
+                    pbuf += this_bytes;
+                } while (!cycle_done && remaining > 2);
+
+                if (wrote_any) {
 #if PRIORITY_CAROUSEL_DEBUG
                     fib_log << entry->name() << ":" << bytes << "B ";
 #endif
-                    written += bytes;
-                    remaining -= bytes;
-                    pbuf += bytes;
                     m_priorities[prio].move_to_back(entry);
                     on_fig_sent(prio);
                     made_progress = true;
@@ -735,10 +756,15 @@ void FIGCarouselPriority::decrement_all_counters()
     }
 }
 
-size_t FIGCarouselPriority::try_send_fig(FIGEntryPriority* entry, uint8_t* buf, size_t max_size)
+size_t FIGCarouselPriority::try_send_fig(FIGEntryPriority* entry, uint8_t* buf,
+        size_t max_size, bool* cycle_completed)
 {
     FillStatus status = entry->fig->fill(buf, max_size);
     size_t written = status.num_bytes_written;
+
+    if (cycle_completed) {
+        *cycle_completed = status.complete_fig_transmitted;
+    }
     
     // Validation: FIG should write at least 3 bytes or nothing
     if (written == 1 || written == 2) {

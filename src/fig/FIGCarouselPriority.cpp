@@ -484,6 +484,8 @@ size_t FIGCarouselPriority::fill_fib(uint8_t* buf, size_t max_size, int fib_inde
                 if (wrote_any) {
 #if PRIORITY_CAROUSEL_DEBUG
                     fib_log << entry->name() << ":" << bytes << "B ";
+#else
+                    (void)bytes; // suppress warning about unused variable
 #endif
                     m_priorities[prio].move_to_back(entry);
                     on_fig_sent(prio);

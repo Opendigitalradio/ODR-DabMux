@@ -90,7 +90,8 @@ FIGCarouselPriority::FIGCarouselPriority(
     m_fig0_5(&m_rti),
     m_fig0_6(&m_rti),
     m_fig0_7(&m_rti),
-    m_fig0_8(&m_rti),
+    m_fig0_8_prog(&m_rti, FIG0_8_mode::Programme),
+    m_fig0_8_data(&m_rti, FIG0_8_mode::Data),
     m_fig0_9(&m_rti),
     m_fig0_10(&m_rti),
     m_fig0_13(&m_rti),
@@ -174,6 +175,10 @@ void FIGCarouselPriority::assign_figs_to_priorities()
     // Priority 1: Core MCI (fixed share - ~50% of FIC capacity)
     add_fig_to_priority(m_fig0_1, 1);
     add_fig_to_priority(m_fig0_2, 1);
+    // Programme service component global definitions are group A MCI (96ms
+    // nominal per EN 300 401 clause 6.1) and belong with core MCI. The data
+    // half is carried separately at priority 4 (rate B).
+    add_fig_to_priority(m_fig0_8_prog, 1);
     
     // Priority 2: Service labels (fixed share - critical for scan completion!)
     // WorldDAB: "labels should get 2 FIGs per 96ms frame"
@@ -186,7 +191,7 @@ void FIGCarouselPriority::assign_figs_to_priorities()
     
     // Priority 4: Component details
     add_fig_to_priority(m_fig0_3, 4);  // Packet mode
-    add_fig_to_priority(m_fig0_8, 4);  // Service component global def
+    add_fig_to_priority(m_fig0_8_data, 4);  // Data service component global def (rate B)
     add_fig_to_priority(m_fig0_13, 4); // User applications
     
     // Priority 5: Scaled insertion (should match label cycle time)
@@ -451,14 +456,35 @@ size_t FIGCarouselPriority::fill_fib(uint8_t* buf, size_t max_size, int fib_inde
                 }
                 tried_this_fib.insert(entry);
                 
-                size_t bytes = try_send_fig(entry, pbuf, remaining);
-                if (bytes > 0) {
+                // A structured FIG (e.g. 0/8) traverses its component list
+                // across successive fills, reporting completion only when the
+                // list wraps. Normally each FIG gets one fill per FIB, which
+                // throttles large FIGs to a few entries per frame. To let such
+                // a FIG use the spare space in this FIB, keep refilling it while
+                // it writes bytes but has not yet completed its cycle. This is
+                // self-limiting: it stops on a completed cycle, a zero-byte
+                // write (no fit / nothing left), or exhausted FIB space, so it
+                // cannot spin. Single-block FIGs complete in one fill and never
+                // loop here.
+                size_t bytes = 0;
+                bool cycle_done = false;
+                bool wrote_any = false;
+                do {
+                    size_t this_bytes = try_send_fig(entry, pbuf, remaining, &cycle_done);
+                    if (this_bytes == 0) {
+                        break;
+                    }
+                    wrote_any = true;
+                    bytes += this_bytes;
+                    written += this_bytes;
+                    remaining -= this_bytes;
+                    pbuf += this_bytes;
+                } while (!cycle_done && remaining > 2);
+
+                if (wrote_any) {
 #if PRIORITY_CAROUSEL_DEBUG
                     fib_log << entry->name() << ":" << bytes << "B ";
 #endif
-                    written += bytes;
-                    remaining -= bytes;
-                    pbuf += bytes;
                     m_priorities[prio].move_to_back(entry);
                     on_fig_sent(prio);
                     made_progress = true;
@@ -608,7 +634,7 @@ size_t FIGCarouselPriority::send_priority_zero(uint8_t* buf, size_t max_size, in
             }
             // Mark cycle complete if the FIG says so
             if (status.complete_fig_transmitted) {
-                entry->on_cycle_complete(status.num_bytes_written > 0);
+                entry->on_cycle_complete();
             }
             if (status.num_bytes_written == 0) {
                 throw std::logic_error("Failed to write FIG 0/0");
@@ -633,9 +659,9 @@ size_t FIGCarouselPriority::send_priority_zero(uint8_t* buf, size_t max_size, in
             if (status.num_bytes_written > 0) {
                 written += status.num_bytes_written;
             }
-            // If complete, reset the cycle - pass whether data was sent
+            // Mark cycle complete if the FIG says so
             if (status.complete_fig_transmitted) {
-                entry->on_cycle_complete(status.num_bytes_written > 0);
+                entry->on_cycle_complete();
 #if PRIORITY_CAROUSEL_DEBUG
                 etiLog.level(info) << "  FIG 0/7: cycle complete, new deadline=" << entry->deadline_ms;
 #endif
@@ -737,10 +763,15 @@ void FIGCarouselPriority::decrement_all_counters()
     }
 }
 
-size_t FIGCarouselPriority::try_send_fig(FIGEntryPriority* entry, uint8_t* buf, size_t max_size)
+size_t FIGCarouselPriority::try_send_fig(FIGEntryPriority* entry, uint8_t* buf,
+        size_t max_size, bool* cycle_completed)
 {
     FillStatus status = entry->fig->fill(buf, max_size);
     size_t written = status.num_bytes_written;
+
+    if (cycle_completed) {
+        *cycle_completed = status.complete_fig_transmitted;
+    }
     
     // Validation: FIG should write at least 3 bytes or nothing
     if (written == 1 || written == 2) {
@@ -759,9 +790,12 @@ size_t FIGCarouselPriority::try_send_fig(FIGEntryPriority* entry, uint8_t* buf, 
     }
     
     // Handle cycle completion
-    // Pass whether data was actually sent - only record stats if we transmitted something
+    // When complete_fig_transmitted is true, the FIG has completed its full cycle.
+    // For multi-phase FIGs like 0/2 (audio then data), the final phase may write
+    // 0 bytes if there's no data, but the cycle is still complete.
+    // We always record the cycle completion to track end-to-end timing.
     if (status.complete_fig_transmitted) {
-        entry->on_cycle_complete(written > 0);
+        entry->on_cycle_complete();
     }
     
     return written;

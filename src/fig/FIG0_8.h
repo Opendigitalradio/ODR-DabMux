@@ -35,18 +35,35 @@ namespace FIC {
 // The Extension 8 of FIG type 0 (FIG 0/8) provides information to link
 // together the service component description that is valid within the ensemble
 // to a service component description that is valid in other ensembles
+// Selects which service components an FIG0_8 instance carries.
+//  - Both:      legacy behaviour, alternates programme then data passes from a
+//               single instance, completing the full database every second loop.
+//  - Programme: carries only programme service components, completing on each loop.
+//  - Data:      carries only data service components, completing on each loop.
+// The split modes let the priority carousel run programme components at rate A
+// (group A MCI, 96ms) and data components at rate B, as permitted by EN 300 401
+// clause 6.1, while keeping each instance single-pass so cycle timing is exact.
+enum class FIG0_8_mode { Both, Programme, Data };
+
 class FIG0_8 : public IFIG
 {
     public:
-        FIG0_8(FIGRuntimeInformation* rti);
+        FIG0_8(FIGRuntimeInformation* rti, FIG0_8_mode mode = FIG0_8_mode::Both);
         virtual FillStatus fill(uint8_t *buf, size_t max_size);
-        virtual FIG_rate repetition_rate() const { return FIG_rate::B; }
+        virtual FIG_rate repetition_rate() const {
+            // Programme-only instances are group A MCI (96ms nominal).
+            // Data-only and legacy Both instances use rate B, matching the
+            // original declaration and EN 300 401 clause 6.1 for data
+            // components.
+            return (m_mode == FIG0_8_mode::Programme) ? FIG_rate::A : FIG_rate::B;
+        }
 
         virtual int figtype() const { return 0; }
         virtual int figextension() const { return 8; }
 
     private:
         FIGRuntimeInformation *m_rti;
+        FIG0_8_mode m_mode;
         bool m_initialised;
         bool m_transmit_programme;
         vec_sp_component::iterator componentFIG0_8;

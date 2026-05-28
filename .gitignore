@@ -33,3 +33,4 @@ cscope.out
 ctags
 tags
 .clang_complete
+*:Zone.Identifier

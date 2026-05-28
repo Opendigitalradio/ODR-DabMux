@@ -190,11 +190,10 @@ struct FIGEntryPriority {
         return false;
     }
     
-    void on_cycle_complete(bool data_was_sent = true) {
-        // Track repetition rate statistics only if data was actually sent
-        // FIGs that return 0 bytes (nothing to send) shouldn't count as "cycles"
-        // as they don't consume bandwidth and skew the statistics
-        if (data_was_sent && last_cycle_complete_ms > 0) {
+    void on_cycle_complete() {
+        // Track repetition rate statistics
+        // Measures end-to-end cycle time (from one completion to the next)
+        if (last_cycle_complete_ms > 0) {
             uint64_t cycle_time = current_time_ms - last_cycle_complete_ms;
             // Only count if meaningful time has passed (avoid artifacts from
             // multiple completions in same frame due to timing granularity)
@@ -205,9 +204,7 @@ struct FIGEntryPriority {
                 if (cycle_time > max_cycle_time_ms) max_cycle_time_ms = cycle_time;
             }
         }
-        if (data_was_sent) {
-            last_cycle_complete_ms = current_time_ms;
-        }
+        last_cycle_complete_ms = current_time_ms;
         
         // Reset deadline for next cycle
         // FIG 0/7 needs extra margin for framephase timing
@@ -347,7 +344,10 @@ private:
     
     // Try to send a FIG, returns bytes written
     // Does NOT move FIG in carousel - caller must do that only if bytes > 0
-    size_t try_send_fig(FIGEntryPriority* entry, uint8_t* buf, size_t max_size);
+    // If cycle_completed is non-null, it is set to whether this fill completed
+    // the FIG's full cycle (used by the multi-entry refill logic).
+    size_t try_send_fig(FIGEntryPriority* entry, uint8_t* buf, size_t max_size,
+            bool* cycle_completed = nullptr);
     
     // Assign FIGs to priority levels (hardcoded assignments)
     void assign_figs_to_priorities();
@@ -381,7 +381,8 @@ private:
     FIG0_5 m_fig0_5;
     FIG0_6 m_fig0_6;
     FIG0_7 m_fig0_7;
-    FIG0_8 m_fig0_8;
+    FIG0_8 m_fig0_8_prog;
+    FIG0_8 m_fig0_8_data;
     FIG0_9 m_fig0_9;
     FIG0_10 m_fig0_10;
     FIG0_13 m_fig0_13;

@@ -6,6 +6,10 @@
    Copyright (C) 2024
    Matthias P. Braendli, matthias.braendli@mpb.li
 
+   Phase-lock extensions:
+   Copyright (C) 2026
+   Samuel Hunt, Maxxwave Ltd. sam@maxxwave.co.uk
+
    */
 /*
    This file is part of ODR-DabMux.
@@ -51,6 +55,55 @@ class FIGRuntimeInformation {
         unsigned long currentFrame;
         std::shared_ptr<dabEnsemble> ensemble;
         bool factumAnalyzer;
+        
+        /* Phase-lock mechanism for FIG 0/2 and FIG 1/1 synchronisation.
+         *
+         * Problem: Receivers use FIG 0/2 to learn service organisation, then
+         * wait for FIG 1/1 labels for each service. If a receiver completes
+         * its label scan before seeing complete 0/2 data, services may be
+         * missing from the service list.
+         *
+         * Solution: One-way lock - FIG 1/1 cannot send a label until FIG 0/2
+         * has announced that service. FIG 0/2 runs freely at its natural rate
+         * (potentially completing multiple cycles per label cycle).
+         *
+         * Counters are reset when FIG 1/1 starts a new cycle, synchronising
+         * the start of both cycles.
+         *
+         * This ensures that within any label cycle window:
+         * - Every service announced by 0/2 can have its label sent
+         * - 0/2 completes at least once (usually multiple times)
+         * - Receivers see complete service data before labels finish
+         */
+        
+        // Number of programme services announced by FIG 0/2 since last 1/1 cycle start
+        size_t fig0_2_services_announced = 0;
+        
+        // Number of programme service labels sent by FIG 1/1 this cycle  
+        size_t fig1_1_labels_sent = 0;
+        
+        // Called by FIG 0/2 when it sends a programme service entry
+        void on_fig0_2_service_sent() {
+            fig0_2_services_announced++;
+        }
+        
+        // Called by FIG 1/1 to check if it can send a label
+        // Returns true if 0/2 has announced more services than 1/1 has labelled
+        bool can_fig1_1_send() const {
+            return fig1_1_labels_sent < fig0_2_services_announced;
+        }
+        
+        // Called by FIG 1/1 when it sends a service label
+        void on_fig1_1_label_sent() {
+            fig1_1_labels_sent++;
+        }
+        
+        // Called by FIG 1/1 when it starts a new cycle
+        // Resets both counters to synchronise the cycles
+        void on_fig1_1_cycle_start() {
+            fig0_2_services_announced = 0;
+            fig1_1_labels_sent = 0;
+        }
 };
 
 /* Recommended FIG rates according to ETSI TR 101 496-2 Table 3.6.1
@@ -103,4 +156,3 @@ class IFIG
 };
 
 } // namespace FIC
-

@@ -7,6 +7,10 @@
    Matthias P. Braendli, matthias.braendli@mpb.li
 
    Implementation of FIG1
+
+   Phase-lock extensions:
+   Copyright (C) 2026
+   Samuel Hunt, Maxxwave Ltd. sam@maxxwave.co.uk
    */
 /*
    This file is part of ODR-DabMux.
@@ -79,16 +83,18 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
     FillStatus fs;
 
     ssize_t remaining = max_size;
-
-    if (not m_initialised) {
-        service = m_rti->ensemble->services.end();
-        m_initialised = true;
-    }
-
+    
     auto ensemble = m_rti->ensemble;
 
-    // Rotate through the subchannels until there is no more
-    // space
+    if (not m_initialised) {
+        service = ensemble->services.begin();
+        m_initialised = true;
+        // Reset phase-lock counters at start of new cycle
+        // This synchronises 1/1 and 0/2 cycles
+        m_rti->on_fig1_1_cycle_start();
+    }
+
+    // Rotate through the services until there is no more space
     for (; service != ensemble->services.end(); ++service) {
         if (remaining < 4 + 16 + 2) {
             break;
@@ -97,6 +103,13 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
         const bool is_programme = (*service)->isProgramme(ensemble);
 
         if (is_programme and (*service)->label.has_fig1_label()) {
+            // Phase-lock: check if 0/2 has announced enough services
+            // We cannot send a label until 0/2 has announced the service
+            if (!m_rti->can_fig1_1_send()) {
+                // 0/2 hasn't announced enough services yet, wait
+                break;
+            }
+            
             auto fig1_1 = (FIGtype1_1 *)buf;
 
             fig1_1->FIGtypeNumber = 1;
@@ -117,11 +130,15 @@ FillStatus FIG1_1::fill(uint8_t *buf, size_t max_size)
             buf[1] = (*service)->label.flag() & 0xFF;
             buf += 2;
             remaining -= 2;
+            
+            // Phase-lock: notify that we've sent a programme service label
+            m_rti->on_fig1_1_label_sent();
         }
     }
 
     if (service == ensemble->services.end()) {
-        service = ensemble->services.begin();
+        // Cycle complete - mark uninitialised so next call starts fresh
+        m_initialised = false;
         fs.complete_fig_transmitted = true;
     }
 
@@ -278,4 +295,3 @@ FillStatus FIG1_5::fill(uint8_t *buf, size_t max_size)
 }
 
 } // namespace FIC
-

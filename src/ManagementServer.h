@@ -101,7 +101,7 @@ class InputStat
 
         /* This function is called for every frame read by
          * the multiplexer */
-        void notifyBuffer(long bufsize);
+        void notifyBuffer(uint64_t bufsize);
         void notifyTimestampOffset(double offset);
         void notifyPeakLevels(int peak_left, int peak_right);
         void notifyUnderrun();
@@ -121,7 +121,7 @@ class InputStat
         // can calculate the correct state from it.
         struct fill_stat_t {
             std::chrono::time_point<std::chrono::steady_clock> timestamp;
-            long bufsize;
+            uint64_t bufsize;
         };
         std::deque<fill_stat_t> m_buffer_fill_stats;
 
@@ -198,7 +198,7 @@ class ManagementServer
 
 
     private:
-        void restart_thread(long);
+        void restart_thread();
 
         /******* Server ******/
         zmq::context_t m_zmq_context;

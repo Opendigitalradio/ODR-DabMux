@@ -304,13 +304,13 @@ void ManagementServer::open(int listenport)
 
 void ManagementServer::restart()
 {
-    m_restarter_thread = thread(&ManagementServer::restart_thread, this, 0);
+    m_restarter_thread = thread(&ManagementServer::restart_thread, this);
 }
 
 // This runs in a separate thread, because
 // it would take too long to be done in the main loop
 // thread.
-void ManagementServer::restart_thread(long)
+void ManagementServer::restart_thread()
 {
     m_running = false;
 
@@ -440,7 +440,7 @@ void InputStat::registerAtServer()
     get_mgmt_server().register_input(this);
 }
 
-void InputStat::notifyBuffer(long bufsize)
+void InputStat::notifyBuffer(uint64_t bufsize)
 {
     unique_lock<mutex> lock(m_mutex);
 
@@ -594,8 +594,8 @@ json::map_t InputStat::encodeValues()
         }
     }
 
-    long min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
-    long max_fill_buffer = 0;
+    uint64_t min_fill_buffer = MIN_FILL_BUFFER_UNDEF;
+    uint64_t max_fill_buffer = 0;
     if (not m_buffer_fill_stats.empty()) {
         const auto& buffer_min_max_fill = minmax_element(
                 m_buffer_fill_stats.begin(), m_buffer_fill_stats.end(),

@@ -1,6 +1,11 @@
 This file contains information about the changes done to
 ODR-DabMux in this repository
 
+2026-06-17: Matthias P. Braendli <matthias@mpb.li>
+	(v5.5.1):
+		Update CarouselPriority FIC scheduler.
+		Fix compilation issues.
+
 2026-05-08: Matthias P. Braendli <matthias@mpb.li>
 	(v5.5.0):
 		Update project to C++20, libboost 1.71.

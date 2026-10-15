@@ -107,7 +107,7 @@ class InputStat
         void notifyUnderrun();
         void notifyOverrun();
         void notifyVersion(const std::string& version, uint32_t uptime_s);
-        json::map_t encodeValues();
+        json::map_t encodeValues(input_state_t determined_state);
         input_state_t determineState();
 
     private:
@@ -242,7 +242,11 @@ class ManagementServer
          *
          * returns: JSON encoded statistics
          */
-        json::map_t get_input_values() const;
+        struct InputValues {
+            json::map_t values;
+            uint32_t worst_state;
+        };
+        InputValues get_input_values() const;
 
         struct output_stats {
             json::map_t values;

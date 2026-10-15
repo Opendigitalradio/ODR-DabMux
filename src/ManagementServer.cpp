@@ -57,7 +57,7 @@ using namespace std;
 #define INPUT_AUDIO_LEVEL_COUNT_SATURATION 500 // superframes (120ms)
 
 /* An example of how the state changes work.
- * The timeout is set to expire in 30 minutes
+ * The timeout is set to expire in 5 minutes
  * at each under-/overrun.
  *
  * The glitch counter is increased by one for each glitch (can be a
@@ -83,12 +83,12 @@ using namespace std;
                                    \
                                     \
   timeout expires ___________________\
-                           <--30min-->
+                           <--5 min-->
  */
 
 /* The delay after which the glitch counter is reset */
 static constexpr auto
-INPUT_COUNTER_RESET_TIME = std::chrono::minutes(30);
+INPUT_COUNTER_RESET_TIME = std::chrono::minutes(5);
 
 /* How many glitches we tolerate in Streaming state before
  * we consider the input Unstable */
@@ -174,7 +174,6 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
     json::map_t j;
 
     j["version"] = VERSION;
-    j["global_input_state"] = std::nullopt; // TODO
 
     using namespace chrono;
     j["process_startup_time"] = duration_cast<seconds>(m_startup_time_sys.time_since_epoch()).count();
@@ -188,7 +187,10 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
         j["clock_tai_expiry"] = std::nullopt;
     }
 
-    j["inputs"] = get_input_values();
+    auto iv = get_input_values();
+    j["inputs"] = iv.values;
+    j["global_input_state"] = iv.worst_state;
+
     auto ov = get_output_values();
     j["outputs"] = ov.values;
     j["num_output_connections"] = ov.total_num_connections;
@@ -235,18 +237,41 @@ json::map_t ManagementServer::get_input_config_json()
     return j;
 }
 
-json::map_t ManagementServer::get_input_values() const
+ManagementServer::InputValues ManagementServer::get_input_values() const
 {
     unique_lock<mutex> lock(m_statsmutex);
+
+    InputValues r;
+    r.worst_state = 99;
 
     json::map_t j;
     for (const auto& stat : m_input_stats) {
         const std::string& id = stat.first;
         InputStat* stats = stat.second;
 
-        j[id] = stats->encodeValues();
+        auto determined_state = stats->determineState();
+        r.values[id] = stats->encodeValues(determined_state);
+
+        uint32_t state_number = 0;
+        switch (determined_state) {
+            case input_state_t::NoData:
+                state_number = 1;
+                break;
+            case input_state_t::Unstable:
+                state_number = 2;
+                break;
+            case input_state_t::Silence:
+                state_number = 3;
+                break;
+            case input_state_t::Streaming:
+                state_number = 4;
+                break;
+        }
+
+        r.worst_state = std::min(r.worst_state, state_number);
     }
-    return j;
+
+    return r;
 }
 
 ManagementServer::output_stats ManagementServer::get_output_values() const
@@ -385,7 +410,7 @@ void ManagementServer::handle_message(zmq::message_t& zmq_message)
         }
         else if (data == "values") {
             json::map_t root;
-            root["values"] = get_input_values();
+            root["values"] = get_input_values().values;
             answer << json::map_to_json(root);
         }
         else if (data == "output_values") {
@@ -554,7 +579,7 @@ void InputStat::notifyVersion(const std::string& version, uint32_t uptime_s)
     m_uptime_s = uptime_s;
 }
 
-json::map_t InputStat::encodeValues()
+json::map_t InputStat::encodeValues(input_state_t determined_state)
 {
     const int16_t int16_max = std::numeric_limits<int16_t>::max();
 
@@ -622,6 +647,16 @@ json::map_t InputStat::encodeValues()
          pos++;
     }
 
+    std::vector<std::string> version_parts;
+    {
+        stringstream ss(version);
+        std::string item;
+
+        while (std::getline(ss, item, ' ')) {
+            version_parts.push_back(std::move(item));
+        }
+    }
+
     json::map_t inputstat;
     inputstat["min_fill"] = min_fill_buffer;
     inputstat["max_fill"] = max_fill_buffer;
@@ -633,22 +668,42 @@ json::map_t InputStat::encodeValues()
     inputstat["num_overruns"] = m_num_overruns;
     inputstat["last_tist_offset"] = m_last_tist_offset;
     inputstat["version"] = version;
+
+    inputstat["encoder_name"] = "";
+    inputstat["encoder_version"] = "";
+    inputstat["encoder_identifier"] = "";
+
+    // In case of missing --id for odr-audioenc
+    if (version_parts.size() >= 2) {
+        inputstat["encoder_name"] = version_parts[0];
+        inputstat["encoder_version"] = version_parts[1];
+    }
+
+    if (version_parts.size() == 3) {
+        inputstat["encoder_identifier"] = version_parts[2];
+    }
+
     inputstat["uptime"] = m_uptime_s;
-    inputstat["state"] = "";
+    inputstat["state_text"] = "";
+    inputstat["state"] = 0;
 
     string state;
-    switch (determineState()) {
+    switch (determined_state) {
         case input_state_t::NoData:
-            inputstat["state"] = "NoData (1)";
+            inputstat["state_text"] = "NoData (1)";
+            inputstat["state"] = 1;
             break;
         case input_state_t::Unstable:
-            inputstat["state"] = "Unstable (2)";
+            inputstat["state_text"] = "Unstable (2)";
+            inputstat["state"] = 2;
             break;
         case input_state_t::Silence:
-            inputstat["state"] = "Silent (3)";
+            inputstat["state_text"] = "Silent (3)";
+            inputstat["state"] = 3;
             break;
         case input_state_t::Streaming:
-            inputstat["state"] = "Streaming (4)";
+            inputstat["state_text"] = "Streaming (4)";
+            inputstat["state"] = 4;
             break;
     }
 

@@ -173,7 +173,13 @@ std::string ManagementServer::get_json_stats_for_http(std::optional<int64_t> clo
 {
     json::map_t j;
 
-    j["version"] = VERSION;
+    j["version"] =
+#if defined(GITVERSION)
+                GITVERSION
+#else
+                PACKAGE_VERSION
+#endif
+                ;
 
     using namespace chrono;
     j["process_startup_time"] = duration_cast<seconds>(m_startup_time_sys.time_since_epoch()).count();
